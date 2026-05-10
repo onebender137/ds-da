@@ -48,25 +48,36 @@ input.addEventListener('keydown', (e) => {
 });
 
 function processCommand(cmd) {
-    // Add the user's line to the output
     const userLine = document.createElement('div');
     userLine.innerHTML = `<span class="prompt">DSDA_USER:~$</span> ${cmd}`;
     output.appendChild(userLine);
 
-    // Logic for response
-    if (cmd === 'clear') {
+    const parts = cmd.split(' ');
+    const baseCmd = parts[0];
+    const target = parts[1];
+
+    if (baseCmd === 'clear') {
         output.innerHTML = '';
-    } else if (cmd === 'exit') {
+    } else if (baseCmd === 'exit') {
         window.location.href = '/';
+    } else if (cmd === 'cat') {
+        printOutput("> Usage: cat [filename]");
     } else if (commands[cmd]) {
-        const response = document.createElement('div');
-        response.innerHTML = `> ${commands[cmd]}`;
-        output.appendChild(response);
+        printOutput("> " + commands[cmd]);
+    } else if (baseCmd === 'cat' && commands[cmd]) {
+        printOutput("> Reading file... <br>" + commands[cmd]);
     } else {
-        const error = document.createElement('div');
-        error.innerHTML = `> COMMAND NOT RECOGNIZED: ${cmd}. Type 'help' for protocols.`;
-        output.appendChild(error);
+        printOutput(`> ERROR: Unknown protocol '${cmd}'. Type 'help' for valid commands.`);
     }
+
+    output.scrollTop = output.scrollHeight;
+}
+
+function printOutput(text) {
+    const response = document.createElement('div');
+    response.innerHTML = text;
+    output.appendChild(response);
+}
 
     // Always scroll to bottom
     output.scrollTop = output.scrollHeight;
