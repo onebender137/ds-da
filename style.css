@@ -266,3 +266,69 @@ footer { position: fixed; bottom: 20px; font-size: 0.7rem; color: #334155; lette
     66% { clip-path: inset(50% 0 5% 0); transform: translate(-1px, 4px); }
     100% { clip-path: inset(0 0 0 0); transform: translate(0); }
 }
+/* --- ARCHIVES LAYOUT --- */
+.archives-body { justify-content: flex-start; padding-top: 80px; }
+
+.archives-container {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 20px;
+    width: 95%;
+    max-width: 1400px;
+    height: 80vh;
+    z-index: 10;
+}
+
+.forensic-border {
+    background: rgba(7, 8, 11, 0.85);
+    border: 1px solid rgba(0, 229, 255, 0.15);
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+}
+
+.explorer-header, .viewer-header {
+    background: rgba(0, 229, 255, 0.05);
+    padding: 10px 15px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.9rem;
+    letter-spacing: 2px;
+    border-bottom: 1px solid rgba(0, 229, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* File Tree */
+.file-tree { list-style: none; padding: 20px; font-family: 'Space Mono', monospace; font-size: 0.8rem; }
+.folder { color: var(--gold); margin-bottom: 10px; cursor: default; }
+.file-link { 
+    color: var(--cyan); 
+    padding: 5px 15px; 
+    cursor: pointer; 
+    transition: 0.2s;
+    opacity: 0.7;
+}
+.file-link:hover { opacity: 1; background: rgba(0, 229, 255, 0.1); }
+
+/* Doc Reader */
+.doc-reader {
+    padding: 40px;
+    overflow-y: auto;
+    font-family: 'Space Mono', monospace;
+    line-height: 1.8;
+    color: #cbd5e1;
+}
+
+.redacted {
+    background: #000;
+    color: #000;
+    padding: 0 4px;
+    transition: 0.3s;
+    cursor: help;
+}
+.redacted:hover { background: transparent; color: var(--cyan); text-shadow: 0 0 5px var(--cyan); }
+
+.doc-reader h2 { color: var(--gold); font-family: 'Rajdhani', sans-serif; text-transform: uppercase; margin-bottom: 20px; }
+
+.access-badge { background: var(--gold); color: #000; padding: 2px 8px; font-weight: bold; font-size: 0.7rem; }
