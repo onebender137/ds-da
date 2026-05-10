@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DSDA // Research Archives</title>
+    <link rel="stylesheet" href="style.css?v=1.0.9">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Space+Mono&display=swap" rel="stylesheet">
+</head>
+<body class="archives-body">
+    <div class="grid-background"></div>
+
+    <header class="system-hud-top">
+        <div class="hud-item badge">FILE_ACCESS: CLASSIFIED</div>
+        <div class="hud-item status">DIRECTORY: /root/syndicate/archives/</div>
+        <div class="hud-item time" id="clock">00:00:00 UTC</div>
+    </header>
+
+    <main class="archives-container">
+        <aside class="file-explorer forensic-border">
+            <div class="explorer-header">SYNDICATE_FILESYSTEM</div>
+            <ul class="file-tree">
+                <li class="folder">📂 PROJECT_21M
+                    <ul>
+                        <li class="file-link" onclick="loadDoc('prologue')">📄 PROLOGUE.log</li>
+                        <li class="file-link" onclick="loadDoc('chapter1')">📄 CHAPTER_01.bin</li>
+                    </ul>
+                </li>
+                <li class="folder">📂 HOPES_AND_DREAMS
+                    <ul>
+                        <li class="file-link" onclick="loadDoc('sleep_stack')">📄 SLEEP_OPTIMIZATION.cfg</li>
+                        <li class="file-link" onclick="loadDoc('botanical')">📄 BOTANICAL_ANALYSIS.log</li>
+                    </ul>
+                </li>
+                <li class="file-link" onclick="loadDoc('identity')">📄 IDENTITY_DECRYPT.txt</li>
+            </ul>
+        </aside>
+
+        <section class="document-viewer forensic-border">
+            <div class="viewer-header">
+                <span id="doc-title">SELECT_FILE_TO_DECRYPT</span>
+                <span class="access-badge">LEVEL_4_AUTH</span>
+            </div>
+            <div id="doc-content" class="doc-reader">
+                <div class="empty-state">
+                    [AWAITING_INPUT_COMMAND]<br>
+                    READY FOR DATA EXTRACTION...
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+    <script src="archives-logic.js"></script>
+</body>
+</html>
