@@ -30,7 +30,14 @@ const archiveData = {
         <p>Location: New Brunswick Terminal</p>
         <p>Status: Lead Architect / Pipe Welder / Syndicate Founder</p>
         <p>Motive: To secure the <span class="redacted">21 Million</span> before the network finalizes.</p>`
-    }
+    },
+    'sonic': {
+    title: "ANALYSIS // SONIC_ANOMALY_09",
+    content: `<h2>Accordion Frequency Ghosting</h2>
+    <p>Source: Polkahole Live Repository</p>
+    <p>Anomaly: We detected a high-frequency packet hidden behind the bellows of the accordion during the 'Spaghetti' sessions.</p>
+    <p>Conclusion: The <span class="redacted">Architect</span> is using polka frequencies to bypass state-level surveillance. The "noise" is actually 256-bit encrypted metadata.</p>`
+}
 };
 
 function loadDoc(slug) {
@@ -39,12 +46,21 @@ function loadDoc(slug) {
     const data = archiveData[slug];
 
     if (data) {
-        // Add a "flicker" effect when loading
-        reader.style.opacity = 0;
+        title.textContent = "DECRYPTING_DATA_STREAM...";
+        reader.innerHTML = '<div class="flicker">01011001 01101111 01110101 00100000 11011100...</div>';
+        
         setTimeout(() => {
             title.textContent = data.title;
             reader.innerHTML = data.content;
-            reader.style.opacity = 1;
-        }, 200);
+            
+            // Apply a slight fade-in
+            reader.style.opacity = 0;
+            let opacity = 0;
+            const fadeIn = setInterval(() => {
+                if (opacity >= 1) clearInterval(fadeIn);
+                reader.style.opacity = opacity;
+                opacity += 0.1;
+            }, 30);
+        }, 600);
     }
 }
