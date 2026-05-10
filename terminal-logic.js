@@ -1,4 +1,4 @@
-// --- DSDA TERMINAL ENGINE v1.0.7: STABLE BUILD ---
+// --- DSDA TERMINAL ENGINE v1.0.7: STABLE MASTER BUILD ---
 
 const commands = {
     'help': "SYSTEM PROTOCOLS:<br>ls - List directory<br>cat [file] - Read file<br>status - System vitals<br>the_architect.bin - Run agent simulation<br>python [program] - Execute redirect (hopes-and-dreams, polkahole)<br>whoami - Decrypt identity<br>clear - Wipe screen<br>exit - Return to core infrastructure",
@@ -73,8 +73,14 @@ function processCommand(cmd, output) {
         }
     } else if (commands[cmd]) {
         printOutput("> " + commands[cmd], output);
-    } else if (baseCmd === 'cat' && commands[cmd]) {
-        printOutput("> Reading file... <br>" + commands[cmd], output);
+    } else if (baseCmd === 'cat' && parts[1]) {
+        const fileName = parts[1];
+        const fullCmd = `cat ${fileName}`;
+        if (commands[fullCmd]) {
+            printOutput("> Reading file... <br>" + commands[fullCmd], output);
+        } else {
+            printOutput(`> ERROR: File '${fileName}' not found.`, output);
+        }
     } else {
         printOutput(`> ERROR: Unknown protocol '${cmd}'. Type 'help' for valid commands.`, output);
     }
