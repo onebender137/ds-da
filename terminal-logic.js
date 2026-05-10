@@ -1,4 +1,4 @@
-// --- DSDA TERMINAL ENGINE v1.0.7: STABLE MASTER BUILD ---
+// --- DSDA TERMINAL ENGINE v1.0.8: REPO MANIFEST UPDATE ---
 
 const commands = {
     'help': `SYSTEM PROTOCOLS:<br>ls - List directory<br>cat [file] - Read file<br>status - System vitals<br>the_architect.bin - Run agent simulation<br>python [program] - Execute redirect (hopes-and-dreams, polkahole)<br>whoami - Decrypt identity<br>clear - Wipe screen<br>exit - Return to core infrastructure`,
@@ -11,7 +11,7 @@ const commands = {
 
     'cat vitals.log': `08:00:01 - Node-01 Handshake SUCCESS<br>08:30:45 - The Architect Agent: Self-correction loop ACTIVE<br>09:20:10 - Polka levels approaching critical spaghetti limit.`,
 
-    'cat network.cfg': `SSID: Starlink_Syndicate_Alpha<br>LOCAL_IP: 192.168.1.137<br>TUNNEL: syndicate_pipe (Active)<br>PORT: 443 [Zero Trust Enabled]`,
+    'cat network.cfg': `SSID: Starlink_Syndicate_Alpha<br>LOCAL_IP: 192.168.1.137<br>TUNNEL: syndicate_pipe (Active)<br>PORT: 443 [Zero Trust Enabled]<br><span style="color:rgba(0, 229, 255, 0.3)">// REPO_REGISTRY: [RESTRICTED_ACCESS]</span>`,
 
     'the_architect.bin': `INITIALIZING AGENT: THE ARCHITECT...<br>[SYSTEM]: MSI Claw Environment Detected.<br>[SYSTEM]: Syncing with 3090 GPU Cluster...<br>------------------------------------`,
 
@@ -19,8 +19,38 @@ const commands = {
 
     'python polkahole': `INITIALIZING POLKAHOLE.EXE...<br>[SYSTEM]: Tuning accordions...<br>------------------------------------`,
 
-    'whoami': `DECRYPTING IDENTITY...<br>[REDACTED]: Syndicate Founder / Lead Architect.<br>[STATUS]: Ghost in the machine.<br>NOTES: Surveillance is active. Stay in the shadows.`
+    'whoami': `DECRYPTING IDENTITY...<br>[REDACTED]: Syndicate Founder / Lead Architect.<br>[STATUS]: Ghost in the machine.<br>NOTES: Surveillance is active. Stay in the shadows.<br><span style="color:rgba(0, 229, 255, 0.3)">AUTH_BYPASS_TOKEN: syndicate</span>`,
+
+    // THE HIDDEN REGISTRY COMMAND
+    'syndicate': `
+<br>
+<span style="color: var(--gold); font-weight: bold;">[!] ACCESSING RESTRICTED REGISTRY...</span><br>
+<span style="color: #4ade80;">UPLINK ESTABLISHED // DECRYPTING REPO_MANIFEST...</span><br>
+------------------------------------------------------------<br>
+<br>
+<span style="color: var(--cyan);">[PROJECT: THE ARCHITECT]</span><br>
+STATUS: ACTIVE (BUILD v1.0.4)<br>
+DESC: Senior Coding Agent optimized for MSI Claw hardware.<br>
+UPLINK: <a href="https://github.com/onebender137/Architect" target="_blank" style="color: var(--gold); text-decoration: underline;">GITHUB_REPO</a><br>
+<br>
+<span style="color: var(--cyan);">[PROJECT: DSDA_CORE]</span><br>
+STATUS: NOMINAL<br>
+DESC: Next-gen infrastructure and forensic UI logic.<br>
+UPLINK: <a href="https://github.com/onebender137/ds-da" target="_blank" style="color: var(--gold); text-decoration: underline;">SOURCE_FILES</a><br>
+<br>
+<span style="color: var(--cyan);">[PROJECT: POLKAHOLE]</span><br>
+STATUS: DEPLOYED<br>
+DESC: Sonic repositories and accordion frequency modulators.<br>
+UPLINK: <a href="https://github.com/onebender137/polkahole" target="_blank" style="color: var(--gold); text-decoration: underline;">AUDIO_REPO</a><br>
+<br>
+------------------------------------------------------------<br>
+<span style="color: #4ade80;">[SUCCESS] DATA_LEAK_PREVENTED. LOGGING OUT...</span><br>
+`
 };
+
+// Aliases for the hidden command
+commands['repos'] = commands['syndicate'];
+commands['github'] = commands['syndicate'];
 
 // --- CORE ENGINE ---
 
