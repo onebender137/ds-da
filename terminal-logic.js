@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 1. Diagnostic: If you see this message, the script is ALIVE.
-    printOutput("<span style='color:#ffb300'>[SYSTEM]: Terminal Logic v1.0.7 Loaded Successfully.</span>", output);
+    printOutput("<span style='color:#ffb300'>[SYSTEM]: Terminal Logic v1.0.8 Loaded Successfully.</span>", output);
     input.focus();
 
     // 2. Listen for Enter Key
