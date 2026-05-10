@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DSDA // Terminal</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Terminal specific overrides */
+        body { background-color: #030406; justify-content: flex-start; padding: 2rem; font-family: 'Space Mono', monospace; }
+        .terminal-container { max-width: 800px; width: 100%; margin: 0 auto; border: 1px solid var(--cyan); padding: 1.5rem; background: rgba(0, 229, 255, 0.05); box-shadow: inset 0 0 20px rgba(0, 229, 255, 0.1); }
+        .log-header { color: var(--gold); margin-bottom: 1rem; text-transform: uppercase; border-bottom: 1px solid var(--gold); padding-bottom: 0.5rem; }
+        .log-entry { color: var(--cyan); margin-bottom: 0.5rem; font-size: 0.9rem; }
+        .log-intern { color: #a8b2c1; font-style: italic; margin-bottom: 1.5rem; }
+        .back-btn { display: inline-block; margin-top: 2rem; color: var(--purple); text-decoration: none; border: 1px solid var(--purple); padding: 0.5rem 1rem; }
+        .back-btn:hover { background: rgba(157, 0, 255, 0.2); }
+    </style>
+</head>
+<body>
+    <div class="grid-background"></div>
+    
+    <div class="terminal-container">
+        <div class="log-header">System Logs // Authorized Access Only</div>
+        
+        <div class="log-entry">> 09:00 - Mainframe online. Awaiting Telegram API handshake.</div>
+        <div class="log-entry">> 09:15 - Porting repository for The Architect. MSI Claw target acquired.</div>
+        <div class="log-entry">> 09:42 - PING received from node [DINK].</div>
+        <div class="log-intern">"Someone spilled coffee on my lab coat again. Also the GPU is running hot. Can I go home?" - Dink</div>
+        
+        <a href="/" class="back-btn">< Return to Core</a>
+    </div>
+</body>
+</html>
