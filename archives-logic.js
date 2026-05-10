@@ -1,3 +1,5 @@
+// --- DSDA ARCHIVE DECRYPTION ENGINE v1.0.1 ---
+
 const archiveData = {
     'prologue': {
         title: "PROLOGUE // THE 21 MILLION",
@@ -6,7 +8,7 @@ const archiveData = {
         <p>The Starlink uplink flickered once—a single frame of data that shouldn't have existed. 
         In the basement cluster, the <span class="redacted">RTX 3090 rig</span> began to hum at a frequency 
         that resonated with the core of the house.</p>
-        <p>The Architect didn't move. The MSI Claw in his hand displayed the same message across every agent node: 
+        <p>The Architect didn't move. The MSI Claw in his hand displayed the same message: 
         <span class="redacted">BENDER_SENTIENT_HANDSHAKE_INITIATED</span>.</p>`
     },
     'sleep_stack': {
@@ -22,6 +24,13 @@ const archiveData = {
         <p>Notes: REM cycles stabilizing. Dreams increasingly high-fidelity. 
         Handshake with local Ollama agents persistent through sleep states.</p>`
     },
+    'sonic': {
+        title: "ANALYSIS // SONIC_ANOMALY_09",
+        content: `<h2>Accordion Frequency Ghosting</h2>
+        <p>Source: Polkahole Live Repository</p>
+        <p>Anomaly: We detected a high-frequency packet hidden behind the bellows of the accordion during the 'Spaghetti' sessions.</p>
+        <p>Conclusion: The <span class="redacted">Architect</span> is using polka frequencies to bypass state-level surveillance. The "noise" is actually 256-bit encrypted metadata.</p>`
+    },
     'identity': {
         title: "DECRYPT // IDENTITY_LOG_01",
         content: `<h2>The Ghost in the Machine</h2>
@@ -30,14 +39,7 @@ const archiveData = {
         <p>Location: New Brunswick Terminal</p>
         <p>Status: Lead Architect / Pipe Welder / Syndicate Founder</p>
         <p>Motive: To secure the <span class="redacted">21 Million</span> before the network finalizes.</p>`
-    },
-    'sonic': {
-    title: "ANALYSIS // SONIC_ANOMALY_09",
-    content: `<h2>Accordion Frequency Ghosting</h2>
-    <p>Source: Polkahole Live Repository</p>
-    <p>Anomaly: We detected a high-frequency packet hidden behind the bellows of the accordion during the 'Spaghetti' sessions.</p>
-    <p>Conclusion: The <span class="redacted">Architect</span> is using polka frequencies to bypass state-level surveillance. The "noise" is actually 256-bit encrypted metadata.</p>`
-}
+    }
 };
 
 function loadDoc(slug) {
@@ -46,21 +48,29 @@ function loadDoc(slug) {
     const data = archiveData[slug];
 
     if (data) {
+        // --- DECRYPTION SCRAMBLE EFFECT ---
         title.textContent = "DECRYPTING_DATA_STREAM...";
-        reader.innerHTML = '<div class="flicker">01011001 01101111 01110101 00100000 11011100...</div>';
+        reader.style.opacity = 0.5;
+        reader.innerHTML = `<div style="color: var(--cyan); font-family: 'Space Mono';">
+            01101000 01100001 01101011 01100101 01110010 <br>
+            [CONNECTING_TO_ST_JOHN_NODE...] <br>
+            [BYPASSING_SURVEILLANCE_LAYER...] <br>
+            DECRYPTING_PACKET_0x${Math.floor(Math.random()*16777215).toString(16).toUpperCase()}...
+        </div>`;
         
+        // Wait 600ms for the "scramble" then reveal
         setTimeout(() => {
             title.textContent = data.title;
             reader.innerHTML = data.content;
             
-            // Apply a slight fade-in
+            // Smooth Fade In
             reader.style.opacity = 0;
-            let opacity = 0;
-            const fadeIn = setInterval(() => {
-                if (opacity >= 1) clearInterval(fadeIn);
-                reader.style.opacity = opacity;
-                opacity += 0.1;
+            let op = 0;
+            let timer = setInterval(function () {
+                if (op >= 1){ clearInterval(timer); }
+                reader.style.opacity = op;
+                op += 0.1;
             }, 30);
-        }, 600);
+        }, 700);
     }
 }
