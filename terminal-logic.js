@@ -1,3 +1,10 @@
+        "// Optimizing neural weights for MSI Claw handheld...",
+        "function syndicateDeploy() {",
+        "  const agents = ['Bender', 'Dink', 'Fry'];",
+        "  return agents.map(a => initiate(a));",
+        "}",
+        "// Architect Output: DEPLOYMENT SUCCESSFUL."
+    ];
 1const input = document.getElementById('command-input');
 const output = document.getElementById('output');
 
@@ -57,50 +64,3 @@ function runArchitect() {
         "  return agents.map(a => initiate(a));",
         "}",
         "// Architect Output: DEPLOYMENT SUCCESSFUL."
-    ];
-    let i = 0;
-    const interval = setInterval(() => {
-        if (i < lines.length) {
-            printOutput(`<span style="color:#00ff00">${lines[i]}</span>`);
-            i++;
-        } else {
-            clearInterval(interval);
-        }
-    }, 600);
-}
-
-function runPython(program) {
-    const url = program === 'hopes-and-dreams' ? "https://hopes-and-dreams.ca" : "https://polkahole.ca";
-    printOutput("> " + commands['python ' + program]);
-    const lines = [
-        `// Executing ${program}.py...`,
-        "// Establishing SSL tunnel...",
-        "// Handshaking with remote node...",
-        "// REDIRECTING TO SOURCE..."
-    ];
-    let i = 0;
-    const interval = setInterval(() => {
-        if (i < lines.length) {
-            printOutput(`<span style="color:#00ff00">${lines[i]}</span>`);
-            i++;
-        } else {
-            clearInterval(interval);
-            window.location.href = url;
-        }
-    }, 600);
-}
-
-function printUserLine(cmd) {
-    const userLine = document.createElement('div');
-    userLine.innerHTML = `<span class="prompt">DSDA_USER:~$</span> ${cmd}`;
-    output.appendChild(userLine);
-}
-
-function printOutput(text) {
-    const response = document.createElement('div');
-    response.innerHTML = text;
-    output.appendChild(response);
-    output.scrollTop = output.scrollHeight;
-}
-
-document.addEventListener('click', () => input.focus());
