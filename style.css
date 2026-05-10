@@ -208,3 +208,80 @@ footer { position: fixed; bottom: 20px; font-size: 0.7rem; color: #334155; lette
     .gradient-text { font-size: 2.8rem; }
     .carousel-node { transform: rotateY(calc(var(--i) * 120deg)) translateZ(180px); }
 }
+
+/* --- THE DIGITAL BREACH (LOGO EFFECT) --- */
+
+.logo-breach-container {
+    position: relative;
+    width: 320px;
+    height: auto;
+    margin: 0 auto 1.5rem;
+    cursor: crosshair;
+    perspective: 1000px;
+}
+
+.hero-logo, .hacker-img {
+    width: 100%;
+    height: auto;
+    border-radius: 4px;
+    transition: transform 0.3s ease, opacity 0.1s ease;
+    backface-visibility: hidden;
+}
+
+.hacker-img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0;
+    filter: saturate(1.5) contrast(1.2) hue-rotate(280deg); /* Makes it extra neon */
+    z-index: 1;
+}
+
+.hero-logo {
+    position: relative;
+    z-index: 2;
+}
+
+/* Hover State: The Breach */
+.logo-breach-container:hover .hero-logo {
+    opacity: 0;
+    animation: logoFlicker 0.2s infinite;
+}
+
+.logo-breach-container:hover .hacker-img {
+    opacity: 1;
+    transform: translateZ(20px) scale(1.05);
+    animation: identityGlitch 0.4s steps(2) infinite;
+    box-shadow: 0 0 40px rgba(157, 0, 255, 0.4);
+}
+
+/* Electric Title Shiver */
+.gradient-text {
+    position: relative;
+    animation: textShine 6s linear infinite, titleShiver 4s ease-in-out infinite;
+}
+
+/* --- ANIMATIONS --- */
+
+@keyframes logoFlicker {
+    0% { opacity: 0.1; }
+    50% { opacity: 0; }
+    100% { opacity: 0.2; }
+}
+
+@keyframes identityGlitch {
+    0% { clip-path: inset(10% 0 30% 0); transform: translate(-5px, 2px); }
+    20% { clip-path: inset(40% 0 10% 0); transform: translate(5px, -2px); }
+    40% { clip-path: inset(60% 0 5% 0); transform: translate(-2px, 5px); }
+    60% { clip-path: inset(5% 0 70% 0); transform: translate(2px, -5px); }
+    80% { clip-path: inset(20% 0 20% 0); transform: translate(-5px, -2px); }
+    100% { clip-path: inset(0 0 0 0); transform: translate(0); }
+}
+
+@keyframes titleShiver {
+    0%, 100% { transform: skewX(0deg); }
+    95% { transform: skewX(0deg); }
+    96% { transform: skewX(2deg) scale(1.01); filter: brightness(1.2); }
+    97% { transform: skewX(-2deg); }
+    98% { transform: skewX(1deg); }
+}
