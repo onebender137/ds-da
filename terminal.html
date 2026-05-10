@@ -7,15 +7,7 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { 
-            background-color: #030406; 
-            font-family: 'Space Mono', monospace; 
-            display: block; /* Override center flex */
-            padding: 20px;
-            height: 100vh;
-            overflow: hidden;
-        }
-
+        body { background-color: #030406; display: block; padding: 20px; height: 100vh; overflow: hidden; }
         #terminal-wrapper {
             border: 1px solid var(--cyan);
             height: calc(100% - 40px);
@@ -24,9 +16,7 @@
             flex-direction: column;
             padding: 20px;
             box-shadow: inset 0 0 30px rgba(0, 229, 255, 0.1);
-            position: relative;
         }
-
         #output {
             flex-grow: 1;
             overflow-y: auto;
@@ -35,15 +25,9 @@
             line-height: 1.6;
             margin-bottom: 20px;
             text-shadow: 0 0 5px rgba(0, 229, 255, 0.5);
+            font-family: 'Space Mono', monospace;
         }
-
-        .input-line {
-            display: flex;
-            align-items: center;
-            color: var(--gold);
-            font-weight: bold;
-        }
-
+        .input-line { display: flex; align-items: center; color: var(--gold); font-weight: bold; }
         #command-input {
             background: transparent;
             border: none;
@@ -54,20 +38,14 @@
             outline: none;
             margin-left: 10px;
         }
-
         .prompt { color: var(--purple); }
-        .system-msg { color: var(--gold); text-transform: uppercase; }
-        .intern-msg { color: #888; font-style: italic; }
-        
-        /* Custom Scrollbar for the Cyber Vibe */
+        .system-msg { color: var(--gold); text-transform: uppercase; margin-bottom: 5px; }
         #output::-webkit-scrollbar { width: 5px; }
-        #output::-webkit-scrollbar-track { background: transparent; }
         #output::-webkit-scrollbar-thumb { background: var(--purple); border-radius: 10px; }
     </style>
 </head>
 <body>
     <div class="grid-background"></div>
-    
     <div id="terminal-wrapper">
         <div id="output">
             <div class="system-msg">Dream Syndicate Digital Assets // OS v1.0.4</div>
@@ -76,13 +54,11 @@
             <div>Type <span style="color:var(--gold)">'help'</span> to view available protocols.</div>
             <br>
         </div>
-        
         <div class="input-line">
             <span class="prompt">DSDA_USER@NODE-01:~$</span>
             <input type="text" id="command-input" autofocus autocomplete="off">
         </div>
     </div>
-
     <script src="terminal-logic.js"></script>
 </body>
 </html>
