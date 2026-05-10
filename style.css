@@ -185,7 +185,7 @@ body::before {
     100% { clip-path: inset(0 0 0 0); transform: translate(0); }
 }
 
-/* --- ORBITAL CAROUSEL (UPDATED MATH FOR 4 NODES) --- */
+/* --- ORBITAL CAROUSEL (4-NODE MATH) --- */
 .syndicate-menu {
     perspective: 1200px;
     width: 100%;
@@ -209,7 +209,7 @@ body::before {
     position: absolute;
     width: 100%;
     height: 100%;
-    /* 360 / 4 = 90 */
+    /* Math: 360 / 4 = 90 degrees. TranslateZ pushes nodes out from center. */
     transform: rotateY(calc(var(--i) * 90deg)) translateZ(350px);
 }
 
@@ -224,13 +224,14 @@ body::before {
     flex-direction: column;
     justify-content: space-between;
     transition: all 0.5s ease;
-    /* Keeps cards facing the user */
+    /* Counter-rotate to keep text facing user */
     transform: rotateY(calc(var(--i) * -90deg));
 }
 
 .carousel-node:hover .node-content {
     border-color: var(--cyan);
     box-shadow: 0 0 30px rgba(0, 229, 255, 0.2);
+    /* Cleaned up the rotate calculation here */
     transform: scale(1.08) rotateY(calc(var(--i) * -90deg));
 }
 
@@ -354,7 +355,7 @@ footer { position: fixed; bottom: 20px; font-size: 0.7rem; color: #334155; lette
     .system-hud-top { padding: 10px 15px; font-size: 0.6rem; }
     .telemetry-overlay { display: none; }
     .gradient-text { font-size: 2.8rem; }
-    /* Mobile math fix: changed 120deg to 90deg */
+    /* Mobile math synced to 90deg */
     .carousel-node { transform: rotateY(calc(var(--i) * 90deg)) translateZ(180px); }
     .archives-container { grid-template-columns: 1fr; height: auto; }
 }
