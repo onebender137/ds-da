@@ -209,7 +209,7 @@ body::before {
     position: absolute;
     width: 100%;
     height: 100%;
-    /* Math: 360 / 4 = 90 degrees. Increased TranslateZ to 400px. */
+    /* Math: 360 / 4 = 90 degrees. Increased TranslateZ to 400px so they don't clip. */
     transform: rotateY(calc(var(--i) * 90deg)) translateZ(400px);
 }
 
@@ -224,7 +224,7 @@ body::before {
     flex-direction: column;
     justify-content: space-between;
     transition: all 0.5s ease;
-    /* Counter-rotate by -90deg */
+    /* Counter-rotate by -90deg so text faces user */
     transform: rotateY(calc(var(--i) * -90deg));
 }
 
@@ -354,7 +354,7 @@ footer { position: fixed; bottom: 20px; font-size: 0.7rem; color: #334155; lette
     .system-hud-top { padding: 10px 15px; font-size: 0.6rem; }
     .telemetry-overlay { display: none; }
     .gradient-text { font-size: 2.8rem; }
-    /* FIXED THIS MATH TO 90deg */
+    /* FIXED THIS MATH TO 90deg FOR MOBILE TOO */
     .carousel-node { transform: rotateY(calc(var(--i) * 90deg)) translateZ(180px); }
     .archives-container { grid-template-columns: 1fr; height: auto; }
 }
