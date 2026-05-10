@@ -1,9 +1,9 @@
 // --- DSDA TERMINAL ENGINE v1.0.7: STABLE MASTER BUILD ---
 
 const commands = {
-    'help': "SYSTEM PROTOCOLS:<br>ls - List directory<br>cat [file] - Read file<br>status - System vitals<br>the_architect.bin - Run agent simulation<br>python [program] - Execute redirect (hopes-and-dreams, polkahole)<br>whoami - Decrypt identity<br>clear - Wipe screen<br>exit - Return to core infrastructure",
+    'help': `SYSTEM PROTOCOLS:<br>ls - List directory<br>cat [file] - Read file<br>status - System vitals<br>the_architect.bin - Run agent simulation<br>python [program] - Execute redirect (hopes-and-dreams, polkahole)<br>whoami - Decrypt identity<br>clear - Wipe screen<br>exit - Return to core infrastructure`,
     
-    'ls': "DIRECTORY: /root/syndicate/<br>drwxr-xr-x  [ARCHITECT]  - Senior Coding Agent<br>-rw-r--r--  vitals.log   - Telemetry Data<br>-rw-r--r--  intern.txt   - Personnel complaints<br>-rw-r--r--  network.cfg  - Starlink/Node config",
+    'ls': `DIRECTORY: /root/syndicate/<br>drwxr-xr-x  [ARCHITECT]  - Senior Coding Agent<br>-rw-r--r--  vitals.log   - Telemetry Data<br>-rw-r--r--  intern.txt   - Personnel complaints<br>-rw-r--r--  network.cfg  - Starlink/Node config`,
     
     'status': `[SYSTEM VITALS]<br>-------------------------<br>PRIMARY GPU: RTX 3090 - <span style="color:#00ff00">LOAD 14%</span><br>SECONDARY GPU: RTX 3060 - <span style="color:#00ff00">LOAD 2%</span><br>UPLINK: Starlink - <span style="color:#00ff00">LATENCY 34ms</span><br>ACTIVE AGENTS: 7 [Futurama-Class]<br>DINK STATUS: Heavily caffeinated / Lab coat stained`,
 
@@ -13,13 +13,13 @@ const commands = {
 
     'cat network.cfg': `SSID: Starlink_Syndicate_Alpha<br>LOCAL_IP: 192.168.1.137<br>TUNNEL: syndicate_pipe (Active)<br>PORT: 443 [Zero Trust Enabled]`,
 
-    'the_architect.bin': "INITIALIZING AGENT: THE ARCHITECT...<br>[SYSTEM]: MSI Claw Environment Detected.<br>[SYSTEM]: Syncing with 3090 GPU Cluster...<br>------------------------------------",
+    'the_architect.bin': `INITIALIZING AGENT: THE ARCHITECT...<br>[SYSTEM]: MSI Claw Environment Detected.<br>[SYSTEM]: Syncing with 3090 GPU Cluster...<br>------------------------------------`,
 
-    'python hopes-and-dreams': "INITIALIZING H&D SUITE...<br>[SYSTEM]: Loading botanical database...<br>------------------------------------",
+    'python hopes-and-dreams': `INITIALIZING H&D SUITE...<br>[SYSTEM]: Loading botanical database...<br>------------------------------------`,
 
-    'python polkahole': "INITIALIZING POLKAHOLE.EXE...<br>[SYSTEM]: Tuning accordions...<br>------------------------------------",
+    'python polkahole': `INITIALIZING POLKAHOLE.EXE...<br>[SYSTEM]: Tuning accordions...<br>------------------------------------`,
 
-    'whoami': "DECRYPTING IDENTITY...<br>[REDACTED]: Syndicate Founder / Lead Architect.<br>[STATUS]: Ghost in the machine.<br>NOTES: Surveillance is active. Stay in the shadows."
+    'whoami': `DECRYPTING IDENTITY...<br>[REDACTED]: Syndicate Founder / Lead Architect.<br>[STATUS]: Ghost in the machine.<br>NOTES: Surveillance is active. Stay in the shadows.`
 };
 
 // --- CORE ENGINE ---
@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    // 1. Confirm script is running with a Boot Message
+    // 1. Diagnostic: If you see this message, the script is ALIVE.
     printOutput("<span style='color:#ffb300'>[SYSTEM]: Terminal Logic v1.0.7 Loaded Successfully.</span>", output);
     input.focus();
 
@@ -58,7 +58,6 @@ function processCommand(cmd, output) {
     const baseCmd = parts[0];
     const target = parts[1];
 
-    // Logic Tree
     if (baseCmd === 'clear') {
         output.innerHTML = '';
     } else if (baseCmd === 'exit') {
@@ -86,14 +85,13 @@ function processCommand(cmd, output) {
     }
 }
 
-// --- SPECIAL SEQUENCES ---
+// --- SEQUENCES ---
 
 function runArchitect(output) {
     printOutput("> " + commands['the_architect.bin'], output);
     const lines = [
-        "// Optimizing neural weights for MSI Claw handheld...",
+        "// Optimizing neural weights...",
         "function syndicateDeploy() {",
-        "  const agents = ['Bender', 'Dink', 'Fry'];",
         "  return agents.map(a => initiate(a));",
         "}",
         "// Architect Output: DEPLOYMENT SUCCESSFUL."
@@ -115,7 +113,6 @@ function runPython(program, output) {
     const lines = [
         `// Executing ${program}.py...`,
         "// Establishing SSL tunnel...",
-        "// Handshaking with remote node...",
         "// REDIRECTING TO SOURCE..."
     ];
     let i = 0;
