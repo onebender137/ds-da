@@ -211,6 +211,7 @@ body::before {
     height: 100%;
     /* Math: 360 / 4 = 90 degrees. Increased TranslateZ to 400px so they don't clip. */
     transform: rotateY(calc(var(--i) * 90deg)) translateZ(400px);
+    transform-style: preserve-3d;
 }
 
 .node-content {
@@ -224,14 +225,14 @@ body::before {
     flex-direction: column;
     justify-content: space-between;
     transition: all 0.5s ease;
-    /* Counter-rotate by -90deg so text faces user */
-    transform: rotateY(calc(var(--i) * -90deg));
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
 }
 
 .carousel-node:hover .node-content {
     border-color: var(--cyan);
     box-shadow: 0 0 30px rgba(0, 229, 255, 0.2);
-    transform: scale(1.08) rotateY(calc(var(--i) * -90deg));
+    transform: scale(1.08);
 }
 
 .node-content h3 { font-family: 'Rajdhani', sans-serif; font-size: 1.8rem; text-transform: uppercase; margin-bottom: 10px; }
