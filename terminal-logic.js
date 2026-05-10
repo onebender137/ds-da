@@ -12,6 +12,7 @@ const commands = {
     'the_architect.bin': "INITIALIZING AGENT: THE ARCHITECT...<br>[SYSTEM]: MSI Claw Environment Detected.<br>[SYSTEM]: Syncing with 3090 Cluster...<br>------------------------------------",
     'python hopes-and-dreams': "INITIALIZING H&D SUITE...<br>[SYSTEM]: Loading botanical database...<br>------------------------------------",
     'python polkahole': "INITIALIZING POLKAHOLE.EXE...<br>[SYSTEM]: Tuning accordions...<br>------------------------------------"
+    'whoami': "DECRYPTING IDENTITY...<br>[REDACTED]: Syndicate Founder / Lead Architect.<br>[STATUS]: Ghost in the machine.<br>NOTES: Surveillance is active. Stay in the shadows.",
 };
 
 // --- CORE ENGINE ---
