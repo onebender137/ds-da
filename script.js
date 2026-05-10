@@ -13,6 +13,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         setTimeout(typeWriter, 1000);
+        setInterval(() => {
+    const temp = document.getElementById('gpu-temp');
+    if(temp) {
+        // Simulates a GPU flux between 62 and 68 degrees
+        temp.textContent = Math.floor(Math.random() * (68 - 62 + 1)) + 62;
+    }
+}, 3000);
     }
 
     // 2. HUD Clock
