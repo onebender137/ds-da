@@ -21,7 +21,7 @@
     <meta property="og:image" content="https://ds-da.ca/dsda-logo.jpg">
 
     <link rel="canonical" href="https://ds-da.ca/">
-    <link rel="stylesheet" href="style.css?v=1.1.1">
+    <link rel="stylesheet" href="style.css?v=1.2.0">
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Space+Grotesk:wght@300;400;600&family=Space+Mono&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -35,7 +35,11 @@
 
     <aside class="telemetry-overlay">
         <div class="telemetry-header">LIVE_NODE_SYNC</div>
-        <div class="telemetry-data" id="telemetry-feed">INITIALIZING...</div>
+        <div class="telemetry-data" id="telemetry-feed">
+            INITIALIZING...<br>
+            0xAF32... SYNCED<br>
+            0xBD88... PENDING
+        </div>
         <div class="telemetry-header" style="margin-top: 20px;">NODE_HARDWARE</div>
         <div class="telemetry-data">
             GPU_01 (3090): <span id="gpu-temp">64</span>°C<br>
@@ -63,6 +67,7 @@
                         <a href="terminal.html" class="btn btn-primary">Access Node</a>
                     </div>
                 </div>
+
                 <div class="carousel-node" style="--i: 1;">
                     <div class="node-content">
                         <h3>Hopes & Dreams</h3>
@@ -70,6 +75,7 @@
                         <a href="https://hopes-and-dreams.ca" class="btn btn-secondary">Initialize</a>
                     </div>
                 </div>
+
                 <div class="carousel-node" style="--i: 2;">
                     <div class="node-content">
                         <h3>Research Archives</h3>
@@ -77,6 +83,7 @@
                         <a href="archives.html" class="btn btn-secondary">Access Files</a>
                     </div>
                 </div>
+
                 <div class="carousel-node" style="--i: 3;">
                     <div class="node-content">
                         <h3>Polkahole</h3>
@@ -92,7 +99,8 @@
         <p>&copy; 2026 DSDA. SYNC_STATUS: 100% NOMINAL</p>
     </footer>
 
-    <script src="script.js?v=1.1.1"></script>
-    <script src="terminal-logic.js?v=1.1.1"></script>
+    <script src="script.js?v=1.2.0"></script>
+    <script src="terminal-logic.js?v=1.2.0"></script>
 </body>
+</html>
 </html>
