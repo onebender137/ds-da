@@ -38,7 +38,10 @@ const archiveData = {
         <p>Primary Operator: Cory Ruller (Age 46)</p>
         <p>Location: New Brunswick Terminal</p>
         <p>Status: Lead Architect / Pipe Welder / Syndicate Founder</p>
-        <p>Motive: To secure the <span class="redacted">21 Million</span> before the network finalizes.</p>`
+        <p>Motive: To secure the <span class="redacted">21 Million</span> before the network finalizes.</p>
+        <p style="color: rgba(0, 229, 255, 0.4); font-size: 0.8rem; margin-top: 20px;">
+        // REGISTERED_ASSETS_LOGGED_UNDER_CMD: SYNDICATE
+        </p>`
     }
 };
 
