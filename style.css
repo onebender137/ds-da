@@ -209,8 +209,8 @@ body::before {
     position: absolute;
     width: 100%;
     height: 100%;
-    /* Math: 360 / 4 nodes = 90 degrees */
-    transform: rotateY(calc(var(--i) * 90deg)) translateZ(300px);
+    /* 360 / 4 = 90 */
+    transform: rotateY(calc(var(--i) * 90deg)) translateZ(350px);
 }
 
 .node-content {
@@ -224,7 +224,7 @@ body::before {
     flex-direction: column;
     justify-content: space-between;
     transition: all 0.5s ease;
-    /* Counter-rotate to keep text facing user */
+    /* Keeps cards facing the user */
     transform: rotateY(calc(var(--i) * -90deg));
 }
 
@@ -354,6 +354,7 @@ footer { position: fixed; bottom: 20px; font-size: 0.7rem; color: #334155; lette
     .system-hud-top { padding: 10px 15px; font-size: 0.6rem; }
     .telemetry-overlay { display: none; }
     .gradient-text { font-size: 2.8rem; }
+    /* Mobile math fix: changed 120deg to 90deg */
     .carousel-node { transform: rotateY(calc(var(--i) * 90deg)) translateZ(180px); }
     .archives-container { grid-template-columns: 1fr; height: auto; }
 }
