@@ -3,77 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DSDA // Research Archives</title>
-    <meta name="description" content="Classified DSDA research archives: the 21 Million logs, cognitive enhancement protocols, and sonic anomaly analyses.">
-    <meta name="keywords" content="DSDA, Research Archives, 21 Million, Cognitive Enhancement, Sonic Anomaly, Classified Logs">
+    <title>DSDA // The Clearance</title>
+    <meta name="description" content="The 21 Million case file. Work the seals, raise your clearance, and decrypt what the Syndicate has recovered.">
+    <meta name="keywords" content="DSDA, The 21 Million, Research Archives, Classified, Clearance, Syndicate">
 
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://ds-da.ca/archives.html">
-    <meta property="og:title" content="DSDA // Research Archives">
-    <meta property="og:description" content="Classified logs: The 21 Million & Research.">
+    <meta property="og:title" content="DSDA // The Clearance">
+    <meta property="og:description" content="The 21 Million case file. Work the seals, raise your clearance.">
     <meta property="og:image" content="https://ds-da.ca/dsda-logo.jpg">
 
     <meta property="twitter:card" content="summary">
     <meta property="twitter:url" content="https://ds-da.ca/archives.html">
-    <meta property="twitter:title" content="DSDA // Research Archives">
-    <meta property="twitter:description" content="Classified logs: The 21 Million & Research.">
+    <meta property="twitter:title" content="DSDA // The Clearance">
+    <meta property="twitter:description" content="The 21 Million case file. Work the seals, raise your clearance.">
     <meta property="twitter:image" content="https://ds-da.ca/dsda-logo.jpg">
 
     <link rel="canonical" href="https://ds-da.ca/archives.html">
     <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-    <link rel="stylesheet" href="style.css?v=1.3.1">
+    <link rel="stylesheet" href="style.css?v=1.4.0">
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Space+Mono&display=swap" rel="stylesheet">
 </head>
 <body class="archives-body">
     <div class="grid-background"></div>
 
     <header class="system-hud-top">
-        <div class="hud-item badge">FILE_ACCESS: CLASSIFIED</div>
-        <div class="hud-item status">DIRECTORY: /root/syndicate/archives/</div>
+        <div class="hud-item badge">CASE: 21M</div>
+        <div class="hud-item status">CLEARANCE: <span id="clearance-level" class="pulse">LVL_0</span></div>
         <div class="hud-item time" id="clock">00:00:00 UTC</div>
     </header>
 
     <main class="archives-container">
         <aside class="file-explorer forensic-border">
-            <div class="explorer-header">SYNDICATE_FILESYSTEM</div>
-            <ul class="file-tree">
-                <li class="folder">📂 PROJECT_21M
-                    <ul>
-                        <li class="file-link" onclick="loadDoc('prologue')">📄 PROLOGUE.log</li>
-                        <li class="file-link" onclick="loadDoc('chapter1')">📄 CHAPTER_01.bin</li>
-                    </ul>
-                </li>
-                <li class="folder">📂 HOPES_AND_DREAMS
-                    <ul>
-                        <li class="file-link" onclick="loadDoc('sleep_stack')">📄 SLEEP_OPTIMIZATION.cfg</li>
-                        <li class="file-link" onclick="loadDoc('botanical')">📄 BOTANICAL_ANALYSIS.log</li>
-                    </ul>
-                </li>
-                <li class="folder">📂 DATA_STREAMS
-                    <ul>
-                        <li class="file-link" onclick="loadDoc('sonic')">📄 SONIC_ANOMALY.log</li>
-                        <li class="file-link" onclick="loadDoc('identity')">📄 IDENTITY_DECRYPT.txt</li>
-                    </ul>
-                </li>
+            <div class="explorer-header">
+                <span>THE_21MILLION // CASE_FILE</span>
+                <span class="access-badge" id="seal-counter">0/6</span>
+            </div>
+            <ul class="file-tree" id="case-list">
+                <!-- Cases rendered by archives-logic.js -->
             </ul>
+            <div class="explorer-footer">
+                <button id="reset-clearance" class="btn btn-secondary" type="button">RESET_CLEARANCE</button>
+            </div>
         </aside>
 
         <section class="document-viewer forensic-border">
             <div class="viewer-header">
-                <span id="doc-title">SELECT_FILE_TO_DECRYPT</span>
-                <span class="access-badge">LEVEL_4_AUTH</span>
+                <span id="doc-title">INCOMING_NODE // NO_CLEARANCE</span>
+                <span class="access-badge" id="doc-status">SEALED</span>
             </div>
             <div id="doc-content" class="doc-reader">
                 <div class="empty-state">
-                    [AWAITING_INPUT_COMMAND]<br>
-                    READY FOR DATA EXTRACTION...
+                    [INCOMING NODE DETECTED]<br>
+                    You have no clearance on this terminal.<br><br>
+                    The case file below is sealed. Every seal hides a
+                    <span class="seal-hint">fragment</span> — find it, and the
+                    Syndicate raises your clearance one level.<br><br>
+                    SELECT_A_CASE_TO_BEGIN
                 </div>
             </div>
         </section>
     </main>
 
-    <script src="script.js?v=1.3.1"></script>
-    <script src="archives-logic.js?v=1.3.1"></script>
+    <script src="script.js?v=1.4.0"></script>
+    <script src="archives-logic.js?v=1.4.0"></script>
 </body>
 </html>

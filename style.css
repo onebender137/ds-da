@@ -347,6 +347,128 @@ body::before {
 .flicker { animation: textFlicker 0.1s infinite; }
 @keyframes textFlicker { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 0.9; } }
 
+/* --- THE CLEARANCE: CASE LIST --- */
+.case-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 15px;
+    margin-bottom: 4px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--cyan);
+    cursor: pointer;
+    border-left: 2px solid transparent;
+    transition: 0.2s;
+    opacity: 0.85;
+}
+.case-item:hover { background: rgba(0, 229, 255, 0.1); opacity: 1; border-left-color: var(--cyan); }
+.case-file { flex: 1; }
+.case-state { font-size: 0.6rem; letter-spacing: 1px; color: var(--gold); }
+.case-locked { opacity: 0.3; cursor: not-allowed; }
+.case-locked:hover { background: none; border-left-color: transparent; }
+.case-locked .case-state { color: #64748b; }
+.case-cracked { color: #00ff00; border-left-color: #00ff00; }
+.case-cracked .case-state { color: #00ff00; }
+
+.explorer-footer { margin-top: auto; padding: 15px 20px; border-top: 1px solid rgba(0, 229, 255, 0.1); }
+.explorer-footer .btn { font-size: 0.65rem; padding: 8px; }
+
+/* --- THE CLEARANCE: SEALS --- */
+.seal {
+    background: #000;
+    color: #000;
+    padding: 0 6px;
+    cursor: pointer;
+    transition: 0.3s;
+    border: 1px solid rgba(0, 229, 255, 0.2);
+    user-select: none;
+}
+.seal:hover { border-color: var(--cyan); box-shadow: 0 0 8px rgba(0, 229, 255, 0.3); }
+.seal-fragment { color: #000; }
+.seal-active {
+    background: rgba(0, 229, 255, 0.15);
+    border-color: var(--cyan);
+    box-shadow: 0 0 12px rgba(0, 229, 255, 0.5);
+}
+.seal-active .seal-fragment { color: var(--cyan); text-shadow: 0 0 6px var(--cyan); }
+.seal-cracked {
+    background: transparent;
+    border-color: #00ff00;
+    color: #00ff00;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.4);
+}
+.seal-cracked .seal-fragment { color: #00ff00; text-shadow: 0 0 6px #00ff00; }
+.seal-hint { color: var(--gold); }
+
+.doc-note {
+    color: rgba(0, 229, 255, 0.4);
+    font-size: 0.75rem;
+    margin-top: 24px;
+    border-top: 1px dashed rgba(0, 229, 255, 0.15);
+    padding-top: 12px;
+}
+
+/* --- THE CLEARANCE: EXTRACT BAR --- */
+.extract-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 28px;
+    padding: 14px;
+    background: rgba(0, 229, 255, 0.04);
+    border: 1px solid rgba(0, 229, 255, 0.2);
+}
+.extract-bar.cracked { border-color: #00ff00; background: rgba(0, 255, 0, 0.04); }
+.extract-label { font-family: 'Rajdhani', sans-serif; letter-spacing: 2px; color: var(--gold); font-size: 0.8rem; }
+.extract-bar input {
+    flex: 1;
+    min-width: 120px;
+    background: transparent;
+    border: 1px solid rgba(0, 229, 255, 0.3);
+    color: var(--cyan);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem;
+    padding: 8px 10px;
+    outline: none;
+}
+.extract-bar input:focus { border-color: var(--cyan); box-shadow: 0 0 8px rgba(0, 229, 255, 0.3); }
+.extract-bar .btn { font-size: 0.65rem; padding: 8px 14px; }
+.fragment-feedback { width: 100%; font-size: 0.75rem; color: var(--gold); min-height: 1em; }
+
+.clearance-up {
+    margin-top: 24px;
+    padding: 14px;
+    background: rgba(0, 255, 0, 0.06);
+    border: 1px solid #00ff00;
+    color: #00ff00;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+}
+.next-case { color: var(--cyan); }
+
+/* --- THE CLEARANCE: FINALE --- */
+.finale-block {
+    margin: 28px 0;
+    padding: 20px;
+    background: rgba(157, 0, 255, 0.06);
+    border: 1px solid var(--purple);
+    box-shadow: 0 0 30px rgba(157, 0, 255, 0.2);
+}
+.finale-line {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1.3rem;
+    letter-spacing: 3px;
+    color: var(--text-main);
+    margin-bottom: 8px;
+}
+.finale-line:last-child { color: var(--purple); }
+
+.decrypt-stream { color: var(--cyan); font-family: 'Space Mono', monospace; font-size: 0.85rem; line-height: 1.8; }
+
 /* --- FOOTER --- */
 footer { position: fixed; bottom: 20px; font-size: 0.7rem; color: #334155; letter-spacing: 2px; }
 
