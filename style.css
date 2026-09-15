@@ -355,7 +355,34 @@ footer { position: fixed; bottom: 20px; font-size: 0.7rem; color: #334155; lette
     .system-hud-top { padding: 10px 15px; font-size: 0.6rem; }
     .telemetry-overlay { display: none; }
     .gradient-text { font-size: 2.8rem; }
-    /* FIXED THIS MATH TO 90deg FOR MOBILE TOO */
-    .carousel-node { transform: rotateY(calc(var(--i) * 90deg)) translateZ(180px); }
+
+    /* On phones the 3D orbit overflows the viewport, so flatten the
+       carousel into a swipeable horizontal snap list. */
+    .syndicate-menu { height: auto; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .carousel {
+        width: auto;
+        height: auto;
+        transform: none;
+        animation: none;
+        display: flex;
+        gap: 16px;
+        padding: 8px 4px 24px;
+        scroll-snap-type: x mandatory;
+    }
+    .carousel-node {
+        position: relative;
+        flex: 0 0 82%;
+        width: 82%;
+        height: 220px;
+        transform: none;
+        scroll-snap-align: center;
+    }
+    .carousel-node:hover .node-content { transform: none; }
+
+    /* Archives: stack the file explorer above the document viewer. */
     .archives-container { grid-template-columns: 1fr; height: auto; }
+
+    /* Keep the fixed footer from covering content on small screens. */
+    .container { padding-bottom: 3rem; }
+    footer { bottom: 8px; }
 }
