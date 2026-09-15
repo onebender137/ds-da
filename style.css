@@ -356,26 +356,23 @@ footer { position: fixed; bottom: 20px; font-size: 0.7rem; color: #334155; lette
     .telemetry-overlay { display: none; }
     .gradient-text { font-size: 2.8rem; }
 
-    /* On phones the 3D orbit overflows the viewport, so flatten the
-       carousel into a swipeable horizontal snap list. */
-    .syndicate-menu { height: auto; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    /* On phones the 3D orbit overflows the viewport, so stack the four
+       cards vertically, each full-width. No 3D, no horizontal scroll. */
+    .syndicate-menu { height: auto; width: 100%; }
     .carousel {
-        width: auto;
+        width: 100%;
         height: auto;
         transform: none;
         animation: none;
         display: flex;
+        flex-direction: column;
         gap: 16px;
-        padding: 8px 4px 24px;
-        scroll-snap-type: x mandatory;
     }
     .carousel-node {
         position: relative;
-        flex: 0 0 82%;
-        width: 82%;
-        height: 220px;
+        width: 100%;
+        height: 200px;
         transform: none;
-        scroll-snap-align: center;
     }
     .carousel-node:hover .node-content { transform: none; }
 
