@@ -16,12 +16,21 @@ function esc(s) {
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
         .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
-async function api(path, opts) {
-    // Default to including credentials (cookies) for authenticated requests
+async function api(path, opts, retries) {
     if (!opts) opts = {};
     if (!opts.credentials) opts.credentials = 'include';
-    const res = await fetch(API_BASE + path, opts);
-    return res.json().then(j => ({ ok: res.ok, j }));
+    if (retries === undefined) retries = 2;
+    try {
+        const res = await fetch(API_BASE + path, opts);
+        return res.json().then(j => ({ ok: res.ok, j }));
+    } catch (e) {
+        if (retries > 0) {
+            // Network error — retry after a short delay
+            await new Promise(r => setTimeout(r, 1000));
+            return api(path, opts, retries - 1);
+        }
+        throw e;
+    }
 }
 function apiPost(path, body, opts) {
     if (!opts) opts = {};
