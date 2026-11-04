@@ -29,6 +29,23 @@ body {
     -moz-osx-font-smoothing: grayscale;
 }
 
+/* --- CUSTOM SCROLLBAR (light + dark) --- */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+::-webkit-scrollbar-track {
+    background: var(--white);
+}
+::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 5px;
+    border: 2px solid var(--white);
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--gold);
+}
+
 /* --- HEADER --- */
 .header {
     position: sticky;
@@ -67,13 +84,13 @@ body {
     letter-spacing: 0.5px;
     transition: color 0.2s ease;
 }
-.nav a:hover { color: var(--navy); }
+.nav a:hover { color: var(--gold-dark); }
 
 /* --- HERO --- */
 .hero {
     background: var(--navy);
     color: var(--white);
-    padding: 140px 40px;
+    padding: 100px 40px;
     text-align: center;
 }
 .hero-inner {
@@ -174,8 +191,20 @@ body {
     font-weight: 600;
     letter-spacing: 1px;
     transition: color 0.2s ease;
+    position: relative;
+}
+.link::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 1px;
+    background: var(--gold);
+    transition: width 0.25s ease;
 }
 .link:hover { color: var(--gold-dark); }
+.link:hover::after { width: 100%; }
 
 /* --- ABOUT --- */
 .about {
@@ -273,7 +302,7 @@ html.dark .nav a { color: #94a3b8; }
 html.dark .nav a:hover { color: #e2e8f0; }
 html.dark .hero { background: #060d18; }
 html.dark .hero-title { color: #fafaf8; }
-html.dark .hero-sub { color: rgba(250, 250, 248, 0.6); }
+html.dark .hero-sub { color: rgba(250, 250, 248, 0.75); }
 html.dark .section-title { color: #e2e8f0; }
 html.dark .service-card {
     background: #132038;
@@ -285,7 +314,7 @@ html.dark .service-card:hover {
 }
 html.dark .about { background: #060d18; }
 html.dark .about .section-title { color: #fafaf8; }
-html.dark .about p { color: rgba(250, 250, 248, 0.6); }
+html.dark .about p { color: rgba(250, 250, 248, 0.75); }
 html.dark .footer { border-top-color: #1e293b; }
 html.dark .theme-toggle {
     background: #132038;
@@ -295,4 +324,17 @@ html.dark .theme-toggle {
 html.dark .theme-toggle:hover {
     border-color: var(--gold);
     color: #e2e8f0;
+}
+html.dark .link::after { background: var(--gold); }
+html.dark .nav a:hover { color: var(--gold); }
+/* Dark mode scrollbar */
+html.dark ::-webkit-scrollbar-track {
+    background: #0a1628;
+}
+html.dark ::-webkit-scrollbar-thumb {
+    background: #1e293b;
+    border: 2px solid #0a1628;
+}
+html.dark ::-webkit-scrollbar-thumb:hover {
+    background: var(--gold);
 }

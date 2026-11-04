@@ -31,6 +31,23 @@ body {
     flex-direction: column;
 }
 
+/* --- CUSTOM SCROLLBAR (light + dark) --- */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+::-webkit-scrollbar-track {
+    background: var(--white);
+}
+::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 5px;
+    border: 2px solid var(--white);
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--gold);
+}
+
 /* --- HEADER --- */
 .header {
     position: sticky;
@@ -531,7 +548,7 @@ html.dark .nav a:hover { color: #e2e8f0; }
 html.dark .wallet-status { color: #94a3b8; }
 html.dark .hero { background: #060d18; }
 html.dark .hero-title { color: #fafaf8; }
-html.dark .hero-sub { color: rgba(250, 250, 248, 0.6); }
+html.dark .hero-sub { color: rgba(250, 250, 248, 0.75); }
 html.dark .card {
     background: #132038;
     border-color: #1e293b;
@@ -590,4 +607,16 @@ html.dark .theme-toggle {
 html.dark .theme-toggle:hover {
     border-color: var(--gold);
     color: #e2e8f0;
+}
+html.dark .nav a:hover { color: var(--gold); }
+/* Dark mode scrollbar */
+html.dark ::-webkit-scrollbar-track {
+    background: #0a1628;
+}
+html.dark ::-webkit-scrollbar-thumb {
+    background: #1e293b;
+    border: 2px solid #0a1628;
+}
+html.dark ::-webkit-scrollbar-thumb:hover {
+    background: var(--gold);
 }
