@@ -42,14 +42,14 @@ function loadStatus() {
         const el = document.getElementById('walletStatus');
         if (!el) return;
         if (s.funded) {
-            el.innerHTML = 'NOTARY: <span class="pulse">FUNDED</span> · ' +
+            el.innerHTML = 'Notary: <span class="funded">Funded</span> · ' +
                 s.balance_bsv.toFixed(6) + ' BSV';
         } else {
-            el.innerHTML = 'NOTARY: <span style="color:var(--red)">UNFUNDED</span>';
+            el.innerHTML = 'Notary: <span style="color:#dc2626">Unfunded</span>';
         }
     }).catch(() => {
         const el = document.getElementById('walletStatus');
-        if (el) el.textContent = 'NOTARY: OFFLINE';
+        if (el) el.textContent = 'Notary: offline';
     });
 }
 

@@ -11,59 +11,69 @@
     <meta property="og:description" content="Immutable BSV-anchored proof of creation. Verifiable by anyone.">
     <link rel="canonical" href="https://ds-da.ca/proof/">
     <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
-    <link rel="stylesheet" href="proof.css?v=1">
-    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Space+Grotesk:wght@300;400;600&family=Space+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="proof.css?v=2">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="grid-background"></div>
 
-    <header class="system-hud-top">
-        <div class="hud-item badge">DSDA · PROOF OF CREATION</div>
-        <div class="hud-item" id="walletStatus">NOTARY: LOADING…</div>
-        <div class="hud-item"><a href="/">← DSDA HUB</a> &nbsp;·&nbsp; <a href="?view=faq">FAQ</a></div>
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-inner">
+            <a href="/" class="logo">DSDA</a>
+            <nav class="nav">
+                <span class="wallet-status" id="walletStatus">Notary: loading…</span>
+                <a href="/">Home</a>
+                <a href="?view=faq">FAQ</a>
+            </nav>
+        </div>
     </header>
+
+    <!-- HERO -->
+    <section class="hero">
+        <div class="hero-inner">
+            <h1 class="hero-title">Proof of Creation</h1>
+            <p class="hero-sub">Immutable BSV-anchored proof that you created something, at a time, that has not changed. Verifiable by anyone — no trust in us required.</p>
+        </div>
+    </section>
 
     <main class="container">
 
         <!-- ===================== ANCHOR VIEW ===================== -->
         <div id="view-anchor">
-            <h1 class="gradient-text">Proof of Creation</h1>
-            <p class="subtitle">Immutable BSV-anchored proof that you created something, at a time, that has not changed. Verifiable by anyone — no trust in us required.</p>
-
             <div class="card highlight">
-                <h2>🔍 LOOK UP A PROOF</h2>
+                <h2>Look up a proof</h2>
                 <div class="desc">Have a txid? Drop it in + pull up the on-chain certificate. Works for any DSDA anchor — even years from now. The chain is the record.</div>
-                <div style="display:flex;gap:10px;align-items:center">
-                    <input type="text" id="lookupTxid" placeholder="Paste a txid (64 hex chars)…" style="flex:1">
-                    <button class="btn btn-primary btn-inline" id="lookupBtn">LOOK UP</button>
+                <div class="lookup-row">
+                    <input type="text" id="lookupTxid" placeholder="Paste a txid (64 hex chars)…">
+                    <button class="btn btn-primary btn-inline" id="lookupBtn">Look up</button>
                 </div>
                 <div id="lookupErr" class="err"></div>
             </div>
 
             <div class="card">
-                <h2><span class="step">01</span> WHAT ARE YOU ANCHORING?</h2>
-                <div class="drop" id="drop">DROP A FILE HERE, OR <b>BROWSE</b><input type="file" id="file" style="display:none"></div>
+                <h2><span class="step">01</span> What are you anchoring?</h2>
+                <div class="drop" id="drop">Drop a file here, or <b>browse</b><input type="file" id="file" style="display:none"></div>
                 <div class="fileinfo" id="fileinfo"></div>
                 <label class="field">…or paste text content</label>
                 <textarea id="text" placeholder="…or type / paste text to anchor"></textarea>
             </div>
 
             <div class="card">
-                <h2><span class="step">02</span> CHOOSE A TIER</h2>
+                <h2><span class="step">02</span> Choose a tier</h2>
                 <div class="tiers">
                     <div class="tier sel" data-tier="basic">
                         <div class="t">Basic</div>
                         <div class="d">SHA-256 hash + metadata on-chain. The file stays with you; the chain proves existence + integrity.</div>
-                        <div class="p">CHEAPER</div>
+                        <div class="p">Cheaper</div>
                     </div>
                     <div class="tier" data-tier="premium">
                         <div class="t">Premium</div>
                         <div class="d">The full file content on-chain (BSV's unbounded blocks). Rebuild the file from the chain alone.</div>
-                        <div class="p">PREMIUM</div>
+                        <div class="p">Premium</div>
                     </div>
                 </div>
                 <div class="cost-estimate" id="costEstimate">
-                    <b>ESTIMATED ON-CHAIN COST:</b> <span id="costVal"></span>
+                    <b>Estimated on-chain cost:</b> <span id="costVal"></span>
                     <span class="dim" id="costDetail"></span>
                 </div>
                 <div style="display:flex;gap:12px">
@@ -73,7 +83,7 @@
             </div>
 
             <div class="card" id="paymentCard" style="display:none">
-                <h2><span class="step">03</span> PAY THE FEE (BSV)</h2>
+                <h2><span class="step">03</span> Pay the fee (BSV)</h2>
                 <div class="desc">Send the fee in BSV to the address below, + paste your payment txid. We verify it on-chain before anchoring — no payment, no anchor.</div>
                 <label class="field">Amount to send</label>
                 <div class="pay-amount" id="payAmount"></div>
@@ -84,14 +94,14 @@
             </div>
 
             <div class="card">
-                <h2><span class="step">04</span> ANCHOR IT</h2>
-                <button class="btn btn-primary" id="anchorBtn">VERIFY PAYMENT + ANCHOR ON BSV</button>
+                <h2><span class="step">04</span> Anchor it</h2>
+                <button class="btn btn-primary" id="anchorBtn">Verify payment + anchor on BSV</button>
                 <div class="err" id="err"></div>
             </div>
 
             <div class="card" id="resultCard" style="display:none">
-                <h2>✅ CERTIFICATE</h2>
-                <div style="margin-bottom:12px"><span class="badge-status ok" id="resBadge">anchored</span></div>
+                <h2>Certificate</h2>
+                <div style="margin-bottom:16px"><span class="badge-status ok" id="resBadge">anchored</span></div>
                 <div class="kv" id="resKv"></div>
                 <div class="muted" id="resNote"></div>
             </div>
@@ -99,50 +109,50 @@
 
         <!-- ===================== PROOF VIEW ===================== -->
         <div id="view-proof" style="display:none">
-            <a href="?view=anchor" style="color:var(--cyan);text-decoration:none;font-family:'Rajdhani',sans-serif;letter-spacing:2px;font-size:0.8rem">← BACK TO ANCHOR</a>
-            <h1 class="gradient-text" style="margin-top:12px">Certificate</h1>
-            <div class="kv" style="margin-bottom:16px"><span class="k">TXID</span><span class="v" id="proofTxid"></span></div>
-            <p class="subtitle">This certificate is anchored on the BSV blockchain. Verify the content below to confirm it is unchanged + the anchor is on-chain.</p>
+            <a href="?view=anchor" style="color:var(--text-dim);text-decoration:none;font-size:0.85rem;font-weight:500;letter-spacing:0.5px">← Back to anchor</a>
+            <h1 class="hero-title" style="font-size:2.2rem;margin-top:16px;margin-bottom:16px">Certificate</h1>
+            <div class="kv" style="margin-bottom:20px"><span class="k">TXID</span><span class="v" id="proofTxid"></span></div>
+            <p class="desc" style="margin-bottom:24px">This certificate is anchored on the BSV blockchain. Verify the content below to confirm it is unchanged + the anchor is on-chain.</p>
 
             <div class="card">
-                <h2>CERTIFICATE</h2>
+                <h2>Certificate</h2>
                 <div class="kv" id="kv"></div>
             </div>
 
             <div class="card">
-                <h2>SHARE THIS PROOF</h2>
+                <h2>Share this proof</h2>
                 <div class="desc">Send the receipt to someone, or share the link. Anyone can verify it — no login, no trust in us required.</div>
-                <button class="btn btn-primary" id="shareBtn">📤 SHARE / EMAIL THIS PROOF</button>
+                <button class="btn btn-primary" id="shareBtn">Share / email this proof</button>
                 <div id="shareMenu" style="display:none;margin-top:12px">
                     <div class="btn-row">
-                        <button class="btn btn-secondary" id="shareEmail">✉️ EMAIL</button>
-                        <button class="btn btn-secondary" id="shareCopy">📋 COPY LINK</button>
-                        <button class="btn btn-secondary" id="shareSocial">🌐 SOCIAL</button>
+                        <button class="btn btn-secondary" id="shareEmail">Email</button>
+                        <button class="btn btn-secondary" id="shareCopy">Copy link</button>
+                        <button class="btn btn-secondary" id="shareSocial">Social</button>
                     </div>
                 </div>
                 <div id="shareStatus" class="muted"></div>
             </div>
 
             <div class="card" id="contentCard" style="display:none">
-                <h2>ON-CHAIN CONTENT</h2>
+                <h2>On-chain content</h2>
                 <div class="desc">This file is recovered directly from the BSV blockchain (OP_RETURN) — not from our server. This is the Premium guarantee: rebuild the file from the chain alone.</div>
                 <div class="content-display" id="contentDisplay"></div>
             </div>
 
             <div class="card">
-                <h2>VERIFY THE CONTENT</h2>
+                <h2>Verify the content</h2>
                 <div class="desc">Upload the exact file (or paste the text) that was anchored. We re-hash it + check it against the on-chain anchor.</div>
-                <div class="drop" id="dropVerify" style="margin-top:12px">DROP THE FILE HERE, OR <b>BROWSE</b><input type="file" id="fileVerify" style="display:none"></div>
-                <button class="btn btn-primary" id="verifyBtn" disabled>VERIFY</button>
+                <div class="drop" id="dropVerify" style="margin-top:12px">Drop the file here, or <b>browse</b><input type="file" id="fileVerify" style="display:none"></div>
+                <button class="btn btn-primary" id="verifyBtn" disabled>Verify</button>
                 <div id="ver" style="display:none;margin-top:12px"></div>
             </div>
         </div>
 
         <!-- ===================== FAQ VIEW ===================== -->
         <div id="view-faq" style="display:none">
-            <a href="?view=anchor" style="color:var(--cyan);text-decoration:none;font-family:'Rajdhani',sans-serif;letter-spacing:2px;font-size:0.8rem">← BACK TO ANCHOR</a>
-            <h1 class="gradient-text" style="margin-top:12px">FAQ</h1>
-            <p class="subtitle">Everything you'd want to know, in plain language. The short version: <span style="color:var(--gold);font-weight:600">your proof lives on the blockchain, not on us.</span></p>
+            <a href="?view=anchor" style="color:var(--text-dim);text-decoration:none;font-size:0.85rem;font-weight:500;letter-spacing:0.5px">← Back to anchor</a>
+            <h1 class="hero-title" style="font-size:2.2rem;margin-top:16px;margin-bottom:8px">FAQ</h1>
+            <p class="desc" style="margin-bottom:24px">Everything you'd want to know, in plain language. The short version: <span style="color:var(--gold-dark);font-weight:600">your proof lives on the blockchain, not on us.</span></p>
 
             <div class="qa">
                 <h2>What is this, exactly?</h2>
@@ -201,8 +211,14 @@
 
     </main>
 
-    <footer>© 2026 DSDA · PROOF OF CREATION · SYNC_STATUS: 100% NOMINAL</footer>
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="footer-inner">
+            <span>&copy; 2026 Dream Syndicate Digital Assets</span>
+            <span>New Brunswick, Canada</span>
+        </div>
+    </footer>
 
-    <script src="proof.js?v=1"></script>
+    <script src="proof.js?v=2"></script>
 </body>
 </html>
