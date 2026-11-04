@@ -697,8 +697,8 @@ function initLogin() {
             else if (wif) {
                 // Trim + validate the WIF before parsing
                 const cleanWif = wif.trim();
-                if (!/^[5KL][1-9A-HJ-NP-Za-km-z]{51}$/.test(cleanWif)) {
-                    status.textContent = '❌ WIF looks invalid (got ' + cleanWif.length + ' chars, expected 52). Should start with 5, K, or L. Check for stray spaces/newlines.';
+                if (!/^[5KL][1-9A-HJ-NP-Za-km-z]{50,51}$/.test(cleanWif)) {
+                    status.textContent = '❌ WIF looks invalid (got ' + cleanWif.length + ' chars, expected 51-52). Should start with 5, K, or L. Check for stray spaces/newlines.';
                     loginSubmit.disabled = false;
                     loginSubmit.textContent = 'Sign + Login';
                     return;
