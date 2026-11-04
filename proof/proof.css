@@ -471,6 +471,10 @@ label.field {
     font-size: 0.82rem;
     color: var(--navy);
 }
+html.dark .qa code {
+    background: rgba(201, 162, 39, 0.12);
+    color: #e2e8f0;
+}
 .qa .highlight { color: var(--gold-dark); font-weight: 600; }
 
 /* --- FOOTER --- */
