@@ -243,30 +243,41 @@ body {
     font-size: 0.85rem;
 }
 
-/* --- TIP JAR --- */
+/* --- TIP JAR (collapsible) --- */
 .tip-jar {
-    padding: 60px 40px;
+    padding: 36px 24px;
     text-align: center;
-    background: var(--card-bg);
     border-top: 1px solid var(--border);
 }
 .tip-jar-inner {
     max-width: 520px;
     margin: 0 auto;
 }
-.tip-jar h3 {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-size: 1.6rem;
-    font-weight: 600;
-    color: var(--navy);
-    margin-bottom: 12px;
+.tip-jar-toggle {
+    background: none;
+    border: none;
+    color: var(--gold);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 8px 16px;
+    transition: color 0.2s ease;
     letter-spacing: 0.5px;
 }
-.tip-jar > .tip-jar-inner > p {
-    color: var(--text-dim);
-    font-size: 0.95rem;
-    margin-bottom: 28px;
-    line-height: 1.7;
+.tip-jar-toggle:hover {
+    color: var(--gold-dark);
+}
+.tip-jar-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease, opacity 0.3s ease;
+    opacity: 0;
+}
+.tip-jar-content.expanded {
+    max-height: 300px;
+    opacity: 1;
+    margin-top: 20px;
 }
 .tip-jar-grid {
     display: flex;
@@ -400,12 +411,8 @@ html.dark .theme-toggle:hover {
 }
 html.dark .link::after { background: var(--gold); }
 html.dark .nav a:hover { color: var(--gold); }
-html.dark .tip-jar {
-    background: #132038;
-    border-top-color: #1e293b;
-}
-html.dark .tip-jar h3 { color: #e2e8f0; }
-html.dark .tip-jar > .tip-jar-inner > p { color: #94a3b8; }
+html.dark .tip-jar-toggle { color: var(--gold); }
+html.dark .tip-jar-toggle:hover { color: var(--gold); }
 html.dark .tip-qr {
     background: #ffffff;
     border-color: #1e293b;
