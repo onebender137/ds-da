@@ -526,6 +526,69 @@ function initProofView(txid) {
             window.open(tweetUrl, '_blank');
         }
     });
+    const sharePdf = document.getElementById('sharePdf');
+    if (sharePdf) sharePdf.addEventListener('click', () => {
+        const c = cert || { title: 'unknown', creator: 'anon', tier: 'unknown', ts: 0, sha256: '', txid };
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+        const W = doc.internal.pageSize.getWidth();
+        const M = 60; // margin
+        let y = 80;
+        // Header
+        doc.setFontSize(24);
+        doc.setFont('helvetica', 'bold');
+        doc.text('DSDA', W / 2, y, { align: 'center' });
+        y += 30;
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Proof of Creation Certificate', W / 2, y, { align: 'center' });
+        y += 10;
+        doc.setDrawColor(201, 162, 39);
+        doc.setLineWidth(2);
+        doc.line(M, y, W - M, y);
+        y += 30;
+        // Certificate details
+        const fields = [
+            ['Title', c.title],
+            ['Creator', c.creator],
+            ['Tier', c.tier],
+            ['Anchored', new Date(c.ts * 1000).toLocaleString()],
+            ['SHA-256', c.sha256],
+            ['BSV Transaction', c.txid],
+            ['Verify', proofUrl]
+        ];
+        fields.forEach(([label, value]) => {
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.text(label.toUpperCase(), M, y);
+            doc.setFont('helvetica', 'normal');
+            doc.text(String(value), M + 120, y);
+            y += 20;
+        });
+        y += 10;
+        // QR code (if available)
+        const qrEl = document.getElementById('proofQR');
+        if (qrEl && qrEl.querySelector('img')) {
+            const qrImg = qrEl.querySelector('img');
+            const qrData = qrImg.src;
+            const qrSize = 120;
+            doc.addImage(qrData, 'PNG', W / 2 - qrSize / 2, y, qrSize, qrSize);
+            y += qrSize + 20;
+            doc.setFontSize(9);
+            doc.text('Scan to verify this proof', W / 2, y, { align: 'center' });
+        }
+        // Footer
+        y = 720;
+        doc.setFontSize(9);
+        doc.text('This certificate is anchored on the BSV blockchain.', W / 2, y, { align: 'center' });
+        y += 14;
+        doc.text('Verify at: ' + proofUrl, W / 2, y, { align: 'center' });
+        y += 14;
+        doc.text('© 2026 Dream Syndicate Digital Assets', W / 2, y, { align: 'center' });
+        // Save the PDF
+        doc.save('dsda-proof-' + c.txid.substring(0, 8) + '.pdf');
+        shareStatus.textContent = '✓ PDF downloaded';
+    });
 
     // --- verify the content ---
     const drop = document.getElementById('dropVerify');
