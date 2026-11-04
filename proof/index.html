@@ -11,7 +11,7 @@
     <meta property="og:description" content="Immutable BSV-anchored proof of creation. Verifiable by anyone.">
     <link rel="canonical" href="https://ds-da.ca/proof/">
     <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
-    <link rel="stylesheet" href="proof.css?v=13">
+    <link rel="stylesheet" href="proof.css?v=14">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script>
       // Apply the saved theme on load (before the page renders, to avoid a flash)
@@ -287,7 +287,7 @@
                 <h2>📁 Collections</h2>
                 <div class="desc">Group your proofs into collections (e.g., "Q4 Contracts", "Logo Designs").</div>
                 <div class="collection-create">
-                    <input type="text" id="colName" placeholder="Collection name…">
+                    <input type="text" id="colName" placeholder="Collection name…" style="flex:1;min-width:200px">
                     <button class="btn btn-primary" id="colCreateBtn">Create</button>
                 </div>
                 <div id="dashCollections" class="dash-list" style="margin-top:12px">
@@ -407,7 +407,7 @@
             };
         })();
     </script>
-    <script src="proof.js?v=39"></script>
+    <script src="proof.js?v=40"></script>
     <script src="../theme.js?v=1"></script>
 </body>
 </html>
