@@ -794,8 +794,23 @@ function initDashboard() {
             acct.innerHTML =
                 '<div><span class="k">ADDRESS</span><span class="v">' + user.address + '</span></div>' +
                 '<div><span class="k">NAME</span><span class="v">' + esc(user.display_name || '—') + '</span></div>' +
+                '<div><span class="k">WALLET BALANCE</span><span class="v" id="walletBalance">loading…</span></div>' +
                 '<div><span class="k">MEMBER SINCE</span><span class="v">' + new Date(user.created_at * 1000).toLocaleDateString() + '</span></div>' +
                 '<div><span class="k">LAST LOGIN</span><span class="v">' + new Date(user.last_login * 1000).toLocaleString() + '</span></div>';
+            // Fetch wallet balance
+            api('/api/wallet-balance?address=' + user.address, { credentials: 'include' }).then(({ j }) => {
+                const el = document.getElementById('walletBalance');
+                if (el) {
+                    if (j.balance_sat !== undefined) {
+                        el.textContent = j.balance_sat.toLocaleString() + ' sats (' + j.balance_bsv.toFixed(8) + ' BSV)';
+                    } else {
+                        el.textContent = 'unavailable';
+                    }
+                }
+            }).catch(() => {
+                const el = document.getElementById('walletBalance');
+                if (el) el.textContent = 'unavailable';
+            });
         }
         // Load proofs (with tags + rename)
         api('/api/my-proofs', { credentials: 'include' }).then(({ j }) => {
@@ -952,8 +967,7 @@ function initDashboard() {
             if (e.target.id === 'apiKeyGenBtn') {
                 fetch(API_BASE + '/api/key', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({}),
+                    body: '{}',
                     credentials: 'include'
                 }).then(r => r.json()).then(j => {
                     if (j.ok && j.key) {
