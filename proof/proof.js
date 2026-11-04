@@ -61,7 +61,8 @@ function loadStatus() {
 
 // ===================== ANCHOR VIEW =====================
 function initAnchorView() {
-    const state = { content_b64: null, name: null, size: null, tier: 'basic', expected_sat: 1 };
+    // State: array of files (batch anchoring)
+    const state = { files: [], tier: 'basic', expected_sat: 1 };
 
     // --- lookup a proof by txid ---
     const lookupBtn = document.getElementById('lookupBtn');
@@ -91,34 +92,85 @@ function initAnchorView() {
         updateCostEstimate();
     });
 
-    // --- file drop / browse ---
+    // --- file drop / browse (multiple files) ---
     const drop = document.getElementById('drop');
     const fileInput = document.getElementById('file');
     if (drop) {
         drop.addEventListener('click', () => fileInput.click());
         ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
         ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
-        drop.addEventListener('drop', e => { if (e.dataTransfer.files.length) readFile(e.dataTransfer.files[0]); });
+        drop.addEventListener('drop', e => {
+            if (e.dataTransfer.files.length) {
+                Array.from(e.dataTransfer.files).forEach(f => addFile(f));
+            }
+        });
     }
-    if (fileInput) fileInput.addEventListener('change', () => { if (fileInput.files.length) readFile(fileInput.files[0]); });
-    function readFile(f) {
+    if (fileInput) {
+        fileInput.setAttribute('multiple', 'true');
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length) {
+                Array.from(fileInput.files).forEach(f => addFile(f));
+                fileInput.value = ''; // reset so the same file can be re-added
+            }
+        });
+    }
+
+    function addFile(f) {
         const reader = new FileReader();
         reader.onload = () => {
-            state.content_b64 = reader.result.split(',')[1];
-            state.name = f.name; state.size = f.size; state.filename = f.name;
-            const fi = document.getElementById('fileinfo');
-            fi.style.display = 'block';
-            fi.textContent = '✓ ' + f.name + ' (' + f.size + ' bytes) — ready to anchor';
-            document.getElementById('text').value = '';
+            state.files.push({
+                name: f.name,
+                size: f.size,
+                content_b64: reader.result.split(',')[1]
+            });
+            renderFileList();
             updateCostEstimate();
         };
         reader.readAsDataURL(f);
     }
 
+    function removeFile(index) {
+        state.files.splice(index, 1);
+        renderFileList();
+        updateCostEstimate();
+    }
+
+    function renderFileList() {
+        const el = document.getElementById('fileinfo');
+        if (!el) return;
+        if (state.files.length === 0) {
+            el.style.display = 'none';
+            return;
+        }
+        el.style.display = 'block';
+        let html = '<div class="file-list">';
+        state.files.forEach((f, i) => {
+            const sizeStr = f.size < 1024 ? f.size + ' B'
+                : f.size < 1048576 ? (f.size / 1024).toFixed(1) + ' KB'
+                : (f.size / 1048576).toFixed(2) + ' MB';
+            html += '<div class="file-item">' +
+                '<span class="file-name">' + esc(f.name) + ' <span class="file-size">(' + sizeStr + ')</span></span>' +
+                '<button class="file-remove" data-index="' + i + '" title="Remove">&times;</button>' +
+                '</div>';
+        });
+        const totalBytes = state.files.reduce((sum, f) => sum + f.size, 0);
+        const totalStr = totalBytes < 1024 ? totalBytes + ' B'
+            : totalBytes < 1048576 ? (totalBytes / 1024).toFixed(1) + ' KB'
+            : (totalBytes / 1048576).toFixed(2) + ' MB';
+        html += '<div class="file-total">' + state.files.length + ' file' + (state.files.length > 1 ? 's' : '') + ' · ' + totalStr + ' total</div>';
+        html += '</div>';
+        el.innerHTML = html;
+        // Wire up the remove buttons
+        el.querySelectorAll('.file-remove').forEach(btn => {
+            btn.addEventListener('click', () => removeFile(parseInt(btn.getAttribute('data-index'))));
+        });
+    }
+
     // --- live cost estimate + payment card ---
     function updateCostEstimate() {
         const el = document.getElementById('costEstimate');
-        let size = state.size || 0;
+        const totalBytes = state.files.reduce((sum, f) => sum + f.size, 0);
+        let size = totalBytes || 0;
         if (!size) size = document.getElementById('text').value.length;
         if (!size) { el.style.display = 'none'; return; }
         apiPost('/api/estimate', { size, tier: state.tier }).then(({ j: est }) => {
@@ -267,23 +319,15 @@ function initAnchorView() {
     const textEl = document.getElementById('text');
     if (textEl) textEl.addEventListener('input', updateCostEstimate);
 
-    // --- anchor (verify payment first, then anchor) ---
+    // --- anchor (verify payment first, then anchor all files) ---
     const anchorBtn = document.getElementById('anchorBtn');
     if (anchorBtn) anchorBtn.addEventListener('click', () => {
         const err = document.getElementById('err');
         err.style.display = 'none';
         const text = document.getElementById('text').value;
-        if (!state.content_b64 && !text) {
+        if (state.files.length === 0 && !text) {
             err.textContent = 'Add a file or paste text first.'; err.style.display = 'block'; return;
         }
-        const payload = state.content_b64 || btoa(unescape(encodeURIComponent(text)));
-        const body = {
-            content_b64: payload,
-            title: document.getElementById('title').value || 'untitled',
-            creator: document.getElementById('creator').value || 'anon',
-            tier: state.tier,
-            filename: state.filename || ''
-        };
         anchorBtn.disabled = true; anchorBtn.textContent = 'VERIFYING PAYMENT…';
         // Step 1: verify the payment (no payment, no anchor)
         const payTxid = document.getElementById('payTxid').value.trim();
@@ -298,40 +342,85 @@ function initAnchorView() {
                     err.style.display = 'block'; anchorBtn.disabled = false;
                     anchorBtn.textContent = 'VERIFY PAYMENT + ANCHOR ON BSV'; return null;
                 }
-                // Step 2: anchor
-                anchorBtn.textContent = 'ANCHORING…';
-                return apiPost('/api/anchor', body);
-            })
-            .then(res => {
-                if (!res) return;
-                anchorBtn.disabled = false; anchorBtn.textContent = 'VERIFY PAYMENT + ANCHOR ON BSV';
-                if (!res.ok) { err.textContent = res.j.error || 'anchor failed'; err.style.display = 'block'; return; }
-                showResult(res.j);
+                // Step 2: anchor all files (in sequence)
+                const filesToAnchor = state.files.length > 0
+                    ? state.files.map(f => ({
+                        content_b64: f.content_b64,
+                        title: f.name,
+                        creator: document.getElementById('creator').value || 'anon',
+                        tier: state.tier,
+                        filename: f.name
+                    }))
+                    : [{
+                        content_b64: btoa(unescape(encodeURIComponent(text))),
+                        title: document.getElementById('title').value || 'untitled',
+                        creator: document.getElementById('creator').value || 'anon',
+                        tier: state.tier,
+                        filename: ''
+                    }];
+                return anchorBatch(filesToAnchor, anchorBtn, err);
             })
             .catch(e => { anchorBtn.disabled = false; anchorBtn.textContent = 'VERIFY PAYMENT + ANCHOR ON BSV';
                 err.textContent = String(e); err.style.display = 'block'; });
     });
 
-    function showResult(c) {
+    // Anchor files one at a time (in sequence)
+    function anchorBatch(files, anchorBtn, errEl) {
+        const results = [];
+        let i = 0;
+        function next() {
+            if (i >= files.length) {
+                // All done — show the results
+                anchorBtn.disabled = false;
+                anchorBtn.textContent = 'VERIFY PAYMENT + ANCHOR ON BSV';
+                showBatchResults(results);
+                return;
+            }
+            anchorBtn.textContent = 'ANCHORING ' + (i + 1) + '/' + files.length + '…';
+            const body = files[i];
+            apiPost('/api/anchor', body).then(({ ok, j }) => {
+                if (!ok) {
+                    // This file failed — log it + move on
+                    results.push({ title: body.title, error: j.error || 'anchor failed' });
+                } else {
+                    results.push(j);
+                }
+                i++;
+                next();
+            }).catch(e => {
+                results.push({ title: body.title, error: String(e) });
+                i++;
+                next();
+            });
+        }
+        next();
+    }
+
+    // Show the batch results
+    function showBatchResults(results) {
         const card = document.getElementById('resultCard');
         card.style.display = 'block';
-        document.getElementById('resBadge').textContent = c.tier + ' · ' + (c.broadcast ? 'ON-CHAIN' : 'DRY-RUN');
-        const rows = [
-            ['TXID', '<a href="?txid=' + c.txid + '" target="_blank">' + c.txid + '</a>'],
-            ['SHA-256', c.sha256],
-            ['TIER', c.tier],
-            ['TITLE', esc(c.title)],
-            ['CREATOR', esc(c.creator)],
-            ['TIMESTAMP', new Date(c.ts * 1000).toISOString()],
-            ['DATA BYTES', c.data_bytes],
-            ['EXPLORER', '<a href="' + c.verify_url + '" target="_blank">whatsonchain.com</a>']
-        ];
+        const successes = results.filter(r => r.txid);
+        const failures = results.filter(r => r.error);
+        let badge = successes.length + ' anchored';
+        if (failures.length > 0) badge += ' · ' + failures.length + ' failed';
+        document.getElementById('resBadge').textContent = badge;
+        let rows = [];
+        successes.forEach(r => {
+            rows.push(['TXID: ' + r.title, '<a href="?txid=' + r.txid + '" target="_blank">' + r.txid.substring(0, 24) + '…</a>']);
+            rows.push(['SHA-256', r.sha256]);
+            rows.push(['TIMESTAMP', new Date(r.ts * 1000).toISOString()]);
+            rows.push(['DATA BYTES', r.data_bytes]);
+            rows.push(['', '<a href="' + r.verify_url + '" target="_blank">Verify on-chain</a>']);
+        });
+        failures.forEach(r => {
+            rows.push(['FAILED: ' + r.title, r.error]);
+        });
         document.getElementById('resKv').innerHTML = rows.map(r =>
             '<div><span class="k">' + r[0] + '</span><span class="v">' + r[1] + '</span></div>'
         ).join('');
-        document.getElementById('resNote').textContent = c.broadcast
-            ? 'This proof is now immutable on the BSV blockchain. Anyone can verify it at the proof page.'
-            : 'Dry-run (wallet not funded). The tx was built + signed but not broadcast.';
+        document.getElementById('resNote').textContent =
+            'This proof is now immutable on the BSV blockchain. Anyone can verify it at the proof page.';
         card.scrollIntoView({ behavior: 'smooth' });
     }
     // Render the payment card + QR code on page load (so the user can see the

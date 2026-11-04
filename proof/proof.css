@@ -779,6 +779,52 @@ html.dark .modal input {
     margin: 16px 0;
     letter-spacing: 2px;
 }
+/* File list (batch anchoring) */
+.file-list {
+    margin-top: 12px;
+}
+.file-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 6px;
+    font-size: 0.85rem;
+}
+.file-name {
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 70%;
+}
+.file-size {
+    color: var(--text-dim);
+    font-size: 0.8rem;
+}
+.file-remove {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0 8px;
+    line-height: 1;
+}
+.file-remove:hover {
+    color: #dc2626;
+}
+.file-total {
+    text-align: right;
+    color: var(--text-dim);
+    font-size: 0.8rem;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+}
 /* Dashboard */
 .dash-stats {
     display: flex;
