@@ -19,7 +19,7 @@
     <meta property="og:description" content="Proof of creation. Cognitive enhancement. Sonic repositories. Built for the long term.">
     <link rel="canonical" href="https://ds-da.ca/">
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-    <link rel="stylesheet" href="style.css?v=2.0.0">
+    <link rel="stylesheet" href="style.css?v=2.0.1">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script>
       // Apply the saved theme on load (before the page renders, to avoid a flash)
@@ -86,6 +86,21 @@
         </div>
     </section>
 
+    <!-- TIP JAR -->
+    <section class="tip-jar">
+        <div class="tip-jar-inner">
+            <h3>☕ Buy Me a Coffee</h3>
+            <p>Running this service takes time + resources. If you find it useful, consider tipping the notary. Every sat helps keep the lights on + the chain strong.</p>
+            <div class="tip-jar-grid">
+                <div class="tip-qr" id="tipQR"></div>
+                <div class="tip-info">
+                    <p class="tip-address" id="tipAddress">14nn7V37RkgaYjieZQeafeYeyeWxgkJTsQ</p>
+                    <button class="btn-secondary" id="copyTipBtn" onclick="copyTipAddress()">Copy Address</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- FOOTER -->
     <footer class="footer">
         <div class="footer-inner">
@@ -94,6 +109,31 @@
         </div>
     </footer>
 
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script>
+        // Tip jar: render QR code + copy button
+        (function() {
+            const TIP_ADDRESS = '14nn7V37RkgaYjieZQeafeYeyeWxgkJTsQ';
+            // Render QR code
+            new QRCode(document.getElementById('tipQR'), {
+                text: 'bsv:' + TIP_ADDRESS + '?label=DSDA+Tip+Jar',
+                width: 120,
+                height: 120,
+                colorDark: '#0a1628',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.M
+            });
+            // Copy button
+            window.copyTipAddress = function() {
+                navigator.clipboard.writeText(TIP_ADDRESS).then(function() {
+                    var btn = document.getElementById('copyTipBtn');
+                    var original = btn.textContent;
+                    btn.textContent = 'Copied!';
+                    setTimeout(function() { btn.textContent = original; }, 2000);
+                });
+            };
+        })();
+    </script>
     <script src="theme.js?v=1"></script>
 </body>
 </html>

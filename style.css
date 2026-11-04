@@ -243,6 +243,76 @@ body {
     font-size: 0.85rem;
 }
 
+/* --- TIP JAR --- */
+.tip-jar {
+    padding: 60px 40px;
+    text-align: center;
+    background: var(--card-bg);
+    border-top: 1px solid var(--border);
+}
+.tip-jar-inner {
+    max-width: 520px;
+    margin: 0 auto;
+}
+.tip-jar h3 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: var(--navy);
+    margin-bottom: 12px;
+    letter-spacing: 0.5px;
+}
+.tip-jar > .tip-jar-inner > p {
+    color: var(--text-dim);
+    font-size: 0.95rem;
+    margin-bottom: 28px;
+    line-height: 1.7;
+}
+.tip-jar-grid {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+}
+.tip-qr {
+    background: #ffffff;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+}
+.tip-info {
+    text-align: left;
+    flex: 1;
+}
+.tip-address {
+    font-family: 'Courier New', monospace;
+    font-size: 0.82rem;
+    color: var(--text);
+    word-break: break-all;
+    margin-bottom: 14px;
+    line-height: 1.5;
+}
+.btn-secondary {
+    display: inline-block;
+    padding: 10px 22px;
+    border-radius: 3px;
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: all 0.25s ease;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--white);
+    color: var(--navy);
+}
+.btn-secondary:hover {
+    border-color: var(--gold);
+    color: var(--gold-dark);
+}
+
 /* --- RESPONSIVE --- */
 @media (max-width: 900px) {
     .services-grid { grid-template-columns: 1fr; max-width: 480px; margin: 0 auto; }
@@ -258,6 +328,9 @@ body {
     .section-title { font-size: 2rem; }
     .about { padding: 60px 20px; }
     .footer-inner { flex-direction: column; gap: 8px; text-align: center; }
+    .tip-jar { padding: 40px 20px; }
+    .tip-jar-grid { flex-direction: column; gap: 16px; }
+    .tip-info { text-align: center; }
 }
 
 /* --- THEME TOGGLE (pill button) --- */
@@ -327,6 +400,26 @@ html.dark .theme-toggle:hover {
 }
 html.dark .link::after { background: var(--gold); }
 html.dark .nav a:hover { color: var(--gold); }
+html.dark .tip-jar {
+    background: #132038;
+    border-top-color: #1e293b;
+}
+html.dark .tip-jar h3 { color: #e2e8f0; }
+html.dark .tip-jar > .tip-jar-inner > p { color: #94a3b8; }
+html.dark .tip-qr {
+    background: #ffffff;
+    border-color: #1e293b;
+}
+html.dark .tip-address { color: #e2e8f0; }
+html.dark .btn-secondary {
+    color: #e2e8f0;
+    border-color: #1e293b;
+    background: #132038;
+}
+html.dark .btn-secondary:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+}
 /* Dark mode scrollbar */
 html.dark ::-webkit-scrollbar-track {
     background: #0a1628;
