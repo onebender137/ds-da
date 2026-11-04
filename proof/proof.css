@@ -772,6 +772,13 @@ html.dark .modal input {
 .modal-close:hover {
     color: var(--text);
 }
+.modal-divider {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 0.8rem;
+    margin: 16px 0;
+    letter-spacing: 2px;
+}
 /* Dashboard */
 .dash-stats {
     display: flex;

@@ -514,23 +514,40 @@ function initLogin() {
             const { j: nonceRes } = await api('/api/login-nonce');
             const nonce = nonceRes.nonce;
 
-            // Sign the nonce with the BSV library
             let sigAddress, signature;
-            if (wif) {
-                // Derive the address from the WIF
+
+            // Method 1: Wallet extension (preferred — no WIF needed)
+            if (window.bsv && typeof window.bsv.sign === 'function') {
+                try {
+                    status.textContent = '🔐 Approve the signature request in your wallet…';
+                    const result = await window.bsv.sign(nonce);
+                    // result: { address, signature } (signature is base64)
+                    sigAddress = result.address;
+                    signature = result.signature;
+                } catch (walletErr) {
+                    // User rejected the signature request
+                    status.textContent = '❌ Signature request rejected in wallet.';
+                    loginSubmit.disabled = false;
+                    loginSubmit.textContent = 'Sign + Login';
+                    return;
+                }
+            }
+            // Method 2: WIF (fallback — no wallet extension)
+            else if (wif) {
                 const key = new BSV.PrivateKey(wif);
                 sigAddress = key.address();
                 const sigResult = key.sign_text(nonce);
                 signature = sigResult[1]; // base64 signature
-            } else if (address) {
-                // User provided the address (they must have signed elsewhere)
-                // For now, we need the WIF to sign. Show a message.
-                status.textContent = 'Paste your WIF (private key) to sign the challenge.';
+            }
+            // Method 3: Address only (not enough — need a signature)
+            else if (address) {
+                status.textContent = 'No wallet extension detected. Paste your WIF below to sign.';
                 loginSubmit.disabled = false;
                 loginSubmit.textContent = 'Sign + Login';
                 return;
-            } else {
-                status.textContent = 'Enter your BSV address or WIF.';
+            }
+            else {
+                status.textContent = 'Install a BSV wallet extension (Unstoppable/Green) or paste your WIF.';
                 loginSubmit.disabled = false;
                 loginSubmit.textContent = 'Sign + Login';
                 return;
@@ -539,17 +556,15 @@ function initLogin() {
             // Send the signature to the server
             const { ok, j } = await apiPost('/api/login', {
                 nonce, address: sigAddress, signature, display_name: name
-            }, { credentials: 'include' });
+            });
 
             if (ok && j.ok) {
                 status.textContent = '✅ Logged in as ' + (j.user.display_name || j.user.address);
                 setTimeout(() => {
                     if (loginModal) loginModal.style.display = 'none';
-                    // Update the nav
                     if (loginBtn) loginBtn.style.display = 'none';
                     const navDash = document.getElementById('navDashboard');
                     if (navDash) navDash.style.display = 'inline';
-                    // Go to the dashboard
                     location.href = '?view=dashboard';
                 }, 1000);
             } else {

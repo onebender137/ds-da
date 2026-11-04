@@ -11,7 +11,7 @@
     <meta property="og:description" content="Immutable BSV-anchored proof of creation. Verifiable by anyone.">
     <link rel="canonical" href="https://ds-da.ca/proof/">
     <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
-    <link rel="stylesheet" href="proof.css?v=6">
+    <link rel="stylesheet" href="proof.css?v=7">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script>
       // Apply the saved theme on load (before the page renders, to avoid a flash)
@@ -291,13 +291,12 @@
         <div class="modal">
             <button class="modal-close" id="loginModalClose">&times;</button>
             <h2>🔑 Login with BSV Wallet</h2>
-            <p class="modal-desc">Sign a challenge with your BSV wallet to log in. Your private key never leaves your browser.</p>
+            <p class="modal-desc">Sign a challenge to log in. If you have a BSV wallet extension (Unstoppable, Green), it will pop up for approval. No private key needed.</p>
             <label class="field">Display name (optional)</label>
             <input type="text" id="loginName" placeholder="Your name (or 'anon')">
-            <label class="field">Your BSV address</label>
-            <input type="text" id="loginAddress" placeholder="1... (your BSV address)">
-            <label class="field">Or paste your WIF (private key)</label>
-            <input type="password" id="loginWif" placeholder="L... or K... (your WIF)">
+            <div class="modal-divider">— or —</div>
+            <label class="field">No wallet extension? Paste your WIF</label>
+            <input type="password" id="loginWif" placeholder="L... or K... (your WIF, never leaves your browser)">
             <div id="loginStatus" class="muted" style="margin-top:12px"></div>
             <button class="btn btn-primary" id="loginSubmit" style="margin-top:16px">Sign + Login</button>
         </div>
@@ -367,7 +366,7 @@
             };
         })();
     </script>
-    <script src="proof.js?v=11"></script>
+    <script src="proof.js?v=12"></script>
     <script src="../theme.js?v=1"></script>
 </body>
 </html>
