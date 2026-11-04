@@ -695,7 +695,15 @@ function initLogin() {
             }
             // Method 2: WIF (fallback — no wallet extension)
             else if (wif) {
-                const key = new BSV.PrivateKey(wif);
+                // Trim + validate the WIF before parsing
+                const cleanWif = wif.trim();
+                if (!/^[LK][1-9A-HJ-NP-Za-km-z]{30,40}$/.test(cleanWif)) {
+                    status.textContent = '❌ WIF looks invalid. Should start with L or K, 30-40 base58 chars. Check for stray spaces/characters.';
+                    loginSubmit.disabled = false;
+                    loginSubmit.textContent = 'Sign + Login';
+                    return;
+                }
+                const key = new BSV.PrivateKey(cleanWif);
                 sigAddress = key.address;  // property, not a method
                 // BSV standard: double SHA-256 the nonce, sign the hash, base64
                 // Use Uint8Array + btoa() (no Buffer dependency)
