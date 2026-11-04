@@ -116,14 +116,14 @@ function initAnchorView() {
         if (!size) size = document.getElementById('text').value.length;
         if (!size) { el.style.display = 'none'; return; }
         apiPost('/api/estimate', { size, tier: state.tier }).then(({ j: est }) => {
-            const onCents = est.on_chain_sat * 0.00002;  // @ $20/BSV
-            const onStr = onCents < 0.01 ? '<0.01¢' : onCents.toFixed(2) + '¢';
-            document.getElementById('costVal').textContent = onStr + ' on-chain';
+            const custCents = est.customer_sat * 0.00002;  // @ $20/BSV
+            const custStr = custCents < 0.01 ? '<0.01¢' : custCents.toFixed(2) + '¢';
+            document.getElementById('costVal').textContent = custStr + ' total';
             document.getElementById('costDetail').textContent =
-                '  (' + est.on_chain_sat.toFixed(0) + ' sats · ' + est.tier + ' · ' + (size / 1024).toFixed(1) + ' KB)';
+                '  (' + est.customer_sat.toFixed(0) + ' sats · ' + est.tier + ' · ' + (size / 1024).toFixed(1) + ' KB · includes 3% service fee)';
             el.style.display = 'block';
             // update the payment card (amount + address + QR)
-            state.expected_sat = Math.ceil(est.on_chain_sat);
+            state.expected_sat = Math.ceil(est.customer_sat);
             updatePaymentCard();
         }).catch(() => { el.style.display = 'none'; });
     }
