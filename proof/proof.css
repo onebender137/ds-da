@@ -353,6 +353,21 @@ label.field {
 html.dark .pay-qr {
     background: #ffffff;
 }
+.pay-status {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    background: rgba(201, 162, 39, 0.08);
+    border: 1px solid rgba(201, 162, 39, 0.2);
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+html.dark .pay-status {
+    background: rgba(201, 162, 39, 0.06);
+    border-color: rgba(201, 162, 39, 0.15);
+    color: #94a3b8;
+}
 @media (max-width: 600px) {
     .pay-grid { grid-template-columns: 1fr; }
     .pay-right { justify-content: flex-start; }

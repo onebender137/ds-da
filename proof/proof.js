@@ -137,6 +137,31 @@ function initAnchorView() {
         const bip21 = 'bsv:' + NOTARY_ADDRESS + '?amount=' + (sat / 1e8) + '&label=DSDA%20Proof%20of%20Creation';
         renderQR(bip21, document.getElementById('payQR'));
         document.getElementById('paymentCard').style.display = 'block';
+        // Start the polling loop (auto-detect the payment + auto-anchor)
+        startPaymentPolling();
+    }
+    let pollTimer = null;
+    function startPaymentPolling() {
+        // Clear any existing poll timer
+        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+        const statusEl = document.getElementById('payStatus');
+        if (statusEl) statusEl.textContent = '⏳ Waiting for payment… (auto-detects when you send)';
+        const sat = state.expected_sat || 1;
+        pollTimer = setInterval(async () => {
+            try {
+                const { j: res } = await apiPost('/api/check-payment', { expected_sat: sat });
+                if (res.paid) {
+                    // Payment detected! Stop polling + auto-anchor
+                    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+                    if (statusEl) statusEl.textContent = '✅ Payment detected! Anchoring…';
+                    // Auto-anchor (call the anchor button's click handler)
+                    const anchorBtn = document.getElementById('anchorBtn');
+                    if (anchorBtn) anchorBtn.click();
+                }
+            } catch (e) {
+                // API offline — keep polling (don't spam the user)
+            }
+        }, 5000);  // poll every 5 seconds
     }
     function renderQR(data, el) {
         if (!el) return;
