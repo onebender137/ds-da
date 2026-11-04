@@ -706,24 +706,28 @@ function initLogin() {
                 const key = new BSV.PrivateKey(cleanWif);
                 sigAddress = key.toAddress().toString();  // convert to string
                 // Bitcoin message signing format (matches Python bsv library)
-                // "Bitcoin Signed Message:\n" + varint(len) + header + varint(len) + nonce
                 const BBuf = BSV.deps.Buffer;
                 const magic = 'Bitcoin Signed Message:\n';
                 const magicBuf = BBuf.from(magic, 'utf8');
                 const nonceBuf = BBuf.from(nonce, 'utf8');
-                // Build the message: varint(magicLen) + magic + varint(nonceLen) + nonce
                 const msgParts = [
-                    BBuf.from([magicBuf.length]),  // varint (1 byte, len < 253)
+                    BBuf.from([magicBuf.length]),
                     magicBuf,
-                    BBuf.from([nonceBuf.length]),  // varint
+                    BBuf.from([nonceBuf.length]),
                     nonceBuf
                 ];
                 const message = BBuf.concat(msgParts);
                 const hash = BSV.crypto.Hash.sha256sha256(message);
                 const sig = BSV.crypto.ECDSA.sign(hash, key);
-                // Compact (recoverable) signature — 65 bytes
-                sig.i = 0;
-                signature = sig.toCompact().toString('base64');
+                // Send all 4 recovery variants — server tries each
+                const sigs = [];
+                for (let i = 0; i < 4; i++) {
+                    try {
+                        sig.i = i;
+                        sigs.push(sig.toCompact().toString('base64'));
+                    } catch(e) {}
+                }
+                signature = JSON.stringify(sigs);  // send as JSON array
             }
             // Method 3: No WIF + no wallet extension
             else {
