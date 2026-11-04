@@ -706,17 +706,12 @@ function initLogin() {
                 const key = new BSV.PrivateKey(cleanWif);
                 sigAddress = key.address;  // property, not a method
                 // BSV standard: double SHA-256 the nonce, sign the hash, base64
-                // Use Uint8Array + btoa() (no Buffer dependency)
-                const nonceBytes = Buffer.from(nonce, 'utf8');
+                // Use BSV's internal Buffer (BSV.deps.Buffer) for compatibility
+                const BBuf = BSV.deps.Buffer;
+                const nonceBytes = BBuf.from(nonce, 'utf8');
                 const hash = BSV.crypto.Hash.sha256sha256(nonceBytes);
                 const sig = key.sign(hash);
-                // Convert signature Buffer to base64
-                const sigBytes = new Uint8Array(sig);
-                let binaryStr = '';
-                for (let i = 0; i < sigBytes.length; i++) {
-                    binaryStr += String.fromCharCode(sigBytes[i]);
-                }
-                signature = btoa(binaryStr);
+                signature = sig.toString('base64');
             }
             // Method 3: No WIF + no wallet extension
             else {
