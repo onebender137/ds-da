@@ -91,13 +91,20 @@
                 </div>
             </div>
 
-            <div class="card" id="paymentCard" style="display:none">
+            <div class="card" id="paymentCard">
                 <h2><span class="step">03</span> Pay the fee (BSV)</h2>
-                <div class="desc">Send the fee in BSV to the address below, + paste your payment txid. We verify it on-chain before anchoring — no payment, no anchor.</div>
-                <label class="field">Amount to send</label>
-                <div class="pay-amount" id="payAmount"></div>
-                <label class="field">Send to this address</label>
-                <div class="pay-address" id="payAddress"></div>
+                <div class="desc">Scan the QR code with your BSV wallet, send the fee, + paste your payment txid below. We verify it on-chain before anchoring — no payment, no anchor.</div>
+                <div class="pay-grid">
+                    <div class="pay-left">
+                        <label class="field">Amount to send</label>
+                        <div class="pay-amount" id="payAmount">—</div>
+                        <label class="field">Send to this address</label>
+                        <div class="pay-address" id="payAddress">14nn7V37RkgaYjieZQeafeYeyeWxgkJTsQ</div>
+                    </div>
+                    <div class="pay-right">
+                        <div class="pay-qr" id="payQR"></div>
+                    </div>
+                </div>
                 <label class="field">Your payment txid</label>
                 <input type="text" id="payTxid" placeholder="Paste your payment txid (64 hex chars)…">
             </div>
@@ -228,7 +235,8 @@
         </div>
     </footer>
 
-    <script src="proof.js?v=3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script src="proof.js?v=4"></script>
     <script src="../theme.js?v=1"></script>
 </body>
 </html>

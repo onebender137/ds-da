@@ -322,6 +322,41 @@ label.field {
     margin: 6px 0;
     font-family: 'SF Mono', 'Consolas', monospace;
 }
+/* Payment grid (amount + address | QR code) */
+.pay-grid {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 24px;
+    align-items: start;
+    margin: 12px 0 16px;
+}
+.pay-left { min-width: 0; }
+.pay-right { display: flex; justify-content: center; }
+.pay-qr {
+    background: #ffffff;
+    padding: 12px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+.pay-qr img { display: block; }
+.qr-fallback {
+    font-family: 'SF Mono', 'Consolas', monospace;
+    font-size: 0.72rem;
+    color: #1a1a1a;
+    word-break: break-all;
+    max-width: 200px;
+}
+/* Dark mode: the QR code stays white (it needs to be scannable) */
+html.dark .pay-qr {
+    background: #ffffff;
+}
+@media (max-width: 600px) {
+    .pay-grid { grid-template-columns: 1fr; }
+    .pay-right { justify-content: flex-start; }
+}
 
 /* --- BUTTONS --- */
 .btn {

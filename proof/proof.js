@@ -122,13 +122,33 @@ function initAnchorView() {
             document.getElementById('costDetail').textContent =
                 '  (' + est.on_chain_sat.toFixed(0) + ' sats · ' + est.tier + ' · ' + (size / 1024).toFixed(1) + ' KB)';
             el.style.display = 'block';
-            // show the payment card (amount + address)
+            // update the payment card (amount + address + QR)
             state.expected_sat = Math.ceil(est.on_chain_sat);
-            document.getElementById('payAmount').textContent =
-                state.expected_sat + ' sats (' + (state.expected_sat / 1e8).toFixed(8) + ' BSV)';
-            document.getElementById('payAddress').textContent = NOTARY_ADDRESS;
-            document.getElementById('paymentCard').style.display = 'block';
+            updatePaymentCard();
         }).catch(() => { el.style.display = 'none'; });
+    }
+    function updatePaymentCard() {
+        const sat = state.expected_sat || 0;
+        const bsv = (sat / 1e8).toFixed(8);
+        document.getElementById('payAmount').textContent =
+            sat + ' sats (' + bsv + ' BSV)';
+        document.getElementById('payAddress').textContent = NOTARY_ADDRESS;
+        // render the QR code (BIP21 URI)
+        const bip21 = 'bsv:' + NOTARY_ADDRESS + '?amount=' + (sat / 1e8) + '&label=DSDA%20Proof%20of%20Creation';
+        renderQR(bip21, document.getElementById('payQR'));
+        document.getElementById('paymentCard').style.display = 'block';
+    }
+    function renderQR(data, el) {
+        if (!el) return;
+        el.innerHTML = '';
+        // Use a lightweight QR code generator (no external dependency)
+        // We'll use the qrcode.js library (loaded via CDN)
+        if (typeof QRCode !== 'undefined') {
+            new QRCode(el, { text: data, width: 180, height: 180, colorDark: '#0a1628', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
+        } else {
+            // Fallback: show the BIP21 URI as text (the user can copy it)
+            el.innerHTML = '<div class="qr-fallback">' + data + '</div>';
+        }
     }
     const textEl = document.getElementById('text');
     if (textEl) textEl.addEventListener('input', updateCostEstimate);
@@ -200,6 +220,9 @@ function initAnchorView() {
             : 'Dry-run (wallet not funded). The tx was built + signed but not broadcast.';
         card.scrollIntoView({ behavior: 'smooth' });
     }
+    // Render the payment card + QR code on page load (so the user can see the
+    // address + QR code immediately, even before the cost estimate is calculated)
+    updatePaymentCard();
 }
 
 // ===================== PROOF VIEW =====================
