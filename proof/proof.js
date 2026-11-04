@@ -198,27 +198,17 @@ function initAnchorView() {
         if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
         if (blockWatcherTimer) { clearInterval(blockWatcherTimer); blockWatcherTimer = null; }
         const statusEl = document.getElementById('payStatus');
-        if (statusEl) statusEl.textContent = '⏳ Waiting for payment… (auto-detects when you send)';
+        if (statusEl) statusEl.textContent = '⏳ Waiting for payment… paste your txid below to confirm';
         const sat = state.expected_sat || 1;
         let waitingStarted = false;
         pollTimer = setInterval(async () => {
             try {
-                // Check 1: auto-detect a new confirmed payment (UTXO scan)
-                const { j: res } = await apiPost('/api/check-payment', { expected_sat: sat });
-                if (res.paid) {
-                    stopWaitingAnimations();
-                    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
-                    if (blockWatcherTimer) { clearInterval(blockWatcherTimer); blockWatcherTimer = null; }
-                    if (statusEl) statusEl.innerHTML = '✅ Payment confirmed! Anchoring…';
-                    const anchorBtn = document.getElementById('anchorBtn');
-                    if (anchorBtn) anchorBtn.click();
-                    return;
-                }
-                // Check 2: if the customer entered a txid, watch for confirmation
+                // If the customer entered a txid, watch for confirmation (secure, per-txid)
                 const payTxid = document.getElementById('payTxid').value.trim();
                 if (/^[0-9a-f]{64}$/i.test(payTxid)) {
                     const { j: txSt } = await apiPost('/api/tx-status', { txid: payTxid });
-                    if (txSt.confirmed) {
+                    if (txSt.confirmed && txSt.amount_sat >= sat) {
+                        // Tx is confirmed + pays enough! Stop + anchor
                         stopWaitingAnimations();
                         if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
                         if (blockWatcherTimer) { clearInterval(blockWatcherTimer); blockWatcherTimer = null; }
@@ -231,7 +221,6 @@ function initAnchorView() {
                             waitingStarted = true;
                             startCountdown();
                             startFacts();
-                            // Show the "while you wait" section
                             const waitSec = document.getElementById('waitingSection');
                             if (waitSec) waitSec.style.display = 'block';
                         }
@@ -245,6 +234,12 @@ function initAnchorView() {
                                 '🕐 Tx found — waiting for it to pay the notary address…';
                         }
                     }
+                    return;
+                }
+                // No txid entered — don't auto-detect (avoids cross-user collisions)
+                // Just show a gentle reminder
+                if (statusEl && statusEl.textContent.indexOf('Waiting') === 0) {
+                    statusEl.textContent = '⏳ Waiting for payment… paste your txid below to confirm';
                 }
             } catch (e) {
                 // API offline — keep polling (don't spam the user)
