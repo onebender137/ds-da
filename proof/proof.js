@@ -696,7 +696,7 @@ function initLogin() {
             // Method 2: WIF (fallback — no wallet extension)
             else if (wif) {
                 const key = new BSV.PrivateKey(wif);
-                sigAddress = key.address();
+                sigAddress = key.address;  // property, not a method
                 // BSV standard: double SHA-256 the nonce, sign the hash, base64
                 // Use Uint8Array + btoa() (no Buffer dependency)
                 const nonceBytes = new TextEncoder().encode(nonce);
