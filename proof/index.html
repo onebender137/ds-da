@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DSDA | Proof of Creation — Immutable BSV Anchors</title>
+    <meta name="description" content="Immutable BSV-anchored proof that you created something, at a time, that has not changed. Verifiable by anyone — no trust in us required.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://ds-da.ca/proof/">
+    <meta property="og:title" content="DSDA | Proof of Creation">
+    <meta property="og:description" content="Immutable BSV-anchored proof of creation. Verifiable by anyone.">
+    <link rel="canonical" href="https://ds-da.ca/proof/">
+    <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
+    <link rel="stylesheet" href="proof.css">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Space+Grotesk:wght@300;400;600&family=Space+Mono&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="grid-background"></div>
+
+    <header class="system-hud-top">
+        <div class="hud-item badge">DSDA · PROOF OF CREATION</div>
+        <div class="hud-item" id="walletStatus">NOTARY: LOADING…</div>
+        <div class="hud-item"><a href="/">← DSDA HUB</a> &nbsp;·&nbsp; <a href="?view=faq">FAQ</a></div>
+    </header>
+
+    <main class="container">
+
+        <!-- ===================== ANCHOR VIEW ===================== -->
+        <div id="view-anchor">
+            <h1 class="gradient-text">Proof of Creation</h1>
+            <p class="subtitle">Immutable BSV-anchored proof that you created something, at a time, that has not changed. Verifiable by anyone — no trust in us required.</p>
+
+            <div class="card highlight">
+                <h2>🔍 LOOK UP A PROOF</h2>
+                <div class="desc">Have a txid? Drop it in + pull up the on-chain certificate. Works for any DSDA anchor — even years from now. The chain is the record.</div>
+                <div style="display:flex;gap:10px;align-items:center">
+                    <input type="text" id="lookupTxid" placeholder="Paste a txid (64 hex chars)…" style="flex:1">
+                    <button class="btn btn-primary btn-inline" id="lookupBtn">LOOK UP</button>
+                </div>
+                <div id="lookupErr" class="err"></div>
+            </div>
+
+            <div class="card">
+                <h2><span class="step">01</span> WHAT ARE YOU ANCHORING?</h2>
+                <div class="drop" id="drop">DROP A FILE HERE, OR <b>BROWSE</b><input type="file" id="file" style="display:none"></div>
+                <div class="fileinfo" id="fileinfo"></div>
+                <label class="field">…or paste text content</label>
+                <textarea id="text" placeholder="…or type / paste text to anchor"></textarea>
+            </div>
+
+            <div class="card">
+                <h2><span class="step">02</span> CHOOSE A TIER</h2>
+                <div class="tiers">
+                    <div class="tier sel" data-tier="basic">
+                        <div class="t">Basic</div>
+                        <div class="d">SHA-256 hash + metadata on-chain. The file stays with you; the chain proves existence + integrity.</div>
+                        <div class="p">CHEAPER</div>
+                    </div>
+                    <div class="tier" data-tier="premium">
+                        <div class="t">Premium</div>
+                        <div class="d">The full file content on-chain (BSV's unbounded blocks). Rebuild the file from the chain alone.</div>
+                        <div class="p">PREMIUM</div>
+                    </div>
+                </div>
+                <div class="cost-estimate" id="costEstimate">
+                    <b>ESTIMATED ON-CHAIN COST:</b> <span id="costVal"></span>
+                    <span class="dim" id="costDetail"></span>
+                </div>
+                <div style="display:flex;gap:12px">
+                    <div style="flex:1"><label class="field">Title</label><input type="text" id="title" placeholder="My document"></div>
+                    <div style="flex:1"><label class="field">Creator</label><input type="text" id="creator" placeholder="coryr" value="coryr"></div>
+                </div>
+            </div>
+
+            <div class="card" id="paymentCard" style="display:none">
+                <h2><span class="step">03</span> PAY THE FEE (BSV)</h2>
+                <div class="desc">Send the fee in BSV to the address below, + paste your payment txid. We verify it on-chain before anchoring — no payment, no anchor.</div>
+                <label class="field">Amount to send</label>
+                <div class="pay-amount" id="payAmount"></div>
+                <label class="field">Send to this address</label>
+                <div class="pay-address" id="payAddress"></div>
+                <label class="field">Your payment txid</label>
+                <input type="text" id="payTxid" placeholder="Paste your payment txid (64 hex chars)…">
+            </div>
+
+            <div class="card">
+                <h2><span class="step">04</span> ANCHOR IT</h2>
+                <button class="btn btn-primary" id="anchorBtn">VERIFY PAYMENT + ANCHOR ON BSV</button>
+                <div class="err" id="err"></div>
+            </div>
+
+            <div class="card" id="resultCard" style="display:none">
+                <h2>✅ CERTIFICATE</h2>
+                <div style="margin-bottom:12px"><span class="badge-status ok" id="resBadge">anchored</span></div>
+                <div class="kv" id="resKv"></div>
+                <div class="muted" id="resNote"></div>
+            </div>
+        </div>
+
+        <!-- ===================== PROOF VIEW ===================== -->
+        <div id="view-proof" style="display:none">
+            <a href="?view=anchor" style="color:var(--cyan);text-decoration:none;font-family:'Rajdhani',sans-serif;letter-spacing:2px;font-size:0.8rem">← BACK TO ANCHOR</a>
+            <h1 class="gradient-text" style="margin-top:12px">Certificate</h1>
+            <div class="kv" style="margin-bottom:16px"><span class="k">TXID</span><span class="v" id="proofTxid"></span></div>
+            <p class="subtitle">This certificate is anchored on the BSV blockchain. Verify the content below to confirm it is unchanged + the anchor is on-chain.</p>
+
+            <div class="card">
+                <h2>CERTIFICATE</h2>
+                <div class="kv" id="kv"></div>
+            </div>
+
+            <div class="card">
+                <h2>SHARE THIS PROOF</h2>
+                <div class="desc">Send the receipt to someone, or share the link. Anyone can verify it — no login, no trust in us required.</div>
+                <button class="btn btn-primary" id="shareBtn">📤 SHARE / EMAIL THIS PROOF</button>
+                <div id="shareMenu" style="display:none;margin-top:12px">
+                    <div class="btn-row">
+                        <button class="btn btn-secondary" id="shareEmail">✉️ EMAIL</button>
+                        <button class="btn btn-secondary" id="shareCopy">📋 COPY LINK</button>
+                        <button class="btn btn-secondary" id="shareSocial">🌐 SOCIAL</button>
+                    </div>
+                </div>
+                <div id="shareStatus" class="muted"></div>
+            </div>
+
+            <div class="card" id="contentCard" style="display:none">
+                <h2>ON-CHAIN CONTENT</h2>
+                <div class="desc">This file is recovered directly from the BSV blockchain (OP_RETURN) — not from our server. This is the Premium guarantee: rebuild the file from the chain alone.</div>
+                <div class="content-display" id="contentDisplay"></div>
+            </div>
+
+            <div class="card">
+                <h2>VERIFY THE CONTENT</h2>
+                <div class="desc">Upload the exact file (or paste the text) that was anchored. We re-hash it + check it against the on-chain anchor.</div>
+                <div class="drop" id="dropVerify" style="margin-top:12px">DROP THE FILE HERE, OR <b>BROWSE</b><input type="file" id="fileVerify" style="display:none"></div>
+                <button class="btn btn-primary" id="verifyBtn" disabled>VERIFY</button>
+                <div id="ver" style="display:none;margin-top:12px"></div>
+            </div>
+        </div>
+
+        <!-- ===================== FAQ VIEW ===================== -->
+        <div id="view-faq" style="display:none">
+            <a href="?view=anchor" style="color:var(--cyan);text-decoration:none;font-family:'Rajdhani',sans-serif;letter-spacing:2px;font-size:0.8rem">← BACK TO ANCHOR</a>
+            <h1 class="gradient-text" style="margin-top:12px">FAQ</h1>
+            <p class="subtitle">Everything you'd want to know, in plain language. The short version: <span style="color:var(--gold);font-weight:600">your proof lives on the blockchain, not on us.</span></p>
+
+            <div class="qa">
+                <h2>What is this, exactly?</h2>
+                <p>An immutable, BSV-anchored proof that <b>you created something, at a specific time, and it has not changed since.</b> We take your file, fingerprint it (SHA-256 hash), + anchor that fingerprint on the BSV blockchain. The blockchain is the timestamp; the hash is the proof.</p>
+                <p>Think of it like a notary public, but the notary is a blockchain that never sleeps, never loses the record, + anyone in the world can check the stamp.</p>
+            </div>
+            <div class="qa">
+                <h2>How does it actually work?</h2>
+                <p><b>Basic tier:</b> We hash your file (SHA-256 — a 64-character fingerprint) + put that hash on-chain via an <code>OP_RETURN</code> transaction. The file stays with you; the chain proves it existed at time T + is unchanged.</p>
+                <p><b>Premium tier:</b> We put the <b>entire file</b> on-chain (BSV's unbounded blocks allow MB-scale data for pennies). You can rebuild the file from the chain alone — no server, no us, just the block.</p>
+            </div>
+            <div class="qa">
+                <h2>What if your site goes down?</h2>
+                <p><span class="highlight">Your proof is not on our site.</span> It's on the BSV blockchain — a decentralized network of thousands of nodes. Our website is just a <b>reader</b> for the chain. If we vanish tomorrow, anyone with a txid can still pull up the certificate + verify it, using any BSV explorer + the blockchain itself. The record outlives us.</p>
+            </div>
+            <div class="qa">
+                <h2>What if I lose my file?</h2>
+                <p><b>Basic tier:</b> The hash proves the file existed + is unchanged, but you need a copy to verify against the hash. (Like a certificate of authenticity — it proves the painting is real, but it's not the painting.)</p>
+                <p><b>Premium tier:</b> The <b>full file is on-chain</b>. Lose your copy? Rebuild it from the blockchain. We've recovered a 136 KB photo + an 8 MB GIF straight off the chain. The chain is the backup.</p>
+            </div>
+            <div class="qa">
+                <h2>How do I verify a proof (mine or someone else's)?</h2>
+                <p>Three ways, all trustless:</p>
+                <p>1. <b>Our lookup form</b> — drop the txid in, + we pull up the certificate + the verify tool.</p>
+                <p>2. <b>Any BSV explorer</b> — go to whatsonchain.com/tx/&lt;txid&gt; + see the OP_RETURN data.</p>
+                <p>3. <b>Re-hash</b> — take the file, SHA-256 it, + compare to the on-chain hash. Match = unchanged.</p>
+                <p>No login, no account, no trust in us. The math is the trust.</p>
+            </div>
+            <div class="qa">
+                <h2>What does it cost?</h2>
+                <p>The BSV data fee is <b>~0.1 sat/byte</b> (calibrated to real transactions). A 10 MB song is ~20 cents on-chain; a 50 MB video ~$1. We charge a flat service fee (well above the on-chain cost) — the blockchain is essentially subsidizing your storage.</p>
+                <p>You pay in BSV to our notary address, + we verify the payment on-chain before anchoring. No payment, no anchor.</p>
+            </div>
+            <div class="qa">
+                <h2>Why BSV, specifically?</h2>
+                <p>Three reasons: <b>(1) Unbounded blocks</b> — BSV allows MB-scale data in a single transaction (Bitcoin caps at 1 MB; BSV goes to 2 GB blocks). <b>(2) Cheap data</b> — the data fee is ~0.1 sat/byte, so a full song is pennies. <b>(3) Permanent</b> — the BSV blockchain is decentralized + has been running since 2018. It's not going away.</p>
+            </div>
+            <div class="qa">
+                <h2>What can I anchor?</h2>
+                <p>Anything with bytes: photos, MP3s, videos, documents, contracts, designs, code, patents, tweets, art, recipes, love letters. If it's a file, it can be anchored. We've tested photos, MP3s, GIFs, + text — all work.</p>
+            </div>
+            <div class="qa">
+                <h2>Is it really permanent?</h2>
+                <p>As permanent as the BSV blockchain — which is as permanent as a network of thousands of independent nodes all agreeing on the same record. No single point of failure. No server to crash. No company to go bankrupt. The proof will outlive us, your hard drive, + probably your grandchildren's smartphones.</p>
+            </div>
+            <div class="qa">
+                <h2>Do I need to trust you?</h2>
+                <p><span class="highlight">No.</span> That's the whole point. The proof is verifiable by <b>anyone</b>, with just the txid + the BSV blockchain. You don't need our website, our servers, or our word. The blockchain is the notary; the hash is the stamp; the math is the trust.</p>
+                <p>We're the convenience layer — the pretty interface, the verify tool, the share button. But the record is yours, on the chain, forever.</p>
+            </div>
+            <div class="qa">
+                <h2>Who is DSDA?</h2>
+                <p>Dream Syndicate Digital Assets — a New Brunswick, Canada company running hopes-and-dreams.ca, polkahole.ca, + ds-da.ca. Proof of Creation is our leading service: immutable, BSV-anchored proof that you created something, at a time, that has not changed.</p>
+            </div>
+        </div>
+
+    </main>
+
+    <footer>© 2026 DSDA · PROOF OF CREATION · SYNC_STATUS: 100% NOMINAL</footer>
+
+    <script src="proof.js"></script>
+</body>
+</html>

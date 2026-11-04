@@ -209,8 +209,8 @@ body::before {
     position: absolute;
     width: 100%;
     height: 100%;
-    /* Math: 360 / 4 = 90 degrees. Increased TranslateZ to 400px so they don't clip. */
-    transform: rotateY(calc(var(--i) * 90deg)) translateZ(400px);
+    /* Math: 360 / 5 = 72 degrees (5 nodes). TranslateZ 420px so they don't clip. */
+    transform: rotateY(calc(var(--i) * 72deg)) translateZ(420px);
     transform-style: preserve-3d;
 }
 
