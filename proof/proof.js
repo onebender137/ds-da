@@ -764,6 +764,7 @@ function initLogin() {
     // Logout
     if (logoutBtn) logoutBtn.addEventListener('click', async () => {
         await apiPost('/api/logout', {}, { credentials: 'include' });
+        // Redirect to the anchor view (fresh page = logged-out state)
         location.href = '?view=anchor';
     });
 }
