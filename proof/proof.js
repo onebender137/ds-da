@@ -742,15 +742,9 @@ function initLogin() {
                 nonce, address: sigAddress, signature, display_name: name
             });
 
-            if (ok && j.ok) {
-                status.textContent = '✅ Logged in as ' + (j.user.display_name || j.user.address);
-                setTimeout(() => {
-                    if (loginModal) loginModal.style.display = 'none';
-                    if (loginBtn) loginBtn.style.display = 'none';
-                    const navDash = document.getElementById('navDashboard');
-                    if (navDash) navDash.style.display = 'inline';
-                    location.href = '?view=dashboard';
-                }, 1000);
+            if (ok) {
+                // Server returned 200 = login successful (cookie is set)
+                location.href = '?view=dashboard';
             } else {
                 status.textContent = '❌ ' + (j.error || 'Login failed');
             }
