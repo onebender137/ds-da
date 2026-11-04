@@ -11,7 +11,7 @@
     <meta property="og:description" content="Immutable BSV-anchored proof of creation. Verifiable by anyone.">
     <link rel="canonical" href="https://ds-da.ca/proof/">
     <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
-    <link rel="stylesheet" href="proof.css?v=5">
+    <link rel="stylesheet" href="proof.css?v=6">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script>
       // Apply the saved theme on load (before the page renders, to avoid a flash)
@@ -31,8 +31,10 @@
                     <span class="theme-icon">☀️</span>
                     <span class="theme-label">Light</span>
                 </button>
-                <a href="/">Home</a>
-                <a href="?view=faq">FAQ</a>
+                <a href="/" id="navHome">Home</a>
+                <a href="?view=faq" id="navFaq">FAQ</a>
+                <a href="?view=dashboard" id="navDashboard" class="nav-login">Dashboard</a>
+                <button class="btn-login" id="loginBtn">🔑 Login</button>
             </nav>
         </div>
     </header>
@@ -246,7 +248,60 @@
             </div>
         </div>
 
+        <!-- ===================== DASHBOARD VIEW ===================== -->
+        <div id="view-dashboard" style="display:none">
+            <a href="?view=anchor" style="color:var(--text-dim);text-decoration:none;font-size:0.85rem;font-weight:500;letter-spacing:0.5px">← Back to anchor</a>
+            <h1 class="hero-title" style="font-size:2.2rem;margin-top:16px;margin-bottom:8px">My Dashboard</h1>
+            <p class="desc" style="margin-bottom:24px" id="dashWelcome">Welcome!</p>
+
+            <div class="card">
+                <h2>📊 Stats</h2>
+                <div class="dash-stats" id="dashStats">
+                    <div class="dash-stat"><span class="dash-stat-num" id="statProofs">0</span><span class="dash-stat-label">Proofs</span></div>
+                    <div class="dash-stat"><span class="dash-stat-num" id="statSpent">0</span><span class="dash-stat-label">Sats Spent</span></div>
+                    <div class="dash-stat"><span class="dash-stat-num" id="statSince">—</span><span class="dash-stat-label">Member Since</span></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>📜 My Proofs</h2>
+                <div id="dashProofs" class="dash-list">
+                    <p class="muted">No proofs yet. Anchor something to get started!</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>💳 My Payments</h2>
+                <div id="dashPayments" class="dash-list">
+                    <p class="muted">No payments yet.</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>⚙️ Account</h2>
+                <div class="kv" id="dashAccount"></div>
+                <button class="btn btn-secondary" id="logoutBtn" style="margin-top:16px;width:auto">Logout</button>
+            </div>
+        </div>
+
     </main>
+
+    <!-- LOGIN MODAL -->
+    <div class="modal-overlay" id="loginModal" style="display:none">
+        <div class="modal">
+            <button class="modal-close" id="loginModalClose">&times;</button>
+            <h2>🔑 Login with BSV Wallet</h2>
+            <p class="modal-desc">Sign a challenge with your BSV wallet to log in. Your private key never leaves your browser.</p>
+            <label class="field">Display name (optional)</label>
+            <input type="text" id="loginName" placeholder="Your name (or 'anon')">
+            <label class="field">Your BSV address</label>
+            <input type="text" id="loginAddress" placeholder="1... (your BSV address)">
+            <label class="field">Or paste your WIF (private key)</label>
+            <input type="password" id="loginWif" placeholder="L... or K... (your WIF)">
+            <div id="loginStatus" class="muted" style="margin-top:12px"></div>
+            <button class="btn btn-primary" id="loginSubmit" style="margin-top:16px">Sign + Login</button>
+        </div>
+    </div>
 
     <!-- TIP JAR -->
     <section class="tip-jar">
@@ -275,6 +330,7 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bsv@1.5.6/bsv.min.js"></script>
     <script>
         // Tip jar: collapsible + QR code + copy button
         (function() {
@@ -311,7 +367,7 @@
             };
         })();
     </script>
-    <script src="proof.js?v=10"></script>
+    <script src="proof.js?v=11"></script>
     <script src="../theme.js?v=1"></script>
 </body>
 </html>

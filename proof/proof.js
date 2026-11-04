@@ -17,20 +17,26 @@ function esc(s) {
         .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 async function api(path, opts) {
+    // Default to including credentials (cookies) for authenticated requests
+    if (!opts) opts = {};
+    if (!opts.credentials) opts.credentials = 'include';
     const res = await fetch(API_BASE + path, opts);
     return res.json().then(j => ({ ok: res.ok, j }));
 }
-function apiPost(path, body) {
+function apiPost(path, body, opts) {
+    if (!opts) opts = {};
     return api(path, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
+        body: JSON.stringify(body),
+        credentials: 'include',
+        ...opts
     });
 }
 
 // --- view routing ---
 function showView(name) {
-    ['anchor', 'proof', 'faq'].forEach(v => {
+    ['anchor', 'proof', 'faq', 'dashboard'].forEach(v => {
         const el = document.getElementById('view-' + v);
         if (el) el.style.display = (v === name) ? 'block' : 'none';
     });
@@ -456,6 +462,176 @@ function initProofView(txid) {
     });
 }
 
+// ===================== LOGIN + DASHBOARD =====================
+function initLogin() {
+    const loginBtn = document.getElementById('loginBtn');
+    const loginModal = document.getElementById('loginModal');
+    const loginModalClose = document.getElementById('loginModalClose');
+    const loginSubmit = document.getElementById('loginSubmit');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    // Check if the user is already logged in
+    api('/api/me', { credentials: 'include' }).then(({ j }) => {
+        if (j.logged_in && j.user) {
+            // Hide the login button, show the dashboard link
+            if (loginBtn) loginBtn.style.display = 'none';
+            const navDash = document.getElementById('navDashboard');
+            if (navDash) navDash.style.display = 'inline';
+            // Pre-fill the address
+            const addrInput = document.getElementById('loginAddress');
+            if (addrInput) addrInput.value = j.user.address;
+        } else {
+            // Show the login button, hide the dashboard link
+            if (loginBtn) loginBtn.style.display = 'inline-block';
+            const navDash = document.getElementById('navDashboard');
+            if (navDash) navDash.style.display = 'none';
+        }
+    }).catch(() => {});
+
+    // Open the login modal
+    if (loginBtn) loginBtn.addEventListener('click', () => {
+        if (loginModal) loginModal.style.display = 'flex';
+    });
+    // Close the login modal
+    if (loginModalClose) loginModalClose.addEventListener('click', () => {
+        if (loginModal) loginModal.style.display = 'none';
+    });
+    if (loginModal) loginModal.addEventListener('click', (e) => {
+        if (e.target === loginModal) loginModal.style.display = 'none';
+    });
+
+    // Submit the login
+    if (loginSubmit) loginSubmit.addEventListener('click', async () => {
+        const status = document.getElementById('loginStatus');
+        const name = document.getElementById('loginName').value.trim();
+        const address = document.getElementById('loginAddress').value.trim();
+        const wif = document.getElementById('loginWif').value.trim();
+        loginSubmit.disabled = true;
+        loginSubmit.textContent = 'Signing…';
+
+        try {
+            // Get a nonce from the server
+            const { j: nonceRes } = await api('/api/login-nonce');
+            const nonce = nonceRes.nonce;
+
+            // Sign the nonce with the BSV library
+            let sigAddress, signature;
+            if (wif) {
+                // Derive the address from the WIF
+                const key = new BSV.PrivateKey(wif);
+                sigAddress = key.address();
+                const sigResult = key.sign_text(nonce);
+                signature = sigResult[1]; // base64 signature
+            } else if (address) {
+                // User provided the address (they must have signed elsewhere)
+                // For now, we need the WIF to sign. Show a message.
+                status.textContent = 'Paste your WIF (private key) to sign the challenge.';
+                loginSubmit.disabled = false;
+                loginSubmit.textContent = 'Sign + Login';
+                return;
+            } else {
+                status.textContent = 'Enter your BSV address or WIF.';
+                loginSubmit.disabled = false;
+                loginSubmit.textContent = 'Sign + Login';
+                return;
+            }
+
+            // Send the signature to the server
+            const { ok, j } = await apiPost('/api/login', {
+                nonce, address: sigAddress, signature, display_name: name
+            }, { credentials: 'include' });
+
+            if (ok && j.ok) {
+                status.textContent = '✅ Logged in as ' + (j.user.display_name || j.user.address);
+                setTimeout(() => {
+                    if (loginModal) loginModal.style.display = 'none';
+                    // Update the nav
+                    if (loginBtn) loginBtn.style.display = 'none';
+                    const navDash = document.getElementById('navDashboard');
+                    if (navDash) navDash.style.display = 'inline';
+                    // Go to the dashboard
+                    location.href = '?view=dashboard';
+                }, 1000);
+            } else {
+                status.textContent = '❌ ' + (j.error || 'Login failed');
+            }
+        } catch (e) {
+            status.textContent = '❌ ' + String(e);
+        }
+        loginSubmit.disabled = false;
+        loginSubmit.textContent = 'Sign + Login';
+    });
+
+    // Logout
+    if (logoutBtn) logoutBtn.addEventListener('click', async () => {
+        await apiPost('/api/logout', {}, { credentials: 'include' });
+        location.href = '?view=anchor';
+    });
+}
+
+function initDashboard() {
+    // Load the user's data
+    api('/api/me', { credentials: 'include' }).then(({ j }) => {
+        if (!j.logged_in || !j.user) {
+            // Not logged in — redirect to anchor
+            location.href = '?view=anchor';
+            return;
+        }
+        const user = j.user;
+        // Welcome message
+        const welcome = document.getElementById('dashWelcome');
+        if (welcome) welcome.textContent = 'Welcome, ' + (user.display_name || user.address) + '!';
+        // Stats
+        document.getElementById('statProofs').textContent = user.total_proofs || 0;
+        document.getElementById('statSpent').textContent = (user.total_spent_sat || 0).toLocaleString();
+        document.getElementById('statSince').textContent = new Date(user.created_at * 1000).toLocaleDateString();
+        // Account info
+        const acct = document.getElementById('dashAccount');
+        if (acct) {
+            acct.innerHTML =
+                '<div><span class="k">ADDRESS</span><span class="v">' + user.address + '</span></div>' +
+                '<div><span class="k">NAME</span><span class="v">' + esc(user.display_name || '—') + '</span></div>' +
+                '<div><span class="k">MEMBER SINCE</span><span class="v">' + new Date(user.created_at * 1000).toLocaleDateString() + '</span></div>' +
+                '<div><span class="k">LAST LOGIN</span><span class="v">' + new Date(user.last_login * 1000).toLocaleString() + '</span></div>';
+        }
+        // Load proofs
+        api('/api/my-proofs', { credentials: 'include' }).then(({ j }) => {
+            const el = document.getElementById('dashProofs');
+            if (!el) return;
+            if (!j.proofs || j.proofs.length === 0) {
+                el.innerHTML = '<p class="muted">No proofs yet. Anchor something to get started!</p>';
+                return;
+            }
+            el.innerHTML = j.proofs.map(p =>
+                '<div class="dash-item">' +
+                '<a href="?txid=' + p.txid + '" class="dash-item-title">' + esc(p.title || 'untitled') + '</a>' +
+                '<span class="dash-item-meta">' + p.tier + ' · ' + (p.size_bytes || 0).toLocaleString() + ' bytes · ' +
+                new Date(p.created_at * 1000).toLocaleDateString() + '</span>' +
+                '</div>'
+            ).join('');
+        }).catch(() => {});
+        // Load payments
+        api('/api/my-payments', { credentials: 'include' }).then(({ j }) => {
+            const el = document.getElementById('dashPayments');
+            if (!el) return;
+            if (!j.payments || j.payments.length === 0) {
+                el.innerHTML = '<p class="muted">No payments yet.</p>';
+                return;
+            }
+            el.innerHTML = j.payments.map(p =>
+                '<div class="dash-item">' +
+                '<span class="dash-item-title">' + p.amount_sat.toLocaleString() + ' sats</span>' +
+                '<span class="dash-item-meta">' +
+                '<a href="https://whatsonchain.com/tx/' + p.txid + '" target="_blank">' + p.txid.substring(0, 16) + '…</a> · ' +
+                new Date(p.created_at * 1000).toLocaleDateString() + '</span>' +
+                '</div>'
+            ).join('');
+        }).catch(() => {});
+    }).catch(() => {
+        location.href = '?view=anchor';
+    });
+}
+
 // ===================== INIT =====================
 function init() {
     const params = new URLSearchParams(location.search);
@@ -463,7 +639,9 @@ function init() {
     const view = params.get('view') || 'anchor';
     if (txid) { showView('proof'); initProofView(txid); }
     else if (view === 'faq') { showView('faq'); }
+    else if (view === 'dashboard') { showView('dashboard'); initDashboard(); }
     else { showView('anchor'); initAnchorView(); }
     loadStatus();
+    initLogin();
 }
 document.addEventListener('DOMContentLoaded', init);
