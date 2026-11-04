@@ -841,6 +841,20 @@ function initDashboard() {
                 });
             });
         }).catch(() => {});
+        // Load collections
+        loadCollections();
+        // Create collection button
+        const colCreateBtn = document.getElementById('colCreateBtn');
+        if (colCreateBtn) colCreateBtn.addEventListener('click', () => {
+            const name = document.getElementById('colName').value.trim();
+            if (!name) return;
+            apiPost('/api/collections', { name }, { credentials: 'include' }).then(({ j }) => {
+                if (j.ok) {
+                    document.getElementById('colName').value = '';
+                    loadCollections();
+                }
+            });
+        });
         // Load payments
         api('/api/my-payments', { credentials: 'include' }).then(({ j }) => {
             const el = document.getElementById('dashPayments');
@@ -861,6 +875,75 @@ function initDashboard() {
     }).catch(() => {
         location.href = '?view=anchor';
     });
+}
+
+// ===================== COLLECTIONS =====================
+function loadCollections() {
+    api('/api/collections', { credentials: 'include' }).then(({ j }) => {
+        const el = document.getElementById('dashCollections');
+        if (!el) return;
+        if (!j.collections || j.collections.length === 0) {
+            el.innerHTML = '<p class="muted">No collections yet. Create one above.</p>';
+            return;
+        }
+        el.innerHTML = j.collections.map(c =>
+            '<div class="dash-item" data-colid="' + c.id + '">' +
+            '<div class="dash-item-row">' +
+            '<span class="dash-item-title">' + esc(c.name) + ' <span class="muted">(' + c.proof_count + ' proofs)</span></span>' +
+            '<div class="dash-item-actions">' +
+            '<button class="dash-col-view-btn" title="View">👁️</button>' +
+            '<button class="dash-col-del-btn" title="Delete">🗑️</button>' +
+            '</div>' +
+            '</div>' +
+            '<div class="dash-col-items" style="display:none"></div>' +
+            '</div>'
+        ).join('');
+        // Wire up view + delete buttons
+        el.querySelectorAll('.dash-col-view-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const item = btn.closest('.dash-item');
+                const colId = item.getAttribute('data-colid');
+                const itemsEl = item.querySelector('.dash-col-items');
+                if (itemsEl.style.display !== 'none') {
+                    itemsEl.style.display = 'none';
+                    return;
+                }
+                api('/api/collections/' + colId + '/items', { credentials: 'include' }).then(({ j }) => {
+                    if (!j.items || j.items.length === 0) {
+                        itemsEl.innerHTML = '<p class="muted">Empty collection.</p>';
+                    } else {
+                        itemsEl.innerHTML = j.items.map(p =>
+                            '<div class="dash-col-proof">' +
+                            '<a href="?txid=' + p.txid + '">' + esc(p.title || 'untitled') + '</a>' +
+                            '<span class="muted">' + p.tier + ' · ' + (p.size_bytes || 0).toLocaleString() + ' B</span>' +
+                            '<button class="dash-col-proof-remove" data-txid="' + p.txid + '">×</button>' +
+                            '</div>'
+                        ).join('');
+                        // Wire up remove buttons
+                        itemsEl.querySelectorAll('.dash-col-proof-remove').forEach(rmBtn => {
+                            rmBtn.addEventListener('click', () => {
+                                const txid = rmBtn.getAttribute('data-txid');
+                                apiPost('/api/collections/' + colId + '/remove', { txid }, { credentials: 'include' })
+                                    .then(() => { loadCollections(); });
+                            });
+                        });
+                    }
+                    itemsEl.style.display = 'block';
+                });
+            });
+        });
+        el.querySelectorAll('.dash-col-del-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const item = btn.closest('.dash-item');
+                const colId = item.getAttribute('data-colid');
+                const name = item.querySelector('.dash-item-title').textContent;
+                if (confirm('Delete collection "' + name.trim() + '"?')) {
+                    apiPost('/api/collections/' + colId + '/delete', {}, { credentials: 'include' })
+                        .then(() => { loadCollections(); });
+                }
+            });
+        });
+    }).catch(() => {});
 }
 
 // ===================== INIT =====================

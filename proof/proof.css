@@ -970,6 +970,72 @@ html.dark .dash-tag {
     color: var(--text);
     width: 120px;
 }
+/* Collections */
+.collection-create {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+.collection-create input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    background: var(--bg-card);
+    color: var(--text);
+}
+.dash-item-actions {
+    display: flex;
+    gap: 4px;
+}
+.dash-col-view-btn,
+.dash-col-del-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    opacity: 0.5;
+    transition: opacity 0.15s;
+}
+.dash-col-view-btn:hover,
+.dash-col-del-btn:hover {
+    opacity: 1;
+}
+.dash-col-items {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+}
+.dash-col-proof {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 8px;
+    margin-bottom: 4px;
+    background: rgba(201, 162, 39, 0.03);
+    border-radius: 6px;
+    font-size: 0.8rem;
+}
+.dash-col-proof a {
+    color: var(--text);
+    text-decoration: none;
+    font-weight: 500;
+}
+.dash-col-proof a:hover {
+    color: var(--gold-dark);
+}
+.dash-col-proof-remove {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0 4px;
+}
+.dash-col-proof-remove:hover {
+    color: #dc2626;
+}
 
 /* --- RESPONSIVE --- */
 @media (max-width: 768px) {
