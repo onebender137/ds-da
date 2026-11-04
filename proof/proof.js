@@ -642,9 +642,6 @@ function initLogin() {
             if (loginBtn) loginBtn.style.display = 'none';
             const navDash = document.getElementById('navDashboard');
             if (navDash) navDash.style.display = 'inline';
-            // Pre-fill the address
-            const addrInput = document.getElementById('loginAddress');
-            if (addrInput) addrInput.value = j.user.address;
         } else {
             // Show the login button, hide the dashboard link
             if (loginBtn) loginBtn.style.display = 'inline-block';
@@ -669,7 +666,6 @@ function initLogin() {
     if (loginSubmit) loginSubmit.addEventListener('click', async () => {
         const status = document.getElementById('loginStatus');
         const name = document.getElementById('loginName').value.trim();
-        const address = document.getElementById('loginAddress').value.trim();
         const wif = document.getElementById('loginWif').value.trim();
         loginSubmit.disabled = true;
         loginSubmit.textContent = 'Signing…';
@@ -714,13 +710,7 @@ function initLogin() {
                 }
                 signature = btoa(binaryStr);
             }
-            // Method 3: Address only (not enough — need a signature)
-            else if (address) {
-                status.textContent = 'No wallet extension detected. Paste your WIF below to sign.';
-                loginSubmit.disabled = false;
-                loginSubmit.textContent = 'Sign + Login';
-                return;
-            }
+            // Method 3: No WIF + no wallet extension
             else {
                 status.textContent = 'Install a BSV wallet extension (Unstoppable/Green) or paste your WIF.';
                 loginSubmit.disabled = false;
