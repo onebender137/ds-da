@@ -350,7 +350,37 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/buffer@6.0.3/index.min.js"></script>
+    <script>
+    // Minimal Buffer polyfill for BSV.js (browser)
+    (function() {
+        if (typeof Buffer !== 'undefined' && Buffer.from) return;
+        function BufferPolyfill(data) {
+            if (data instanceof Uint8Array) { this.data = data; }
+            else if (typeof data === 'string') { this.data = new TextEncoder().encode(data); }
+            else if (Array.isArray(data)) { this.data = new Uint8Array(data); }
+            else { this.data = new Uint8Array(0); }
+        }
+        BufferPolyfill.from = function(data, enc) {
+            if (typeof data === 'string') return new BufferPolyfill(data);
+            if (data instanceof Uint8Array) return new BufferPolyfill(data);
+            return new BufferPolyfill(data || []);
+        };
+        BufferPolyfill.isBuffer = function(obj) { return obj instanceof BufferPolyfill; };
+        BufferPolyfill.prototype.toString = function(enc) {
+            if (enc === 'base64') {
+                let bin = '';
+                for (let i = 0; i < this.data.length; i++) bin += String.fromCharCode(this.data[i]);
+                return btoa(bin);
+            }
+            return new TextDecoder().decode(this.data);
+        };
+        BufferPolyfill.prototype.length = 0;
+        Object.defineProperty(BufferPolyfill.prototype, 'length', {
+            get: function() { return this.data.length; }
+        });
+        window.Buffer = BufferPolyfill;
+    })();
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/bsv@1.5.6/bsv.min.js"></script>
     <script>
         // BSV.js sets window.bsv (lowercase) — alias to BSV for our code
@@ -395,7 +425,7 @@
             };
         })();
     </script>
-    <script src="proof.js?v=26"></script>
+    <script src="proof.js?v=27"></script>
     <script src="../theme.js?v=1"></script>
 </body>
 </html>
