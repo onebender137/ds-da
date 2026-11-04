@@ -701,8 +701,10 @@ function initLogin() {
             else if (wif) {
                 const key = new BSV.PrivateKey(wif);
                 sigAddress = key.address();
-                const sigResult = key.sign_text(nonce);
-                signature = sigResult[1]; // base64 signature
+                // BSV standard: double SHA-256 the nonce, sign the hash, base64
+                const hash = BSV.crypto.hash.sha256a(Buffer.from(nonce, 'utf8'));
+                const sig = key.sign(hash);
+                signature = sig.toString('base64');
             }
             // Method 3: Address only (not enough — need a signature)
             else if (address) {
