@@ -704,7 +704,7 @@ function initLogin() {
                     return;
                 }
                 const key = new BSV.PrivateKey(cleanWif);
-                sigAddress = key.toAddress();  // method, not property
+                sigAddress = key.toAddress().toString();  // convert to string
                 // BSV standard: double SHA-256 the nonce, sign with ECDSA, base64
                 const BBuf = BSV.deps.Buffer;
                 const nonceBytes = BBuf.from(nonce, 'utf8');
