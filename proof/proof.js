@@ -708,7 +708,7 @@ function initLogin() {
                 // BSV standard: double SHA-256 the nonce, sign the hash, base64
                 // Use Uint8Array + btoa() (no Buffer dependency)
                 const nonceBytes = new TextEncoder().encode(nonce);
-                const hash = BSV.crypto.hash.sha256a(nonceBytes);
+                const hash = BSV.crypto.Hash.sha256a(nonceBytes);
                 const sig = key.sign(hash);
                 // Convert signature Buffer to base64
                 const sigBytes = new Uint8Array(sig);
