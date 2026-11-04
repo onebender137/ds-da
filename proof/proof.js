@@ -704,13 +704,12 @@ function initLogin() {
                     return;
                 }
                 const key = new BSV.PrivateKey(cleanWif);
-                sigAddress = key.address;  // property, not a method
-                // BSV standard: double SHA-256 the nonce, sign the hash, base64
-                // Use BSV's internal Buffer (BSV.deps.Buffer) for compatibility
+                sigAddress = key.toAddress();  // method, not property
+                // BSV standard: double SHA-256 the nonce, sign with ECDSA, base64
                 const BBuf = BSV.deps.Buffer;
                 const nonceBytes = BBuf.from(nonce, 'utf8');
                 const hash = BSV.crypto.Hash.sha256sha256(nonceBytes);
-                const sig = key.sign(hash);
+                const sig = BSV.crypto.ECDSA.sign(hash, key);
                 signature = sig.toString('base64');
             }
             // Method 3: No WIF + no wallet extension
