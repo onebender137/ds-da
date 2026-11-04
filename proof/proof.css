@@ -553,6 +553,75 @@ html.dark .qa code {
     font-size: 0.85rem;
 }
 
+/* --- WHILE YOU WAIT (block watcher) --- */
+.waiting-card {
+    border-color: rgba(201, 162, 39, 0.3);
+    background: rgba(201, 162, 39, 0.03);
+}
+.waiting-inner {
+    text-align: center;
+}
+.waiting-progress {
+    width: 100%;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 14px;
+}
+.waiting-progress-bar {
+    height: 100%;
+    width: 0%;
+    background: var(--gold);
+    border-radius: 2px;
+    transition: width 1s linear;
+}
+.waiting-countdown {
+    font-family: 'SF Mono', 'Consolas', monospace;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--gold-dark);
+    margin-bottom: 16px;
+    letter-spacing: 1px;
+}
+.waiting-fact {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    line-height: 1.6;
+    padding: 12px 16px;
+    background: rgba(201, 162, 39, 0.05);
+    border-radius: 6px;
+    border: 1px solid rgba(201, 162, 39, 0.15);
+}
+.waiting-fact-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+}
+.waiting-fact-text {
+    display: block;
+    color: var(--text-dim);
+    transition: opacity 0.3s ease;
+}
+html.dark .waiting-card {
+    border-color: rgba(201, 162, 39, 0.2);
+    background: rgba(201, 162, 39, 0.04);
+}
+html.dark .waiting-progress {
+    background: #1e293b;
+}
+html.dark .waiting-countdown {
+    color: var(--gold);
+}
+html.dark .waiting-fact {
+    background: rgba(201, 162, 39, 0.06);
+    border-color: rgba(201, 162, 39, 0.15);
+}
+
 /* --- RESPONSIVE --- */
 @media (max-width: 768px) {
     .hero { padding: 56px 20px; }

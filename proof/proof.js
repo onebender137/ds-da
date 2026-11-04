@@ -142,6 +142,57 @@ function initAnchorView() {
     }
     let pollTimer = null;
     let blockWatcherTimer = null;
+    let countdownTimer = null;
+    let factsTimer = null;
+    let countdownStart = null;
+    const COUNTDOWN_SECS = 600; // ~10 min block time
+    const BSV_FACTS = [
+        "BSV blocks can hold up to 2 GB of data — 2000x larger than Bitcoin.",
+        "The BSV blockchain has been running continuously since 2018. Zero downtime.",
+        "A full MP3 song (~10 MB) costs less than a cent to store on BSV.",
+        "BSV's unbounded blocks mean no more 'unconfirmed tx' anxiety for big data.",
+        "The BSV network is secured by miners worldwide — no single point of failure.",
+        "Your proof will outlive your hard drive, your phone, + probably your smartphone's successor.",
+        "BSV data fees are ~0.1 sat/byte — a 1 MB file costs less than a satoshi.",
+        "The blockchain is the ultimate notary: it never sleeps, never loses records, + never lies.",
+    ];
+    let factIndex = 0;
+
+    function startCountdown() {
+        if (countdownTimer) clearInterval(countdownTimer);
+        countdownStart = Date.now();
+        countdownTimer = setInterval(() => {
+            const elapsed = Math.floor((Date.now() - countdownStart) / 1000);
+            const remaining = Math.max(0, COUNTDOWN_SECS - elapsed);
+            const min = Math.floor(remaining / 60);
+            const sec = remaining % 60;
+            const el = document.getElementById('blockCountdown');
+            if (el) el.textContent = 'Next block in ~' + min + ':' + String(sec).padStart(2, '0');
+            // Update progress bar
+            const bar = document.getElementById('blockProgress');
+            if (bar) bar.style.width = Math.min(100, (elapsed / COUNTDOWN_SECS) * 100) + '%';
+            if (remaining <= 0) {
+                clearInterval(countdownTimer);
+                countdownTimer = null;
+            }
+        }, 1000);
+    }
+    function startFacts() {
+        if (factsTimer) clearInterval(factsTimer);
+        factIndex = Math.floor(Math.random() * BSV_FACTS.length);
+        const el = document.getElementById('bsvFact');
+        if (el) el.textContent = BSV_FACTS[factIndex];
+        factsTimer = setInterval(() => {
+            factIndex = (factIndex + 1) % BSV_FACTS.length;
+            const e = document.getElementById('bsvFact');
+            if (e) e.textContent = BSV_FACTS[factIndex];
+        }, 15000);
+    }
+    function stopWaitingAnimations() {
+        if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
+        if (factsTimer) { clearInterval(factsTimer); factsTimer = null; }
+    }
+
     function startPaymentPolling() {
         // Clear any existing poll timer
         if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
@@ -149,15 +200,16 @@ function initAnchorView() {
         const statusEl = document.getElementById('payStatus');
         if (statusEl) statusEl.textContent = '⏳ Waiting for payment… (auto-detects when you send)';
         const sat = state.expected_sat || 1;
+        let waitingStarted = false;
         pollTimer = setInterval(async () => {
             try {
                 // Check 1: auto-detect a new confirmed payment (UTXO scan)
                 const { j: res } = await apiPost('/api/check-payment', { expected_sat: sat });
                 if (res.paid) {
-                    // Payment detected + confirmed! Stop polling + auto-anchor
+                    stopWaitingAnimations();
                     if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
                     if (blockWatcherTimer) { clearInterval(blockWatcherTimer); blockWatcherTimer = null; }
-                    if (statusEl) statusEl.textContent = '✅ Payment confirmed! Anchoring…';
+                    if (statusEl) statusEl.innerHTML = '✅ Payment confirmed! Anchoring…';
                     const anchorBtn = document.getElementById('anchorBtn');
                     if (anchorBtn) anchorBtn.click();
                     return;
@@ -167,22 +219,27 @@ function initAnchorView() {
                 if (/^[0-9a-f]{64}$/i.test(payTxid)) {
                     const { j: txSt } = await apiPost('/api/tx-status', { txid: payTxid });
                     if (txSt.confirmed) {
-                        // Tx is confirmed! Stop + anchor
+                        stopWaitingAnimations();
                         if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
                         if (blockWatcherTimer) { clearInterval(blockWatcherTimer); blockWatcherTimer = null; }
-                        if (statusEl) statusEl.textContent = '✅ Payment confirmed! Anchoring…';
+                        if (statusEl) statusEl.innerHTML = '✅ Payment confirmed! Anchoring…';
                         const anchorBtn = document.getElementById('anchorBtn');
                         if (anchorBtn) anchorBtn.click();
                     } else if (txSt.confirmations === 0 && txSt.amount_sat > 0) {
                         // Tx is in the mempool (unconfirmed) — show block watcher
+                        if (!waitingStarted) {
+                            waitingStarted = true;
+                            startCountdown();
+                            startFacts();
+                            // Show the "while you wait" section
+                            const waitSec = document.getElementById('waitingSection');
+                            if (waitSec) waitSec.style.display = 'block';
+                        }
                         if (statusEl) {
                             statusEl.innerHTML =
-                                '🕐 Payment detected — waiting for block confirmation<br>' +
-                                '<span style="font-size:0.85em;opacity:0.7">' +
-                                '0/1 confirmations · ~10 min per block · please wait</span>';
+                                '🕐 Payment detected — waiting for block confirmation';
                         }
                     } else if (txSt.confirmations === 0 && txSt.amount_sat === 0) {
-                        // Tx exists but doesn't pay us (or not found yet)
                         if (statusEl) {
                             statusEl.textContent =
                                 '🕐 Tx found — waiting for it to pay the notary address…';

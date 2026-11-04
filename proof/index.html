@@ -11,7 +11,7 @@
     <meta property="og:description" content="Immutable BSV-anchored proof of creation. Verifiable by anyone.">
     <link rel="canonical" href="https://ds-da.ca/proof/">
     <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
-    <link rel="stylesheet" href="proof.css?v=3">
+    <link rel="stylesheet" href="proof.css?v=4">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script>
       // Apply the saved theme on load (before the page renders, to avoid a flash)
@@ -108,6 +108,20 @@
                 </div>
                 <label class="field">Your payment txid</label>
                 <input type="text" id="payTxid" placeholder="Paste your payment txid (64 hex chars)…">
+            </div>
+
+            <!-- WHILE YOU WAIT (shown when payment is unconfirmed) -->
+            <div class="card waiting-card" id="waitingSection" style="display:none">
+                <div class="waiting-inner">
+                    <div class="waiting-progress">
+                        <div class="waiting-progress-bar" id="blockProgress"></div>
+                    </div>
+                    <div class="waiting-countdown" id="blockCountdown">Next block in ~10:00</div>
+                    <div class="waiting-fact">
+                        <span class="waiting-fact-label">💡 While you wait…</span>
+                        <span class="waiting-fact-text" id="bsvFact">BSV blocks can hold up to 2 GB of data — 2000x larger than Bitcoin.</span>
+                    </div>
+                </div>
             </div>
 
             <div class="card">
@@ -208,6 +222,12 @@
                 <p>Three reasons: <b>(1) Unbounded blocks</b> — BSV allows MB-scale data in a single transaction (Bitcoin caps at 1 MB; BSV goes to 2 GB blocks). <b>(2) Cheap data</b> — the data fee is ~0.1 sat/byte, so a full song is pennies. <b>(3) Permanent</b> — the BSV blockchain is decentralized + has been running since 2018. It's not going away.</p>
             </div>
             <div class="qa">
+                <h2>How long does it take?</h2>
+                <p>After you send your payment, the BSV network needs to <b>confirm the transaction</b> before we can anchor your file. BSV miners produce a new block roughly every <b>10 minutes</b>, so your payment typically confirms within one block (~10 min).</p>
+                <p>While you wait, the page shows a <b>live status</b> — "Payment detected — waiting for block confirmation" — + a countdown. You don't need to refresh; the page watches the chain for you + anchors automatically the moment your payment confirms.</p>
+                <p>Think of it like dropping a letter in a mailbox: the letter (your payment) is in the system, the mail truck (the next block) is on its way, + the moment it arrives, your proof is stamped + permanent. No action needed from you — just wait for the confirmation.</p>
+            </div>
+            <div class="qa">
                 <h2>What can I anchor?</h2>
                 <p>Anything with bytes: photos, MP3s, videos, documents, contracts, designs, code, patents, tweets, art, recipes, love letters. If it's a file, it can be anchored. We've tested photos, MP3s, GIFs, + text — all work.</p>
             </div>
@@ -237,7 +257,7 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-    <script src="proof.js?v=7"></script>
+    <script src="proof.js?v=8"></script>
     <script src="../theme.js?v=1"></script>
 </body>
 </html>
