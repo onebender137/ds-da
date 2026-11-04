@@ -21,6 +21,11 @@
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
     <link rel="stylesheet" href="style.css?v=2.0.0">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script>
+      // Apply the saved theme on load (before the page renders, to avoid a flash)
+      (function(){var t=localStorage.getItem('dsda-theme')||'light';
+      if(t==='dark')document.documentElement.classList.add('dark');})();
+    </script>
 </head>
 <body>
 
@@ -29,6 +34,10 @@
         <div class="header-inner">
             <a href="/" class="logo">DSDA</a>
             <nav class="nav">
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                    <span class="theme-icon">☀️</span>
+                    <span class="theme-label">Light</span>
+                </button>
                 <a href="https://hopes-and-dreams.ca">Hopes &amp; Dreams</a>
                 <a href="https://polkahole.ca">Polkahole</a>
                 <a href="proof/">Proof of Creation</a>
@@ -85,5 +94,6 @@
         </div>
     </footer>
 
+    <script src="theme.js?v=1"></script>
 </body>
 </html>

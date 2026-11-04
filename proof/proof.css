@@ -487,3 +487,107 @@ label.field {
     .drop { padding: 28px 16px; }
     .footer-inner { flex-direction: column; gap: 8px; text-align: center; }
 }
+
+/* --- THEME TOGGLE (pill button) --- */
+.theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--white);
+    color: var(--text-dim);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.theme-toggle:hover {
+    border-color: var(--gold);
+    color: var(--navy);
+}
+.theme-toggle .theme-icon { font-size: 0.9rem; }
+.theme-toggle .theme-label { white-space: nowrap; }
+
+/* --- DARK MODE --- */
+html.dark {
+    --white: #0a1628;
+    --navy: #060d18;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --border: #1e293b;
+    --card-bg: #132038;
+}
+html.dark .header {
+    background: rgba(10, 22, 40, 0.95);
+    border-bottom-color: #1e293b;
+}
+html.dark .logo { color: #e2e8f0; }
+html.dark .nav a { color: #94a3b8; }
+html.dark .nav a:hover { color: #e2e8f0; }
+html.dark .wallet-status { color: #94a3b8; }
+html.dark .hero { background: #060d18; }
+html.dark .hero-title { color: #fafaf8; }
+html.dark .hero-sub { color: rgba(250, 250, 248, 0.6); }
+html.dark .card {
+    background: #132038;
+    border-color: #1e293b;
+}
+html.dark .card:hover {
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+html.dark .card h2 { color: #e2e8f0; }
+html.dark .card .desc { color: #94a3b8; }
+html.dark .tier {
+    background: #132038;
+    border-color: #1e293b;
+}
+html.dark .tier .t { color: #e2e8f0; }
+html.dark .tier .d { color: #94a3b8; }
+html.dark .tier.sel {
+    background: rgba(201, 162, 39, 0.08);
+    border-color: var(--gold);
+}
+html.dark .drop {
+    border-color: #1e293b;
+    color: #94a3b8;
+}
+html.dark .drop:hover, html.dark .drop.over {
+    border-color: var(--gold);
+    color: #e2e8f0;
+    background: rgba(201, 162, 39, 0.06);
+}
+html.dark textarea, html.dark input[type="text"] {
+    background: #0a1628;
+    border-color: #1e293b;
+    color: #e2e8f0;
+}
+html.dark .pay-address {
+    background: #0a1628;
+    border-color: #1e293b;
+    color: #e2e8f0;
+}
+html.dark .kv .k { color: #94a3b8; }
+html.dark .kv .v { color: #e2e8f0; }
+html.dark .qa {
+    background: #132038;
+    border-color: #1e293b;
+}
+html.dark .qa:hover {
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+html.dark .qa h2 { color: #e2e8f0; }
+html.dark .qa p { color: #cbd5e1; }
+html.dark .footer { border-top-color: #1e293b; }
+html.dark .theme-toggle {
+    background: #132038;
+    border-color: #1e293b;
+    color: #94a3b8;
+}
+html.dark .theme-toggle:hover {
+    border-color: var(--gold);
+    color: #e2e8f0;
+}
