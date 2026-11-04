@@ -141,22 +141,53 @@ function initAnchorView() {
         startPaymentPolling();
     }
     let pollTimer = null;
+    let blockWatcherTimer = null;
     function startPaymentPolling() {
         // Clear any existing poll timer
         if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+        if (blockWatcherTimer) { clearInterval(blockWatcherTimer); blockWatcherTimer = null; }
         const statusEl = document.getElementById('payStatus');
         if (statusEl) statusEl.textContent = '⏳ Waiting for payment… (auto-detects when you send)';
         const sat = state.expected_sat || 1;
         pollTimer = setInterval(async () => {
             try {
+                // Check 1: auto-detect a new confirmed payment (UTXO scan)
                 const { j: res } = await apiPost('/api/check-payment', { expected_sat: sat });
                 if (res.paid) {
-                    // Payment detected! Stop polling + auto-anchor
+                    // Payment detected + confirmed! Stop polling + auto-anchor
                     if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
-                    if (statusEl) statusEl.textContent = '✅ Payment detected! Anchoring…';
-                    // Auto-anchor (call the anchor button's click handler)
+                    if (blockWatcherTimer) { clearInterval(blockWatcherTimer); blockWatcherTimer = null; }
+                    if (statusEl) statusEl.textContent = '✅ Payment confirmed! Anchoring…';
                     const anchorBtn = document.getElementById('anchorBtn');
                     if (anchorBtn) anchorBtn.click();
+                    return;
+                }
+                // Check 2: if the customer entered a txid, watch for confirmation
+                const payTxid = document.getElementById('payTxid').value.trim();
+                if (/^[0-9a-f]{64}$/i.test(payTxid)) {
+                    const { j: txSt } = await apiPost('/api/tx-status', { txid: payTxid });
+                    if (txSt.confirmed) {
+                        // Tx is confirmed! Stop + anchor
+                        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+                        if (blockWatcherTimer) { clearInterval(blockWatcherTimer); blockWatcherTimer = null; }
+                        if (statusEl) statusEl.textContent = '✅ Payment confirmed! Anchoring…';
+                        const anchorBtn = document.getElementById('anchorBtn');
+                        if (anchorBtn) anchorBtn.click();
+                    } else if (txSt.confirmations === 0 && txSt.amount_sat > 0) {
+                        // Tx is in the mempool (unconfirmed) — show block watcher
+                        if (statusEl) {
+                            statusEl.innerHTML =
+                                '🕐 Payment detected — waiting for block confirmation<br>' +
+                                '<span style="font-size:0.85em;opacity:0.7">' +
+                                '0/1 confirmations · ~10 min per block · please wait</span>';
+                        }
+                    } else if (txSt.confirmations === 0 && txSt.amount_sat === 0) {
+                        // Tx exists but doesn't pay us (or not found yet)
+                        if (statusEl) {
+                            statusEl.textContent =
+                                '🕐 Tx found — waiting for it to pay the notary address…';
+                        }
+                    }
                 }
             } catch (e) {
                 // API offline — keep polling (don't spam the user)
