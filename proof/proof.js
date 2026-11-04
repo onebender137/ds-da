@@ -933,6 +933,50 @@ function initDashboard() {
                 '</div>'
             ).join('');
         }).catch(() => {});
+        // Load API key status
+        api('/api/key', { credentials: 'include' }).then(({ j }) => {
+            const el = document.getElementById('apiKeySection');
+            if (!el) return;
+            if (j.has_key) {
+                el.innerHTML = '<p class="muted">API key active since ' + (j.info ? new Date(j.info.created_at).toLocaleDateString() : '—') + '</p>' +
+                    '<div class="api-key-actions">' +
+                    '<button class="btn btn-secondary" id="apiKeyRevokeBtn" style="width:auto">Revoke Key</button>' +
+                    '</div>';
+                // Wire up revoke button
+                const revokeBtn = document.getElementById('apiKeyRevokeBtn');
+                if (revokeBtn) revokeBtn.addEventListener('click', () => {
+                    if (confirm('Revoke your API key? Any integrations using it will stop working.')) {
+                        fetch(API_BASE + '/api/key', { method: 'DELETE', credentials: 'include' })
+                            .then(r => r.json())
+                            .then(rj => {
+                                if (rj.ok) loadDashboard();
+                            });
+                    }
+                });
+            } else {
+                el.innerHTML = '<p class="muted">No API key yet.</p>' +
+                    '<button class="btn btn-secondary" id="apiKeyGenBtn" style="margin-top:8px;width:auto">Generate API Key</button>';
+                // Wire up generate button
+                const genBtn = document.getElementById('apiKeyGenBtn');
+                if (genBtn) genBtn.addEventListener('click', () => {
+                    apiPost('/api/key', {}, { credentials: 'include' }).then(({ j }) => {
+                        if (j.ok && j.key) {
+                            el.innerHTML = '<p class="muted"><strong>Save this key now — it won\'t be shown again:</strong></p>' +
+                                '<code class="api-key-display">' + j.key + '</code>' +
+                                '<button class="btn btn-secondary" id="apiKeyCopyBtn" style="margin-top:8px;width:auto">Copy to Clipboard</button>' +
+                                '<p class="muted" style="margin-top:8px;font-size:0.75rem">' + (j.warning || '') + '</p>';
+                            // Wire up copy button
+                            const copyBtn = document.getElementById('apiKeyCopyBtn');
+                            if (copyBtn) copyBtn.addEventListener('click', () => {
+                                navigator.clipboard.writeText(j.key).then(() => {
+                                    copyBtn.textContent = '✓ Copied!';
+                                });
+                            });
+                        }
+                    });
+                });
+            }
+        }).catch(() => {});
     }).catch(() => {
         location.href = '?view=anchor';
     });
