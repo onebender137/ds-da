@@ -825,6 +825,34 @@ html.dark .modal input {
     padding-top: 8px;
     border-top: 1px solid var(--border);
 }
+/* Share grid (proof QR code) */
+.share-grid {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 24px;
+    align-items: start;
+    margin-top: 16px;
+}
+.share-right {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.share-qr {
+    background: #ffffff;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    line-height: 1;
+}
+@media (max-width: 600px) {
+    .share-grid {
+        grid-template-columns: 1fr;
+    }
+    .share-right {
+        order: -1;
+    }
+}
 /* Dashboard */
 .dash-stats {
     display: flex;

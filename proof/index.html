@@ -11,7 +11,7 @@
     <meta property="og:description" content="Immutable BSV-anchored proof of creation. Verifiable by anyone.">
     <link rel="canonical" href="https://ds-da.ca/proof/">
     <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
-    <link rel="stylesheet" href="proof.css?v=8">
+    <link rel="stylesheet" href="proof.css?v=9">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script>
       // Apply the saved theme on load (before the page renders, to avoid a flash)
@@ -154,16 +154,24 @@
 
             <div class="card">
                 <h2>Share this proof</h2>
-                <div class="desc">Send the receipt to someone, or share the link. Anyone can verify it — no login, no trust in us required.</div>
-                <button class="btn btn-primary" id="shareBtn">Share / email this proof</button>
-                <div id="shareMenu" style="display:none;margin-top:12px">
-                    <div class="btn-row">
-                        <button class="btn btn-secondary" id="shareEmail">Email</button>
-                        <button class="btn btn-secondary" id="shareCopy">Copy link</button>
-                        <button class="btn btn-secondary" id="shareSocial">Social</button>
+                <div class="desc">Send the receipt to someone, or share the link. Anyone can verify it — no login, no trust in us required. Scan the QR code with your phone to open this proof.</div>
+                <div class="share-grid">
+                    <div class="share-left">
+                        <button class="btn btn-primary" id="shareBtn">Share / email this proof</button>
+                        <div id="shareMenu" style="display:none;margin-top:12px">
+                            <div class="btn-row">
+                                <button class="btn btn-secondary" id="shareEmail">Email</button>
+                                <button class="btn btn-secondary" id="shareCopy">Copy link</button>
+                                <button class="btn btn-secondary" id="shareSocial">Social</button>
+                            </div>
+                        </div>
+                        <div id="shareStatus" class="muted"></div>
+                    </div>
+                    <div class="share-right">
+                        <div class="share-qr" id="proofQR"></div>
+                        <div class="muted" style="text-align:center;font-size:0.75rem;margin-top:8px">Scan to open this proof</div>
                     </div>
                 </div>
-                <div id="shareStatus" class="muted"></div>
             </div>
 
             <div class="card" id="contentCard" style="display:none">
@@ -366,7 +374,7 @@
             };
         })();
     </script>
-    <script src="proof.js?v=13"></script>
+    <script src="proof.js?v=14"></script>
     <script src="../theme.js?v=1"></script>
 </body>
 </html>

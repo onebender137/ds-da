@@ -465,6 +465,19 @@ function initProofView(txid) {
     api('/api/lookup/' + txid).then(({ j: onchain }) => {
         if (onchain.txid) { cert = onchain; renderCert(cert); }
         else { document.getElementById('kv').innerHTML = '<span class="v">No on-chain data found for this txid.</span>'; }
+        // Render the proof QR code (scan → opens this proof page)
+        const proofUrl = location.origin + location.pathname + '?txid=' + txid;
+        const qrEl = document.getElementById('proofQR');
+        if (qrEl && typeof QRCode !== 'undefined') {
+            new QRCode(qrEl, {
+                text: proofUrl,
+                width: 160,
+                height: 160,
+                colorDark: '#0a1628',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.M
+            });
+        }
     }).catch(() => {
         document.getElementById('kv').innerHTML = '<span class="v">Lookup failed — check the txid.</span>';
     });
