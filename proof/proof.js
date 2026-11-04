@@ -808,13 +808,15 @@ function initDashboard() {
             el.innerHTML = j.proofs.map(p => {
                 const tags = p.tags ? (typeof p.tags === 'string' ? JSON.parse(p.tags) : p.tags) : [];
                 const tagHtml = tags.map(t => '<span class="dash-tag">' + esc(t) + '</span>').join('');
+                const lastVerified = p.last_verified ? new Date(p.last_verified).toLocaleString() : 'never';
                 return '<div class="dash-item" data-txid="' + p.txid + '">' +
                     '<div class="dash-item-row">' +
                     '<a href="?txid=' + p.txid + '" class="dash-item-title">' + esc(p.title || 'untitled') + '</a>' +
                     '<button class="dash-rename-btn" title="Rename">✏️</button>' +
+                    '<button class="dash-verify-btn" title="Mark as verified">✓</button>' +
                     '</div>' +
                     '<span class="dash-item-meta">' + p.tier + ' · ' + (p.size_bytes || 0).toLocaleString() + ' bytes · ' +
-                    new Date(p.created_at * 1000).toLocaleDateString() + '</span>' +
+                    new Date(p.created_at * 1000).toLocaleDateString() + ' · verified: ' + lastVerified + '</span>' +
                     '<div class="dash-tags">' + tagHtml + '<button class="dash-add-tag-btn" title="Add tag">+ tag</button></div>' +
                     '<input type="text" class="dash-tag-input" placeholder="Add a tag…" style="display:none">' +
                     '</div>';
@@ -863,7 +865,43 @@ function initDashboard() {
                     };
                 });
             });
+            // Wire up the verify button
+            el.querySelectorAll('.dash-verify-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const item = btn.closest('.dash-item');
+                    const txid = item.getAttribute('data-txid');
+                    api('/api/verify-proof-history?txid=' + txid, { credentials: 'include' }).then(({ j }) => {
+                        if (j.ok) {
+                            const metaEl = item.querySelector('.dash-item-meta');
+                            if (metaEl) {
+                                // Update the verified timestamp in the meta
+                                const now = new Date().toLocaleString();
+                                metaEl.textContent = metaEl.textContent.replace(/verified: .*$/, 'verified: ' + now);
+                            }
+                            btn.textContent = '✓✓';
+                            btn.title = 'Verified just now';
+                        }
+                    });
+                });
+            });
         }).catch(() => {});
+        // Export CSV button
+        const exportBtn = document.getElementById('dashExportBtn');
+        if (exportBtn) exportBtn.addEventListener('click', () => {
+            // Trigger a download of the CSV
+            const link = document.createElement('a');
+            link.href = API_BASE + '/api/export-proofs';
+            link.download = 'dsda-proofs.csv';
+            // Need to use fetch + blob for CORS + cookies
+            fetch(API_BASE + '/api/export-proofs', { credentials: 'include' })
+                .then(res => res.blob())
+                .then(blob => {
+                    const url = URL.createObjectURL(blob);
+                    link.href = url;
+                    link.click();
+                    URL.revokeObjectURL(url);
+                });
+        });
         // Load collections
         loadCollections();
         // Create collection button

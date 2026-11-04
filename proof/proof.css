@@ -927,6 +927,42 @@ html.dark .dash-item-title { color: #e2e8f0; }
 .dash-rename-btn:hover {
     opacity: 1;
 }
+.dash-verify-btn {
+    background: none;
+    border: none;
+    color: var(--gold);
+    font-size: 0.85rem;
+    cursor: pointer;
+    opacity: 0.5;
+    transition: opacity 0.15s;
+    padding: 2px 6px;
+}
+.dash-verify-btn:hover {
+    opacity: 1;
+}
+.dash-proofs-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+.dash-export-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.dash-export-btn:hover {
+    border-color: var(--gold);
+    color: var(--gold-dark);
+}
+html.dark .dash-export-btn:hover {
+    color: var(--gold);
+}
 .dash-tags {
     display: flex;
     flex-wrap: wrap;

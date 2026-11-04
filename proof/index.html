@@ -11,7 +11,7 @@
     <meta property="og:description" content="Immutable BSV-anchored proof of creation. Verifiable by anyone.">
     <link rel="canonical" href="https://ds-da.ca/proof/">
     <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
-    <link rel="stylesheet" href="proof.css?v=11">
+    <link rel="stylesheet" href="proof.css?v=12">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script>
       // Apply the saved theme on load (before the page renders, to avoid a flash)
@@ -274,6 +274,10 @@
 
             <div class="card">
                 <h2>📜 My Proofs</h2>
+                <div class="dash-proofs-header">
+                    <span class="muted">Your anchored proofs</span>
+                    <button class="dash-export-btn" id="dashExportBtn">⬇ Export CSV</button>
+                </div>
                 <div id="dashProofs" class="dash-list">
                     <p class="muted">No proofs yet. Anchor something to get started!</p>
                 </div>
@@ -394,7 +398,7 @@
             };
         })();
     </script>
-    <script src="proof.js?v=37"></script>
+    <script src="proof.js?v=38"></script>
     <script src="../theme.js?v=1"></script>
 </body>
 </html>
