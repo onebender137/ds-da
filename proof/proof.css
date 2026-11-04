@@ -622,6 +622,81 @@ html.dark .waiting-fact {
     border-color: rgba(201, 162, 39, 0.15);
 }
 
+/* --- TIP JAR (collapsible) --- */
+.tip-jar {
+    padding: 36px 24px;
+    text-align: center;
+    border-top: 1px solid var(--border);
+}
+.tip-jar-inner {
+    max-width: 520px;
+    margin: 0 auto;
+}
+.tip-jar-toggle {
+    background: none;
+    border: none;
+    color: var(--gold);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 8px 16px;
+    transition: color 0.2s ease;
+    letter-spacing: 0.5px;
+}
+.tip-jar-toggle:hover {
+    color: var(--gold-dark);
+}
+.tip-jar-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease, opacity 0.3s ease;
+    opacity: 0;
+}
+.tip-jar-content.expanded {
+    max-height: 300px;
+    opacity: 1;
+    margin-top: 20px;
+}
+.tip-jar-grid {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+}
+.tip-qr {
+    background: #ffffff;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+}
+.tip-info {
+    text-align: left;
+    flex: 1;
+}
+.tip-address {
+    font-family: 'Courier New', monospace;
+    font-size: 0.82rem;
+    color: var(--text);
+    word-break: break-all;
+    margin-bottom: 14px;
+    line-height: 1.5;
+}
+.tip-copy-btn {
+    display: inline-block;
+    width: auto;
+    margin-top: 0;
+    padding: 10px 22px;
+}
+html.dark .tip-jar-toggle { color: var(--gold); }
+html.dark .tip-jar-toggle:hover { color: var(--gold); }
+html.dark .tip-qr {
+    background: #ffffff;
+    border-color: #1e293b;
+}
+html.dark .tip-address { color: #e2e8f0; }
+
 /* --- RESPONSIVE --- */
 @media (max-width: 768px) {
     .hero { padding: 56px 20px; }
@@ -636,6 +711,9 @@ html.dark .waiting-fact {
     .btn-row { flex-direction: column; }
     .drop { padding: 28px 16px; }
     .footer-inner { flex-direction: column; gap: 8px; text-align: center; }
+    .tip-jar { padding: 28px 16px; }
+    .tip-jar-grid { flex-direction: column; gap: 16px; }
+    .tip-info { text-align: center; }
 }
 
 /* --- THEME TOGGLE (pill button) --- */
