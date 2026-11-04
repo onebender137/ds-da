@@ -950,7 +950,12 @@ function initDashboard() {
         // API key button handlers (event delegation — buttons are re-created on load)
         document.getElementById('apiKeySection').addEventListener('click', (e) => {
             if (e.target.id === 'apiKeyGenBtn') {
-                apiPost('/api/key', {}, { credentials: 'include' }).then(({ j }) => {
+                fetch(API_BASE + '/api/key', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({}),
+                    credentials: 'include'
+                }).then(r => r.json()).then(j => {
                     if (j.ok && j.key) {
                         const el = document.getElementById('apiKeySection');
                         el.innerHTML = '<p class="muted"><strong>Save this key now — it won\'t be shown again:</strong></p>' +
