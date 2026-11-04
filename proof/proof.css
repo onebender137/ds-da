@@ -410,6 +410,16 @@ html.dark .pay-status {
     border-color: var(--gold);
     color: var(--gold-dark);
 }
+/* Dark mode: the secondary buttons need light text + a visible background */
+html.dark .btn-secondary {
+    color: #e2e8f0;
+    border-color: #1e293b;
+    background: #132038;
+}
+html.dark .btn-secondary:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+}
 .btn:disabled { opacity: 0.4; cursor: default; }
 .btn-row { display: flex; gap: 12px; }
 .btn-row .btn { flex: 1; }
