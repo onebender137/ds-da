@@ -4,9 +4,9 @@
    The backend API lives on bigboy (port 8796, served under /dsda/).
    ========================================================================== */
 
-// API base URL. Tailnet for now; switch to a public URL (e.g. https://api.ds-da.ca)
-// when the service goes live. The backend sends CORS: *, so cross-origin works.
-const API_BASE = 'https://bigboy.tail78c43c.ts.net/dsda';
+// API base URL. Cloudflare Tunnel (public, no Tailscale required).
+// The backend sends CORS: *, so cross-origin works.
+const API_BASE = 'https://api.ds-da.ca';
 const NOTARY_ADDRESS = '14nn7V37RkgaYjieZQeafeYeyeWxgkJTsQ';
 
 // --- helpers ---
