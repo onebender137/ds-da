@@ -886,8 +886,8 @@ html.dark .dash-stat-num { color: var(--gold); }
 }
 .dash-item {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-start;
     padding: 12px 16px;
     background: rgba(201, 162, 39, 0.03);
     border: 1px solid var(--border);
@@ -909,6 +909,66 @@ html.dark .dash-item-title { color: #e2e8f0; }
 .dash-item-meta {
     font-size: 0.8rem;
     color: var(--text-dim);
+}
+.dash-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+.dash-rename-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    opacity: 0.5;
+    transition: opacity 0.15s;
+}
+.dash-rename-btn:hover {
+    opacity: 1;
+}
+.dash-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+    align-items: center;
+    width: 100%;
+}
+.dash-tag {
+    background: rgba(201, 162, 39, 0.12);
+    color: var(--gold-dark);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 500;
+}
+html.dark .dash-tag {
+    background: rgba(201, 162, 39, 0.2);
+    color: #c9a227;
+}
+.dash-add-tag-btn {
+    background: none;
+    border: 1px dashed var(--border);
+    color: var(--text-dim);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    cursor: pointer;
+}
+.dash-add-tag-btn:hover {
+    border-color: var(--gold);
+    color: var(--gold-dark);
+}
+.dash-tag-input {
+    margin-top: 6px;
+    padding: 4px 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.75rem;
+    background: var(--bg-card);
+    color: var(--text);
+    width: 120px;
 }
 
 /* --- RESPONSIVE --- */

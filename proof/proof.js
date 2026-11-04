@@ -711,7 +711,7 @@ function initDashboard() {
                 '<div><span class="k">MEMBER SINCE</span><span class="v">' + new Date(user.created_at * 1000).toLocaleDateString() + '</span></div>' +
                 '<div><span class="k">LAST LOGIN</span><span class="v">' + new Date(user.last_login * 1000).toLocaleString() + '</span></div>';
         }
-        // Load proofs
+        // Load proofs (with tags + rename)
         api('/api/my-proofs', { credentials: 'include' }).then(({ j }) => {
             const el = document.getElementById('dashProofs');
             if (!el) return;
@@ -719,13 +719,64 @@ function initDashboard() {
                 el.innerHTML = '<p class="muted">No proofs yet. Anchor something to get started!</p>';
                 return;
             }
-            el.innerHTML = j.proofs.map(p =>
-                '<div class="dash-item">' +
-                '<a href="?txid=' + p.txid + '" class="dash-item-title">' + esc(p.title || 'untitled') + '</a>' +
-                '<span class="dash-item-meta">' + p.tier + ' · ' + (p.size_bytes || 0).toLocaleString() + ' bytes · ' +
-                new Date(p.created_at * 1000).toLocaleDateString() + '</span>' +
-                '</div>'
-            ).join('');
+            el.innerHTML = j.proofs.map(p => {
+                const tags = p.tags ? (typeof p.tags === 'string' ? JSON.parse(p.tags) : p.tags) : [];
+                const tagHtml = tags.map(t => '<span class="dash-tag">' + esc(t) + '</span>').join('');
+                return '<div class="dash-item" data-txid="' + p.txid + '">' +
+                    '<div class="dash-item-row">' +
+                    '<a href="?txid=' + p.txid + '" class="dash-item-title">' + esc(p.title || 'untitled') + '</a>' +
+                    '<button class="dash-rename-btn" title="Rename">✏️</button>' +
+                    '</div>' +
+                    '<span class="dash-item-meta">' + p.tier + ' · ' + (p.size_bytes || 0).toLocaleString() + ' bytes · ' +
+                    new Date(p.created_at * 1000).toLocaleDateString() + '</span>' +
+                    '<div class="dash-tags">' + tagHtml + '<button class="dash-add-tag-btn" title="Add tag">+ tag</button></div>' +
+                    '<input type="text" class="dash-tag-input" placeholder="Add a tag…" style="display:none">' +
+                    '</div>';
+            }).join('');
+            // Wire up the rename + tag buttons
+            el.querySelectorAll('.dash-rename-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const item = btn.closest('.dash-item');
+                    const txid = item.getAttribute('data-txid');
+                    const titleEl = item.querySelector('.dash-item-title');
+                    const currentTitle = titleEl.textContent;
+                    const newTitle = prompt('Rename this proof:', currentTitle);
+                    if (newTitle && newTitle.trim() && newTitle !== currentTitle) {
+                        apiPost('/api/rename-proof', { txid, title: newTitle.trim() }, { credentials: 'include' })
+                            .then(({ j }) => {
+                                if (j.ok) titleEl.textContent = newTitle.trim();
+                            });
+                    }
+                });
+            });
+            el.querySelectorAll('.dash-add-tag-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const item = btn.closest('.dash-item');
+                    const input = item.querySelector('.dash-tag-input');
+                    input.style.display = 'block';
+                    input.focus();
+                    input.onkeydown = (e) => {
+                        if (e.key === 'Enter' && input.value.trim()) {
+                            const txid = item.getAttribute('data-txid');
+                            const tagsEl = item.querySelector('.dash-tags');
+                            const existing = Array.from(tagsEl.querySelectorAll('.dash-tag')).map(t => t.textContent);
+                            const newTag = input.value.trim();
+                            if (!existing.includes(newTag)) {
+                                const tagSpan = document.createElement('span');
+                                tagSpan.className = 'dash-tag';
+                                tagSpan.textContent = newTag;
+                                tagsEl.insertBefore(tagSpan, btn);
+                                apiPost('/api/tag-proof', { txid, tags: [...existing, newTag] }, { credentials: 'include' });
+                            }
+                            input.value = '';
+                            input.style.display = 'none';
+                        }
+                        if (e.key === 'Escape') {
+                            input.style.display = 'none';
+                        }
+                    };
+                });
+            });
         }).catch(() => {});
         // Load payments
         api('/api/my-payments', { credentials: 'include' }).then(({ j }) => {
