@@ -1090,6 +1090,9 @@ html.dark .dash-tag {
     .tip-jar { padding: 28px 16px; }
     .tip-jar-grid { flex-direction: column; gap: 16px; }
     .tip-info { text-align: center; }
+    /* Mobile: theme toggle = icon only (saves nav space) */
+    .theme-toggle .theme-label { display: none; }
+    .theme-toggle { padding: 6px 10px; gap: 0; }
 }
 
 /* --- THEME TOGGLE (pill button) --- */
