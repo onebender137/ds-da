@@ -1075,6 +1075,55 @@ function loadCollections() {
     }).catch(() => {});
 }
 
+// ===================== CREATE WALLET =====================
+function initCreateWallet() {
+    const createBtn = document.getElementById('createWalletBtn');
+    const walletModal = document.getElementById('walletModal');
+    const walletClose = document.getElementById('walletModalClose');
+    const walletDone = document.getElementById('walletDoneBtn');
+    if (!createBtn || !walletModal) return;
+
+    createBtn.addEventListener('click', () => {
+        try {
+            const key = new BSV.PrivateKey(); // random key
+            const address = key.toAddress().toString();
+            const wif = key.toWIF();
+            document.getElementById('walletAddress').value = address;
+            document.getElementById('walletWif').value = wif;
+            document.getElementById('loginModal').style.display = 'none';
+            walletModal.style.display = 'flex';
+        } catch (e) {
+            alert('Error creating wallet: ' + e.message);
+        }
+    });
+
+    const closeWallet = () => { walletModal.style.display = 'none'; };
+    walletClose.addEventListener('click', closeWallet);
+    walletDone.addEventListener('click', () => {
+        closeWallet();
+        // Pre-fill the WIF in the login form so they can log in immediately
+        const wif = document.getElementById('walletWif').value;
+        const loginWif = document.getElementById('loginWif');
+        if (wif && loginWif) loginWif.value = wif;
+        document.getElementById('loginModal').style.display = 'flex';
+    });
+    walletModal.addEventListener('click', (e) => { if (e.target === walletModal) closeWallet(); });
+
+    // Copy buttons
+    document.querySelectorAll('.btn-copy').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const id = btn.dataset.copy;
+            const input = document.getElementById(id);
+            if (input) {
+                navigator.clipboard.writeText(input.value).then(() => {
+                    btn.textContent = '✓';
+                    setTimeout(() => btn.textContent = '⧉', 1500);
+                });
+            }
+        });
+    });
+}
+
 // ===================== INIT =====================
 function init() {
     const params = new URLSearchParams(location.search);
@@ -1086,5 +1135,6 @@ function init() {
     else { showView('anchor'); initAnchorView(); }
     loadStatus();
     initLogin();
+    initCreateWallet();
 }
 document.addEventListener('DOMContentLoaded', init);

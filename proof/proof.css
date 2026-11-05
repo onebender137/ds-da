@@ -1210,3 +1210,42 @@ html.dark ::-webkit-scrollbar-thumb {
 html.dark ::-webkit-scrollbar-thumb:hover {
     background: var(--gold);
 }
+
+/* --- CREATE WALLET MODAL --- */
+.wallet-field { display: flex; gap: 8px; align-items: center; }
+.wallet-field input { flex: 1; }
+.btn-copy {
+    background: var(--navy-light);
+    border: 1px solid var(--border);
+    color: var(--gold);
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+.btn-copy:hover { background: var(--gold); color: var(--navy); }
+.wallet-warning {
+    margin-top: 16px;
+    padding: 12px;
+    background: rgba(201, 162, 39, 0.1);
+    border: 1px solid var(--gold);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--gold);
+}
+.btn-secondary {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s, border-color 0.2s;
+}
+.btn-secondary:hover { border-color: var(--gold); color: var(--gold); }

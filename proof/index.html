@@ -11,7 +11,7 @@
     <meta property="og:description" content="Immutable BSV-anchored proof of creation. Verifiable by anyone.">
     <link rel="canonical" href="https://ds-da.ca/proof/">
     <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
-    <link rel="stylesheet" href="proof.css?v=14">
+    <link rel="stylesheet" href="proof.css?v=15">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script>
       // Apply the saved theme on load (before the page renders, to avoid a flash)
@@ -333,6 +333,32 @@
             <input type="password" id="loginWif" placeholder="L... or K... (your WIF, never leaves your browser)">
             <div id="loginStatus" class="muted" style="margin-top:12px"></div>
             <button class="btn btn-primary" id="loginSubmit" style="margin-top:16px">Sign + Login</button>
+            <div class="modal-divider" style="margin-top:16px">— new here? —</div>
+            <button class="btn btn-secondary" id="createWalletBtn" style="margin-top:8px">🪙 Create a Wallet</button>
+            <p class="muted" style="font-size:11px;margin-top:8px">Generates your address + WIF in your browser. No account, no email.</p>
+        </div>
+    </div>
+
+    <!-- CREATE WALLET MODAL -->
+    <div class="modal-overlay" id="walletModal" style="display:none">
+        <div class="modal">
+            <button class="modal-close" id="walletModalClose">&times;</button>
+            <h2>🪙 Your New Wallet</h2>
+            <p class="modal-desc">Write these down. The WIF is your private key — anyone with it can spend your BSV. Don't share it, don't lose it.</p>
+            <label class="field">Your Address</label>
+            <div class="wallet-field">
+                <input type="text" id="walletAddress" readonly style="font-family:monospace;font-size:13px">
+                <button class="btn-copy" data-copy="walletAddress">⧉</button>
+            </div>
+            <label class="field" style="margin-top:16px">Your WIF (Private Key)</label>
+            <div class="wallet-field">
+                <input type="text" id="walletWif" readonly style="font-family:monospace;font-size:13px">
+                <button class="btn-copy" data-copy="walletWif">⧉</button>
+            </div>
+            <div class="wallet-warning">
+                ⚠️ <strong>Save these now.</strong> Close this window and you'll need to create a new wallet. There is no recovery.
+            </div>
+            <button class="btn btn-primary" id="walletDoneBtn" style="margin-top:16px">Done — I've saved them</button>
         </div>
     </div>
 
@@ -407,7 +433,7 @@
             };
         })();
     </script>
-    <script src="proof.js?v=42"></script>
+    <script src="proof.js?v=43"></script>
     <script src="../theme.js?v=1"></script>
 </body>
 </html>
