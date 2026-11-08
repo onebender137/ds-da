@@ -781,7 +781,9 @@ async function fetchGlobalBoard() {
     const r = await fetch('leaderboard.json?nocache=' + Date.now(), { cache: 'no-store' });
     if (!r.ok) return null;
     const j = await r.json();
-    return Array.isArray(j) ? j : (j && Array.isArray(j.top) ? j : null);
+    if (Array.isArray(j)) return { top: j, updated: null };
+    if (j && Array.isArray(j.top)) return { top: j.top, updated: j.updated || null };
+    return null;
   } catch (e) { return null; }
 }
 
@@ -790,8 +792,8 @@ async function showScores() {
   renderTopList(elLocalTop, loadScores().slice(0, 5));
   elGlobalNote.textContent = 'Loading global board…';
   const g = await fetchGlobalBoard();
-  if (g && g.length) {
-    renderTopList(elGlobalTop, g.slice(0, 5));
+  if (g && g.top.length) {
+    renderTopList(elGlobalTop, g.top.slice(0, 5));
     elGlobalNote.textContent = 'Verified by the DSDA board · ' + new Date(g.updated || Date.now()).toLocaleDateString();
   } else if (g) {
     renderTopList(elGlobalTop, []);
