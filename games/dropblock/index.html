@@ -130,7 +130,7 @@
   <ol id="hudTop" class="tops"></ol>
   <div class="keys">
     ← → &nbsp;move &nbsp;·&nbsp; ↓ soft drop<br>
-    SPACE &nbsp;hard drop &nbsp;·&nbsp; M &nbsp;next track
+    ↑ / SPACE &nbsp;hard drop &nbsp;·&nbsp; M &nbsp;next track
   </div>
 </div>
 <button id="soundBtn">🔊 sound on</button>
@@ -150,7 +150,7 @@
     <button id="menuScores" class="mbtn">HIGH SCORES</button>
     <button id="menuSite" class="mbtn">BACK TO DS-DA.CA</button>
   </div>
-  <p class="menu-hint">← → move · ↓ soft drop · SPACE hard drop · M music</p>
+  <p class="menu-hint">← → move · ↓ soft drop · ↑/SPACE hard drop · M music</p>
 </div>
 <div id="scores" class="hidden">
   <div class="card">
@@ -927,7 +927,7 @@ function onKey(e) {
     if (!e.repeat) { moveTimer = 0; moveArmed = false; tryMove(1); }
   } else if (e.code === 'ArrowDown') {
     keysDown.add('down'); lastDownT = now;
-  } else if (e.code === 'Space') {
+  } else if (e.code === 'Space' || e.code === 'ArrowUp') {
     if (!e.repeat) hardDrop();
   } else if (e.code === 'KeyM') {
     if (!e.repeat) MusicSys.next();
