@@ -466,6 +466,7 @@ let softAcc = 0;
 let fps = 0;
 const keysDown = new Set();
 let heldLeft = false, heldRight = false, moveTimer = 0, moveArmed = false;
+let dasInit = 0.13, dasRep = 0.055; // auto-repeat timing per input source (touch sets gentler values)
 let heldDir = 0, lastKeyT = 0, lastDownT = 0;
 const KEY_TIMEOUT = 1.5; // self-heals phantom keys (lost keyups happen on remote sessions)
 let menuSel = 0;
@@ -624,10 +625,12 @@ function tryMove(dir) {
   falling.col = nc;
   falling.mesh.position.x = xOf(nc);
   sfx.move();
+  buzz(8);
 }
 
 function hardDrop() {
   if (phase !== 'falling' || !falling) return;
+  buzz(15);
   const row = restRowFor(falling.col);
   falling.y = row * CELL + CELL / 2;
   falling.mesh.position.y = falling.y;
@@ -973,10 +976,10 @@ function onKey(e) {
   }
   if (e.code === 'ArrowLeft') {
     heldLeft = true; heldDir = -1; lastKeyT = now;
-    if (!e.repeat) { moveTimer = 0; moveArmed = false; tryMove(-1); }
+    if (!e.repeat) { dasInit = 0.13; dasRep = 0.055; moveTimer = 0; moveArmed = false; tryMove(-1); }
   } else if (e.code === 'ArrowRight') {
     heldRight = true; heldDir = 1; lastKeyT = now;
-    if (!e.repeat) { moveTimer = 0; moveArmed = false; tryMove(1); }
+    if (!e.repeat) { dasInit = 0.13; dasRep = 0.055; moveTimer = 0; moveArmed = false; tryMove(1); }
   } else if (e.code === 'ArrowDown') {
     keysDown.add('down'); lastDownT = now;
   } else if (e.code === 'Space' || e.code === 'ArrowUp') {
@@ -1009,8 +1012,9 @@ function onWindowBlur() {
 // swipe ↑   : hard drop (once per touch)
 // tap       : hard drop
 const IS_TOUCH = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
-const SWIPE_DIST = 24;  // px of travel before a swipe registers
+const SWIPE_DIST = 36;  // px of travel per step (≈ 2/3 board cell — deliberate, not twitchy)
 const TAP_MS = 260;     // max duration for a tap
+const buzz = ms => { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} };
 let tId = null;         // active pointer id (one finger at a time)
 let tX = 0, tY = 0;     // rebased origin (swipe steps)
 let tSX = 0, tSY = 0;   // original down position (tap detection)
@@ -1030,11 +1034,12 @@ function touchMove(e) {
   const dx = e.clientX - tX, dy = e.clientY - tY;
   if (Math.abs(dx) < SWIPE_DIST && Math.abs(dy) < SWIPE_DIST) return;
   const now = performance.now() / 1000;
-  if (Math.abs(dx) > Math.abs(dy) * 1.15) {
+  if (Math.abs(dx) > Math.abs(dy) * 1.3) {
     // horizontal: step in swipe direction + arm auto-repeat (hold to slide)
     if (dx < 0) { heldLeft = true; heldRight = false; }
     else { heldRight = true; heldLeft = false; }
     heldDir = dx < 0 ? -1 : 1; lastKeyT = now;
+    dasInit = 0.22; dasRep = 0.09; // touch slide: gentler than keyboard
     moveTimer = 0; moveArmed = false;
     tryMove(heldDir);
     tMoved = true;
@@ -1093,7 +1098,7 @@ function update(dt) {
     const dir = (heldLeft && !heldRight) ? -1 : (heldRight && !heldLeft) ? 1 : (heldLeft && heldRight ? heldDir : 0);
     if (dir !== 0) {
       moveTimer += dt;
-      if (moveTimer >= (moveArmed ? 0.055 : 0.13)) {
+      if (moveTimer >= (moveArmed ? dasRep : dasInit)) {
         tryMove(dir);
         moveTimer = 0;
         moveArmed = true;
