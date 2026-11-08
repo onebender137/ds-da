@@ -20,7 +20,7 @@
     <link rel="canonical" href="https://ds-da.ca/games/">
     <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
     <link rel="stylesheet" href="../style.css?v=2.0.2">
-    <link rel="stylesheet" href="games.css?v=1">
+    <link rel="stylesheet" href="games.css?v=2">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script>
       // Apply the saved theme on load (before the page renders, to avoid a flash)
@@ -82,7 +82,11 @@
     <section class="games-note">
         <div class="games-note-inner">
             <h2>Your score, on the record</h2>
-            <p>Every game in the gallery keeps a live leaderboard. When we wire up <a href="../proof/">Proof of Creation</a>, top scores will be timestamped on the BSV blockchain — immutable proof that you were there, and that you were good at it.</p>
+            <div class="games-stats" id="gamesStats">
+                <div class="games-stat"><b id="statGames">—</b><span>games played</span></div>
+                <div class="games-stat"><b id="statPlayers">—</b><span>players</span></div>
+            </div>
+            <p>Every game in the gallery keeps a live leaderboard. When we wire up <a href="../proof/">Proof of Creation</a>, top scores will be timestamped on the BSV blockchain — immutable proof that you were there, and that you were good at it. <small>Counters are tallied from live leaderboard saves; players are counted by distinct initials.</small></p>
         </div>
     </section>
 
@@ -95,5 +99,27 @@
     </footer>
 
     <script src="../theme.js?v=1"></script>
+    <script>
+      // Live play counters — aggregated from each game's leaderboard webhook stats
+      (function () {
+        var boards = ['dropblock/leaderboard.json'];
+        Promise.all(boards.map(function (url) {
+          return fetch(url, { cache: 'no-store' })
+            .then(function (r) { return r.json(); })
+            .catch(function () { return null; });
+        })).then(function (results) {
+          var saves = 0, initials = {};
+          results.forEach(function (d) {
+            if (!d || !d.stats) return;
+            saves += d.stats.saves || 0;
+            (d.stats.initials || []).forEach(function (i) { initials[i] = 1; });
+          });
+          var g = document.getElementById('statGames');
+          var p = document.getElementById('statPlayers');
+          if (g) g.textContent = String(saves);
+          if (p) p.textContent = String(Object.keys(initials).length);
+        });
+      })();
+    </script>
 </body>
 </html>

@@ -139,6 +139,35 @@ html.dark .game-card:hover {
     color: var(--text-dim);
 }
 
+/* --- LIVE PLAY COUNTERS --- */
+.games-stats {
+    display: flex;
+    justify-content: center;
+    gap: 56px;
+    margin: 30px 0 34px;
+}
+.games-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+.games-stat b {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 2.7rem;
+    font-weight: 600;
+    color: var(--gold);
+    line-height: 1;
+}
+.games-stat span {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(250, 248, 248, 0.55);
+}
+html.dark .games-stat span { color: rgba(250, 248, 248, 0.6); }
+
 /* --- LEADERBOARD NOTE --- */
 .games-note {
     background: var(--navy);

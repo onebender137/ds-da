@@ -55,6 +55,15 @@ jobs:
           top = top[:10]
           data['top'] = top
           data['updated'] = int(time.time() * 1000)
+          # play stats: every validated save = 1 game played; distinct initials ~= players
+          stats = data.get('stats') or {'saves': 0, 'initials': []}
+          stats['saves'] = stats.get('saves', 0) + 1
+          initials = stats.get('initials', [])
+          if init not in initials:
+              initials.append(init)
+          stats['initials'] = initials
+          stats['players'] = len(initials)
+          data['stats'] = stats
           with open(path, 'w') as f:
               json.dump(data, f, indent=2)
               f.write('\n')
