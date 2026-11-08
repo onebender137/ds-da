@@ -201,6 +201,12 @@ const COLORS = [
 const SCORE_KEY='candyf...s.v1';
 // global score submission (GitHub Actions webhook -> leaderboard.json)
 const SCORE_DISPATCH_URL = 'https://api.github.com/repos/onebender137/ds-da/actions/workflows/score-webhook.yml/dispatches';
+const BOARD_API = 'https://api.ds-da.ca/api/board'; // fast path (instant); GitHub dispatch = fallback
+function fetchTimeout(url, opts, ms = 4000) {
+  const c = new AbortController();
+  const t = setTimeout(() => c.abort(), ms);
+  return fetch(url, Object.assign({ signal: c.signal }, opts)).finally(() => clearTimeout(t));
+}
 const SCORE_TOKEN = ['github_pat_','11BSP72GQ0ahD5DWDTnYvW_yw5FUOGwGkIjafWX6x4FipOXpW1ObVzvOHSXtbopwubO4IXUTCFSqSp8bII'].join('') // split so secret-scanning's PAT regex (plain AND base64 variants) can't match; token is deliberately public, BSV proof is the integrity layer
 const SCORE_SECRET = '6216cf68f4e077d3cd991f2d6bd3e878';
 
@@ -781,6 +787,14 @@ function backToMenu() {
 }
 
 async function fetchGlobalBoard() {
+  // fast path: board API (instant); fallback: static leaderboard.json (GitHub Pages)
+  try {
+    const r = await fetchTimeout(BOARD_API + '/leaderboard', { cache: 'no-store' });
+    if (r.ok) {
+      const j = await r.json();
+      if (j && Array.isArray(j.top)) return { top: j.top, updated: j.updated || null };
+    }
+  } catch (e) { /* fall through to static */ }
   try {
     const r = await fetch('leaderboard.json?nocache=' + Date.now(), { cache: 'no-store' });
     if (!r.ok) return null;
@@ -855,6 +869,15 @@ function renderTopList(el, top) {
   });
 }
 async function submitGlobal(name, s) {
+  // fast path: board API (instant); fallback: GitHub Actions dispatch (~1 min)
+  try {
+    const r = await fetchTimeout(BOARD_API + '/score', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ initials: name, score: s, secret: SCORE_SECRET }),
+    }, 5000);
+    if (r.ok) return 'ok';
+  } catch (e) { /* fall through to GitHub */ }
   if (!SCORE_TOKEN || SCORE_TOKEN.indexOf('PASTE_') === 0) return 'no-token';
   try {
     const r = await fetch(SCORE_DISPATCH_URL, {
