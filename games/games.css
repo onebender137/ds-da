@@ -168,6 +168,25 @@ html.dark .game-card:hover {
 }
 html.dark .games-stat span { color: rgba(250, 248, 248, 0.6); }
 
+/* --- PER-GAME CARD STATS --- */
+.game-stats {
+    display: flex;
+    gap: 24px;
+    margin-top: 4px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    letter-spacing: 0.2px;
+}
+.game-stats b {
+    font-weight: 600;
+    color: var(--navy);
+    font-size: 1.05rem;
+}
+html.dark .game-stats b { color: #e2e8f0; }
+html.dark .game-stats { color: rgba(226, 232, 240, 0.6); }
+
 /* --- LEADERBOARD NOTE --- */
 .games-note {
     background: var(--navy);
