@@ -851,7 +851,7 @@ async function submitGlobal(name, s) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        event: 'workflow_dispatch',
+        ref: 'main',
         inputs: { initials: name, score: String(s), secret: SCORE_SECRET },
       }),
     });
