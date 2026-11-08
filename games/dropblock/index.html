@@ -35,7 +35,7 @@
   #combo.hot { transform: scale(1.25); color: #ffd24d; }
   h3.sub { font-size: 10px; letter-spacing: 2px; color: var(--muted); margin: 12px 0 6px; }
   ol.tops { list-style: none; }
-  ol.tops li { display: flex; justify-content: space-between; font-size: 13px; padding: 3px 2px;
+  ol.tops li { display: flex; justify-content: space-between; font-size: 12px; padding: 2px 2px;
     border-bottom: 1px dashed rgba(122,142,255,0.1); font-variant-numeric: tabular-nums; }
   ol.tops li .rank { color: var(--muted); width: 18px; }
   ol.tops li .name { letter-spacing: 1px; font-weight: 700; }
@@ -126,7 +126,7 @@
   <div class="stat"><span>SCORE</span><b id="score">0</b></div>
   <div class="stat"><span>LEVEL</span><b id="level">1</b></div>
   <div class="stat"><span>CHAIN</span><b id="combo">—</b></div>
-  <h3 class="sub">TOP 5</h3>
+  <h3 class="sub">TOP 10</h3>
   <ol id="hudTop" class="tops"></ol>
   <div class="keys">
     ← → &nbsp;move &nbsp;·&nbsp; ↓ soft drop<br>
@@ -709,7 +709,7 @@ function gameOver() {
   elSavedMsg.textContent = '';
   const top = loadScores();
   elNewHigh.classList.toggle('hidden', !(score > 0 && score >= (top[0] ? top[0].s : 0)));
-  renderTopList(elTopList, top.slice(0, 5));
+  renderTopList(elTopList, top.slice(0, 10));
   elOverlay.classList.remove('hidden');
   elInitials.focus();
 }
@@ -793,11 +793,11 @@ async function fetchGlobalBoard() {
 
 async function showScores() {
   elScores.classList.remove('hidden');
-  renderTopList(elLocalTop, loadScores().slice(0, 5));
+  renderTopList(elLocalTop, loadScores().slice(0, 10));
   elGlobalNote.textContent = 'Loading global board…';
   const g = await fetchGlobalBoard();
   if (g && g.top.length) {
-    renderTopList(elGlobalTop, g.top.slice(0, 5));
+    renderTopList(elGlobalTop, g.top.slice(0, 10));
     elGlobalNote.textContent = 'Verified by the DSDA board · ' + new Date(g.updated || Date.now()).toLocaleDateString();
   } else if (g) {
     renderTopList(elGlobalTop, []);
@@ -819,7 +819,7 @@ function saveToStorage(name, s) {
   const arr = loadScores();
   arr.push({ n: name, s: s, d: Date.now() });
   arr.sort((a, b) => b.s - a.s);
-  const top = arr.slice(0, 5);
+  const top = arr.slice(0, 10);
   try { localStorage.setItem(SCORE_KEY, JSON.stringify(top)); } catch (e) {}
   return top;
 }
@@ -1108,7 +1108,7 @@ function boot() {
   buildTitleCandies();
 
   grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
-  renderTopList(elHudTop, loadScores().slice(0, 5));
+  renderTopList(elHudTop, loadScores().slice(0, 10));
   updateMusicUI();
   updateHud();
   setMenuSel(0);
