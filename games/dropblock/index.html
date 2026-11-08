@@ -1307,7 +1307,9 @@ function onResize() {
   const w = window.innerWidth, h = window.innerHeight;
   camera.aspect = w / h;
   // portrait phones: pull the camera back so the whole board fits horizontally
-  const bx = 2.6, by = 1.2, bz = 17.5; // base offset from lookAt(0, 6, 0)
+  // base offset is 10% further back than the original (2.6/1.2/17.5) so the spawn
+  // area above the top row stays fully in frame on wide screens (was clipping at NDC 1.06)
+  const bx = 2.86, by = 1.32, bz = 19.25;
   const dist = Math.sqrt(bx * bx + by * by + bz * bz);
   const halfW = (COLS + 0.8) / 2 + 1.1;
   const need = halfW / (Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect);
@@ -1334,7 +1336,7 @@ function boot() {
   scene.fog = new THREE.Fog(0x0b0e1a, 26, 90);
 
   camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 200);
-  camera.position.set(2.6, 7.2, 17.5);
+  camera.position.set(2.86, 7.32, 19.25);
   camera.lookAt(0, 6, 0);
 
   scene.add(new THREE.HemisphereLight(0x4455aa, 0x0a0c14, 0.55));
