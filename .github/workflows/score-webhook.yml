@@ -52,7 +52,7 @@ jobs:
           top = data.get('top', [])
           top.append({'n': init, 's': score, 'd': int(time.time() * 1000)})
           top.sort(key=lambda e: e['s'], reverse=True)
-          top = top[:5]
+          top = top[:10]
           data['top'] = top
           data['updated'] = int(time.time() * 1000)
           with open(path, 'w') as f:
