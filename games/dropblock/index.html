@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <title>DropBlock — Tetris × Match-3</title>
 <style>
   :root {
@@ -17,8 +17,9 @@
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text);
+    overscroll-behavior: none; user-select: none; -webkit-user-select: none;
     font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif; }
-  #scene { position: fixed; inset: 0; display: block; }
+  #scene { position: fixed; inset: 0; display: block; touch-action: none; }
   .panel { position: fixed; background: var(--panel); border: 1px solid var(--border);
     border-radius: 14px; padding: 14px 16px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
     box-shadow: 0 8px 32px rgba(0,0,0,0.45); }
@@ -40,7 +41,7 @@
   ol.tops li .rank { color: var(--muted); width: 18px; }
   ol.tops li .name { letter-spacing: 1px; font-weight: 700; }
   .keys { margin-top: 12px; font-size: 11px; color: var(--muted); line-height: 1.8; }
-  button { font: inherit; cursor: pointer; }
+  button { font: inherit; cursor: pointer; touch-action: manipulation; }
   #soundBtn { position: fixed; bottom: 56px; left: 16px; z-index: 5; background: var(--panel);
     border: 1px solid var(--border); color: var(--text); border-radius: 10px; padding: 8px 12px;
     font-size: 12px; backdrop-filter: blur(10px); }
@@ -115,6 +116,20 @@
     justify-content: center; background: rgba(5, 8, 18, 0.8); backdrop-filter: blur(6px); }
   #scores.hidden { display: none; }
   .global-note { font-size: 11px; color: var(--muted); letter-spacing: 1px; margin: 4px 0 2px; min-height: 14px; }
+
+  /* ---- mobile (phone) ---- */
+  @media (max-width: 768px) {
+    #titleBox { display: none; }
+    #hud { top: max(10px, env(safe-area-inset-top)); right: 10px; width: auto;
+      padding: 8px 12px; display: flex; flex-direction: row; align-items: center; gap: 12px; }
+    #hud .stat { border-bottom: none; padding: 0; gap: 5px; }
+    #hud .stat span { font-size: 8px; letter-spacing: 1px; }
+    #hud .stat b { font-size: 15px; }
+    #hud .sub, #hud .tops, #hud .keys { display: none; }
+    #soundBtn { bottom: calc(54px + env(safe-area-inset-bottom)); left: 10px; padding: 6px 10px; }
+    #musicBox { bottom: calc(10px + env(safe-area-inset-bottom)); left: 10px; }
+    .card { padding: 20px 22px; }
+  }
 </style>
 </head>
 <body class="menu-mode">
@@ -128,7 +143,7 @@
   <div class="stat"><span>CHAIN</span><b id="combo">—</b></div>
   <h3 class="sub">TOP 10</h3>
   <ol id="hudTop" class="tops"></ol>
-  <div class="keys">
+  <div class="keys" id="hudKeys">
     ← → &nbsp;move &nbsp;·&nbsp; ↓ soft drop<br>
     ↑ / SPACE &nbsp;hard drop &nbsp;·&nbsp; M &nbsp;next track
   </div>
@@ -150,7 +165,7 @@
     <button id="menuScores" class="mbtn">HIGH SCORES</button>
     <button id="menuSite" class="mbtn">BACK TO DS-DA.CA</button>
   </div>
-  <p class="menu-hint">← → move · ↓ soft drop · ↑/SPACE hard drop · M music</p>
+  <p class="menu-hint" id="menuHint">← → move · ↓ soft drop · ↑/SPACE hard drop · M music</p>
 </div>
 <div id="scores" class="hidden">
   <div class="card">
@@ -985,6 +1000,65 @@ function onWindowBlur() {
   heldLeft = false; heldRight = false;
   keysDown.clear();
   moveTimer = 0; moveArmed = false;
+  tId = null;
+}
+
+// ---------------- touch / swipe input (mobile) ----------------
+// swipe ← → : move (hold to slide, same DAS as keyboard)
+// swipe ↓   : soft drop while held
+// swipe ↑   : hard drop (once per touch)
+// tap       : hard drop
+const IS_TOUCH = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+const SWIPE_DIST = 24;  // px of travel before a swipe registers
+const TAP_MS = 260;     // max duration for a tap
+let tId = null;         // active pointer id (one finger at a time)
+let tX = 0, tY = 0;     // rebased origin (swipe steps)
+let tSX = 0, tSY = 0;   // original down position (tap detection)
+let tT0 = 0;
+let tMoved = false;     // a swipe was consumed on this touch
+function touchStart(e) {
+  if (inputFrozen || tId !== null || !e.isPrimary) return;
+  tId = e.pointerId;
+  tX = tSX = e.clientX; tY = tSY = e.clientY;
+  tT0 = performance.now();
+  tMoved = false;
+  sfx.ensure();
+  MusicSys.tryStart();
+}
+function touchMove(e) {
+  if (inputFrozen || e.pointerId !== tId) return;
+  const dx = e.clientX - tX, dy = e.clientY - tY;
+  if (Math.abs(dx) < SWIPE_DIST && Math.abs(dy) < SWIPE_DIST) return;
+  const now = performance.now() / 1000;
+  if (Math.abs(dx) > Math.abs(dy) * 1.15) {
+    // horizontal: step in swipe direction + arm auto-repeat (hold to slide)
+    if (dx < 0) { heldLeft = true; heldRight = false; }
+    else { heldRight = true; heldLeft = false; }
+    heldDir = dx < 0 ? -1 : 1; lastKeyT = now;
+    moveTimer = 0; moveArmed = false;
+    tryMove(heldDir);
+    tMoved = true;
+    tX = e.clientX; // rebase — next step needs a fresh swipe
+  } else if (dy > 0) {
+    // swipe down: soft drop while held
+    if (!keysDown.has('down')) keysDown.add('down');
+    lastDownT = now;
+    tMoved = true;
+    tY = e.clientY;
+  } else {
+    // swipe up: hard drop (once per touch)
+    if (!tMoved) { hardDrop(); tMoved = true; }
+    tY = e.clientY;
+  }
+}
+function touchEnd(e, allowTap) {
+  if (e.pointerId !== tId) return;
+  tId = null;
+  if (allowTap && !tMoved && performance.now() - tT0 < TAP_MS &&
+      Math.hypot(e.clientX - tSX, e.clientY - tSY) < SWIPE_DIST) hardDrop();
+  heldLeft = false; heldRight = false;
+  keysDown.delete('down');
+  moveTimer = 0; moveArmed = false;
 }
 function toggleSound() {
   sfx.on = !sfx.on;
@@ -1075,9 +1149,17 @@ function animate() {
 }
 
 function onResize() {
-  camera.aspect = window.innerWidth / window.innerHeight;
+  const w = window.innerWidth, h = window.innerHeight;
+  camera.aspect = w / h;
+  // portrait phones: pull the camera back so the whole board fits horizontally
+  const bx = 2.6, by = 1.2, bz = 17.5; // base offset from lookAt(0, 6, 0)
+  const dist = Math.sqrt(bx * bx + by * by + bz * bz);
+  const halfW = (COLS + 0.8) / 2 + 1.1;
+  const need = halfW / (Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect);
+  const k = Math.max(1, need / dist);
+  camera.position.set(bx * k, 6 + by * k, bz * k);
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setSize(w, h);
 }
 
 // ---------------- boot ----------------
@@ -1122,6 +1204,16 @@ function boot() {
   window.addEventListener('blur', onWindowBlur);
   window.addEventListener('pointerdown', () => { window.focus(); sfx.ensure(); MusicSys.tryStart(); });
   window.focus();
+
+  // touch / swipe controls (canvas only — panel taps never reach the game)
+  renderer.domElement.addEventListener('pointerdown', touchStart);
+  renderer.domElement.addEventListener('pointermove', touchMove);
+  renderer.domElement.addEventListener('pointerup', e => touchEnd(e, true));
+  renderer.domElement.addEventListener('pointercancel', e => touchEnd(e, false));
+  if (IS_TOUCH) {
+    $('hudKeys').innerHTML = 'swipe ← → &nbsp;move · hold to slide<br>swipe ↓ soft drop · swipe ↑ / tap hard drop';
+    $('menuHint').textContent = 'swipe ← → move · swipe ↓ soft drop · swipe ↑ or tap hard drop';
+  }
 
   elSave.addEventListener('click', saveScore);
   elPlayAgain.addEventListener('click', playAgain);
@@ -1190,9 +1282,27 @@ window.__tl = {
       heldLeft, heldRight, heldDir, down: keysDown.has('down'),
       keyAge: +(performance.now() / 1000 - lastKeyT).toFixed(2),
       frozen: inputFrozen,
+      touchActive: tId !== null,
     };
   },
   hardDrop() { if (phase === 'falling' && falling) hardDrop(); },
+  touchTap() {
+    const c = renderer.domElement, r = c.getBoundingClientRect();
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    const ev = t => c.dispatchEvent(new PointerEvent(t, { pointerId: 99, isPrimary: true, clientX: cx, clientY: cy, bubbles: true }));
+    ev('pointerdown'); ev('pointerup');
+    return 'tap';
+  },
+  touchSwipe(dx, dy) {
+    const c = renderer.domElement, r = c.getBoundingClientRect();
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    const ev = (t, x, y) => c.dispatchEvent(new PointerEvent(t, { pointerId: 99, isPrimary: true, clientX: x, clientY: y, bubbles: true }));
+    ev('pointerdown', cx, cy);
+    ev('pointermove', cx + dx / 2, cy + dy / 2);
+    ev('pointermove', cx + dx, cy + dy);
+    ev('pointerup', cx + dx, cy + dy);
+    return 'swipe';
+  },
   start() { if (phase === 'menu') startGameFromMenu(); },
   toMenu() { backToMenu(); },
   menuSel() { return menuSel; },
