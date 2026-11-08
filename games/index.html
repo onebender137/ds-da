@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-M9D0GNYMWJ"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-M9D0GNYMWJ');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Games | DSDA | Dream Syndicate Digital Assets</title>
+    <meta name="description" content="The DSDA Games Gallery — hand-built browser games, no downloads. Play DropBlock, a 3D Tetris × Match-3 hybrid, and more to come.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://ds-da.ca/games/">
+    <meta property="og:title" content="Games | DSDA">
+    <meta property="og:description" content="Hand-built browser games from the Dream Syndicate workshop. No downloads. No accounts. Just play.">
+    <meta property="og:image" content="https://ds-da.ca/games/dropblock/screenshot.png">
+    <link rel="canonical" href="https://ds-da.ca/games/">
+    <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
+    <link rel="stylesheet" href="../style.css?v=2.0.2">
+    <link rel="stylesheet" href="games.css?v=1">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script>
+      // Apply the saved theme on load (before the page renders, to avoid a flash)
+      (function(){var t=localStorage.getItem('dsda-theme')||'light';
+      if(t==='dark')document.documentElement.classList.add('dark');})();
+    </script>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-inner">
+            <a href="/" class="logo">DSDA</a>
+            <nav class="nav">
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                    <span class="theme-icon">☀️</span>
+                    <span class="theme-label">Light</span>
+                </button>
+                <a href="https://hopes-and-dreams.ca">Hopes &amp; Dreams</a>
+                <a href="https://polkahole.ca">Polkahole</a>
+                <a href="../proof/">Proof of Creation</a>
+                <a href="games/" style="color: var(--gold); font-weight: 600;">Games</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- GAMES HERO -->
+    <section class="games-hero">
+        <div class="games-hero-inner">
+            <h1>The Games Gallery</h1>
+            <p>Hand-built browser games from the DSDA workshop. No downloads, no accounts, no friction — just play. High scores are tracked, and the best of them are headed for the blockchain.</p>
+        </div>
+    </section>
+
+    <!-- GAMES GRID -->
+    <section class="games-section">
+        <h2 class="section-title">Playable now</h2>
+        <div class="games-grid">
+            <div class="game-card">
+                <img class="game-shot" src="dropblock/screenshot.png" alt="DropBlock — a 3D Tetris x Match-3 game with colorful candy blocks on a dark board" loading="lazy">
+                <div class="game-body">
+                    <h3>DropBlock</h3>
+                    <div class="game-tags">
+                        <span class="game-tag">Puzzle</span>
+                        <span class="game-tag">3D</span>
+                        <span class="game-tag">Chiptune</span>
+                    </div>
+                    <p>A 3D hybrid of Tetris and Candy Crush. Candy blocks fall one at a time — steer them with the arrow keys, stack them, and clear runs of three. Chain reactions multiply your score, and three original 8-bit tracks keep the tempo. How far can you get before the board fills?</p>
+                    <a href="dropblock/" class="btn btn-primary game-play">Play DropBlock</a>
+                </div>
+            </div>
+            <div class="game-card soon">
+                <span class="soon-label">Next game in development</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- LEADERBOARD NOTE -->
+    <section class="games-note">
+        <div class="games-note-inner">
+            <h2>Your score, on the record</h2>
+            <p>Every game in the gallery keeps a live leaderboard. When we wire up <a href="../proof/">Proof of Creation</a>, top scores will be timestamped on the BSV blockchain — immutable proof that you were there, and that you were good at it.</p>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="footer-inner">
+            <span>&copy; 2026 Dream Syndicate Digital Assets</span>
+            <span>New Brunswick, Canada</span>
+        </div>
+    </footer>
+
+    <script src="../theme.js?v=1"></script>
+</body>
+</html>

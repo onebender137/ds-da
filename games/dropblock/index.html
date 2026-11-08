@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DropBlock — Tetris × Match-3</title>
+<style>
+  :root {
+    --bg: #0b0e1a;
+    --panel: rgba(15, 19, 36, 0.82);
+    --border: rgba(122, 142, 255, 0.28);
+    --accent: #6ea8ff;
+    --accent2: #c06bff;
+    --text: #dfe6ff;
+    --muted: #8b96c9;
+    --danger: #ff3b5c;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif; }
+  #scene { position: fixed; inset: 0; display: block; }
+  .panel { position: fixed; background: var(--panel); border: 1px solid var(--border);
+    border-radius: 14px; padding: 14px 16px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.45); }
+  #titleBox { top: 16px; left: 16px; z-index: 5; }
+  #titleBox h1 { font-size: 17px; letter-spacing: 3px; font-weight: 800; }
+  #titleBox h1 span { color: var(--accent); }
+  #titleBox p { font-size: 11px; color: var(--muted); letter-spacing: 1px; margin-top: 2px; }
+  #hud { top: 16px; right: 16px; width: 232px; z-index: 5; }
+  .stat { display: flex; justify-content: space-between; align-items: baseline; padding: 4px 0;
+    border-bottom: 1px solid rgba(122,142,255,0.12); }
+  .stat span { font-size: 10px; letter-spacing: 2px; color: var(--muted); }
+  .stat b { font-size: 20px; font-variant-numeric: tabular-nums; }
+  #combo { font-size: 14px; color: var(--accent2); transition: transform .12s; }
+  #combo.hot { transform: scale(1.25); color: #ffd24d; }
+  h3.sub { font-size: 10px; letter-spacing: 2px; color: var(--muted); margin: 12px 0 6px; }
+  ol.tops { list-style: none; }
+  ol.tops li { display: flex; justify-content: space-between; font-size: 13px; padding: 3px 2px;
+    border-bottom: 1px dashed rgba(122,142,255,0.1); font-variant-numeric: tabular-nums; }
+  ol.tops li .rank { color: var(--muted); width: 18px; }
+  ol.tops li .name { letter-spacing: 1px; font-weight: 700; }
+  .keys { margin-top: 12px; font-size: 11px; color: var(--muted); line-height: 1.8; }
+  button { font: inherit; cursor: pointer; }
+  #soundBtn { position: fixed; bottom: 56px; left: 16px; z-index: 5; background: var(--panel);
+    border: 1px solid var(--border); color: var(--text); border-radius: 10px; padding: 8px 12px;
+    font-size: 12px; backdrop-filter: blur(10px); }
+  #musicBox { position: fixed; bottom: 16px; left: 16px; z-index: 5; display: flex; align-items: center;
+    gap: 4px; background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 6px 10px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  #musicBox button { background: none; border: none; color: var(--muted); font-size: 13px;
+    padding: 2px 5px; line-height: 1; }
+  #musicBox button:hover { color: var(--text); }
+  #musicName { font-size: 11px; letter-spacing: 1px; min-width: 122px; text-align: center;
+    white-space: nowrap; color: var(--text); }
+  #overlay { position: fixed; inset: 0; z-index: 20; display: flex; align-items: center;
+    justify-content: center; background: rgba(5, 8, 18, 0.74); backdrop-filter: blur(6px); }
+  #overlay.hidden { display: none; }
+  .card { width: min(92vw, 430px); background: var(--panel); border: 1px solid var(--border);
+    border-radius: 18px; padding: 28px 30px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+  .card h2 { font-size: 30px; letter-spacing: 6px; color: var(--danger); margin-bottom: 6px; }
+  .card .final { font-size: 15px; color: var(--muted); margin-bottom: 4px; }
+  .card .final b { color: var(--text); font-size: 20px; }
+  #newHigh { color: #ffd24d; font-size: 12px; letter-spacing: 2px; margin-bottom: 6px; font-weight: 700; }
+  #newHigh.hidden { display: none; }
+  .card label { display: block; font-size: 11px; letter-spacing: 2px; color: var(--muted);
+    margin: 16px 0 6px; text-align: left; }
+  #initials { width: 100%; font: inherit; font-size: 26px; font-weight: 800; letter-spacing: 10px;
+    text-align: center; text-transform: uppercase; color: var(--text); background: rgba(10,13,26,0.9);
+    border: 1px solid var(--border); border-radius: 10px; padding: 8px 4px; outline: none; }
+  #initials:focus { border-color: var(--accent); }
+  .card button { width: 100%; margin-top: 10px; padding: 11px; border-radius: 10px;
+    border: 1px solid var(--border); background: rgba(30,40,80,0.5); color: var(--text);
+    font-size: 14px; letter-spacing: 1px; font-weight: 700; }
+  .card button:hover { background: rgba(45,60,120,0.6); }
+  .card button.primary { background: linear-gradient(135deg, #2b4bd8, #7a3bd8); border: none; font-size: 15px; }
+  .card button.primary:hover { filter: brightness(1.15); }
+  .card button:disabled { opacity: 0.5; cursor: default; }
+  #savedMsg { color: #4ade80; font-size: 12px; margin-top: 6px; min-height: 16px; }
+  #booterr { position: fixed; left: 12px; bottom: 12px; z-index: 50; max-width: 70vw;
+    max-height: 40vh; overflow: auto; background: #2a0a12; color: #ff9db0; border: 1px solid var(--danger);
+    border-radius: 10px; padding: 10px 12px; font: 11px/1.5 ui-monospace, monospace; white-space: pre-wrap; }
+  #booterr.hidden { display: none; }
+
+  /* ---- main menu ---- */
+  #menu { position: fixed; inset: 0; z-index: 15; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 14px;
+    background: radial-gradient(ellipse at 50% 38%, rgba(11,14,26,0.18) 0%, rgba(5,8,18,0.78) 78%);
+    backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); }
+  #menu.hidden { display: none; }
+  body.menu-mode #titleBox, body.menu-mode #hud { display: none; }
+  .menu-title { font-size: clamp(42px, 8.5vw, 88px); font-weight: 900; letter-spacing: 6px;
+    display: flex; user-select: none; line-height: 1; }
+  .menu-title .lt { display: inline-block;
+    background: linear-gradient(180deg, #ffffff 0%, #6ea8ff 48%, #c06bff 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: ltfloat 2.8s ease-in-out infinite;
+    filter: drop-shadow(0 6px 22px rgba(110,168,255,0.4)); }
+  @keyframes ltfloat {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-13px) rotate(-2.5deg); }
+  }
+  .menu-tag { font-size: 12px; letter-spacing: 5px; color: var(--muted); text-align: center; }
+  .menu-btns { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; width: min(82vw, 330px); }
+  .mbtn { font: inherit; font-size: 15px; font-weight: 700; letter-spacing: 3px; padding: 13px;
+    border-radius: 12px; border: 1px solid var(--border); background: var(--panel); color: var(--text);
+    cursor: pointer; transition: all .15s; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  .mbtn:hover, .mbtn.sel { border-color: var(--accent); background: rgba(45,70,150,0.45);
+    box-shadow: 0 0 24px rgba(110,168,255,0.28); transform: translateX(4px); }
+  .mbtn.primary { background: linear-gradient(135deg, #2b4bd8, #7a3bd8); border: none; font-size: 16px; }
+  .mbtn.primary:hover, .mbtn.primary.sel { filter: brightness(1.15); }
+  .menu-hint { font-size: 11px; color: var(--muted); letter-spacing: 1px; margin-top: 10px; text-align: center; }
+
+  /* ---- high scores screen ---- */
+  #scores { position: fixed; inset: 0; z-index: 18; display: flex; align-items: center;
+    justify-content: center; background: rgba(5, 8, 18, 0.8); backdrop-filter: blur(6px); }
+  #scores.hidden { display: none; }
+  .global-note { font-size: 11px; color: var(--muted); letter-spacing: 1px; margin: 4px 0 2px; min-height: 14px; }
+</style>
+</head>
+<body class="menu-mode">
+<div id="titleBox" class="panel">
+  <h1>DROP<span>BLOCK</span></h1>
+  <p>TETRIS × MATCH-3</p>
+</div>
+<div id="hud" class="panel">
+  <div class="stat"><span>SCORE</span><b id="score">0</b></div>
+  <div class="stat"><span>LEVEL</span><b id="level">1</b></div>
+  <div class="stat"><span>CHAIN</span><b id="combo">—</b></div>
+  <h3 class="sub">TOP 5</h3>
+  <ol id="hudTop" class="tops"></ol>
+  <div class="keys">
+    ← → &nbsp;move &nbsp;·&nbsp; ↓ soft drop<br>
+    SPACE &nbsp;hard drop &nbsp;·&nbsp; M &nbsp;next track
+  </div>
+</div>
+<button id="soundBtn">🔊 sound on</button>
+<div id="musicBox">
+  <button id="musicPrev" title="Previous track">⏮</button>
+  <div id="musicName">1. Bit Block Boy</div>
+  <button id="musicNext" title="Next track (M)">⏭</button>
+  <button id="musicToggle" title="Music on/off">🎵</button>
+</div>
+<div id="menu">
+  <h1 class="menu-title" aria-label="DROPBLOCK">
+    <span class="lt" style="animation-delay:0s">D</span><span class="lt" style="animation-delay:.07s">R</span><span class="lt" style="animation-delay:.14s">O</span><span class="lt" style="animation-delay:.21s">P</span><span class="lt" style="animation-delay:.28s">B</span><span class="lt" style="animation-delay:.35s">L</span><span class="lt" style="animation-delay:.42s">O</span><span class="lt" style="animation-delay:.49s">C</span><span class="lt" style="animation-delay:.56s">K</span>
+  </h1>
+  <p class="menu-tag">TETRIS × MATCH-3 — DSDA GAMES</p>
+  <div class="menu-btns">
+    <button id="menuStart" class="mbtn primary sel">START GAME</button>
+    <button id="menuScores" class="mbtn">HIGH SCORES</button>
+    <button id="menuSite" class="mbtn">BACK TO DS-DA.CA</button>
+  </div>
+  <p class="menu-hint">← → move · ↓ soft drop · SPACE hard drop · M music</p>
+</div>
+<div id="scores" class="hidden">
+  <div class="card">
+    <h2 style="color: var(--accent);">HIGH SCORES</h2>
+    <h3 class="sub">GLOBAL — DS-DA.CA</h3>
+    <ol id="globalTop" class="tops"></ol>
+    <p id="globalNote" class="global-note"></p>
+    <h3 class="sub">THIS DEVICE</h3>
+    <ol id="localTop" class="tops"></ol>
+    <button id="scoresBack" class="primary">Back to Menu</button>
+  </div>
+</div>
+<div id="overlay" class="hidden">
+  <div class="card">
+    <h2>GAME OVER</h2>
+    <div id="newHigh" class="hidden">★ NEW HIGH SCORE ★</div>
+    <p class="final">Final score <b id="finalScore">0</b></p>
+    <label for="initials">YOUR INITIALS</label>
+    <input id="initials" maxlength="3" autocomplete="off" spellcheck="false" />
+    <button id="saveBtn">Save Score</button>
+    <div id="savedMsg"></div>
+    <h3 class="sub">HIGH SCORES</h3>
+    <ol id="topList" class="tops"></ol>
+    <button id="playAgain" class="primary">Play Again</button>
+    <button id="toMenu">Main Menu</button>
+  </div>
+</div>
+<div id="booterr" class="hidden"></div>
+<noscript><p style="position:fixed;top:40%;width:100%;text-align:center">JavaScript is required.</p></noscript>
+
+<script type="importmap">
+{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+'use strict';
+
+// ---------------- constants ----------------
+const COLS = 6, ROWS = 12, CELL = 1.0;
+const COLORS = [
+  { c: 0xff3b5c }, // ruby
+  { c: 0xff9f2e }, // amber
+  { c: 0xffe14d }, // lemon
+  { c: 0x4ade80 }, // mint
+  { c: 0x4d9fff }, // sapphire
+  { c: 0xc06bff }, // grape
+];
+const SCORE_KEY = 'candyfall.scores.v1';
+
+// ---------------- dom ----------------
+const $ = id => document.getElementById(id);
+const elScore = $('score'), elLevel = $('level'), elCombo = $('combo');
+const elHudTop = $('hudTop'), elOverlay = $('overlay'), elFinal = $('finalScore');
+const elInitials = $('initials'), elSave = $('saveBtn'), elSavedMsg = $('savedMsg');
+const elTopList = $('topList'), elPlayAgain = $('playAgain'), elNewHigh = $('newHigh');
+const elMenu = $('menu'), elScores = $('scores');
+const elGlobalTop = $('globalTop'), elLocalTop = $('localTop'), elGlobalNote = $('globalNote');
+const elScoresBack = $('scoresBack'), elToMenu = $('toMenu');
+const elSound = $('soundBtn'), elBootErr = $('booterr');
+const elMusicName = $('musicName'), elMusicPrev = $('musicPrev');
+const elMusicNext = $('musicNext'), elMusicToggle = $('musicToggle');
+
+// ---------------- three.js globals ----------------
+let renderer, scene, camera, clock;
+let rafId = 0;
+let inputFrozen = false;
+const xOf = col => (col - (COLS - 1) / 2) * CELL;
+
+// ---------------- synthesized audio ----------------
+const sfx = {
+  ctx: null,
+  on: true,
+  ensure() {
+    if (!this.ctx) {
+      try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); }
+      catch (e) { this.on = false; }
+    }
+    if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+  },
+  tone(f, dur, type, vol, delay, slideTo) {
+    if (!this.on || !this.ctx) return;
+    dur = dur || 0.08; type = type || 'square'; vol = vol || 0.1; delay = delay || 0;
+    const t0 = this.ctx.currentTime + delay;
+    const o = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(Math.max(30, f), t0);
+    if (slideTo) o.frequency.exponentialRampToValueAtTime(Math.max(30, slideTo), t0 + dur);
+    g.gain.setValueAtTime(vol, t0);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(this.ctx.destination);
+    o.start(t0); o.stop(t0 + dur + 0.03);
+  },
+  move() { this.tone(340, 0.045, 'square', 0.05); },
+  lock() { this.tone(160, 0.09, 'triangle', 0.15, 0, 90); },
+  match(c) {
+    const base = 430 * Math.pow(1.14, Math.min(c, 8));
+    [0, 4, 7, 12].forEach((s, i) => this.tone(base * Math.pow(2, s / 12), 0.09, 'square', 0.07, i * 0.055));
+  },
+  over() {
+    [392, 311, 262, 196].forEach((f, i) => this.tone(f, 0.16, 'sawtooth', 0.08, i * 0.15, f * 0.92));
+  },
+};
+
+// ---------------- 8-bit chiptune music (3 tracks) ----------------
+const N2F = m => 440 * Math.pow(2, (m - 69) / 12);
+// Track 1: "Bit Block Boy" — swing polka techno (C -> G -> Am -> F)
+const BBB_MELODY = [
+  72,76,79,76, 72,76,79,76, 81,79,76,72, 74,76,79,76, // C
+  79,74,83,79, 79,74,83,79, 83,81,79,74, 77,79,74,79, // G
+  69,72,76,72, 69,72,76,72, 81,79,76,72, 74,76,79,76, // Am
+  77,72,77,72, 77,72,77,72, 77,76,74,72, 70,72,77,74, // F
+];
+const BBB_BASS = [
+  48,0,55,0, 48,0,55,0, 48,0,55,0, 48,0,55,0, // C
+  43,0,50,0, 43,0,50,0, 43,0,50,0, 43,0,50,0, // G
+  45,0,52,0, 45,0,52,0, 45,0,52,0, 45,0,52,0, // Am
+  41,0,48,0, 41,0,48,0, 41,0,48,0, 41,0,48,0, // F
+];
+// Track 2: "Korobeiniki Polka" — the classic Tetris theme, 8-bit polka remix
+const KOB_MELODY = [
+  76,76,76,72, 76,79,79,0, 76,74,74,83, 74,77,77,0,
+  76,72,72,81, 81,83,79,0, 72,74,83,74, 76,0,0,0,
+  76,76,76,72, 76,79,79,0, 76,74,74,83, 74,77,77,0,
+  76,72,72,81, 81,83,79,0, 72,74,83,74, 76,0,0,0,
+];
+const KOB_BASS = [
+  48,0,55,0, 48,0,55,0, 48,0,55,0, 48,0,55,0, // C
+  43,0,50,0, 43,0,50,0, 43,0,50,0, 43,0,50,0, // G
+  45,0,52,0, 45,0,52,0, 45,0,52,0, 45,0,52,0, // Am
+  43,0,50,0, 43,0,50,0, 43,0,50,0, 43,0,50,0, // G
+];
+// Track 3: "Dr. Dark" — deep dark capsule (Dm -> Bb -> Dm -> G)
+const DRK_MELODY = [
+  62,0,65,0, 69,0,65,0, 62,0,65,0, 69,0,72,0,
+  58,0,62,0, 65,0,62,0, 58,0,62,0, 65,0,69,0,
+  62,0,65,0, 69,0,65,0, 62,0,65,0, 69,0,72,0,
+  55,0,59,0, 62,0,59,0, 55,0,59,0, 62,0,65,0,
+];
+const DRK_BASS = [
+  38,0,0,0, 45,0,0,0, 38,0,0,0, 45,0,0,0, // Dm
+  34,0,0,0, 41,0,0,0, 34,0,0,0, 41,0,0,0, // Bb
+  38,0,0,0, 45,0,0,0, 38,0,0,0, 45,0,0,0, // Dm
+  31,0,0,0, 38,0,0,0, 31,0,0,0, 38,0,0,0, // G
+];
+const TRACKS = [
+  {
+    name: 'Bit Block Boy', bpm: 138, swing: 0.16, melody: BBB_MELODY, bass: BBB_BASS,
+    kick: s => s % 4 === 0,
+    clap: s => s % 16 === 4 || s % 16 === 12,
+    hat: s => s % 2 === 0 ? (s % 4 === 2 ? 0.16 : 0.08) : 0,
+  },
+  {
+    name: 'Korobeiniki Polka', bpm: 150, swing: 0.28, melody: KOB_MELODY, bass: KOB_BASS,
+    kick: s => s % 4 === 0,
+    clap: s => s % 16 === 4 || s % 16 === 12,
+    hat: s => s % 2 === 0 ? (s % 4 === 2 ? 0.18 : 0.1) : 0,
+  },
+  {
+    name: 'Dr. Dark', bpm: 100, swing: 0.12, melody: DRK_MELODY, bass: DRK_BASS,
+    kick: s => s % 16 === 0 || s % 16 === 8,
+    clap: s => s % 16 === 8,
+    hat: s => s % 4 === 2 ? 0.12 : 0,
+  },
+];
+const MusicSys = {
+  ctx: null, noiseBuf: null,
+  on: true, playing: false,
+  track: 0,
+  step: 0, nextTime: 0, timer: null,
+  get cur() { return TRACKS[this.track]; },
+  get stepDur() { return 60 / this.cur.bpm / 4; },
+  ensure() {
+    if (!this.ctx) {
+      try {
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const len = Math.floor(this.ctx.sampleRate * 0.2);
+        this.noiseBuf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+        const d = this.noiseBuf.getChannelData(0);
+        for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+      } catch (e) { this.on = false; }
+    }
+  },
+  tryStart() {
+    if (!this.on || this.playing) return;
+    this.ensure();
+    if (!this.ctx) return;
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+    this.playing = true;
+    this.step = 0;
+    this.nextTime = this.ctx.currentTime + 0.1;
+    this.timer = setInterval(() => this.schedule(), 30);
+  },
+  stop() {
+    this.playing = false;
+    if (this.timer) { clearInterval(this.timer); this.timer = null; }
+  },
+  setTrack(i) {
+    this.track = (i + TRACKS.length) % TRACKS.length;
+    if (this.ctx && this.playing) {
+      this.step = 0;
+      this.nextTime = this.ctx.currentTime + 0.12;
+    }
+    updateMusicUI();
+  },
+  next() { this.setTrack(this.track + 1); },
+  prev() { this.setTrack(this.track - 1); },
+  schedule() {
+    const len = this.cur.melody.length;
+    while (this.nextTime < this.ctx.currentTime + 0.18) {
+      const s = this.step;
+      const t = this.nextTime + (s % 2 === 1 ? this.cur.swing * this.stepDur : 0);
+      this.playStep(s, t);
+      this.nextTime += this.stepDur;
+      this.step = (s + 1) % len;
+    }
+  },
+  playStep(s, t) {
+    const tr = this.cur;
+    if (tr.kick(s)) this.kick(t);
+    if (tr.clap(s)) this.clap(t);
+    const hv = tr.hat(s);
+    if (hv) this.hat(t, hv);
+    const b = tr.bass[s];
+    if (b) this.bassNote(b, t);
+    const m = tr.melody[s];
+    if (m) this.leadNote(m, t);
+  },
+  kick(t) {
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(150, t);
+    o.frequency.exponentialRampToValueAtTime(42, t + 0.11);
+    g.gain.setValueAtTime(0.5, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
+    o.connect(g); g.connect(this.ctx.destination);
+    o.start(t); o.stop(t + 0.16);
+  },
+  clap(t) {
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.noiseBuf;
+    const f = this.ctx.createBiquadFilter();
+    f.type = 'bandpass'; f.frequency.value = 1800; f.Q.value = 0.9;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.22, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+    src.connect(f); f.connect(g); g.connect(this.ctx.destination);
+    src.start(t); src.stop(t + 0.12);
+  },
+  hat(t, vol) {
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.noiseBuf;
+    const f = this.ctx.createBiquadFilter();
+    f.type = 'highpass'; f.frequency.value = 7000;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.035);
+    src.connect(f); f.connect(g); g.connect(this.ctx.destination);
+    src.start(t); src.stop(t + 0.05);
+  },
+  bassNote(midi, t) {
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = 'triangle';
+    o.frequency.value = N2F(midi);
+    g.gain.setValueAtTime(0.3, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.17);
+    o.connect(g); g.connect(this.ctx.destination);
+    o.start(t); o.stop(t + 0.19);
+  },
+  leadNote(midi, t) {
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = 'square';
+    o.frequency.value = N2F(midi);
+    g.gain.setValueAtTime(0.13, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.13);
+    o.connect(g); g.connect(this.ctx.destination);
+    o.start(t); o.stop(t + 0.15);
+  },
+};
+
+// ---------------- game state ----------------
+let grid = null;
+let falling = null;
+let phase = 'menu'; // menu | falling | clearing | settling | over
+let score = 0, combo = 0, level = 0, fallingSpeed = 2.3;
+let clearT = 0, clearDur = 0.38, clearList = [];
+let softAcc = 0;
+let fps = 0;
+const keysDown = new Set();
+let heldLeft = false, heldRight = false, moveTimer = 0, moveArmed = false;
+let heldDir = 0, lastKeyT = 0, lastDownT = 0;
+const KEY_TIMEOUT = 1.5; // self-heals phantom keys (lost keyups happen on remote sessions)
+let menuSel = 0;
+const menuButtons = [];
+const titleCandies = [];
+let menuTime = 0;
+
+// ---------------- candy assets (primitives, no external files) ----------------
+const geos = [
+  new THREE.BoxGeometry(0.86, 0.86, 0.86),
+  new THREE.SphereGeometry(0.46, 24, 18),
+  new THREE.IcosahedronGeometry(0.5, 0),
+  new THREE.OctahedronGeometry(0.52, 0),
+  new THREE.ConeGeometry(0.46, 0.9, 20),
+  new THREE.TorusGeometry(0.34, 0.17, 14, 24),
+];
+const mats = COLORS.map(p => new THREE.MeshStandardMaterial({
+  color: p.c, roughness: 0.28, metalness: 0.18,
+  emissive: new THREE.Color(p.c).multiplyScalar(0.14),
+}));
+function makeCandy(color) {
+  const m = new THREE.Mesh(geos[color], mats[color]);
+  m.castShadow = true;
+  m.receiveShadow = true;
+  return m;
+}
+
+// ---------------- particles ----------------
+const particleGeo = new THREE.TetrahedronGeometry(0.09);
+const particleMats = COLORS.map(p => new THREE.MeshBasicMaterial({
+  color: p.c, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false,
+}));
+let particles = [];
+function spawnBurst(pos, color) {
+  for (let i = 0; i < 10; i++) {
+    if (particles.length > 260) return;
+    const m = new THREE.Mesh(particleGeo, particleMats[color]);
+    m.position.copy(pos);
+    const v = new THREE.Vector3((Math.random() - 0.5) * 5, Math.random() * 5 + 1.5, (Math.random() - 0.5) * 5);
+    particles.push({ m, v, life: 0.55, max: 0.55 });
+    scene.add(m);
+  }
+}
+function updateParticles(dt) {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.life -= dt;
+    if (p.life <= 0) { scene.remove(p.m); particles.splice(i, 1); continue; }
+    p.v.y -= 10 * dt;
+    p.m.position.addScaledVector(p.v, dt);
+    p.m.rotation.x += dt * 8;
+    p.m.rotation.y += dt * 6;
+    p.m.scale.setScalar(p.life / p.max);
+  }
+}
+
+// ---------------- board & scene construction ----------------
+function buildBoard() {
+  const g = new THREE.Group();
+  const back = new THREE.Mesh(
+    new THREE.BoxGeometry(COLS + 0.6, ROWS + 0.6, 0.3),
+    new THREE.MeshStandardMaterial({ color: 0x131a33, roughness: 0.85, metalness: 0.15 })
+  );
+  back.position.set(0, ROWS / 2, -0.62);
+  back.receiveShadow = true;
+  g.add(back);
+
+  const lineMat = new THREE.MeshBasicMaterial({ color: 0x2b3a6e, transparent: true, opacity: 0.7 });
+  for (let r = 0; r <= ROWS; r++) {
+    const bar = new THREE.Mesh(new THREE.BoxGeometry(COLS, 0.025, 0.025), lineMat);
+    bar.position.set(0, r * CELL, -0.42);
+    g.add(bar);
+  }
+  for (let c = 0; c <= COLS; c++) {
+    const bar = new THREE.Mesh(new THREE.BoxGeometry(0.025, ROWS, 0.025), lineMat);
+    bar.position.set(xOf(c - 0.5), ROWS / 2, -0.42);
+    g.add(bar);
+  }
+
+  const rimMat = new THREE.MeshStandardMaterial({
+    color: 0x0a0f22, roughness: 0.35, metalness: 0.7,
+    emissive: 0x1c2f77, emissiveIntensity: 0.7,
+  });
+  const rimH = new THREE.BoxGeometry(COLS + 0.8, 0.18, 0.7);
+  const rimV = new THREE.BoxGeometry(0.18, ROWS + 0.8, 0.7);
+  const top = new THREE.Mesh(rimH, rimMat); top.position.set(0, ROWS + 0.09, -0.2);
+  const bot = new THREE.Mesh(rimH, rimMat); bot.position.set(0, -0.09, -0.2);
+  const left = new THREE.Mesh(rimV, rimMat); left.position.set(-COLS / 2 - 0.09, ROWS / 2, -0.2);
+  const right = new THREE.Mesh(rimV, rimMat); right.position.set(COLS / 2 + 0.09, ROWS / 2, -0.2);
+  g.add(top, bot, left, right);
+
+  const danger = new THREE.Mesh(
+    new THREE.BoxGeometry(COLS + 0.4, 0.05, 0.5),
+    new THREE.MeshBasicMaterial({ color: 0xff3b5c, transparent: true, opacity: 0.85 })
+  );
+  danger.position.set(0, ROWS + 0.28, 0);
+  g.add(danger);
+
+  const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(80, 80),
+    new THREE.MeshStandardMaterial({ color: 0x0c101f, roughness: 1, metalness: 0 })
+  );
+  floor.rotation.x = -Math.PI / 2;
+  floor.position.y = -0.5;
+  floor.receiveShadow = true;
+  g.add(floor);
+
+  scene.add(g);
+}
+
+function buildStars() {
+  const n = 500;
+  const pos = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) {
+    const r = 35 + Math.random() * 50;
+    const t = Math.random() * Math.PI * 2;
+    const ph = Math.acos(2 * Math.random() - 1);
+    pos[i * 3]     = r * Math.sin(ph) * Math.cos(t);
+    pos[i * 3 + 1] = r * Math.cos(ph) * 0.6 + 6;
+    pos[i * 3 + 2] = r * Math.sin(ph) * Math.sin(t) - 20;
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const m = new THREE.PointsMaterial({
+    color: 0x88aaff, size: 0.18, sizeAttenuation: true, transparent: true, opacity: 0.8,
+  });
+  scene.add(new THREE.Points(g, m));
+}
+
+// ---------------- core game logic ----------------
+function restRowFor(col) {
+  for (let r = ROWS - 1; r >= 0; r--) if (grid[r][col]) return r + 1;
+  return 0;
+}
+
+function spawnPiece() {
+  const col = (Math.random() * COLS) | 0;
+  if (grid[ROWS - 1][col]) { gameOver(); return; }
+  const color = (Math.random() * COLORS.length) | 0;
+  const mesh = makeCandy(color);
+  const y = ROWS * CELL + 1.4;
+  mesh.position.set(xOf(col), y, 0);
+  scene.add(mesh);
+  falling = { color, col, y, mesh };
+  phase = 'falling';
+}
+
+function tryMove(dir) {
+  if (phase !== 'falling' || !falling) return;
+  const nc = falling.col + dir;
+  if (nc < 0 || nc >= COLS) return;
+  // collide against the piece's CURRENT bottom row, not its landing row,
+  // so a piece can slide over shorter stacks to reach the side lanes
+  const r = Math.min(ROWS - 1, Math.max(0, Math.floor(falling.y - 0.5)));
+  if (grid[r][nc]) return;
+  falling.col = nc;
+  falling.mesh.position.x = xOf(nc);
+  sfx.move();
+}
+
+function hardDrop() {
+  if (phase !== 'falling' || !falling) return;
+  const row = restRowFor(falling.col);
+  falling.y = row * CELL + CELL / 2;
+  falling.mesh.position.y = falling.y;
+  score += 2;
+  lockPiece();
+}
+
+function lockPiece() {
+  const row = restRowFor(falling.col);
+  const mesh = falling.mesh;
+  mesh.rotation.set(0, 0, 0);
+  if (row >= ROWS) {
+    scene.remove(mesh);
+    falling = null;
+    gameOver();
+    return;
+  }
+  mesh.position.set(xOf(falling.col), row * CELL + CELL / 2, 0);
+  grid[row][falling.col] = { color: falling.color, mesh, ty: row * CELL + CELL / 2 };
+  falling = null;
+  sfx.lock();
+  updateHud();
+  const m = findMatches();
+  if (m.size) startClear(m, 1);
+  else spawnPiece();
+}
+
+function findMatches() {
+  const matched = new Set();
+  for (let r = 0; r < ROWS; r++) {
+    let run = 1;
+    for (let c = 1; c <= COLS; c++) {
+      const same = c < COLS && grid[r][c] && grid[r][c - 1] && grid[r][c].color === grid[r][c - 1].color;
+      if (same) run++;
+      else {
+        if (run >= 3) for (let k = c - run; k < c; k++) matched.add(r + ',' + k);
+        run = 1;
+      }
+    }
+  }
+  for (let c = 0; c < COLS; c++) {
+    let run = 1;
+    for (let r = 1; r <= ROWS; r++) {
+      const same = r < ROWS && grid[r][c] && grid[r - 1][c] && grid[r][c].color === grid[r - 1][c].color;
+      if (same) run++;
+      else {
+        if (run >= 3) for (let k = r - run; k < r; k++) matched.add(k + ',' + c);
+        run = 1;
+      }
+    }
+  }
+  return matched;
+}
+
+function startClear(matched, n) {
+  combo = n;
+  score += matched.size * 10 * n;
+  phase = 'clearing';
+  clearT = 0;
+  clearList = [];
+  matched.forEach(key => {
+    const idx = key.indexOf(',');
+    const r = +key.slice(0, idx), c = +key.slice(idx + 1);
+    const cd = grid[r][c];
+    if (!cd) return;
+    clearList.push({ cd, r, c });
+    spawnBurst(cd.mesh.position, cd.color);
+  });
+  sfx.match(n);
+  updateHud();
+}
+
+function finishClear() {
+  for (const it of clearList) {
+    scene.remove(it.cd.mesh);
+    grid[it.r][it.c] = null;
+  }
+  clearList = [];
+  for (let c = 0; c < COLS; c++) {
+    let w = 0;
+    for (let r = 0; r < ROWS; r++) {
+      const cd = grid[r][c];
+      if (!cd) continue;
+      grid[r][c] = null;
+      grid[w][c] = cd;
+      cd.ty = w * CELL + CELL / 2;
+      w++;
+    }
+  }
+  phase = 'settling';
+}
+
+function gameOver() {
+  phase = 'over';
+  if (falling) { scene.remove(falling.mesh); falling = null; }
+  sfx.over();
+  elFinal.textContent = score;
+  elInitials.value = '';
+  elSave.disabled = false;
+  elSavedMsg.textContent = '';
+  const top = loadScores();
+  elNewHigh.classList.toggle('hidden', !(score > 0 && score >= (top[0] ? top[0].s : 0)));
+  renderTopList(elTopList, top.slice(0, 5));
+  elOverlay.classList.remove('hidden');
+  elInitials.focus();
+}
+
+function clearBoard() {
+  if (grid) for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+    const cd = grid[r][c];
+    if (cd) scene.remove(cd.mesh);
+  }
+  if (falling) { scene.remove(falling.mesh); falling = null; }
+  for (const p of particles) scene.remove(p.m);
+  particles = [];
+  clearList = [];
+  grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
+  score = 0; combo = 0; level = 0; fallingSpeed = 2.3; softAcc = 0;
+  updateHud();
+}
+
+function resetGame() {
+  clearBoard();
+  spawnPiece();
+}
+
+// ---------------- main menu & high scores ----------------
+function buildTitleCandies() {
+  const n = 9;
+  for (let i = 0; i < n; i++) {
+    const color = i % COLORS.length;
+    const m = makeCandy(color);
+    const x = (i - (n - 1) / 2) * 1.05;
+    const y = ROWS + 1.7;
+    m.position.set(x, y, 0.5);
+    m.scale.setScalar(0.72);
+    scene.add(m);
+    titleCandies.push({ m, baseY: y, ph: i * 0.55 });
+  }
+}
+
+function setMenuSel(i) {
+  menuSel = (i + menuButtons.length) % menuButtons.length;
+  menuButtons.forEach((b, k) => b.classList.toggle('sel', k === menuSel));
+}
+
+function activateMenu() {
+  if (!menuButtons.length) return;
+  sfx.ensure();
+  sfx.lock();
+  const id = menuButtons[menuSel].id;
+  if (id === 'menuStart') startGameFromMenu();
+  else if (id === 'menuScores') showScores();
+  else if (id === 'menuSite') window.location.href = 'https://ds-da.ca';
+}
+
+function startGameFromMenu() {
+  elMenu.classList.add('hidden');
+  elScores.classList.add('hidden');
+  document.body.classList.remove('menu-mode');
+  resetGame();
+}
+
+function backToMenu() {
+  elOverlay.classList.add('hidden');
+  elScores.classList.add('hidden');
+  document.body.classList.add('menu-mode');
+  clearBoard();
+  phase = 'menu';
+  setMenuSel(0);
+  elMenu.classList.remove('hidden');
+}
+
+async function fetchGlobalBoard() {
+  try {
+    const r = await fetch('leaderboard.json?nocache=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) return null;
+    const j = await r.json();
+    return Array.isArray(j) ? j : (j && Array.isArray(j.top) ? j : null);
+  } catch (e) { return null; }
+}
+
+async function showScores() {
+  elScores.classList.remove('hidden');
+  renderTopList(elLocalTop, loadScores().slice(0, 5));
+  elGlobalNote.textContent = 'Loading global board…';
+  const g = await fetchGlobalBoard();
+  if (g && g.length) {
+    renderTopList(elGlobalTop, g.slice(0, 5));
+    elGlobalNote.textContent = 'Verified by the DSDA board · ' + new Date(g.updated || Date.now()).toLocaleDateString();
+  } else if (g) {
+    renderTopList(elGlobalTop, []);
+    elGlobalNote.textContent = 'No global scores yet — be the first!';
+  } else {
+    renderTopList(elGlobalTop, []);
+    elGlobalNote.textContent = 'Global board offline (local copy only)';
+  }
+}
+
+// ---------------- scoring / leaderboard (localStorage) ----------------
+function loadScores() {
+  try {
+    const a = JSON.parse(localStorage.getItem(SCORE_KEY));
+    return Array.isArray(a) ? a : [];
+  } catch (e) { return []; }
+}
+function saveToStorage(name, s) {
+  const arr = loadScores();
+  arr.push({ n: name, s: s, d: Date.now() });
+  arr.sort((a, b) => b.s - a.s);
+  const top = arr.slice(0, 5);
+  try { localStorage.setItem(SCORE_KEY, JSON.stringify(top)); } catch (e) {}
+  return top;
+}
+function renderTopList(el, top) {
+  el.innerHTML = '';
+  if (!top.length) {
+    const li = document.createElement('li');
+    li.innerHTML = '<span class="rank">—</span><span class="name">No scores yet</span><span>0</span>';
+    el.appendChild(li);
+    return;
+  }
+  top.forEach((e, i) => {
+    const li = document.createElement('li');
+    const r = document.createElement('span'); r.className = 'rank'; r.textContent = i + 1;
+    const n = document.createElement('span'); n.className = 'name'; n.textContent = e.n;
+    const s = document.createElement('span'); s.textContent = e.s;
+    li.append(r, n, s);
+    el.appendChild(li);
+  });
+}
+function saveScore() {
+  if (phase !== 'over' || elSave.disabled) return;
+  let name = elInitials.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (!name) name = '???';
+  name = name.slice(0, 3).padEnd(3, '?');
+  const top = saveToStorage(name, score);
+  renderTopList(elTopList, top);
+  renderTopList(elHudTop, top);
+  elSave.disabled = true;
+  elSavedMsg.textContent = 'Saved!';
+  sfx.match(2);
+}
+function playAgain() {
+  elOverlay.classList.add('hidden');
+  elPlayAgain.blur();
+  resetGame();
+}
+
+// ---------------- HUD ----------------
+function updateHud() {
+  elScore.textContent = score;
+  elLevel.textContent = 1 + level;
+  if (combo >= 2) {
+    elCombo.textContent = '×' + combo + ' CHAIN';
+    elCombo.classList.add('hot');
+  } else if (combo === 1) {
+    elCombo.textContent = 'MATCH!';
+    elCombo.classList.remove('hot');
+  } else {
+    elCombo.textContent = '—';
+    elCombo.classList.remove('hot');
+  }
+}
+function bumpLevel() {
+  const lv = Math.min(12, Math.floor(score / 400));
+  if (lv !== level) { level = lv; fallingSpeed = 2.3 + level * 0.55; updateHud(); }
+}
+
+// ---------------- input ----------------
+function onKey(e) {
+  if (inputFrozen) return;
+  if (['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp', 'Space'].includes(e.code)) e.preventDefault();
+  sfx.ensure();
+  MusicSys.tryStart();
+  const now = performance.now() / 1000;
+  const ae = document.activeElement;
+  if (ae && ae.tagName === 'BUTTON') ae.blur();
+  if (!elScores.classList.contains('hidden')) {
+    if (e.code === 'Escape' || e.code === 'Enter' || e.code === 'Space') { e.preventDefault(); backToMenu(); }
+    return;
+  }
+  if (phase === 'menu' && !elMenu.classList.contains('hidden')) {
+    if (e.code === 'ArrowUp') { setMenuSel(menuSel - 1); return; }
+    if (e.code === 'ArrowDown') { setMenuSel(menuSel + 1); return; }
+    if (e.code === 'Enter' || e.code === 'Space') { e.preventDefault(); activateMenu(); return; }
+    return;
+  }
+  if (e.code === 'ArrowLeft') {
+    heldLeft = true; heldDir = -1; lastKeyT = now;
+    if (!e.repeat) { moveTimer = 0; moveArmed = false; tryMove(-1); }
+  } else if (e.code === 'ArrowRight') {
+    heldRight = true; heldDir = 1; lastKeyT = now;
+    if (!e.repeat) { moveTimer = 0; moveArmed = false; tryMove(1); }
+  } else if (e.code === 'ArrowDown') {
+    keysDown.add('down'); lastDownT = now;
+  } else if (e.code === 'Space') {
+    if (!e.repeat) hardDrop();
+  } else if (e.code === 'KeyM') {
+    if (!e.repeat) MusicSys.next();
+  }
+}
+function onKeyUp(e) {
+  if (e.code === 'ArrowLeft') {
+    heldLeft = false;
+    if (!heldRight) { moveTimer = 0; moveArmed = false; }
+  } else if (e.code === 'ArrowRight') {
+    heldRight = false;
+    if (!heldLeft) { moveTimer = 0; moveArmed = false; }
+  } else if (e.code === 'ArrowDown') {
+    keysDown.delete('down');
+  }
+}
+function onWindowBlur() {
+  heldLeft = false; heldRight = false;
+  keysDown.clear();
+  moveTimer = 0; moveArmed = false;
+}
+function toggleSound() {
+  sfx.on = !sfx.on;
+  elSound.textContent = sfx.on ? '🔊 sound on' : '🔇 sound off';
+  if (sfx.on) { sfx.ensure(); sfx.move(); }
+}
+function toggleMusic() {
+  MusicSys.on = !MusicSys.on;
+  elMusicToggle.textContent = MusicSys.on ? '🎵' : '🔇';
+  if (MusicSys.on) MusicSys.tryStart();
+  else MusicSys.stop();
+}
+function updateMusicUI() {
+  elMusicName.textContent = (MusicSys.track + 1) + '. ' + MusicSys.cur.name;
+}
+
+// ---------------- main loop ----------------
+function update(dt) {
+  updateParticles(dt);
+  menuTime += dt;
+  for (const tc of titleCandies) {
+    tc.m.position.y = tc.baseY + Math.sin(menuTime * 1.8 + tc.ph) * 0.18;
+    tc.m.rotation.y += dt * 0.9;
+    tc.m.rotation.x += dt * 0.4;
+  }
+  const now = performance.now() / 1000;
+  if ((heldLeft || heldRight) && now - lastKeyT > KEY_TIMEOUT) {
+    heldLeft = false; heldRight = false; moveTimer = 0; moveArmed = false;
+  }
+  if (keysDown.has('down') && now - lastDownT > KEY_TIMEOUT) keysDown.delete('down');
+  if (phase === 'falling' && falling) {
+    const dir = (heldLeft && !heldRight) ? -1 : (heldRight && !heldLeft) ? 1 : (heldLeft && heldRight ? heldDir : 0);
+    if (dir !== 0) {
+      moveTimer += dt;
+      if (moveTimer >= (moveArmed ? 0.055 : 0.13)) {
+        tryMove(dir);
+        moveTimer = 0;
+        moveArmed = true;
+      }
+    } else {
+      moveTimer = 0; moveArmed = false;
+    }
+    const v = fallingSpeed * (keysDown.has('down') ? 6 : 1);
+    falling.y -= v * dt;
+    if (keysDown.has('down')) {
+      softAcc += v * dt;
+      while (softAcc >= 1) { softAcc -= 1; score += 1; }
+    }
+    const row = restRowFor(falling.col);
+    const ty = row * CELL + CELL / 2;
+    falling.mesh.position.y = Math.max(falling.y, ty);
+    falling.mesh.rotation.y += dt * 1.4;
+    falling.mesh.rotation.x += dt * 0.5;
+    if (falling.y <= ty) lockPiece();
+  } else if (phase === 'clearing') {
+    clearT += dt;
+    const k = Math.min(1, clearT / clearDur);
+    for (const it of clearList) it.cd.mesh.scale.setScalar(Math.max(0.001, 1 - k));
+    if (k >= 1) finishClear();
+  } else if (phase === 'settling') {
+    let all = true;
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      const cd = grid[r][c];
+      if (!cd) continue;
+      const dy = cd.ty - cd.mesh.position.y;
+      if (Math.abs(dy) > 0.004) {
+        all = false;
+        cd.mesh.position.y += dy * Math.min(1, dt * 14);
+      } else if (dy !== 0) {
+        cd.mesh.position.y = cd.ty;
+      }
+    }
+    if (all) {
+      const m = findMatches();
+      if (m.size) startClear(m, combo + 1);
+      else { combo = 0; updateHud(); spawnPiece(); }
+    }
+  }
+  bumpLevel();
+}
+
+function animate() {
+  rafId = requestAnimationFrame(animate);
+  const dt = Math.min(clock.getDelta(), 0.05);
+  if (dt > 0) fps = fps * 0.95 + (1 / dt) * 0.05;
+  update(dt);
+  renderer.render(scene, camera);
+}
+
+function onResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+// ---------------- boot ----------------
+function boot() {
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.12;
+  renderer.domElement.id = 'scene';
+  document.body.appendChild(renderer.domElement);
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0b0e1a);
+  scene.fog = new THREE.Fog(0x0b0e1a, 26, 90);
+
+  camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 200);
+  camera.position.set(2.6, 7.2, 17.5);
+  camera.lookAt(0, 6, 0);
+
+  scene.add(new THREE.HemisphereLight(0x4455aa, 0x0a0c14, 0.55));
+  scene.add(new THREE.AmbientLight(0x404a70, 0.5));
+  const dir = new THREE.DirectionalLight(0xffffff, 1.7);
+  dir.position.set(6, 14, 9);
+  dir.castShadow = true;
+  dir.shadow.mapSize.set(1024, 1024);
+  dir.shadow.camera.left = -8; dir.shadow.camera.right = 8;
+  dir.shadow.camera.top = 15; dir.shadow.camera.bottom = -2;
+  dir.shadow.camera.near = 1; dir.shadow.camera.far = 40;
+  scene.add(dir);
+  const p1 = new THREE.PointLight(0x5588ff, 55, 0, 2); p1.position.set(-7, 5, 6); scene.add(p1);
+  const p2 = new THREE.PointLight(0xff5599, 40, 0, 2); p2.position.set(7, 11, 5); scene.add(p2);
+
+  buildBoard();
+  buildStars();
+
+  window.addEventListener('resize', onResize);
+  window.addEventListener('keydown', onKey);
+  window.addEventListener('keyup', onKeyUp);
+  window.addEventListener('blur', onWindowBlur);
+  window.addEventListener('pointerdown', () => { window.focus(); sfx.ensure(); MusicSys.tryStart(); });
+  window.focus();
+
+  elSave.addEventListener('click', saveScore);
+  elPlayAgain.addEventListener('click', playAgain);
+  elInitials.addEventListener('keydown', e => {
+    if (e.key === 'Enter') saveScore();
+    e.stopPropagation();
+  });
+  elSound.addEventListener('click', e => { toggleSound(); e.currentTarget.blur(); });
+  elMusicPrev.addEventListener('click', e => { MusicSys.prev(); e.currentTarget.blur(); });
+  elMusicNext.addEventListener('click', e => { MusicSys.next(); e.currentTarget.blur(); });
+  elMusicToggle.addEventListener('click', e => { toggleMusic(); e.currentTarget.blur(); });
+  elScoresBack.addEventListener('click', e => { backToMenu(); e.currentTarget.blur(); });
+  elToMenu.addEventListener('click', e => { backToMenu(); e.currentTarget.blur(); });
+
+  menuButtons.push($('menuStart'), $('menuScores'), $('menuSite'));
+  menuButtons.forEach((b, k) => {
+    b.addEventListener('mouseenter', () => setMenuSel(k));
+    b.addEventListener('click', e => { setMenuSel(k); activateMenu(); e.currentTarget.blur(); });
+  });
+
+  buildTitleCandies();
+
+  grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
+  renderTopList(elHudTop, loadScores().slice(0, 5));
+  updateMusicUI();
+  updateHud();
+  setMenuSel(0);
+  phase = 'menu';
+  clock = new THREE.Clock();
+  animate();
+}
+
+// ---------------- debug / harness API ----------------
+window.__tl = {
+  pause() { cancelAnimationFrame(rafId); },
+  resume() { clock.getDelta(); animate(); },
+  rawFrame() { cancelAnimationFrame(rafId); renderer.render(scene, camera); },
+  freezeInput() { inputFrozen = true; },
+  unfreezeInput() { inputFrozen = false; },
+  music() {
+    let test = 'no-ctx';
+    if (MusicSys.ctx) {
+      try {
+        const saved = MusicSys.track;
+        const names = [];
+        for (let t = 0; t < TRACKS.length; t++) {
+          MusicSys.track = t;
+          const tr = MusicSys.cur;
+          for (let s = 0; s < tr.melody.length; s++) MusicSys.playStep(s, MusicSys.ctx.currentTime + 0.01 + s * 0.001);
+          names.push(tr.name + ':' + tr.melody.length + '+' + tr.bass.length);
+        }
+        MusicSys.track = saved;
+        MusicSys.nextTime = Math.max(0.01, MusicSys.ctx.currentTime - 2);
+        MusicSys.schedule();
+        test = 'ok|' + names.join(' ');
+      } catch (e) { test = String(e); }
+    }
+    return {
+      on: MusicSys.on, playing: MusicSys.playing, step: MusicSys.step,
+      track: MusicSys.track, name: MusicSys.cur.name,
+      ctx: MusicSys.ctx ? MusicSys.ctx.state : null, test,
+    };
+  },
+  inputState() {
+    return {
+      heldLeft, heldRight, heldDir, down: keysDown.has('down'),
+      keyAge: +(performance.now() / 1000 - lastKeyT).toFixed(2),
+      frozen: inputFrozen,
+    };
+  },
+  hardDrop() { if (phase === 'falling' && falling) hardDrop(); },
+  start() { if (phase === 'menu') startGameFromMenu(); },
+  toMenu() { backToMenu(); },
+  menuSel() { return menuSel; },
+  seedBoard(pat) {
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      const cd = grid[r][c];
+      if (cd) { scene.remove(cd.mesh); grid[r][c] = null; }
+    }
+    if (falling) { scene.remove(falling.mesh); falling = null; }
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      if (!pat || !pat[r] || pat[r][c] < 0) continue;
+      const mesh = makeCandy(pat[r][c]);
+      mesh.position.set(xOf(c), r * CELL + CELL / 2, 0);
+      scene.add(mesh);
+      grid[r][c] = { color: pat[r][c], mesh, ty: r * CELL + CELL / 2 };
+    }
+    return 'seeded';
+  },
+  seedFalling(col, y, color) {
+    if (falling) { scene.remove(falling.mesh); falling = null; }
+    const c = (color === undefined) ? 2 : color;
+    const mesh = makeCandy(c);
+    mesh.position.set(xOf(col), y, 0);
+    scene.add(mesh);
+    falling = { color: c, col, y, mesh };
+    phase = 'falling';
+    return 'ok';
+  },
+  setScore(s, cb) { score = s; combo = cb || 0; updateHud(); return 'ok'; },
+  gridDump() {
+    const g = [];
+    for (let r = 0; r < ROWS; r++) {
+      const row = [];
+      for (let c = 0; c < COLS; c++) row.push(grid[r][c] ? grid[r][c].color : -1);
+      g.push(row);
+    }
+    return g;
+  },
+  state() {
+    let filled = 0;
+    if (grid) for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (grid[r][c]) filled++;
+    return {
+      phase, score, combo, level, filled,
+      falling: falling ? { col: falling.col, y: +falling.y.toFixed(2) } : null,
+      fps: Math.round(fps),
+    };
+  },
+  debugClear() {
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      const cd = grid[r][c];
+      if (cd) { scene.remove(cd.mesh); grid[r][c] = null; }
+    }
+    if (falling) { scene.remove(falling.mesh); falling = null; }
+    const pat = [
+      [0, 0, 0, 1, 2, 3],
+      [4, 1, 5, 1, 2, 5],
+      [2, 1, 1, 3, 4, 0],
+    ];
+    for (let r = 0; r < pat.length; r++) for (let c = 0; c < COLS; c++) {
+      const mesh = makeCandy(pat[r][c]);
+      mesh.position.set(xOf(c), r * CELL + CELL / 2, 0);
+      scene.add(mesh);
+      grid[r][c] = { color: pat[r][c], mesh, ty: r * CELL + CELL / 2 };
+    }
+    combo = 0;
+    const m = findMatches();
+    if (m.size) startClear(m, 1);
+    return m.size;
+  },
+  debugGameOver() {
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      if (!grid[r][c]) {
+        const color = (r + c) % COLORS.length;
+        const mesh = makeCandy(color);
+        mesh.position.set(xOf(c), r * CELL + CELL / 2, 0);
+        scene.add(mesh);
+        grid[r][c] = { color, mesh, ty: r * CELL + CELL / 2 };
+      }
+    }
+    phase = 'falling';
+    spawnPiece();
+  },
+  reset: resetGame,
+};
+
+try {
+  boot();
+} catch (err) {
+  window.__bootErr = (err && err.stack) || String(err);
+  elBootErr.classList.remove('hidden');
+  elBootErr.textContent = window.__bootErr;
+}
+</script>
+</body>
+</html>
