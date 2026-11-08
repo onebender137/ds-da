@@ -1165,21 +1165,17 @@ function onWindowBlur() {
 // swipe ← → : move (hold to slide, same DAS as keyboard)
 // swipe ↓   : soft drop while held
 // swipe ↑   : hard drop (once per touch)
-// tap       : hard drop
+// tap       : nothing — accidental taps can't drop the block
 const IS_TOUCH = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
 const SWIPE_DIST = 36;  // px of travel per step (≈ 2/3 board cell — deliberate, not twitchy)
-const TAP_MS = 260;     // max duration for a tap
 const buzz = ms => { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} };
 let tId = null;         // active pointer id (one finger at a time)
 let tX = 0, tY = 0;     // rebased origin (swipe steps)
-let tSX = 0, tSY = 0;   // original down position (tap detection)
-let tT0 = 0;
 let tMoved = false;     // a swipe was consumed on this touch
 function touchStart(e) {
   if (inputFrozen || tId !== null || !e.isPrimary) return;
   tId = e.pointerId;
-  tX = tSX = e.clientX; tY = tSY = e.clientY;
-  tT0 = performance.now();
+  tX = e.clientX; tY = e.clientY;
   tMoved = false;
   sfx.ensure();
   MusicSys.tryStart();
@@ -1211,11 +1207,10 @@ function touchMove(e) {
     tY = e.clientY;
   }
 }
-function touchEnd(e, allowTap) {
+function touchEnd(e) {
   if (e.pointerId !== tId) return;
   tId = null;
-  if (allowTap && !tMoved && performance.now() - tT0 < TAP_MS &&
-      Math.hypot(e.clientX - tSX, e.clientY - tSY) < SWIPE_DIST) hardDrop();
+  // a plain tap (no swipe) does nothing — accidental taps can't drop the block
   heldLeft = false; heldRight = false;
   keysDown.delete('down');
   moveTimer = 0; moveArmed = false;
@@ -1368,11 +1363,11 @@ function boot() {
   // touch / swipe controls (canvas only — panel taps never reach the game)
   renderer.domElement.addEventListener('pointerdown', touchStart);
   renderer.domElement.addEventListener('pointermove', touchMove);
-  renderer.domElement.addEventListener('pointerup', e => touchEnd(e, true));
-  renderer.domElement.addEventListener('pointercancel', e => touchEnd(e, false));
+  renderer.domElement.addEventListener('pointerup', e => touchEnd(e));
+  renderer.domElement.addEventListener('pointercancel', e => touchEnd(e));
   if (IS_TOUCH) {
-    $('hudKeys').innerHTML = 'swipe ← → &nbsp;move · hold to slide<br>swipe ↓ soft drop · swipe ↑ / tap hard drop';
-    $('menuHint').textContent = 'swipe ← → move · swipe ↓ soft drop · swipe ↑ or tap hard drop';
+    $('hudKeys').innerHTML = 'swipe ← → &nbsp;move · hold to slide<br>swipe ↓ soft drop · swipe ↑ hard drop';
+    $('menuHint').textContent = 'swipe ← → move · swipe ↓ soft drop · swipe ↑ hard drop';
   }
 
   elSave.addEventListener('click', saveScore);
