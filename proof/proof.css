@@ -1078,11 +1078,14 @@ html.dark .dash-tag {
     .hero { padding: 56px 20px; }
     .hero-title { font-size: 2.2rem; }
     .hero-sub { font-size: 0.95rem; }
-    /* Mobile: two-row header — DSDA centered + stretched on top, nav options on row two */
-    .header-inner { padding: 14px 20px 12px; flex-direction: column; gap: 10px; }
+    /* Mobile: two-row header — DSDA centered + stretched on top, all nav options on one row */
+    .header-inner { padding: 12px 20px; flex-direction: column; gap: 10px; position: relative; }
     .logo { align-self: center; font-size: 1.75rem; letter-spacing: 10px; text-indent: 10px; }
-    .nav { flex-wrap: wrap; justify-content: center; gap: 8px 16px; }
-    .nav a { font-size: 0.8rem; }
+    .nav { flex-wrap: nowrap; justify-content: center; gap: 8px 12px; }
+    .nav a { font-size: 0.72rem; letter-spacing: 0.3px; white-space: nowrap; }
+    /* Mobile: drop wallet status from the nav row so options fit on one line */
+    .wallet-status { display: none; }
+    .btn-login { padding: 5px 10px; font-size: 0.72rem; }
     .container { padding: 36px 16px 60px; }
     .card { padding: 20px; }
     .tiers { flex-direction: column; }
@@ -1092,9 +1095,10 @@ html.dark .dash-tag {
     .tip-jar { padding: 28px 16px; }
     .tip-jar-grid { flex-direction: column; gap: 16px; }
     .tip-info { text-align: center; }
-    /* Mobile: theme toggle = icon only (saves nav space) */
+    /* Mobile: theme pill = icon only, tucked in the top-right corner, out of header flow */
     .theme-toggle .theme-label { display: none; }
-    .theme-toggle { padding: 6px 10px; gap: 0; }
+    .theme-toggle { position: absolute; top: 10px; right: 12px; padding: 4px 10px; gap: 0; z-index: 2; }
+    .theme-toggle .theme-icon { font-size: 0.85rem; }
 }
 
 /* --- THEME TOGGLE (pill button) --- */
