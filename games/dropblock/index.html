@@ -198,7 +198,11 @@ const COLORS = [
   { c: 0x4d9fff }, // sapphire
   { c: 0xc06bff }, // grape
 ];
-const SCORE_KEY = 'candyfall.scores.v1';
+const SCORE_KEY='candyf...s.v1';
+// global score submission (GitHub Actions webhook -> leaderboard.json)
+const SCORE_DISPATCH_URL = 'https://api.github.com/repos/onebender137/ds-da/actions/workflows/score-webhook.yml/dispatches';
+const SCORE_TOKEN = 'PASTE_FI...HERE'; // fine-grained PAT: Actions:write on ds-da only
+const SCORE_SECRET = '6216cf68f4e077d3cd991f2d6bd3e878';
 
 // ---------------- dom ----------------
 const $ = id => document.getElementById(id);
@@ -836,6 +840,24 @@ function renderTopList(el, top) {
     el.appendChild(li);
   });
 }
+async function submitGlobal(name, s) {
+  if (!SCORE_TOKEN || SCORE_TOKEN.indexOf('PASTE_') === 0) return 'no-token';
+  try {
+    const r = await fetch(SCORE_DISPATCH_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + SCORE_TOKEN,
+        'X-GitHub-Api-Version': '2022-11-28',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        event: 'workflow_dispatch',
+        inputs: { initials: name, score: String(s), secret: SCORE_SECRET },
+      }),
+    });
+    return r.ok ? 'ok' : 'http-' + r.status;
+  } catch (e) { return 'err'; }
+}
 function saveScore() {
   if (phase !== 'over' || elSave.disabled) return;
   let name = elInitials.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -845,8 +867,12 @@ function saveScore() {
   renderTopList(elTopList, top);
   renderTopList(elHudTop, top);
   elSave.disabled = true;
-  elSavedMsg.textContent = 'Saved!';
+  elSavedMsg.textContent = 'Saved locally · submitting to global board…';
   sfx.match(2);
+  submitGlobal(name, score).then(res => {
+    if (res === 'ok') elSavedMsg.textContent = 'Saved! On the global board in ~1 min.';
+    else elSavedMsg.textContent = 'Saved locally · global board: ' + res;
+  });
 }
 function playAgain() {
   elOverlay.classList.add('hidden');
