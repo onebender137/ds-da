@@ -791,6 +791,20 @@ async function fetchGlobalBoard() {
   } catch (e) { return null; }
 }
 
+// live board: poll every 30s — scores overlay refreshes while open, HUD list
+// refreshes while in game. No manual refreshes; board appears the instant
+// the workflow's commit lands on Pages.
+setInterval(async () => {
+  const g = await fetchGlobalBoard();
+  if (!g || !g.top.length) return;
+  if (!elScores.classList.contains('hidden')) {
+    renderTopList(elGlobalTop, g.top.slice(0, 10));
+    elGlobalNote.textContent = 'Verified by the DSDA board · ' + new Date(g.updated || Date.now()).toLocaleDateString();
+  } else if (elMenu.classList.contains('hidden')) {
+    renderTopList(elHudTop, g.top.slice(0, 10));
+  }
+}, 30000);
+
 async function showScores() {
   elScores.classList.remove('hidden');
   renderTopList(elLocalTop, loadScores().slice(0, 10));
