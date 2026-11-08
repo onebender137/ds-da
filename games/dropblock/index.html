@@ -907,7 +907,7 @@ function saveScore() {
   elSavedMsg.textContent = 'Saved locally · submitting to global board…';
   sfx.match(2);
   submitGlobal(name, score).then(res => {
-    if (res === 'ok') elSavedMsg.textContent = 'Saved! On the global board in ~1 min.';
+    if (res === 'ok') elSavedMsg.textContent = 'Saved! On the global board ✓';
     else elSavedMsg.textContent = 'Saved locally · global board: ' + res;
   });
 }
