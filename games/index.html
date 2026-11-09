@@ -16,9 +16,11 @@
     <meta property="og:url" content="https://ds-da.ca/games/">
     <meta property="og:title" content="DSDA Arcade | DSDA">
     <meta property="og:description" content="Hand-built browser games in 3D arcade cabinets. No downloads. No accounts. Just play.">
-    <meta property="og:image" content="https://ds-da.ca/games/dropblock/screenshot.png">
+    <meta property="og:image" content="https://ds-da.ca/games/og-arcade.png">
     <link rel="canonical" href="https://ds-da.ca/games/">
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
     <link rel="stylesheet" href="../style.css?v=2.0.4">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script>
@@ -226,7 +228,8 @@
           state()  { return { phase: state.phase, zoom: +state.zoom.toFixed(3), hover: state.hover, time: +state.time.toFixed(2), paused: state.paused, cams: cabinets.length }; },
           frame(ms) { advance((ms || 16.7) / 1000); render(); },
           play(i)  { startZoom(i); },
-          camPos() { return camera.position.toArray(); }
+          camPos() { return camera.position.toArray(); },
+          view()   { return { renderer, scene, camera }; }
         };
 
         requestAnimationFrame(loop);
