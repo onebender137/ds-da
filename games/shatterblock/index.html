@@ -520,8 +520,16 @@ const sfx = {
     const f = 300 + (7 - Math.min(7, row)) * 55;
     this.tone(hard ? 140 : f, 0.05, hard ? 'sawtooth' : 'square', 0.1, 0, hard ? 90 : f * 1.4);
   },
-  power() { [523, 659, 784, 1047].forEach((f, i) => this.tone(f, 0.09, 'square', 0.09, i * 0.06)); },
-  bad() { [392, 330, 262].forEach((f, i) => this.tone(f, 0.1, 'sawtooth', 0.08, i * 0.07)); },
+  power() {
+    // juicy power-up pickup: bright ascending arpeggio + a sparkling top chord
+    [523, 659, 784, 1047].forEach((f, i) => this.tone(f, 0.09, 'square', 0.085, i * 0.05));
+    [1047, 1319, 1568, 2093].forEach((f, i) => this.tone(f, 0.22, 'triangle', 0.045, 0.2 + i * 0.012));
+  },
+  bad() {
+    // "uh oh" — descending warning for shrink / fast
+    [440, 349, 262].forEach((f, i) => this.tone(f, 0.13, 'sawtooth', 0.085, i * 0.08, f * 0.82));
+    this.tone(180, 0.22, 'sawtooth', 0.06, 0.24, 120);
+  },
   life() { [330, 262, 196, 147].forEach((f, i) => this.tone(f, 0.18, 'sawtooth', 0.09, i * 0.16, f * 0.9)); },
   laser() { this.tone(1400, 0.07, 'sawtooth', 0.06, 0, 500); },
   launch() { this.tone(300, 0.09, 'square', 0.1, 0, 620); },
@@ -744,28 +752,60 @@ let menuSel = 0;
 const menuButtons = [];
 const titleBricks = [];
 let menuTime = 0;
+// visual-polish state
+let glareLight = null, glarePhase = 0;   // sweeping sheen light across the bricks
+let starGroup = null;                     // rotating space starfield + nebulae
 
 const colX = c => -7.66 + BRICK_PITCH_X * c + 0.55;
 const rowY = r => BRICK_TOP - r * BRICK_PITCH_Y;
 
 // ---------------- brick assets ----------------
 const brickGeo = new THREE.BoxGeometry(BRICK_W, BRICK_H, BRICK_D);
+// MeshPhysicalMaterial + clearcoat = a glossy top layer that catches the
+// sweeping glare light, giving each brick a moving specular sheen.
 const brickMats = {
-  1: new THREE.MeshStandardMaterial({ color: 0xff5d6c, roughness: 0.3, metalness: 0.15,
+  1: new THREE.MeshPhysicalMaterial({ color: 0xff5d6c, roughness: 0.28, metalness: 0.2,
+    clearcoat: 1, clearcoatRoughness: 0.12,
     emissive: new THREE.Color(0xff5d6c).multiplyScalar(0.16) }),
-  2: new THREE.MeshStandardMaterial({ color: 0xffb347, roughness: 0.3, metalness: 0.15,
+  2: new THREE.MeshPhysicalMaterial({ color: 0xffb347, roughness: 0.28, metalness: 0.2,
+    clearcoat: 1, clearcoatRoughness: 0.12,
     emissive: new THREE.Color(0xffb347).multiplyScalar(0.16) }),
-  3: new THREE.MeshStandardMaterial({ color: 0x4dd2ff, roughness: 0.3, metalness: 0.15,
+  3: new THREE.MeshPhysicalMaterial({ color: 0x4dd2ff, roughness: 0.28, metalness: 0.2,
+    clearcoat: 1, clearcoatRoughness: 0.12,
     emissive: new THREE.Color(0x4dd2ff).multiplyScalar(0.16) }),
-  solid: new THREE.MeshStandardMaterial({ color: 0x39415e, roughness: 0.35, metalness: 0.75,
+  solid: new THREE.MeshPhysicalMaterial({ color: 0x39415e, roughness: 0.3, metalness: 0.8,
+    clearcoat: 0.8, clearcoatRoughness: 0.2,
     emissive: 0x101733, emissiveIntensity: 0.8 }),
 };
 const ballGeo = new THREE.SphereGeometry(BALL_R, 20, 14);
 const ballMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.25, metalness: 0.3,
   emissive: 0x88aaff, emissiveIntensity: 0.55 });
 const paddleGeo = new THREE.BoxGeometry(1, PADDLE_H, 0.42);
-const paddleMat = new THREE.MeshStandardMaterial({ color: 0x6ea8ff, roughness: 0.3, metalness: 0.5,
-  emissive: 0x2b4bd8, emissiveIntensity: 0.7 });
+// Polished paddle: glossy clearcoated body + a bright "energy core" stripe
+// along the top + glowing side accents. Built as a Group so
+// recalcPaddleWidth() can scale the whole assembly.
+function buildPaddle() {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(paddleGeo,
+    new THREE.MeshPhysicalMaterial({ color: 0x4d8dff, roughness: 0.16, metalness: 0.55,
+      clearcoat: 1, clearcoatRoughness: 0.08,
+      emissive: 0x1a3aa0, emissiveIntensity: 0.5 }));
+  body.castShadow = true;
+  g.add(body);
+  // bright energy core stripe along the top-center
+  const core = new THREE.Mesh(new THREE.BoxGeometry(0.98, 0.055, 0.46),
+    new THREE.MeshStandardMaterial({ color: 0xdff3ff, emissive: 0x8fd8ff, emissiveIntensity: 1.8, roughness: 0.15, metalness: 0.1 }));
+  core.position.y = PADDLE_H / 2 - 0.015;
+  g.add(core);
+  // glowing side accents near the edges
+  const accentMat = new THREE.MeshStandardMaterial({ color: 0x9fd0ff, emissive: 0x5fb0ff, emissiveIntensity: 1.3, roughness: 0.3, metalness: 0.2 });
+  const al = new THREE.Mesh(new THREE.BoxGeometry(0.07, PADDLE_H - 0.1, 0.44), accentMat);
+  al.position.x = -0.45;
+  const ar = new THREE.Mesh(new THREE.BoxGeometry(0.07, PADDLE_H - 0.1, 0.44), accentMat);
+  ar.position.x = 0.45;
+  g.add(al, ar);
+  return g;
+}
 const laserGeo = new THREE.BoxGeometry(0.1, 0.55, 0.1);
 const laserMat = new THREE.MeshBasicMaterial({ color: 0xffe14d });
 
@@ -890,23 +930,55 @@ function buildArena() {
   g.add(floor);
   scene.add(g);
 }
+// soft radial-gradient texture for the distant nebula glows (procedural, no assets)
+const nebulaTexCache = {};
+function nebulaTexture(color) {
+  if (nebulaTexCache[color]) return nebulaTexCache[color];
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const ctx = c.getContext('2d');
+  const col = new THREE.Color(color);
+  const r = Math.round(col.r * 255), g = Math.round(col.g * 255), b = Math.round(col.b * 255);
+  const grad = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+  grad.addColorStop(0, `rgba(${r},${g},${b},0.5)`);
+  grad.addColorStop(0.35, `rgba(${r},${g},${b},0.16)`);
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 128, 128);
+  const tex = new THREE.CanvasTexture(c);
+  nebulaTexCache[color] = tex;
+  return tex;
+}
 function buildStars() {
-  const n = 500;
-  const pos = new Float32Array(n * 3);
-  for (let i = 0; i < n; i++) {
-    const r = 35 + Math.random() * 50;
-    const t = Math.random() * Math.PI * 2;
-    const ph = Math.acos(2 * Math.random() - 1);
-    pos[i * 3] = r * Math.sin(ph) * Math.cos(t);
-    pos[i * 3 + 1] = r * Math.cos(ph) * 0.6 + 9;
-    pos[i * 3 + 2] = r * Math.sin(ph) * Math.sin(t) - 24;
-  }
-  const g = new THREE.BufferGeometry();
-  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  const m = new THREE.PointsMaterial({
-    color: 0x88aaff, size: 0.18, sizeAttenuation: true, transparent: true, opacity: 0.8,
+  starGroup = new THREE.Group();
+  // dense starfield in three size/brightness buckets for depth
+  const makeStars = (n, size, opacity, color) => {
+    const pos = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) {
+      const r = 42 + Math.random() * 70;
+      const t = Math.random() * Math.PI * 2;
+      const ph = Math.acos(2 * Math.random() - 1);
+      pos[i * 3] = r * Math.sin(ph) * Math.cos(t);
+      pos[i * 3 + 1] = r * Math.cos(ph) * 0.7 + 9;
+      pos[i * 3 + 2] = r * Math.sin(ph) * Math.sin(t) - 30;
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const m = new THREE.PointsMaterial({ color, size, sizeAttenuation: true, transparent: true, opacity, depthWrite: false });
+    return new THREE.Points(g, m);
+  };
+  starGroup.add(makeStars(950, 0.16, 0.7, 0x9fc0ff));
+  starGroup.add(makeStars(420, 0.28, 0.9, 0xffffff));
+  starGroup.add(makeStars(220, 0.42, 0.95, 0xcfe4ff));
+  // a few soft nebula glows far in the background — "out in space" candy
+  [0x3a5bd9, 0x7b3fd1, 0xc13f8f, 0x2fb8a8].forEach((c, i) => {
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: nebulaTexture(c), transparent: true, opacity: 0.32, depthWrite: false }));
+    const ang = (i / 4) * Math.PI * 2 + 0.7;
+    s.position.set(Math.cos(ang) * 58, 10 + ((i % 2) ? 10 : -6), -64);
+    s.scale.set(48, 48, 1);
+    starGroup.add(s);
   });
-  scene.add(new THREE.Points(g, m));
+  scene.add(starGroup);
 }
 
 // ---------------- levels ----------------
@@ -1705,6 +1777,17 @@ function updateMusicUI() {
 // ---------------- main loop ----------------
 function update(dt) {
   updateParticles(dt);
+  // visual polish: sweeping brick glare + slow space drift (runs in every phase)
+  if (glareLight) {
+    glarePhase += dt * 0.55;
+    const gx = Math.sin(glarePhase) * 9.5;
+    glareLight.position.x = gx;
+    glareLight.target.position.x = gx;
+  }
+  if (starGroup) {
+    starGroup.rotation.y += dt * 0.012;
+    starGroup.rotation.x += dt * 0.004;
+  }
   menuTime += dt;
   for (const tc of titleBricks) {
     tc.m.position.y = tc.baseY + Math.sin(menuTime * 1.8 + tc.ph) * 0.14;
@@ -1847,15 +1930,20 @@ function boot() {
   scene.add(dir);
   const p1 = new THREE.PointLight(0x5588ff, 60, 0, 2); p1.position.set(-9, 6, 7); scene.add(p1);
   const p2 = new THREE.PointLight(0xff5599, 45, 0, 2); p2.position.set(9, 14, 6); scene.add(p2);
+  // sweeping glare light: slides left-right across the brick field so the
+  // clearcoated bricks show a moving specular sheen (animated in update()).
+  glareLight = new THREE.SpotLight(0xcfe6ff, 70, 42, Math.PI / 4.2, 0.55, 1.1);
+  glareLight.position.set(-9.5, 9, 6);
+  glareLight.target.position.set(-9.5, 9, 0);
+  scene.add(glareLight, glareLight.target);
 
   buildArena();
   buildStars();
 
-  // paddle
-  paddle = new THREE.Mesh(paddleGeo, paddleMat);
+  // paddle (polished group: glossy body + energy core + accents)
+  paddle = buildPaddle();
   paddle.scale.x = PADDLE_BASE_W;
   paddle.position.set(0, PADDLE_Y, 0);
-  paddle.castShadow = true;
   scene.add(paddle);
 
   window.addEventListener('resize', fitCamera);
