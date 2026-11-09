@@ -884,7 +884,11 @@ function launchBall(b) {
   const s = ballSpeed();
   const a = (Math.random() - 0.5) * 0.7;
   b.vx = s * Math.sin(a);
-  b.vy = -s * Math.cos(a);
+  // Launch UPWARD (positive vy = up in this y-up field). It used to be -s*cos(a)
+  // (downward), which worked only because the ball bounced off the paddle on the
+  // next frame — but with the CATCH power-up active that same "moving down at the
+  // paddle" state re-sticks the ball before it ever leaves, so you couldn't launch.
+  b.vy = s * Math.cos(a);
   b.stuck = false;
   sfx.launch();
   phase = 'play';
@@ -995,8 +999,10 @@ function applyPower(type) {
         scene.add(mesh);
         balls.push({
           mesh, x: b.x, y: b.y,
-          vx: b.stuck ? s * Math.sin(ang) : Math.cos(ang) * cur,
-          vy: b.stuck ? -s * Math.cos(ang) : Math.sin(ang) * cur,
+          // stuck balls split into two that both fly UP (left/right offset) so
+          // they don't re-stick to the paddle when CATCH is active
+          vx: b.stuck ? s * Math.sin(da) : Math.cos(ang) * cur,
+          vy: b.stuck ? s * Math.cos(da) : Math.sin(ang) * cur,
           stuck: false,
         });
       }
