@@ -437,7 +437,8 @@
       }
       function setStats(el, stats) {
         if (stats && (stats.saves > 0 || (stats.initials && stats.initials.length))) {
-          el.innerHTML = `<b>${stats.saves}</b> games \u00b7 <b>${stats.initials.length}</b> players on the record`;
+          const g = stats.saves, p = stats.initials.length;
+          el.innerHTML = `<b>${g}</b> game${g === 1 ? '' : 's'} \u00b7 <b>${p}</b> player${p === 1 ? '' : 's'} on the record`;
         } else {
           el.innerHTML = `the record is empty \u2014 <b>first score</b> goes to you`;
         }
