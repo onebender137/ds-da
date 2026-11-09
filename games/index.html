@@ -349,9 +349,10 @@
         mq.position.set(0, 1.84, 0.26); mq.rotation.x = -0.22; grp.add(mq);
         const mqBox = new THREE.Mesh(new THREE.BoxGeometry(0.88, 0.17, 0.05), darkMat);
         mqBox.castShadow = true; mq.add(mqBox);
-        const mqMat = new THREE.MeshStandardMaterial({
-          color: 0x000000, emissive: 0xffffff, emissiveMap: makeMarqueeTexture(game.name, game.tag, game.dark),
-          emissiveIntensity: game.dark ? 0.6 : 0.72, roughness: 0.4
+        // self-lit sign: unlit basic material so the cabinet spotlight can't wash it out
+        const mqMat = new THREE.MeshBasicMaterial({
+          map: makeMarqueeTexture(game.name, game.tag, game.dark),
+          color: 0xffffff
         });
         const mqFace = new THREE.Mesh(new THREE.PlaneGeometry(0.84, 0.14), mqMat);
         mqFace.position.z = 0.028; mq.add(mqFace);
@@ -589,7 +590,7 @@
           }
           c.screenMat.uniforms.uGlow.value = c.hoverGlow;
           const mqBase = c.game.dark ? 0.6 : 0.72;
-          c.marqueeMat.emissiveIntensity = mqBase * (1 + 0.12 * Math.sin(t * 1.4 + i * 1.7)) * (state.phase === 'zooming' && zoomState.i === i ? 1.5 : 1);
+          c.marqueeMat.color.setScalar(mqBase * (1 + 0.12 * Math.sin(t * 1.4 + i * 1.7)) * (state.phase === 'zooming' && zoomState.i === i ? 1.5 : 1));
         });
 
         // infinite horizontal drift + wrap
