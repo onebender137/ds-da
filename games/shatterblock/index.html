@@ -8,11 +8,11 @@
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://ds-da.ca/games/shatterblock/" />
 <meta property="og:title" content="Play ShatterBlock at ds-da.ca" />
-<meta property="og:description" content="Ten levels of bricks and falling power-ups — lasers, multi-ball, sticky catch. The classic breaker, our take." />
+<meta property="og:description" content="Twenty levels of bricks and falling power-ups — lasers, multi-ball, sticky catch. Clear 10, then the ball keeps speeding up: only the die-hard make it to 20. The classic breaker, our take." />
 <meta property="og:image" content="https://ds-da.ca/games/shatterblock/screenshot.png" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Play ShatterBlock at ds-da.ca" />
-<meta name="twitter:description" content="Ten levels of bricks and falling power-ups — lasers, multi-ball, sticky catch. The classic breaker, our take." />
+<meta name="twitter:description" content="Twenty levels of bricks and falling power-ups — lasers, multi-ball, sticky catch. Clear 10, then the ball keeps speeding up: only the die-hard make it to 20. The classic breaker, our take." />
 <meta name="twitter:image" content="https://ds-da.ca/games/shatterblock/screenshot.png" />
 <style>
   :root {
@@ -346,13 +346,94 @@ const LEVELS = [
     "*333333333333*",
     "11111111111111",
   ],
-  [ // 10 — Final Boss
+  [ // 10 — The Boss
     "3*2*3*2*3*2*3*",
     "22222222222222",
     "*1*1*1*1*1*1*1",
     "33333333333333",
     "*1*1*1*1*1*1*1",
     "22222222222222",
+  ],
+  // ---- 11-20: the "die hard" wall. All 3-HP heavy + unbreakable-brick
+  // patterns, progressively denser. Combined with the steeper ball-speed
+  // ramp (see ballSpeed), only fast-reflex players reach level 20.
+  [ // 11 — The Onslaught
+    "33333333333333",
+    "*2*2*2*2*2*2*2",
+    "33333333333333",
+    "*2*2*2*2*2*2*2",
+    "33333333333333",
+  ],
+  [ // 12 — Twin Towers
+    "3*3*3*3*3*3*3*",
+    "33333333333333",
+    "*3*3*3*3*3*3*3",
+    "33333333333333",
+    "*3*3*3*3*3*3*3",
+    "33333333333333",
+  ],
+  [ // 13 — The Lattice
+    "*1*1*1*1*1*1*1",
+    "13131313131313",
+    "*1*1*1*1*1*1*1",
+    "13131313131313",
+    "*1*1*1*1*1*1*1",
+    "13131313131313",
+    "*1*1*1*1*1*1*1",
+  ],
+  [ // 14 — The Corridor
+    "33*33*33*33*33",
+    "11*11*11*11*11",
+    "33*33*33*33*33",
+    "11*11*11*11*11",
+    "33*33*33*33*33",
+  ],
+  [ // 15 — The Hive
+    "33333.33333333",
+    "3.33333333.333",
+    "33333.33333333",
+    "3.33333333.333",
+    "33333.33333333",
+  ],
+  [ // 16 — The Bastion
+    "*333333333333*",
+    "*333333333333*",
+    "33333333333333",
+    "*333333333333*",
+    "*333333333333*",
+    "33333333333333",
+  ],
+  [ // 17 — The Spiral
+    "33333333333333",
+    ".333333333333.",
+    "..3333333333..",
+    "...33333333...",
+    "....333333....",
+  ],
+  [ // 18 — Gauntlet II
+    "*333333333333*",
+    "3*33333333333*",
+    "*333333333333*",
+    "3*33333333333*",
+    "*333333333333*",
+  ],
+  [ // 19 — The Maelstrom
+    "3*3*3*3*3*3*3*",
+    "*333333333333*",
+    "3*3*3*3*3*3*3*",
+    "*333333333333*",
+    "3*3*3*3*3*3*3*",
+    "*333333333333*",
+    "3*3*3*3*3*3*3*",
+  ],
+  [ // 20 — Final Boss
+    "*333333333333*",
+    "3*3*3*3*3*3*3*",
+    "33333333333333",
+    "3*3*3*3*3*3*3*",
+    "*333333333333*",
+    "3*3*3*3*3*3*3*",
+    "33333333333333",
   ],
 ];
 
@@ -867,8 +948,18 @@ function levelBonus(n) { return 200 + 100 * n; }
 
 // ---------------- balls ----------------
 function ballSpeed() {
-  let s = BALL_BASE_SPEED * (1 + 0.05 * (level - 1));
-  if (s > 12) s = 12;
+  // Levels 1-10: gentle ramp (5%/level) — accessible, anyone can clear them.
+  // Levels 11-20: the "die hard" wall — a steeper 7%/level increment continues
+  // from level 10's speed, so the ball keeps getting faster every level and
+  // only fast-reflex players survive to 20 (≈2.15× base at level 20).
+  let mult;
+  if (level <= 10) {
+    mult = 1 + 0.05 * (level - 1);
+  } else {
+    mult = 1 + 0.05 * 9 + 0.07 * (level - 10);
+  }
+  let s = BALL_BASE_SPEED * mult;
+  if (s > 17) s = 17; // cap raised from 12 so the late ramp isn't flattened
   if (power.slow > 0) s *= 0.75;
   if (power.fast > 0) s *= 1.35;
   return s;
