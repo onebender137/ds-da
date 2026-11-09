@@ -14,6 +14,14 @@
 <meta name="twitter:title" content="Play ShatterBlock at ds-da.ca" />
 <meta name="twitter:description" content="Twenty levels of bricks and falling power-ups — lasers, multi-ball, sticky catch. Clear 10, then the ball keeps speeding up: only the die-hard make it to 20. The classic breaker, our take." />
 <meta name="twitter:image" content="https://ds-da.ca/games/shatterblock/screenshot.png" />
+<!-- GA4: track this game page + custom in-game events (see track()) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-M9D0GNYMWJ"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-M9D0GNYMWJ', { page_title: 'ShatterBlock', page_path: '/games/shatterblock/' });
+</script>
 <style>
   :root {
     --bg: #0b0e1a;
@@ -454,8 +462,18 @@ const POWER_DROP_WEIGHTS = { wide: 20, shrink: 10, multi: 16, slow: 14, fast: 10
 const POWER_DROP_CHANCE = 0.22;
 
 // ---------------- scoring / leaderboard ----------------
-const SCORE_KEY = 'shatterb...s.v1';
+const SCORE_KEY = 'shatterblock_scores.v1';
 const GAME_ID = 'shatterblock';
+// ---------------- GA4 analytics (optional; never breaks the game) ----------------
+// Fires custom events at game milestones so ds-da.ca can track per-game
+// engagement (plays, level reached, scores). Safe no-op if gtag isn't loaded.
+function track(event, params) {
+  try {
+    if (typeof gtag === 'function') {
+      gtag('event', event, Object.assign({ game: GAME_ID }, params || {}));
+    }
+  } catch (e) { /* analytics must never interrupt gameplay */ }
+}
 const SHARE_URL = 'https://ds-da.ca/games/shatterblock/';
 const SCORE_DISPATCH_URL = 'https://api.github.com/repos/onebender137/ds-da/actions/workflows/score-webhook.yml/dispatches';
 const BOARD_API = 'https://api.ds-da.ca/api/board'; // fast path (instant); GitHub dispatch = fallback
@@ -1139,6 +1157,7 @@ function dropPowerup(x, forcedType) {
   powerups.push({ mesh, x, y: mesh.position.y, type });
 }
 function applyPower(type) {
+  track('power_up', { power_type: type });
   const def = POWER_DEFS[type];
   score += 50;
   if (def.dur > 0) {
@@ -1243,6 +1262,7 @@ function updateLasers(dt) {
 
 // ---------------- level clear ----------------
 function startLevelClear() {
+  track('level_complete', { level });
   phase = 'clearing';
   clearT = 0;
   const bonus = levelBonus(level);
@@ -1326,6 +1346,7 @@ function collideBall(b, dt) {
 
 // ---------------- game flow ----------------
 function gameOver() {
+  track('game_over', { final_score: score, level_reached: level });
   phase = 'over';
   sfx.over();
   elFinal.textContent = score;
@@ -1375,6 +1396,7 @@ function activateMenu() {
   else if (id === 'menuSite') window.location.href = 'https://ds-da.ca';
 }
 function startGameFromMenu() {
+  track('game_start');
   elMenu.classList.add('hidden');
   elScores.classList.add('hidden');
   document.body.classList.remove('menu-mode');
@@ -1630,6 +1652,7 @@ async function submitGlobal(name, s) {
 }
 function saveScore() {
   if (phase !== 'over' || elSave.disabled) return;
+  track('score_submit', { score });
   let name = elInitials.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
   if (!name) name = '???';
   name = name.slice(0, 3).padEnd(3, '?');

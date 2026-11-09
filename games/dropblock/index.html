@@ -14,6 +14,14 @@
 <meta name="twitter:title" content="Play DropBlock at ds-da.ca" />
 <meta name="twitter:description" content="Drop, match, chain — a 3D candy-drop puzzle with a global leaderboard." />
 <meta name="twitter:image" content="https://ds-da.ca/games/dropblock/screenshot.png" />
+<!-- GA4: track this game page + custom in-game events (see track()) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-M9D0GNYMWJ"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-M9D0GNYMWJ', { page_title: 'DropBlock', page_path: '/games/dropblock/' });
+</script>
 <style>
   :root {
     --bg: #0b0e1a;
@@ -227,6 +235,17 @@ const COLORS = [
   { c: 0xc06bff }, // grape
 ];
 const SCORE_KEY='candyf...s.v1';
+const GAME_ID = 'dropblock';
+// ---------------- GA4 analytics (optional; never breaks the game) ----------------
+// Fires custom events at game milestones so ds-da.ca can track per-game
+// engagement (plays, level reached, scores). Safe no-op if gtag isn't loaded.
+function track(event, params) {
+  try {
+    if (typeof gtag === 'function') {
+      gtag('event', event, Object.assign({ game: GAME_ID }, params || {}));
+    }
+  } catch (e) { /* analytics must never interrupt gameplay */ }
+}
 // global score submission (GitHub Actions webhook -> leaderboard.json)
 const SCORE_DISPATCH_URL = 'https://api.github.com/repos/onebender137/ds-da/actions/workflows/score-webhook.yml/dispatches';
 const BOARD_API = 'https://api.ds-da.ca/api/board'; // fast path (instant); GitHub dispatch = fallback
@@ -744,6 +763,7 @@ function finishClear() {
 }
 
 function gameOver() {
+  track('game_over', { final_score: score, level_reached: level });
   phase = 'over';
   if (falling) { scene.remove(falling.mesh); falling = null; }
   sfx.over();
@@ -809,6 +829,7 @@ function activateMenu() {
 }
 
 function startGameFromMenu() {
+  track('game_start');
   elMenu.classList.add('hidden');
   elScores.classList.add('hidden');
   document.body.classList.remove('menu-mode');
@@ -1070,6 +1091,7 @@ async function submitGlobal(name, s) {
 }
 function saveScore() {
   if (phase !== 'over' || elSave.disabled) return;
+  track('score_submit', { score });
   let name = elInitials.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
   if (!name) name = '???';
   name = name.slice(0, 3).padEnd(3, '?');
@@ -1107,7 +1129,7 @@ function updateHud() {
 }
 function bumpLevel() {
   const lv = Math.min(12, Math.floor(score / 400));
-  if (lv !== level) { level = lv; fallingSpeed = 2.3 + level * 0.55; updateHud(); }
+  if (lv !== level) { level = lv; fallingSpeed = 2.3 + level * 0.55; updateHud(); track('level_up', { level: level }); }
 }
 
 // ---------------- input ----------------
