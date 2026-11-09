@@ -76,6 +76,23 @@
                     <a href="dropblock/" class="btn btn-primary game-play">Play DropBlock</a>
                 </div>
             </div>
+            <div class="game-card">
+                <img class="game-shot" src="shatterblock/screenshot.png" alt="ShatterBlock — a 3D Arkanoid brick-breaker with colorful blocks, lasers and falling power-ups" loading="lazy">
+                <div class="game-body">
+                    <h3>ShatterBlock</h3>
+                    <div class="game-tags">
+                        <span class="game-tag">Arcade</span>
+                        <span class="game-tag">3D</span>
+                        <span class="game-tag">Chiptune</span>
+                    </div>
+                    <p>The classic brick-breaker, our take. Six levels of blocks, a bouncing ball, lasers, and falling power-ups — wide paddle, multi-ball, sticky catch, extra lives. Clear a level to advance. Arrow keys on desktop, swipe on mobile. How far can you get?</p>
+                    <div class="game-stats">
+                        <span><b id="sbStatGames">—</b> games played</span>
+                        <span><b id="sbStatPlayers">—</b> players</span>
+                    </div>
+                    <a href="shatterblock/" class="btn btn-primary game-play">Play ShatterBlock</a>
+                </div>
+            </div>
             <div class="game-card soon">
                 <span class="soon-label">Next game in development</span>
             </div>
@@ -108,7 +125,8 @@
       // aggregated from each game's leaderboard webhook stats
       (function () {
         var boards = [
-          { url: 'dropblock/leaderboard.json', games: 'dbStatGames', players: 'dbStatPlayers' }
+          { url: 'dropblock/leaderboard.json', games: 'dbStatGames', players: 'dbStatPlayers' },
+          { url: 'shatterblock/leaderboard.json', games: 'sbStatGames', players: 'sbStatPlayers' }
         ];
         Promise.all(boards.map(function (b) {
           return fetch(b.url, { cache: 'no-store' })
