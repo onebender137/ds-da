@@ -54,8 +54,21 @@
       .card .play:hover { background: #c9a227; color: #060d18; box-shadow: 0 0 24px rgba(201,162,39,0.45); }
       .card .soon { margin-top: 14px; font-size: 0.7rem; letter-spacing: 3px; color: #94a3b8; font-style: italic; }
       #zooming #cards { opacity: 0; }
+      /* live record strip — floats above the cabinets, no scroll needed */
+      .arcade-stats {
+        position: absolute; top: 18px; left: 50%; transform: translateX(-50%);
+        display: flex; align-items: center; gap: 20px;
+        padding: 12px 26px;
+        background: rgba(10, 22, 40, 0.72); border: 1px solid rgba(201, 162, 39, 0.25);
+        border-radius: 6px; backdrop-filter: blur(6px);
+        font-family: 'Inter', system-ui, sans-serif; white-space: nowrap;
+      }
+      .arcade-stat b { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; color: #c9a227; margin-right: 7px; }
+      .arcade-stat span { font-size: 0.64rem; letter-spacing: 1.5px; color: #94a3b8; text-transform: uppercase; }
+      .arcade-div { width: 1px; height: 22px; background: rgba(201, 162, 39, 0.3); }
+      .arcade-poc { font-size: 0.66rem; letter-spacing: 1px; color: #c9a227; text-decoration: none; border-bottom: 1px solid rgba(201, 162, 39, 0.4); padding-bottom: 1px; transition: border-color 0.25s; }
+      .arcade-poc:hover { border-bottom-color: #c9a227; }
       /* content below the hall scrolls over the fixed scene */
-      .games-note { position: relative; z-index: 2; background: var(--bg); }
       .footer { position: relative; z-index: 2; background: var(--bg); }
       #arcadeBootErr {
         position: fixed; inset: auto 0 0 0; z-index: 50; display: none;
@@ -64,6 +77,8 @@
       @media (max-width: 640px) {
         .card { width: min(280px, 88vw); padding: 14px 14px 16px; }
         .card .desc { display: none; }
+        .arcade-stats { gap: 14px; padding: 10px 16px; }
+        .arcade-poc { display: none; }
       }
     </style>
 </head>
@@ -91,18 +106,14 @@
         </div>
     </header>
 
-    <!-- HALL (scroll space for the 3D scene) -->
-    <section class="arcade-hall" aria-label="DSDA Arcade hall"></section>
-
-    <!-- LEADERBOARD NOTE -->
-    <section class="games-note">
-        <div class="games-note-inner">
-            <h2>Your score, on the record</h2>
-            <div class="games-stats" id="gamesStats">
-                <div class="games-stat"><b id="statGames">—</b><span>games played</span></div>
-                <div class="games-stat"><b id="statPlayers">—</b><span>players</span></div>
-            </div>
-            <p>Every game in the arcade keeps a live leaderboard. When we wire up <a href="../proof/">Proof of Creation</a>, top scores will be timestamped on the BSV blockchain — immutable proof that you were there, and that you were good at it. <small>Counters are tallied from live leaderboard saves; players are counted by distinct initials.</small></p>
+    <!-- HALL (one viewport: record strip above, cabinets, cards) -->
+    <section class="arcade-hall" aria-label="DSDA Arcade hall">
+        <div class="arcade-stats">
+            <div class="arcade-stat"><b id="statGames">—</b><span>games played</span></div>
+            <div class="arcade-div"></div>
+            <div class="arcade-stat"><b id="statPlayers">—</b><span>players on the record</span></div>
+            <div class="arcade-div"></div>
+            <a class="arcade-poc" href="../proof/">top scores &rarr; Proof of Creation</a>
         </div>
     </section>
 
