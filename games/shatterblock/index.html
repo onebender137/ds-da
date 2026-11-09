@@ -1114,14 +1114,20 @@ function applyPower(type) {
 }
 function updatePowers(dt) {
   let changed = false;
+  let stickyExpired = false;
   for (const k in power) {
     if (power[k] > 0) {
       power[k] -= dt;
-      if (power[k] <= 0) { power[k] = 0; changed = true; }
+      if (power[k] <= 0) { power[k] = 0; changed = true; if (k === 'sticky') stickyExpired = true; }
     }
   }
   if (changed) {
     recalcPaddleWidth();
+    // When CATCH expires, release any ball stuck to the paddle. Without this a
+    // stuck ball with no catch active can't be launched while phase is 'play'
+    // (happens with multi-ball, where not all balls are stuck) — so it rides
+    // the paddle forever and the level can neither be cleared nor lost.
+    if (stickyExpired) for (const b of balls) if (b.stuck) launchBall(b);
     rescaleBalls();
     updateHud();
   }
@@ -1614,8 +1620,10 @@ function onKey(e) {
   else if (e.code === 'ArrowRight' || e.code === 'KeyD') heldRight = true;
   else if (e.code === 'Space') {
     if (!e.repeat) {
-      if (phase === 'launch') {
-        for (const b of balls) if (b.stuck) launchBall(b);
+      // launch stuck balls (any phase) first, else fire
+      const stuck = balls.filter(b => b.stuck);
+      if (stuck.length) {
+        for (const b of stuck) launchBall(b);
       } else {
         fireLasers();
       }
@@ -1669,10 +1677,11 @@ function touchMove(e) {
 function touchEnd(e) {
   if (e.pointerId !== tId) return;
   tId = null;
-  // tap (no drag) = launch / fire
+  // tap (no drag) = launch stuck balls (any phase), else fire
   if (!tMoved && performance.now() - tDownT < 300) {
-    if (phase === 'launch') {
-      for (const b of balls) if (b.stuck) launchBall(b);
+    const stuck = balls.filter(b => b.stuck);
+    if (stuck.length) {
+      for (const b of stuck) launchBall(b);
     } else if (phase === 'play') {
       fireLasers();
     }
