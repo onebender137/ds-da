@@ -44,9 +44,20 @@
   .stat span { font-size: 10px; letter-spacing: 2px; color: var(--muted); }
   .stat b { font-size: 20px; font-variant-numeric: tabular-nums; }
   #lives { font-size: 15px; letter-spacing: 2px; }
-  #powers { margin-top: 8px; min-height: 0; }
-  #powers .pw { display: flex; justify-content: space-between; font-size: 11px; padding: 2px 0;
-    color: var(--gold); letter-spacing: 1px; }
+  .active-power { margin-top: 10px; min-height: 0; display: none;
+    align-items: center; justify-content: space-between; gap: 8px;
+    padding: 7px 12px; border-radius: 10px;
+    border: 1.5px solid var(--ap-color, var(--gold));
+    background: color-mix(in srgb, var(--ap-color, var(--gold)) 16%, transparent);
+    box-shadow: 0 0 14px color-mix(in srgb, var(--ap-color, var(--gold)) 45%, transparent),
+      inset 0 0 10px color-mix(in srgb, var(--ap-color, var(--gold)) 22%, transparent);
+    animation: apPulse 1.1s ease-in-out infinite; }
+  .active-power.on { display: flex; }
+  .active-power .ap-name { font-size: 14px; font-weight: 800; letter-spacing: 2px;
+    color: var(--ap-color, var(--gold)); text-shadow: 0 0 10px var(--ap-color, var(--gold)); }
+  .active-power .ap-time { font-size: 13px; font-weight: 700; letter-spacing: 1px;
+    color: var(--fg, #eaf0ff); font-variant-numeric: tabular-nums; }
+  @keyframes apPulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.035); opacity: .82; } }
   h3.sub { font-size: 10px; letter-spacing: 2px; color: var(--muted); margin: 12px 0 6px; }
   ol.tops { list-style: none; }
   ol.tops li { display: flex; justify-content: space-between; font-size: 12px; padding: 2px 2px;
@@ -134,10 +145,13 @@
   .mbtn.primary { background: linear-gradient(135deg, #2b4bd8, #7a3bd8); border: none; font-size: 16px; }
   .mbtn.primary:hover, .mbtn.primary.sel { filter: brightness(1.15); }
   .menu-hint { font-size: 11px; color: var(--muted); letter-spacing: 1px; margin-top: 10px; text-align: center; }
-  .menu-powers { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; justify-content: center; max-width: 420px; }
-  .mp { font-size: 10px; letter-spacing: 1px; padding: 4px 9px; border-radius: 8px;
-    border: 1px solid var(--border); background: var(--panel); color: var(--muted); }
+  .menu-powers { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; justify-content: center; max-width: 540px; }
+  .mp { font-size: 10px; letter-spacing: 1px; padding: 7px 10px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--panel); color: var(--muted);
+    display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 104px; }
+  .mp .mp-top { display: flex; align-items: center; gap: 5px; font-weight: 700; color: var(--fg, #eaf0ff); }
   .mp b { font-size: 12px; }
+  .mp .mp-desc { font-size: 9px; letter-spacing: .4px; color: var(--muted); opacity: .85; text-align: center; line-height: 1.25; }
 
   /* ---- high scores screen ---- */
   #scores { position: fixed; inset: 0; z-index: 18; display: flex; align-items: center;
@@ -153,7 +167,10 @@
     #hud .stat { border-bottom: none; padding: 0; gap: 5px; }
     #hud .stat span { font-size: 8px; letter-spacing: 1px; }
     #hud .stat b { font-size: 15px; }
-    #hud .sub, #hud .tops, #hud .keys, #hud #powers { display: none; }
+    #hud .sub, #hud .tops, #hud .keys { display: none; }
+    #hud .active-power { margin-top: 0; padding: 4px 9px; }
+    #hud .active-power .ap-name { font-size: 11px; letter-spacing: 1px; }
+    #hud .active-power .ap-time { font-size: 10px; }
     #soundBtn { bottom: calc(54px + env(safe-area-inset-bottom)); left: 10px; padding: 6px 10px; }
     #musicBox { bottom: calc(10px + env(safe-area-inset-bottom)); left: 10px; }
     .card { padding: 20px 22px; }
@@ -170,7 +187,7 @@
   <div class="stat"><span>SCORE</span><b id="score">0</b></div>
   <div class="stat"><span>LEVEL</span><b id="level">1</b></div>
   <div class="stat"><span>LIVES</span><b id="lives">♥♥♥</b></div>
-  <div id="powers"></div>
+  <div id="activePower" class="active-power"></div>
   <h3 class="sub">TOP 10</h3>
   <ol id="hudTop" class="tops"></ol>
   <div class="keys" id="hudKeys">
@@ -310,15 +327,16 @@ const LEVELS = [
 
 // ---------------- power-ups ----------------
 // dur: seconds (0 = instant) · w: paddle width factor · f: ball speed factor
+const POWER_DUR = 10; // every timed power-up lasts exactly 10s, one at a time
 const POWER_DEFS = {
-  wide:   { letter: 'W', color: 0x4ade80, dur: 15, w: 1.5,  label: 'WIDE' },
-  shrink: { letter: 'X', color: 0xff3b5c, dur: 10, w: 0.7,  label: 'SHRINK' },
-  multi:  { letter: 'M', color: 0x4d9fff, dur: 0,  w: 1,    label: 'MULTI' },
-  slow:   { letter: 'S', color: 0x22d3ee, dur: 10, w: 1,    label: 'SLOW', f: 0.75 },
-  fast:   { letter: 'F', color: 0xff9f2e, dur: 8,  w: 1,    label: 'FAST', f: 1.35 },
-  laser:  { letter: 'L', color: 0xffe14d, dur: 10, w: 1,    label: 'LASER' },
-  sticky: { letter: 'C', color: 0xc06bff, dur: 12, w: 1,    label: 'CATCH' },
-  life:   { letter: 'E', color: 0xff7ab8, dur: 0,  w: 1,    label: 'EXTRA LIFE' },
+  wide:   { letter: 'W', color: 0x4ade80, dur: POWER_DUR, w: 1.5,  label: 'WIDE',  desc: 'Paddle grows bigger' },
+  shrink: { letter: 'X', color: 0xff3b5c, dur: POWER_DUR, w: 0.7,  label: 'SHRINK', desc: 'Paddle shrinks — careful!' },
+  multi:  { letter: 'M', color: 0x4d9fff, dur: 0,  w: 1,    label: 'MULTI', desc: 'Splits into more balls' },
+  slow:   { letter: 'S', color: 0x22d3ee, dur: POWER_DUR, w: 1,    label: 'SLOW',  f: 0.75, desc: 'Ball moves slower' },
+  fast:   { letter: 'F', color: 0xff9f2e, dur: POWER_DUR, w: 1,    label: 'FAST',  f: 1.35, desc: 'Ball moves faster — careful!' },
+  laser:  { letter: 'L', color: 0xffe14d, dur: POWER_DUR, w: 1,    label: 'LASER', desc: 'Paddle fires lasers' },
+  sticky: { letter: 'C', color: 0xc06bff, dur: POWER_DUR, w: 1,    label: 'CATCH', desc: 'Ball sticks to paddle' },
+  life:   { letter: 'E', color: 0xff7ab8, dur: 0,  w: 1,    label: 'EXTRA LIFE', desc: 'Gains one extra life' },
 };
 const POWER_DROP_WEIGHTS = { wide: 20, shrink: 10, multi: 16, slow: 14, fast: 10, laser: 14, sticky: 10, life: 3 };
 const POWER_DROP_CHANCE = 0.22;
@@ -340,7 +358,7 @@ const SCORE_SECRET = '6216cf68f4e077d3cd991f2d6bd3e878';
 // ---------------- dom ----------------
 const $ = id => document.getElementById(id);
 const elScore = $('score'), elLevel = $('level'), elLives = $('lives');
-const elPowers = $('powers'), elHudTop = $('hudTop'), elOverlay = $('overlay');
+const elActivePower = $('activePower'), elHudTop = $('hudTop'), elOverlay = $('overlay');
 const elFinal = $('finalScore'), elFinalLevel = $('finalLevel');
 const elInitials = $('initials'), elSave = $('saveBtn'), elSavedMsg = $('savedMsg');
 const elShare = $('shareBtn'), elShareMsg = $('shareMsg');
@@ -887,7 +905,11 @@ function dropPowerup(x, forcedType) {
 function applyPower(type) {
   const def = POWER_DEFS[type];
   score += 50;
-  if (def.dur > 0) power[type] = def.dur;
+  if (def.dur > 0) {
+    // One timed power-up at a time: grabbing a new one drops whatever is active.
+    for (const k in power) if (k !== type) power[k] = 0;
+    power[type] = POWER_DUR;
+  }
   recalcPaddleWidth();
   if (type === 'multi') {
     const free = balls.filter(b => !b.stuck);
@@ -1387,14 +1409,18 @@ function updateHud() {
   elScore.textContent = score;
   elLevel.textContent = level;
   elLives.textContent = '♥'.repeat(Math.max(0, lives)) || '—';
-  elPowers.innerHTML = '';
-  for (const k in power) {
-    if (power[k] > 0) {
-      const d = document.createElement('div');
-      d.className = 'pw';
-      d.innerHTML = '<span>' + POWER_DEFS[k].label + '</span><span>' + Math.ceil(power[k]) + 's</span>';
-      elPowers.appendChild(d);
-    }
+  // cool active power-up popup (only one at a time)
+  let active = null;
+  for (const k in power) if (power[k] > 0) { active = k; break; }
+  if (active) {
+    // safe: label/color come from the hardcoded POWER_DEFS table, never user input
+    elActivePower.innerHTML =
+      '<span class="ap-name">' + POWER_DEFS[active].label + '</span>' +
+      '<span class="ap-time">' + Math.ceil(power[active]) + 's</span>';
+    elActivePower.style.setProperty('--ap-color', _hex(POWER_DEFS[active].color));
+    elActivePower.classList.add('on');
+  } else {
+    elActivePower.classList.remove('on');
   }
 }
 
@@ -1696,7 +1722,9 @@ function boot() {
   for (const k in POWER_DEFS) {
     const d = document.createElement('span');
     d.className = 'mp';
-    d.innerHTML = '<b style="color:' + _hex(POWER_DEFS[k].color) + '">' + POWER_DEFS[k].letter + '</b> ' + POWER_DEFS[k].label;
+    d.title = POWER_DEFS[k].desc;
+    // safe: letter/label/desc all come from the hardcoded POWER_DEFS table
+    d.innerHTML = '<span class="mp-top"><b style="color:' + _hex(POWER_DEFS[k].color) + '">' + POWER_DEFS[k].letter + '</b> ' + POWER_DEFS[k].label + '</span><span class="mp-desc">' + POWER_DEFS[k].desc + '</span>';
     mp.appendChild(d);
   }
 
