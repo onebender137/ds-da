@@ -8,11 +8,11 @@
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://ds-da.ca/games/shatterblock/" />
 <meta property="og:title" content="Play ShatterBlock at ds-da.ca" />
-<meta property="og:description" content="Six levels of bricks, lasers, and falling power-ups — the classic breaker, our take." />
+<meta property="og:description" content="Ten levels of bricks and falling power-ups — lasers, multi-ball, sticky catch. The classic breaker, our take." />
 <meta property="og:image" content="https://ds-da.ca/games/shatterblock/screenshot.png" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Play ShatterBlock at ds-da.ca" />
-<meta name="twitter:description" content="Six levels of bricks, lasers, and falling power-ups — the classic breaker, our take." />
+<meta name="twitter:description" content="Ten levels of bricks and falling power-ups — lasers, multi-ball, sticky catch. The classic breaker, our take." />
 <meta name="twitter:image" content="https://ds-da.ca/games/shatterblock/screenshot.png" />
 <style>
   :root {
@@ -323,6 +323,37 @@ const LEVELS = [
     "*111111111111*",
     "33333333333333",
   ],
+  [ // 7 — The Maze
+    "1*1*1*1*1*1*1*",
+    "22222222222222",
+    ".1.1.1.1.1.1.1",
+    "33333333333333",
+    ".1.1.1.1.1.1.1",
+    "22222222222222",
+  ],
+  [ // 8 — Zigzag
+    "3..3..3..3..3.",
+    ".3..3..3..3..3",
+    "..3..3..3..3..",
+    "11111111111111",
+    ".2.2.2.2.2.2.2",
+    "2.2.2.2.2.2.2.",
+  ],
+  [ // 9 — The Vault
+    "*333333333333*",
+    "33333333333333",
+    "33333333333333",
+    "*333333333333*",
+    "11111111111111",
+  ],
+  [ // 10 — Final Boss
+    "3*2*3*2*3*2*3*",
+    "22222222222222",
+    "*1*1*1*1*1*1*1",
+    "33333333333333",
+    "*1*1*1*1*1*1*1",
+    "22222222222222",
+  ],
 ];
 
 // ---------------- power-ups ----------------
@@ -419,7 +450,7 @@ const sfx = {
   },
 };
 
-// ---------------- 8-bit chiptune music (2 tracks) ----------------
+// ---------------- 8-bit chiptune music (4 tracks) ----------------
 const N2F = m => 440 * Math.pow(2, (m - 69) / 12);
 // Track 1: "Brick Breaker" — driving E-minor breaker loop
 const BB_MELODY = [
@@ -447,6 +478,32 @@ const DSD_BASS = [
   38,0,0,0, 45,0,0,0, 34,0,0,0, 41,0,0,0,
   41,0,0,0, 48,0,0,0, 43,0,0,0, 38,0,0,0,
 ];
+// Track 3: "Neon Rush" — driving A-minor, high-energy breaker anthem
+const NR_MELODY = [
+  69,0,72,0, 76,0,72,0, 69,0,72,0, 77,0,74,0,
+  69,0,72,0, 76,0,79,0, 77,77,74,72, 69,0,64,0,
+  69,0,72,0, 76,0,72,0, 74,0,77,0, 81,0,79,0,
+  77,77,74,74, 72,72,69,69, 67,67,64,64, 62,0,0,0,
+];
+const NR_BASS = [
+  45,0,45,0, 45,0,45,0, 48,0,48,0, 48,0,48,0,
+  50,0,50,0, 50,0,50,0, 45,0,45,0, 45,0,45,0,
+  45,0,45,0, 48,0,48,0, 50,0,50,0, 50,0,50,0,
+  45,0,45,0, 45,0,45,0, 43,0,43,0, 43,0,43,0,
+];
+// Track 4: "Crystal Cascade" — bright, bouncy F-major interlude
+const CC_MELODY = [
+  65,65,67,65, 69,0,65,0, 64,64,62,64, 60,0,64,0,
+  65,65,67,65, 69,0,72,0, 71,71,69,69, 65,0,64,0,
+  62,62,64,62, 60,0,64,0, 58,58,60,58, 55,0,57,0,
+  60,60,62,64, 65,0,64,0, 62,62,60,60, 58,0,0,0,
+];
+const CC_BASS = [
+  41,0,41,0, 48,0,48,0, 41,0,41,0, 48,0,48,0,
+  41,0,41,0, 48,0,48,0, 50,0,50,0, 50,0,50,0,
+  37,0,37,0, 44,0,44,0, 36,0,36,0, 43,0,43,0,
+  41,0,41,0, 48,0,48,0, 45,0,45,0, 43,0,43,0,
+];
 const TRACKS = [
   {
     name: 'Brick Breaker', bpm: 150, swing: 0.12, melody: BB_MELODY, bass: BB_BASS,
@@ -459,6 +516,18 @@ const TRACKS = [
     kick: s => s % 8 === 0,
     clap: s => s % 16 === 8,
     hat: s => s % 4 === 2 ? 0.09 : 0,
+  },
+  {
+    name: 'Neon Rush', bpm: 160, swing: 0.1, melody: NR_MELODY, bass: NR_BASS,
+    kick: s => s % 4 === 0,
+    clap: s => s % 16 === 4 || s % 16 === 12,
+    hat: s => s % 2 === 0 ? (s % 4 === 2 ? 0.14 : 0.07) : 0,
+  },
+  {
+    name: 'Crystal Cascade', bpm: 140, swing: 0.08, melody: CC_MELODY, bass: CC_BASS,
+    kick: s => s % 4 === 0,
+    clap: s => s % 8 === 4,
+    hat: s => s % 2 === 0 ? 0.08 : 0,
   },
 ];
 const MusicSys = {
@@ -963,7 +1032,9 @@ function updatePowers(dt) {
 
 // ---------------- lasers ----------------
 function fireLasers() {
-  if (power.laser <= 0 || laserCd > 0 || (phase !== 'play' && phase !== 'launch')) return;
+  // (power.laser || 0): with no laser power-up active, power.laser is undefined,
+  // and `undefined <= 0` is false — which let lasers fire from the start.
+  if ((power.laser || 0) <= 0 || laserCd > 0 || (phase !== 'play' && phase !== 'launch')) return;
   laserCd = LASER_COOLDOWN;
   for (const off of [-1, 1]) {
     const mesh = new THREE.Mesh(laserGeo, laserMat);
