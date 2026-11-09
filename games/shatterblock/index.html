@@ -1010,12 +1010,16 @@ function collideBall(b, dt) {
       const px = Math.abs(dx) - (BRICK_W / 2 + BALL_R);
       const py = Math.abs(dy) - (BRICK_H / 2 + BALL_R);
       if (px < 0 && py < 0) {
-        if (px < py) {
+        // Bounce axis from the ball's VELOCITY direction, not penetration depth:
+        // a fast ball entering the gap between two bricks has near-zero vertical
+        // penetration on first contact, so penetration-based selection shunts it
+        // horizontally between bricks and lets it fly straight through them.
+        if (Math.abs(b.vx) > Math.abs(b.vy)) {
           b.x = br.x + Math.sign(dx) * (BRICK_W / 2 + BALL_R);
-          b.vx = Math.sign(dx) * Math.abs(b.vx);
+          b.vx = -b.vx;
         } else {
           b.y = br.y + Math.sign(dy) * (BRICK_H / 2 + BALL_R);
-          b.vy = Math.sign(dy) * Math.abs(b.vy);
+          b.vy = -b.vy;
         }
         damageBrick(bi, false);
         break;
