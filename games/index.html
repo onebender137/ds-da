@@ -10,27 +10,69 @@
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Games | DSDA | Dream Syndicate Digital Assets</title>
-    <meta name="description" content="The DSDA Games Gallery — hand-built browser games, no downloads. Play DropBlock, a 3D Tetris × Match-3 hybrid, and more to come.">
+    <title>DSDA Arcade | DSDA | Dream Syndicate Digital Assets</title>
+    <meta name="description" content="The DSDA Arcade — hand-built browser games in 3D cabinets. No downloads, no accounts, no friction. Play DropBlock and ShatterBlock; high scores are headed for the blockchain.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://ds-da.ca/games/">
-    <meta property="og:title" content="Games | DSDA">
-    <meta property="og:description" content="Hand-built browser games from the Dream Syndicate workshop. No downloads. No accounts. Just play.">
+    <meta property="og:title" content="DSDA Arcade | DSDA">
+    <meta property="og:description" content="Hand-built browser games in 3D arcade cabinets. No downloads. No accounts. Just play.">
     <meta property="og:image" content="https://ds-da.ca/games/dropblock/screenshot.png">
     <link rel="canonical" href="https://ds-da.ca/games/">
     <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
     <link rel="stylesheet" href="../style.css?v=2.0.4">
-    <link rel="stylesheet" href="games.css?v=3">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script>
       // Apply the saved theme on load (before the page renders, to avoid a flash)
       (function(){var t=localStorage.getItem('dsda-theme')||'light';
       if(t==='dark')document.documentElement.classList.add('dark');})();
     </script>
+    <style>
+      /* ---- DSDA Arcade hall ---- */
+      #scene { position: fixed; inset: 0; z-index: 0; display: block; }
+      .arcade-hall { position: relative; z-index: 1; height: 100vh; }
+      #cards { position: fixed; inset: 0; z-index: 5; pointer-events: none; transition: opacity 0.45s ease; }
+      .card {
+        position: absolute; width: min(300px, 31vw); transform: translate(-50%, 0);
+        text-align: center; padding: 18px 22px 20px;
+        background: rgba(10, 22, 40, 0.78); border: 1px solid rgba(201, 162, 39, 0.28);
+        border-radius: 6px; backdrop-filter: blur(6px);
+        font-family: 'Inter', system-ui, sans-serif; color: #fafaf8;
+      }
+      .card .name { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 700; letter-spacing: 1px; color: #fafaf8; }
+      .card .tag { font-size: 0.66rem; letter-spacing: 2.5px; color: #c9a227; font-weight: 600; margin-top: 3px; text-transform: uppercase; }
+      .card .desc { font-size: 0.76rem; line-height: 1.55; color: #94a3b8; margin-top: 10px; }
+      .card .stats { font-size: 0.68rem; letter-spacing: 1px; color: #94a3b8; margin-top: 12px; }
+      .card .stats b { color: #fafaf8; font-weight: 600; }
+      .card .play {
+        pointer-events: auto; margin-top: 14px; display: inline-block; cursor: pointer;
+        font-family: 'Inter', sans-serif; font-size: 0.74rem; font-weight: 600; letter-spacing: 3px;
+        color: #c9a227; background: transparent; border: 1px solid #c9a227;
+        padding: 10px 34px; border-radius: 3px; transition: all 0.25s ease;
+      }
+      .card .play:hover { background: #c9a227; color: #060d18; box-shadow: 0 0 24px rgba(201,162,39,0.45); }
+      .card .soon { margin-top: 14px; font-size: 0.7rem; letter-spacing: 3px; color: #94a3b8; font-style: italic; }
+      #zooming #cards { opacity: 0; }
+      /* content below the hall scrolls over the fixed scene */
+      .games-note { position: relative; z-index: 2; background: var(--bg); }
+      .footer { position: relative; z-index: 2; background: var(--bg); }
+      #arcadeBootErr {
+        position: fixed; inset: auto 0 0 0; z-index: 50; display: none;
+        background: #2a0a0a; color: #ffb4b4; font: 12px monospace; padding: 12px; white-space: pre-wrap;
+      }
+      @media (max-width: 640px) {
+        .card { width: min(280px, 88vw); padding: 14px 14px 16px; }
+        .card .desc { display: none; }
+      }
+    </style>
 </head>
 <body>
 
-    <!-- HEADER -->
+    <!-- 3D arcade hall (fixed, behind everything) -->
+    <canvas id="scene"></canvas>
+    <div id="cards"></div>
+    <div id="arcadeBootErr"></div>
+
+    <!-- HEADER (standard site topper) -->
     <header class="header">
         <div class="header-inner">
             <a href="/" class="logo">DSDA</a>
@@ -42,62 +84,13 @@
                 <a href="https://hopes-and-dreams.ca">Hopes &amp; Dreams</a>
                 <a href="https://polkahole.ca">Polkahole</a>
                 <a href="/proof/">Proof of Creation</a>
-                <a href="/games/" style="color: var(--gold); font-weight: 600;">Games</a>
+                <a href="/games/" style="color: var(--gold); font-weight: 600;">Arcade</a>
             </nav>
         </div>
     </header>
 
-    <!-- GAMES HERO -->
-    <section class="games-hero">
-        <div class="games-hero-inner">
-            <h1>The Games Gallery</h1>
-            <p>Hand-built browser games from the DSDA workshop. No downloads, no accounts, no friction — just play. High scores are tracked, and the best of them are headed for the blockchain.</p>
-        </div>
-    </section>
-
-    <!-- GAMES GRID -->
-    <section class="games-section">
-        <h2 class="section-title">Playable now</h2>
-        <div class="games-grid">
-            <div class="game-card">
-                <img class="game-shot" src="dropblock/screenshot.png" alt="DropBlock — a 3D Tetris x Match-3 game with colorful candy blocks on a dark board" loading="lazy">
-                <div class="game-body">
-                    <h3>DropBlock</h3>
-                    <div class="game-tags">
-                        <span class="game-tag">Puzzle</span>
-                        <span class="game-tag">3D</span>
-                        <span class="game-tag">Chiptune</span>
-                    </div>
-                    <p>A 3D hybrid of Tetris and Candy Crush. Candy blocks fall one at a time — steer them with the arrow keys, stack them, and clear runs of three. Chain reactions multiply your score, and three original 8-bit tracks keep the tempo. How far can you get before the board fills?</p>
-                    <div class="game-stats">
-                        <span><b id="dbStatGames">—</b> games played</span>
-                        <span><b id="dbStatPlayers">—</b> players</span>
-                    </div>
-                    <a href="dropblock/" class="btn btn-primary game-play">Play DropBlock</a>
-                </div>
-            </div>
-            <div class="game-card">
-                <img class="game-shot" src="shatterblock/screenshot.png" alt="ShatterBlock — a 3D Arkanoid brick-breaker with colorful blocks and falling power-ups" loading="lazy">
-                <div class="game-body">
-                    <h3>ShatterBlock</h3>
-                    <div class="game-tags">
-                        <span class="game-tag">Arcade</span>
-                        <span class="game-tag">3D</span>
-                        <span class="game-tag">Chiptune</span>
-                    </div>
-                    <p>The classic brick-breaker, our take. Twenty levels of blocks and a bouncing ball, with falling power-ups — lasers, wide paddle, multi-ball, sticky catch, extra lives. Lasers are earned, not given. Levels 1–10 are fair; from 11 on the ball keeps speeding up every level, so only the die-hard reach the final 20th. Clear a level to advance and survive long enough to post a score. Arrow keys on desktop, swipe on mobile. How far can you get?</p>
-                    <div class="game-stats">
-                        <span><b id="sbStatGames">—</b> games played</span>
-                        <span><b id="sbStatPlayers">—</b> players</span>
-                    </div>
-                    <a href="shatterblock/" class="btn btn-primary game-play">Play ShatterBlock</a>
-                </div>
-            </div>
-            <div class="game-card soon">
-                <span class="soon-label">Next game in development</span>
-            </div>
-        </div>
-    </section>
+    <!-- HALL (scroll space for the 3D scene) -->
+    <section class="arcade-hall" aria-label="DSDA Arcade hall"></section>
 
     <!-- LEADERBOARD NOTE -->
     <section class="games-note">
@@ -107,7 +100,7 @@
                 <div class="games-stat"><b id="statGames">—</b><span>games played</span></div>
                 <div class="games-stat"><b id="statPlayers">—</b><span>players</span></div>
             </div>
-            <p>Every game in the gallery keeps a live leaderboard. When we wire up <a href="../proof/">Proof of Creation</a>, top scores will be timestamped on the BSV blockchain — immutable proof that you were there, and that you were good at it. <small>Counters are tallied from live leaderboard saves; players are counted by distinct initials.</small></p>
+            <p>Every game in the arcade keeps a live leaderboard. When we wire up <a href="../proof/">Proof of Creation</a>, top scores will be timestamped on the BSV blockchain — immutable proof that you were there, and that you were good at it. <small>Counters are tallied from live leaderboard saves; players are counted by distinct initials.</small></p>
         </div>
     </section>
 
@@ -121,28 +114,17 @@
 
     <script src="../theme.js?v=1"></script>
     <script>
-      // Live play counters — per-game card stats + gallery totals,
-      // aggregated from each game's leaderboard webhook stats
+      // Live play counters — gallery totals aggregated from each game's leaderboard
       (function () {
-        var boards = [
-          { url: 'dropblock/leaderboard.json', games: 'dbStatGames', players: 'dbStatPlayers' },
-          { url: 'shatterblock/leaderboard.json', games: 'sbStatGames', players: 'sbStatPlayers' }
-        ];
-        Promise.all(boards.map(function (b) {
-          return fetch(b.url, { cache: 'no-store' })
-            .then(function (r) { return r.json(); })
-            .catch(function () { return null; });
+        var boards = ['dropblock/leaderboard.json', 'shatterblock/leaderboard.json'];
+        Promise.all(boards.map(function (url) {
+          return fetch(url, { cache: 'no-store' }).then(function (r) { return r.json(); }).catch(function () { return null; });
         })).then(function (results) {
           var totalSaves = 0, initials = {};
-          results.forEach(function (d, i) {
+          results.forEach(function (d) {
             if (!d || !d.stats) return;
-            var s = d.stats.saves || 0;
-            totalSaves += s;
+            totalSaves += d.stats.saves || 0;
             (d.stats.initials || []).forEach(function (x) { initials[x] = 1; });
-            var g = document.getElementById(boards[i].games);
-            var p = document.getElementById(boards[i].players);
-            if (g) g.textContent = String(s);
-            if (p) p.textContent = String((d.stats.initials || []).length);
           });
           var g = document.getElementById('statGames');
           var p = document.getElementById('statPlayers');
@@ -150,6 +132,450 @@
           if (p) p.textContent = String(Object.keys(initials).length);
         });
       })();
+    </script>
+
+    <script type="module">
+      import * as THREE from './three.module.js';
+
+      const GAMES = [
+        {
+          id: 'dropblock', name: 'DropBlock', tag: 'Tetris \u00d7 Match-3',
+          desc: 'Candy blocks fall one at a time \u2014 steer, stack, and clear runs of three. Chain reactions multiply your score.',
+          shot: 'dropblock/screenshot.png', url: 'dropblock/',
+          board: 'dropblock/leaderboard.json', dark: false
+        },
+        {
+          id: 'shatterblock', name: 'ShatterBlock', tag: 'Breakout, die-hard',
+          desc: 'Twenty levels of bricks and eight power-ups. Levels 11\u201320 are a wall only fast reflexes get through.',
+          shot: 'shatterblock/screenshot.png', url: 'shatterblock/',
+          board: 'shatterblock/leaderboard.json', dark: false
+        },
+        {
+          id: 'soon', name: 'Coming Soon', tag: 'Next game in development',
+          desc: 'A new cabinet is being built in the DSDA workshop. The screen stays dark until it\u2019s ready.',
+          shot: null, url: null, board: null, dark: true
+        }
+      ];
+
+      const GOLD = 0xc9a227, NAVY = 0x0a1628;
+      const canvas = document.getElementById('scene');
+      const cardsEl = document.getElementById('cards');
+      let renderer, scene, camera, clock = new THREE.Clock();
+      let cabinets = [];           // { group, screen, screenMat, marqueeMat, spot, glow, x, card }
+      let state = { phase: 'hall', zoom: 0, hover: -1, time: 0, paused: false };
+      let hallCam = { pos: new THREE.Vector3(0, 1.42, 5.9), tgt: new THREE.Vector3(0, 1.02, 0) };
+
+      const SCREEN_VERT = `
+        varying vec2 vUv;
+        void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
+      const SCREEN_FRAG = `
+        uniform sampler2D uMap; uniform float uTime; uniform float uGlow; uniform float uDim;
+        varying vec2 vUv;
+        void main(){
+          vec2 c = vUv - 0.5;
+          float r2 = dot(c, c);
+          vec2 uv = c * (1.0 + 0.10 * r2) + 0.5;
+          vec3 col = vec3(0.0);
+          if (uv.x >= 0.0 && uv.x <= 1.0 && uv.y >= 0.0 && uv.y <= 1.0) col = texture2D(uMap, uv).rgb;
+          float scan  = 0.93 + 0.07 * sin(vUv.y * 380.0 + uTime * 2.5);
+          float flick = 0.975 + 0.025 * sin(uTime * 43.0) * sin(uTime * 29.0);
+          float vig   = smoothstep(0.95, 0.30, length(c) * 1.5);
+          col *= uGlow * flick * scan * (0.30 + 0.70 * vig);
+          col *= uDim;
+          gl_FragColor = vec4(col, 1.0);
+        }`;
+
+      // ---------- boot ----------
+      try { boot(); } catch (err) {
+        window.__bootErr = err;
+        const e = document.getElementById('arcadeBootErr');
+        e.style.display = 'block';
+        e.textContent = err.stack || String(err);
+      }
+
+      function boot() {
+        renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.3;
+
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x04070d);
+        scene.fog = new THREE.Fog(0x04070d, 12, 30);
+
+        camera = new THREE.PerspectiveCamera(46, window.innerWidth / window.innerHeight, 0.1, 60);
+        camera.position.copy(hallCam.pos);
+        camera.lookAt(hallCam.tgt);
+
+        buildRoom();
+        buildCabinets();
+        buildLights();
+        buildCards();
+        loadBoards();
+
+        window.addEventListener('resize', onResize);
+        canvas.addEventListener('pointermove', onPointerMove);
+        canvas.addEventListener('pointerdown', onPointerDown);
+
+        window.__arcade = {
+          pause()  { state.paused = true; },
+          resume() { state.paused = false; },
+          state()  { return { phase: state.phase, zoom: +state.zoom.toFixed(3), hover: state.hover, time: +state.time.toFixed(2), paused: state.paused, cams: cabinets.length }; },
+          frame(ms) { advance((ms || 16.7) / 1000); render(); },
+          play(i)  { startZoom(i); },
+          camPos() { return camera.position.toArray(); }
+        };
+
+        requestAnimationFrame(loop);
+      }
+
+      function loop() {
+        requestAnimationFrame(loop);
+        if (state.paused) return;
+        advance(Math.min(clock.getDelta(), 0.05));
+        render();
+      }
+      function advance(dt) { state.time += dt; update(dt); }
+      function render() { renderer.render(scene, camera); placeCards(); }
+
+      // ---------- room ----------
+      function buildRoom() {
+        const floor = new THREE.Mesh(
+          new THREE.PlaneGeometry(40, 40),
+          new THREE.MeshStandardMaterial({ color: 0x0b1220, roughness: 0.32, metalness: 0.55 })
+        );
+        floor.rotation.x = -Math.PI / 2;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        const wall = new THREE.Mesh(
+          new THREE.PlaneGeometry(40, 12),
+          new THREE.MeshStandardMaterial({ color: 0x070d18, roughness: 0.9, metalness: 0.1 })
+        );
+        wall.position.set(0, 6, -3.4);
+        scene.add(wall);
+
+        const trim = new THREE.Mesh(
+          new THREE.BoxGeometry(30, 0.025, 0.02),
+          new THREE.MeshStandardMaterial({ color: GOLD, roughness: 0.35, metalness: 0.8, emissive: GOLD, emissiveIntensity: 0.25 })
+        );
+        trim.position.set(0, 2.6, -3.38);
+        scene.add(trim);
+
+        const cove = new THREE.Mesh(
+          new THREE.BoxGeometry(14, 0.06, 0.06),
+          new THREE.MeshStandardMaterial({ color: 0x223048, emissive: 0x2a3c5c, emissiveIntensity: 0.8 })
+        );
+        cove.position.set(0, 4.2, 1.2);
+        scene.add(cove);
+      }
+
+      // ---------- cabinet ----------
+      function makeMarqueeTexture(title, tag, dark) {
+        const c = document.createElement('canvas'); c.width = 1024; c.height = 200;
+        const g = c.getContext('2d');
+        g.fillStyle = '#081120'; g.fillRect(0, 0, 1024, 200);
+        const grd = g.createLinearGradient(0, 0, 0, 200);
+        grd.addColorStop(0, 'rgba(201,162,39,0.18)'); grd.addColorStop(0.5, 'rgba(201,162,39,0)'); grd.addColorStop(1, 'rgba(201,162,39,0.18)');
+        g.fillStyle = grd; g.fillRect(0, 0, 1024, 200);
+        g.textAlign = 'center';
+        g.fillStyle = dark ? 'rgba(201,162,39,0.4)' : '#e8c95a';
+        g.font = '700 92px Georgia, "Times New Roman", serif';
+        g.fillText(title.toUpperCase(), 512, 108);
+        g.fillStyle = dark ? 'rgba(148,163,184,0.4)' : 'rgba(250,250,248,0.75)';
+        g.font = '500 34px Inter, system-ui, sans-serif';
+        g.fillText(tag.split('').join('\u2009\u2009'), 512, 168);
+        const t = new THREE.CanvasTexture(c);
+        t.colorSpace = THREE.SRGBColorSpace;
+        return t;
+      }
+
+      function makeBlankTexture() {
+        const c = document.createElement('canvas'); c.width = 64; c.height = 36;
+        const g = c.getContext('2d');
+        g.fillStyle = '#0a0f18'; g.fillRect(0, 0, 64, 36);
+        const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+        return t;
+      }
+
+      function makeCabinet(game, x) {
+        const grp = new THREE.Group();
+        grp.position.set(x, 0, 0);
+
+        const bodyMat = new THREE.MeshStandardMaterial({ color: NAVY, roughness: 0.45, metalness: 0.35 });
+        const darkMat = new THREE.MeshStandardMaterial({ color: 0x0d1524, roughness: 0.5, metalness: 0.3 });
+        const goldMat = new THREE.MeshStandardMaterial({ color: GOLD, roughness: 0.3, metalness: 0.85, emissive: GOLD, emissiveIntensity: 0.12 });
+        const deckMat = new THREE.MeshStandardMaterial({ color: 0x111c30, roughness: 0.4, metalness: 0.4 });
+
+        const add = (geo, mat, px, py, pz, rx = 0) => {
+          const m = new THREE.Mesh(geo, mat);
+          m.position.set(px, py, pz); m.rotation.x = rx;
+          m.castShadow = true; m.receiveShadow = true;
+          grp.add(m); return m;
+        };
+
+        // plinth + body
+        add(new THREE.BoxGeometry(1.02, 0.12, 0.78), darkMat, 0, 0.06, 0);
+        add(new THREE.BoxGeometry(0.88, 1.60, 0.62), bodyMat, 0, 0.92, 0);
+
+        // gold trim
+        add(new THREE.BoxGeometry(0.022, 1.60, 0.022), goldMat, -0.44, 0.92, 0.305);
+        add(new THREE.BoxGeometry(0.022, 1.60, 0.022), goldMat,  0.44, 0.92, 0.305);
+        add(new THREE.BoxGeometry(0.88, 0.022, 0.022), goldMat, 0, 1.70, 0.305);
+        add(new THREE.BoxGeometry(0.02, 1.3, 0.02), goldMat, -0.445, 0.95, 0.05);
+        add(new THREE.BoxGeometry(0.02, 1.3, 0.02), goldMat,  0.445, 0.95, 0.05);
+
+        // marquee (tilted, glowing)
+        const mq = new THREE.Group();
+        mq.position.set(0, 1.84, 0.26); mq.rotation.x = -0.22; grp.add(mq);
+        const mqBox = new THREE.Mesh(new THREE.BoxGeometry(0.88, 0.17, 0.05), darkMat);
+        mqBox.castShadow = true; mq.add(mqBox);
+        const mqMat = new THREE.MeshStandardMaterial({
+          color: 0x000000, emissive: 0xffffff, emissiveMap: makeMarqueeTexture(game.name, game.tag, game.dark),
+          emissiveIntensity: game.dark ? 0.6 : 0.72, roughness: 0.4
+        });
+        const mqFace = new THREE.Mesh(new THREE.PlaneGeometry(0.84, 0.14), mqMat);
+        mqFace.position.z = 0.028; mq.add(mqFace);
+
+        // screen assembly (tilted back)
+        const sg = new THREE.Group();
+        sg.position.set(0, 1.36, 0.285); sg.rotation.x = -0.17; grp.add(sg);
+        const bezel = new THREE.Mesh(new THREE.BoxGeometry(0.82, 0.54, 0.06), darkMat);
+        bezel.castShadow = true; sg.add(bezel);
+        const shotTex = game.dark ? makeBlankTexture() : new THREE.TextureLoader().load(game.shot);
+        if (!game.dark) shotTex.colorSpace = THREE.SRGBColorSpace;
+        const scrMat = new THREE.ShaderMaterial({
+          uniforms: {
+            uMap: { value: shotTex },
+            uTime: { value: 0 },
+            uGlow: { value: 1 },
+            uDim: { value: game.dark ? 0.05 : 1.0 }
+          },
+          vertexShader: SCREEN_VERT, fragmentShader: SCREEN_FRAG
+        });
+        const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.74, 0.416), scrMat);
+        scr.position.z = 0.032; sg.add(scr);
+
+        // control deck
+        const dk = new THREE.Group();
+        dk.position.set(0, 1.03, 0.34); dk.rotation.x = 0.42; grp.add(dk);
+        const deck = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.055, 0.46), deckMat);
+        deck.castShadow = true; dk.add(deck);
+        const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.024, 0.11, 12), darkMat);
+        stick.position.set(-0.2, 0.08, 0.05); dk.add(stick);
+        const knob = new THREE.Mesh(new THREE.SphereGeometry(0.042, 16, 12), new THREE.MeshStandardMaterial({ color: 0x1a2438, roughness: 0.25, metalness: 0.6 }));
+        knob.position.set(-0.2, 0.145, 0.05); knob.castShadow = true; dk.add(knob);
+        [GOLD, 0x8a2be2, 0xd43f5e].forEach((bc, i) => {
+          const b = new THREE.Mesh(new THREE.CylinderGeometry(0.034, 0.038, 0.028, 16),
+            new THREE.MeshStandardMaterial({ color: bc, roughness: 0.3, metalness: 0.3, emissive: bc, emissiveIntensity: game.dark ? 0.05 : 0.25 }));
+          b.position.set(0.08 + i * 0.11, 0.04, 0.08); b.castShadow = true; dk.add(b);
+        });
+
+        // coin door
+        const coin = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.2, 0.02), darkMat);
+        coin.position.set(0.26, 0.72, 0.315); grp.add(coin);
+        add(new THREE.BoxGeometry(0.015, 0.12, 0.005), goldMat, 0.26, 0.72, 0.328);
+
+        scene.add(grp);
+        return { group: grp, screen: scr, screenMat: scrMat, marqueeMat: mqMat, x, game, hoverGlow: game.dark ? 0 : 1.0 };
+      }
+
+      function buildCabinets() {
+        const xs = [-2.3, 0, 2.3];
+        GAMES.forEach((g, i) => cabinets.push(makeCabinet(g, xs[i])));
+      }
+
+      // ---------- lights ----------
+      function buildLights() {
+        scene.add(new THREE.AmbientLight(0x223044, 0.8));
+        scene.add(new THREE.HemisphereLight(0x1c2a42, 0x05070c, 0.9));
+
+        cabinets.forEach(c => {
+          if (c.game.dark) return;
+          const spot = new THREE.SpotLight(0xffd9a0, 140, 14, 0.46, 0.55, 1.6);
+          spot.position.set(c.x * 0.82, 4.1, 2.2);
+          spot.target.position.set(c.x, 1.1, 0);
+          spot.castShadow = true;
+          spot.shadow.mapSize.set(1024, 1024);
+          spot.shadow.bias = -0.002;
+          scene.add(spot, spot.target);
+          c.spot = spot;
+          const pl = new THREE.PointLight(0x9fc4ff, 6, 3.2, 2);
+          pl.position.set(c.x, 1.36, 0.75);
+          scene.add(pl);
+          c.screenLight = pl;
+        });
+      }
+
+      // ---------- HTML cards (projected under cabinets) ----------
+      // innerHTML below uses only the local GAMES constants (no user input) — safe.
+      function buildCards() {
+        cabinets.forEach((c, i) => {
+          const d = document.createElement('div');
+          d.className = 'card';
+          d.innerHTML = c.game.dark
+            ? `<div class="name">${c.game.name}</div><div class="tag">${c.game.tag}</div><div class="desc">${c.game.desc}</div><div class="soon">\u2014 in development \u2014</div>`
+            : `<div class="name">${c.game.name}</div><div class="tag">${c.game.tag}</div><div class="desc">${c.game.desc}</div><div class="stats" id="stats-${i}">loading the record\u2026</div><button class="play" data-i="${i}">P L A Y</button>`;
+          cardsEl.appendChild(d);
+          c.card = d;
+          if (!c.game.dark) d.querySelector('.play').addEventListener('click', () => startZoom(i));
+        });
+      }
+
+      function loadBoards() {
+        cabinets.forEach((c, i) => {
+          if (c.game.dark) return;
+          const el = document.getElementById('stats-' + i);
+          fetch(c.game.board, { cache: 'no-store' })
+            .then(r => r.ok ? r.json() : null)
+            .then(j => setStats(el, j && j.stats))
+            .catch(() => setStats(el, null));
+        });
+      }
+      function setStats(el, stats) {
+        if (stats && (stats.saves > 0 || (stats.initials && stats.initials.length))) {
+          el.innerHTML = `<b>${stats.saves}</b> games \u00b7 <b>${stats.initials.length}</b> players on the record`;
+        } else {
+          el.innerHTML = `the record is empty \u2014 <b>first score</b> goes to you`;
+        }
+      }
+
+      // ---------- interaction ----------
+      const raycaster = new THREE.Raycaster();
+      const pointer = new THREE.Vector2();
+
+      function pickCabinet(ev) {
+        pointer.x = (ev.clientX / window.innerWidth) * 2 - 1;
+        pointer.y = -(ev.clientY / window.innerHeight) * 2 + 1;
+        raycaster.setFromCamera(pointer, camera);
+        const hits = raycaster.intersectObjects(cabinets.map(c => c.group), true);
+        if (!hits.length) return -1;
+        let o = hits[0].object;
+        while (o && cabinets.findIndex(c => c.group === o) < 0) o = o.parent;
+        return o ? cabinets.findIndex(c => c.group === o) : -1;
+      }
+
+      function onPointerMove(ev) {
+        if (state.phase !== 'hall') return;
+        state.hover = pickCabinet(ev);
+        canvas.style.cursor = state.hover >= 0 && !cabinets[state.hover].game.dark ? 'pointer' : 'default';
+      }
+
+      function onPointerDown(ev) {
+        if (state.phase !== 'hall') return;
+        const i = pickCabinet(ev);
+        if (i >= 0 && !cabinets[i].game.dark) startZoom(i);
+      }
+
+      // ---------- coin sound ----------
+      function coin() {
+        try {
+          const ac = window.__ac || (window.__ac = new (window.AudioContext || window.webkitAudioContext)());
+          const t0 = ac.currentTime;
+          [[987.77, 0], [1318.51, 0.085]].forEach(([f, d]) => {
+            const o = ac.createOscillator(), g = ac.createGain();
+            o.type = 'square'; o.frequency.value = f;
+            g.gain.setValueAtTime(0.09, t0 + d);
+            g.gain.exponentialRampToValueAtTime(0.001, t0 + d + 0.2);
+            o.connect(g).connect(ac.destination);
+            o.start(t0 + d); o.stop(t0 + d + 0.22);
+          });
+        } catch (e) {}
+      }
+
+      // ---------- zoom transition ----------
+      const zoomState = { i: -1, t: 0, toPos: null, toTgt: null, fromPos: null, fromTgt: null };
+
+      function startZoom(i) {
+        if (state.phase !== 'hall') return;
+        const c = cabinets[i];
+        const tgt = new THREE.Vector3();
+        c.screen.getWorldPosition(tgt);
+        const n = new THREE.Vector3(0, 0, 1).applyQuaternion(c.screen.getWorldQuaternion(new THREE.Quaternion()));
+        zoomState.i = i; zoomState.t = 0;
+        zoomState.toPos = tgt.clone().add(n.multiplyScalar(0.52));
+        zoomState.toTgt = tgt;
+        zoomState.fromPos = camera.position.clone();
+        zoomState.fromTgt = hallCam.tgt.clone();
+        state.phase = 'zooming';
+        document.body.classList.add('zooming');
+        coin();
+        try { gtag('event', 'arcade_play', { game: c.game.id }); } catch (e) {}
+      }
+
+      function easeInOutCubic(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+
+      function update(dt) {
+        const t = state.time;
+
+        // attract mode + hover glow
+        cabinets.forEach((c, i) => {
+          c.screenMat.uniforms.uTime.value = t;
+          if (c.game.dark) {
+            c.hoverGlow += (0 - c.hoverGlow) * Math.min(1, dt * 5);
+          } else {
+            const target = (state.phase === 'zooming') ? 1.0 : (state.hover === i ? 1.35 : 1.0);
+            c.hoverGlow += (target - c.hoverGlow) * Math.min(1, dt * 6);
+          }
+          c.screenMat.uniforms.uGlow.value = c.hoverGlow;
+          const mqBase = c.game.dark ? 0.6 : 0.72;
+          c.marqueeMat.emissiveIntensity = mqBase * (1 + 0.12 * Math.sin(t * 1.4 + i * 1.7)) * (state.phase === 'zooming' && zoomState.i === i ? 1.5 : 1);
+        });
+
+        // zoom
+        if (state.phase === 'zooming') {
+          zoomState.t = Math.min(1, zoomState.t + dt / 1.5);
+          const e = easeInOutCubic(zoomState.t);
+          camera.position.lerpVectors(zoomState.fromPos, zoomState.toPos, e);
+          const lt = new THREE.Vector3().lerpVectors(zoomState.fromTgt, zoomState.toTgt, e);
+          camera.lookAt(lt);
+          state.zoom = e;
+          cabinets.forEach(c => {
+            const f = (c === cabinets[zoomState.i]) ? 1 : (1 - e);
+            if (c.spot) c.spot.intensity = 140 * f;
+            if (c.screenLight) c.screenLight.intensity = 6 * f;
+          });
+          if (zoomState.t >= 1) {
+            state.phase = 'loading';
+            location.assign(cabinets[zoomState.i].game.url);
+          }
+        }
+      }
+
+      // ---------- cards follow cabinets ----------
+      const _v = new THREE.Vector3();
+      function placeCards() {
+        const w = window.innerWidth, h = window.innerHeight;
+        // project all anchors
+        const anchors = cabinets.map(c => {
+          _v.set(c.x, 0.02, 1.05).project(camera);
+          return { x: (_v.x * 0.5 + 0.5) * w, y: (-_v.y * 0.5 + 0.5) * h };
+        });
+        // common baseline: bottom of the lowest card (cards bottom-align)
+        let commonBottom = h - 10;
+        cabinets.forEach((c, i) => {
+          const ch = c.card.offsetHeight || 240;
+          commonBottom = Math.min(commonBottom, anchors[i].y + ch);
+        });
+        const cw = w / cabinets.length, pad = 6;
+        cabinets.forEach((c, i) => {
+          const ch = c.card.offsetHeight || 240;
+          let x = anchors[i].x;
+          // clamp into this cabinet's column so cards never overlap
+          x = Math.max(i * cw + pad, Math.min((i + 1) * cw - pad, x));
+          c.card.style.left = x + 'px';
+          c.card.style.top = (commonBottom - ch) + 'px';
+        });
+      }
+
+      function onResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }
     </script>
 </body>
 </html>

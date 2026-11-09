@@ -219,7 +219,7 @@
   <div class="menu-btns">
     <button id="menuStart" class="mbtn primary sel">START GAME</button>
     <button id="menuScores" class="mbtn">HIGH SCORES</button>
-    <button id="menuSite" class="mbtn">BACK TO DS-DA.CA</button>
+    <button id="menuSite" class="mbtn">BACK TO DSDA ARCADE</button>
   </div>
   <div class="menu-powers" id="menuPowers"></div>
   <p class="menu-hint" id="menuHint">← → / A D move · SPACE launch + fire laser</p>
@@ -1393,7 +1393,7 @@ function activateMenu() {
   const id = menuButtons[menuSel].id;
   if (id === 'menuStart') startGameFromMenu();
   else if (id === 'menuScores') showScores();
-  else if (id === 'menuSite') window.location.href = 'https://ds-da.ca';
+  else if (id === 'menuSite') window.location.href = 'https://ds-da.ca/games/';
 }
 function startGameFromMenu() {
   track('game_start');
