@@ -154,6 +154,21 @@
 
     <script type="module">
       import * as THREE from './three.module.js';
+      // Disable the bfcache (back/forward cache) so the mobile browser back
+      // button always shows a fresh cabinet hall instead of restoring this page
+      // frozen in its "zooming" state (the cabinet zoomed in as it navigated to
+      // a game — the "funky overlay"). When the page IS restored from the
+      // bfcache, force a fresh reload.
+      (function () {
+        const KEY = 'dsda-bfcache:' + location.pathname;
+        window.addEventListener('pagehide', (e) => { if (e.persisted) sessionStorage.setItem(KEY, '1'); });
+        window.addEventListener('pageshow', (e) => {
+          if (e.persisted && sessionStorage.getItem(KEY)) {
+            sessionStorage.removeItem(KEY);
+            location.reload();
+          }
+        });
+      })();
 
       const GAMES = [
         {
