@@ -256,6 +256,20 @@ window.addEventListener('error', e => {
 // three.js is vendored next to the game (self-contained, offline-capable, instant boot)
 import * as THREE from './three.module.js';
 'use strict';
+// Disable the bfcache (back/forward cache) so the mobile browser back button
+// always navigates to the arcade instead of restoring this page frozen in its
+// game-over/menu state (the "weird overlay"). When the page IS restored from
+// the bfcache, force a fresh reload so it shows a clean menu.
+(function () {
+  const KEY = 'dsda-bfcache:' + location.pathname;
+  window.addEventListener('pagehide', (e) => { if (e.persisted) sessionStorage.setItem(KEY, '1'); });
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted && sessionStorage.getItem(KEY)) {
+      sessionStorage.removeItem(KEY);
+      location.reload();
+    }
+  });
+})();
 
 // ---------------- field geometry (orthographic, 2D plane) ----------------
 const C = 11;                     // columns (all rows)
