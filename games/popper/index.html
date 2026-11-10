@@ -569,6 +569,7 @@ let score = 0, level = 1;
 let grid = [];                    // grid[r][c] = {color, mesh, row, col} | null
 let bubbleList = [];              // flat {x,y} for collision + trace
 let activeBubbles = [];           // in-flight shots {x,y,vx,vy,mesh,color,power}
+let lastStuckPos = null;          // where the last fired bubble landed
 let fallingBubbles = [];          // {mesh, x, y, vy, vx, spin}
 let particles = [];
 let aim = Math.PI / 2;            // aim angle from +x (up = PI/2)
@@ -796,8 +797,10 @@ let guideLine = null;
 function tracePath(fromX, fromY) {
   let x = fromX, y = fromY;
   let vx = Math.cos(aim), vy = Math.sin(aim);
-  const step = 0.09, pts = [];
-  for (let i = 0; i < 900; i++) {
+  // Fine step (matches the sim's dt/4 substep granularity) so the predicted
+  // path — especially bank shots off the walls — lands where the sim will.
+  const step = 0.008, pts = [];
+  for (let i = 0; i < 10125; i++) {
     x += vx * step; y += vy * step;
     if (x < -WALL_X) { x = -WALL_X; vx = Math.abs(vx); }
     else if (x > WALL_X) { x = WALL_X; vx = -Math.abs(vx); }
@@ -808,7 +811,7 @@ function tracePath(fromX, fromY) {
       if (dx * dx + dy * dy < (2 * BUBBLE_R) * (2 * BUBBLE_R)) { hit = true; break; }
     }
     if (hit) { pts.push(x, y); return pts; }
-    if (i % 3 === 0) pts.push(x, y);
+    if (i % 4 === 0) pts.push(x, y);
   }
   pts.push(x, y);
   return pts;
@@ -979,6 +982,7 @@ function stickBubble(b) {
   ensureRow(cell.r);
   grid[cell.r][cell.c] = { color: b.color, mesh: b.mesh, row: cell.r, col: cell.c };
   b.mesh.position.set(worldX(cell.r, cell.c), worldY(cell.r), 0);
+  lastStuckPos = { x: worldX(cell.r, cell.c), y: worldY(cell.r), r: cell.r, c: cell.c };
   const res = resolveMatch(cell.r, cell.c);
   // combo celebration: 4 = POPPER, 5+ = MASTER POPPER, 10+ = PHENOMENAL POPPER
   if (res.matched >= 10) {
@@ -1003,7 +1007,7 @@ function stickBubble(b) {
 function updateActiveBubbles(dt) {
   for (let i = activeBubbles.length - 1; i >= 0; i--) {
     const b = activeBubbles[i];
-    const SUB = 4, step = dt / SUB;
+    const SUB = 16, step = dt / SUB;
     let stuck = false;
     for (let sub = 0; sub < SUB && !stuck; sub++) {
       b.x += b.vx * step; b.y += b.vy * step;
@@ -1719,6 +1723,27 @@ window.__tl = {
   menuSel() { return menuSel; },
   setAim(a) { aim = Math.max(AIM_MIN, Math.min(AIM_MAX, a)); updateWandTip(); return 'ok'; },
   getAim() { return aim; },
+  getPrediction() {
+    if (!guideLine) return null;
+    const pos = guideLine.geometry.attributes.position;
+    if (!pos || pos.count < 2) return null;
+    const i = (pos.count - 1) * 2;
+    return { x: pos.array[i], y: pos.array[i+1], pts: pos.count };
+  },
+  getTopmost() {
+    let best = null, bestY = -999;
+    for (let r = 0; r < grid.length; r++) for (let c = 0; c < C; c++) {
+      if (grid[r] && grid[r][c]) {
+        const y = worldY(r);
+        if (y > bestY) { bestY = y; best = { x: worldX(r,c), y, r, c }; }
+      }
+    }
+    return best;
+  },
+  getLastStuck() { return lastStuckPos; },
+  getActiveCount() { return activeBubbles.length; },
+  getActivePos() { return activeBubbles.length ? { x: activeBubbles[0].x, y: activeBubbles[0].y } : null; },
+  getActiveVel() { return activeBubbles.length ? { vx: activeBubbles[0].vx, vy: activeBubbles[0].vy } : null; },
   setPower(p) { power = Math.max(0, Math.min(1, p)); updateWandTip(); return 'ok'; },
   setColor(c) { currentColor = c; nextColor = c; updateWandTip(); return 'ok'; },
   fire(angle, p) {
@@ -1727,7 +1752,7 @@ window.__tl = {
     fire();
     return 'fired';
   },
-  seedBoard(rows, colors) { startLevel(1); level = 1; newBoard(rows || START_ROWS, colors || 5); currentColor = 0; nextColor = 1; updateWandTip(); updateHud(); return 'seeded ' + bubbleCount(); },
+  seedBoard(rows, colors) { startLevel(1); level = 1; lastStuckPos = null; newBoard(rows || START_ROWS, colors || 5); currentColor = 0; nextColor = 1; updateWandTip(); updateHud(); return 'seeded ' + bubbleCount(); },
   setCell(r, c, color) {
     while (grid.length <= r) grid.push(new Array(C).fill(null));
     const row = grid[r];
