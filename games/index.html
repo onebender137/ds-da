@@ -209,6 +209,8 @@
       let renderer, scene, camera, clock = new THREE.Clock();
       let cabinets = [];           // { group, screen, screenMat, marqueeMat, spot, screenLight, x, game, card }
       let state = { phase: 'hall', zoom: 0, hover: -1, time: 0, paused: false, camX: 0, dragging: false, dragVel: 0, lastInteract: -10 };
+      let ambLight, hemiLight, dirLight;   // theme-reactive lights
+      let floorMat, wallMat;               // theme-reactive materials
 
       const SCREEN_VERT = `
         varying vec2 vUv;
@@ -253,13 +255,18 @@
 
         camera = new THREE.PerspectiveCamera(46, window.innerWidth / window.innerHeight, 0.1, 60);
         camera.position.set(0, 1.42, CAM_DIST);
-        camera.lookAt(0, 1.10, 0);
+        camera.lookAt(0, 0.62, 0);
 
         buildRoom();
         buildCabinets();
         buildLights();
         buildCards();
         loadBoards();
+
+        // Theme-reactive lighting: apply the current theme now, and re-light
+        // the scene whenever the user flips the light/dark toggle.
+        applySceneTheme(localStorage.getItem('dsda-theme') || 'light');
+        window.addEventListener('dsda-theme-change', (e) => applySceneTheme(e.detail.theme));
 
         window.addEventListener('resize', onResize);
         // pointer events on window (not canvas) so mobile touches landing on the
@@ -298,18 +305,14 @@
 
       // ---------- room ----------
       function buildRoom() {
-        const floor = new THREE.Mesh(
-          new THREE.PlaneGeometry(40, 40),
-          new THREE.MeshStandardMaterial({ color: 0x0b1220, roughness: 0.32, metalness: 0.55 })
-        );
+        floorMat = new THREE.MeshStandardMaterial({ color: 0x0b1220, roughness: 0.32, metalness: 0.55 });
+        const floor = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), floorMat);
         floor.rotation.x = -Math.PI / 2;
         floor.receiveShadow = true;
         scene.add(floor);
 
-        const wall = new THREE.Mesh(
-          new THREE.PlaneGeometry(40, 12),
-          new THREE.MeshStandardMaterial({ color: 0x070d18, roughness: 0.9, metalness: 0.1 })
-        );
+        wallMat = new THREE.MeshStandardMaterial({ color: 0x070d18, roughness: 0.9, metalness: 0.1 });
+        const wall = new THREE.Mesh(new THREE.PlaneGeometry(40, 12), wallMat);
         wall.position.set(0, 6, -3.4);
         scene.add(wall);
 
@@ -449,8 +452,23 @@
 
       // ---------- lights ----------
       function buildLights() {
-        scene.add(new THREE.AmbientLight(0x223044, 0.8));
-        scene.add(new THREE.HemisphereLight(0x1c2a42, 0x05070c, 0.9));
+        ambLight = new THREE.AmbientLight(0x223044, 0.8);
+        scene.add(ambLight);
+        hemiLight = new THREE.HemisphereLight(0x1c2a42, 0x05070c, 0.9);
+        scene.add(hemiLight);
+
+        // Sun-like directional light so cabinet shadows are visible in light
+        // theme (kept very dim in dark theme so the neon look is unchanged).
+        dirLight = new THREE.DirectionalLight(0xffffff, 0.12);
+        dirLight.position.set(0, 9, 5);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.set(2048, 2048);
+        const sc = dirLight.shadow.camera;
+        sc.left = -14; sc.right = 14; sc.top = 10; sc.bottom = -10;
+        sc.near = 1; sc.far = 30;
+        dirLight.shadow.bias = -0.0015;
+        scene.add(dirLight, dirLight.target);
+        dirLight.target.position.set(0, 0, 0);
 
         cabinets.forEach(c => {
           if (c.game.dark) return;
@@ -467,6 +485,24 @@
           scene.add(pl);
           c.screenLight = pl;
         });
+      }
+
+      // Theme-reactive scene: light theme = bright hall with visible cabinet
+      // shadows; dark theme = the original moody neon look (unchanged).
+      function applySceneTheme(theme) {
+        const light = theme === 'light';
+        const bg = light ? 0xe9edf3 : 0x04070d;
+        scene.background = new THREE.Color(bg);
+        scene.fog = new THREE.Fog(bg, light ? 16 : 12, light ? 42 : 30);
+        if (floorMat) {
+          floorMat.color.setHex(light ? 0x6d7888 : 0x0b1220);
+          floorMat.roughness = light ? 0.85 : 0.32;
+          floorMat.metalness = light ? 0.08 : 0.55;
+        }
+        if (wallMat) wallMat.color.setHex(light ? 0xc8d0db : 0x070d18);
+        if (ambLight) { ambLight.color.setHex(light ? 0xffffff : 0x223044); ambLight.intensity = light ? 0.18 : 0.8; }
+        if (hemiLight) { hemiLight.color.setHex(light ? 0xffffff : 0x1c2a42); hemiLight.groundColor.setHex(light ? 0x6d7888 : 0x05070c); hemiLight.intensity = light ? 0.5 : 0.9; }
+        if (dirLight) dirLight.intensity = light ? 3.4 : 0.12;
       }
 
       // ---------- infinite row: world wrap ----------
@@ -677,7 +713,13 @@
           if (state.camX > CYCLE_W / 2) { state.camX -= CYCLE_W; shiftWorld(-CYCLE_W); }
           else if (state.camX < -CYCLE_W / 2) { state.camX += CYCLE_W; shiftWorld(CYCLE_W); }
           camera.position.x = state.camX;
-          camera.lookAt(state.camX, 1.10, 0);
+          camera.lookAt(state.camX, 0.62, 0);
+          // keep the shadow-casting sun over the visible cabinets, offset to
+          // the side so shadows fall beside (not behind) the cabinets
+          if (dirLight) {
+            dirLight.position.set(state.camX + 4.5, 9, -3.5);
+            dirLight.target.position.set(state.camX, 0, 0);
+          }
           // shadows only for near cabinets (perf)
           cabinets.forEach(c => {
             if (c.spot) c.spot.castShadow = Math.abs(c.x - state.camX) < 9;
@@ -726,8 +768,9 @@
           }
         });
         if (!visible.length) return;
-        // common baseline across visible cards
-        let commonBottom = h - 10;
+        // common baseline across visible cards — lift off the screen bottom so
+        // the floor (and cabinet shadows) stay visible in light theme
+        let commonBottom = h - 188;
         visible.forEach(v => { commonBottom = Math.min(commonBottom, v.y + v.ch); });
         visible.forEach(v => {
           v.c.card.style.left = v.x + 'px';

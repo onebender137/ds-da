@@ -16,6 +16,9 @@
         document.documentElement.classList.toggle('dark', theme === 'dark');
         localStorage.setItem('dsda-theme', theme);
         updateButton(theme);
+        // Notify pages with a 3D scene (e.g. the arcade hall) so they can
+        // re-light the scene for the new theme.
+        window.dispatchEvent(new CustomEvent('dsda-theme-change', { detail: { theme } }));
     }
 
     function updateButton(theme) {
