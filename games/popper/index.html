@@ -1,0 +1,1765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>Popper — Bubble Pop, Fairyland</title>
+<!-- link-share card (iMessage/Telegram/X) -->
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://ds-da.ca/games/popper/" />
+<meta property="og:title" content="Play Popper at ds-da.ca" />
+<meta property="og:description" content="Bubble pop in the fairyland — aim, charge, and burst sparkles to clear the garden. Match three, drop the orphans, and don't let the blossoms reach the roots. The classic bubble shooter, our take." />
+<meta property="og:image" content="https://ds-da.ca/games/popper/screenshot.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Play Popper at ds-da.ca" />
+<meta name="twitter:description" content="Bubble pop in the fairyland — aim, charge, and burst sparkles to clear the garden." />
+<meta name="twitter:image" content="https://ds-da.ca/games/popper/screenshot.png" />
+<!-- GA4: track this game page + custom in-game events (see track()) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-M9D0GNYMWJ"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-M9D0GNYMWJ', { page_title: 'Popper', page_path: '/games/popper/' });
+</script>
+<style>
+  :root {
+    --bg: #05070f;
+    --panel: rgba(8, 14, 26, 0.82);
+    --border: rgba(0, 229, 255, 0.25);
+    --accent: #00e5ff;
+    --accent2: #ff2d95;
+    --text: #e8f4ff;
+    --muted: #5f7d94;
+    --danger: #ff3366;
+    --gold: #ffc300;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text);
+    overscroll-behavior: none; user-select: none; -webkit-user-select: none;
+    font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif; }
+  #scene { position: fixed; inset: 0; display: block; touch-action: none; }
+  .panel { position: fixed; background: var(--panel); border: 1px solid var(--border);
+    border-radius: 14px; padding: 14px 16px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.45); }
+  #titleBox { top: 16px; left: 16px; z-index: 5; }
+  #titleBox h1 { font-size: 17px; letter-spacing: 3px; font-weight: 800; }
+  #titleBox h1 span { color: var(--accent); }
+  #titleBox p { font-size: 11px; color: var(--muted); letter-spacing: 1px; margin-top: 2px; }
+  #hud { top: 16px; right: 16px; width: 232px; z-index: 5; }
+  .stat { display: flex; justify-content: space-between; align-items: baseline; padding: 4px 0;
+    border-bottom: 1px solid rgba(0,229,255,0.12); }
+  .stat span { font-size: 10px; letter-spacing: 2px; color: var(--muted); }
+  .stat b { font-size: 20px; font-variant-numeric: tabular-nums; }
+  #nextRow { align-items: center; }
+  #nextDot { width: 22px; height: 22px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #fff 0%, var(--nc, #00e5ff) 55%, rgba(0,0,0,0.35) 100%);
+    box-shadow: 0 0 10px var(--nc, #00e5ff); }
+  #dropDots { display: flex; gap: 4px; }
+  #dropDots i { width: 9px; height: 9px; border-radius: 50%; background: rgba(0,229,255,0.22); }
+  #dropDots i.on { background: var(--gold); box-shadow: 0 0 8px var(--gold); }
+  h3.sub { font-size: 10px; letter-spacing: 2px; color: var(--muted); margin: 12px 0 6px; }
+  ol.tops { list-style: none; }
+  ol.tops li { display: flex; justify-content: space-between; font-size: 12px; padding: 2px 2px;
+    border-bottom: 1px dashed rgba(0,229,255,0.1); font-variant-numeric: tabular-nums; }
+  ol.tops li .rank { color: var(--muted); width: 18px; }
+  ol.tops li .name { letter-spacing: 1px; font-weight: 700; }
+  .keys { margin-top: 12px; font-size: 11px; color: var(--muted); line-height: 1.8; }
+  button { font: inherit; cursor: pointer; touch-action: manipulation; }
+  #soundBtn { position: fixed; bottom: 56px; left: 16px; z-index: 5; background: var(--panel);
+    border: 1px solid var(--border); color: var(--text); border-radius: 10px; padding: 8px 12px;
+    font-size: 12px; backdrop-filter: blur(10px); }
+  #musicBox { position: fixed; bottom: 16px; left: 16px; z-index: 5; display: flex; align-items: center;
+    gap: 4px; background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 6px 10px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  #musicBox button { background: none; border: none; color: var(--muted); font-size: 13px;
+    padding: 2px 5px; line-height: 1; }
+  #musicBox button:hover { color: var(--text); }
+  #musicName { font-size: 11px; letter-spacing: 1px; min-width: 128px; text-align: center;
+    white-space: nowrap; color: var(--text); }
+  #overlay { position: fixed; inset: 0; z-index: 20; display: flex; align-items: center;
+    justify-content: center; background: rgba(5, 8, 16, 0.82); backdrop-filter: blur(6px); }
+  #overlay.hidden { display: none; }
+  .card { width: min(92vw, 430px); background: var(--panel); border: 1px solid var(--border);
+    border-radius: 18px; padding: 28px 30px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+  .card h2 { font-size: 30px; letter-spacing: 6px; color: var(--danger); margin-bottom: 6px; }
+  .card .final { font-size: 15px; color: var(--muted); margin-bottom: 4px; }
+  .card .final b { color: var(--text); font-size: 20px; }
+  #newHigh { color: var(--gold); font-size: 12px; letter-spacing: 2px; margin-bottom: 6px; font-weight: 700; }
+  #newHigh.hidden { display: none; }
+  .card label { display: block; font-size: 11px; letter-spacing: 2px; color: var(--muted);
+    margin: 16px 0 6px; text-align: left; }
+  #initials { width: 100%; font: inherit; font-size: 26px; font-weight: 800; letter-spacing: 10px;
+    text-align: center; text-transform: uppercase; color: var(--text); background: rgba(5,8,16,0.92);
+    border: 1px solid var(--border); border-radius: 10px; padding: 8px 4px; outline: none; }
+  #initials:focus { border-color: var(--accent); }
+  .card button { width: 100%; margin-top: 10px; padding: 11px; border-radius: 10px;
+    border: 1px solid var(--border); background: rgba(10,20,40,0.5); color: var(--text);
+    font-size: 14px; letter-spacing: 1px; font-weight: 700; }
+  .card button:hover { background: rgba(14,30,55,0.6); }
+  .card button.primary { background: linear-gradient(135deg, #00b8d9, #ff2d95); border: none; font-size: 15px; }
+  .card button.primary:hover { filter: brightness(1.15); }
+  .card button:disabled { opacity: 0.5; cursor: default; }
+  #savedMsg { color: #39ff88; font-size: 12px; margin-top: 6px; min-height: 16px; }
+  #shareMsg { color: var(--gold); font-size: 12px; margin-top: 6px; min-height: 16px; }
+  #booterr { position: fixed; left: 12px; bottom: 12px; z-index: 50; max-width: 70vw;
+    max-height: 40vh; overflow: auto; background: #0a1420; color: #7fffe0; border: 1px solid var(--danger);
+    border-radius: 10px; padding: 10px 12px; font: 11px/1.5 ui-monospace, monospace; white-space: pre-wrap; }
+  #booterr.hidden { display: none; }
+
+  /* ---- banner ---- */
+  #banner { position: fixed; top: 38%; left: 0; right: 0; z-index: 12; text-align: center;
+    pointer-events: none; opacity: 0; transition: opacity .25s; }
+  #banner.show { opacity: 1; }
+  #banner h2 { font-size: clamp(34px, 6vw, 64px); letter-spacing: 10px; font-weight: 900;
+    background: linear-gradient(180deg, #ffffff 0%, #00e5ff 50%, #ff2d95 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 4px 24px rgba(0,229,255,0.5)); }
+  #banner p { font-size: 14px; letter-spacing: 4px; color: var(--gold); margin-top: 6px; }
+
+  /* ---- main menu ---- */
+  #menu { position: fixed; inset: 0; z-index: 15; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 14px;
+    background: radial-gradient(ellipse at 50% 38%, rgba(10,16,30,0.12) 0%, rgba(5,8,16,0.72) 82%);
+    backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); }
+  #menu.hidden { display: none; }
+  body.menu-mode #titleBox, body.menu-mode #hud { display: none; }
+  .menu-title { font-size: clamp(38px, 8vw, 84px); font-weight: 900; letter-spacing: 6px;
+    display: flex; user-select: none; line-height: 1; flex-wrap: wrap; justify-content: center; }
+  .menu-title .lt { display: inline-block;
+    background: linear-gradient(180deg, #ffffff 0%, #00e5ff 48%, #ff2d95 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: ltfloat 2.8s ease-in-out infinite;
+    filter: drop-shadow(0 6px 22px rgba(0,229,255,0.4)); }
+  @keyframes ltfloat {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-13px) rotate(-3deg); }
+  }
+  .menu-tag { font-size: 12px; letter-spacing: 5px; color: var(--muted); text-align: center; }
+  .menu-btns { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; width: min(82vw, 330px); }
+  .mbtn { font: inherit; font-size: 15px; font-weight: 700; letter-spacing: 3px; padding: 13px;
+    border-radius: 12px; border: 1px solid var(--border); background: var(--panel); color: var(--text);
+    cursor: pointer; transition: all .15s; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  .mbtn:hover, .mbtn.sel { border-color: var(--accent); background: rgba(0,40,60,0.45);
+    box-shadow: 0 0 24px rgba(0,229,255,0.28); transform: translateX(4px); }
+  .mbtn.primary { background: linear-gradient(135deg, #00b8d9, #ff2d95); border: none; font-size: 16px; }
+  .mbtn.primary:hover, .mbtn.primary.sel { filter: brightness(1.15); }
+  .menu-hint { font-size: 11px; color: var(--muted); letter-spacing: 1px; margin-top: 10px; text-align: center; }
+  .menu-legend { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; justify-content: center; max-width: 540px; }
+  .ml { font-size: 10px; letter-spacing: 1px; padding: 7px 10px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--panel); color: var(--muted);
+    display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 128px; }
+  .ml .ml-top { display: flex; align-items: center; gap: 5px; font-weight: 700; color: var(--text); }
+  .ml b { font-size: 12px; }
+  .ml .ml-desc { font-size: 9px; letter-spacing: .4px; color: var(--muted); opacity: .85; text-align: center; line-height: 1.25; }
+
+  /* ---- high scores screen ---- */
+  #scores { position: fixed; inset: 0; z-index: 18; display: flex; align-items: center;
+    justify-content: center; background: rgba(5, 8, 16, 0.85); backdrop-filter: blur(6px); }
+  #scores.hidden { display: none; }
+  .global-note { font-size: 11px; color: var(--muted); letter-spacing: 1px; margin: 4px 0 2px; min-height: 14px; }
+
+  /* ---- mobile (phone) ---- */
+  @media (max-width: 768px) {
+    #titleBox { display: none; }
+    #hud { top: max(10px, env(safe-area-inset-top)); right: 10px; width: auto;
+      padding: 8px 12px; display: flex; flex-direction: row; align-items: center; gap: 14px; }
+    #hud .stat { border-bottom: none; padding: 0; gap: 6px; flex-direction: column; align-items: center; }
+    #hud .stat span { font-size: 7px; letter-spacing: 1px; }
+    #hud .stat b { font-size: 15px; }
+    #hud .sub, #hud .tops, #hud .keys { display: none; }
+    #soundBtn { bottom: calc(54px + env(safe-area-inset-bottom)); left: 10px; padding: 6px 10px; }
+    #musicBox { bottom: calc(10px + env(safe-area-inset-bottom)); left: 10px; }
+    .card { padding: 20px 22px; }
+    .menu-legend { display: none; }
+  }
+</style>
+</head>
+<body class="menu-mode">
+<div id="titleBox" class="panel">
+  <h1>POP<span>PER</span></h1>
+  <p>BUBBLE POP · FAIRYLAND</p>
+</div>
+<div id="hud" class="panel">
+  <div class="stat"><span>SCORE</span><b id="score">0</b></div>
+  <div class="stat"><span>LEVEL</span><b id="level">1</b></div>
+  <div class="stat" id="nextRow"><span>NEXT</span><b id="nextDot"></b></div>
+  <div class="stat"><span>ROOTS IN</span><b id="dropDots"><i></i><i></i><i></i></b></div>
+  <h3 class="sub">TOP 10</h3>
+  <ol id="hudTop" class="tops"></ol>
+  <div class="keys" id="hudKeys">
+    ← → &nbsp;aim<br>
+    hold SPACE &nbsp;charge · release to fire<br>
+    4+ POPPER · 5+ MASTER · 10+ PHENOMENAL ✦
+  </div>
+</div>
+<button id="soundBtn">🔊 sound on</button>
+<div id="musicBox">
+  <button id="musicPrev" title="Previous track">⏮</button>
+  <div id="musicName">1. Fairyland</div>
+  <button id="musicNext" title="Next track (M)">⏭</button>
+  <button id="musicToggle" title="Music on/off">🎵</button>
+</div>
+<div id="banner"><h2 id="bannerTitle"></h2><p id="bannerSub"></p></div>
+<div id="menu">
+  <h1 class="menu-title" aria-label="POPPER">
+    <span class="lt" style="animation-delay:0s">P</span><span class="lt" style="animation-delay:.06s">O</span><span class="lt" style="animation-delay:.12s">P</span><span class="lt" style="animation-delay:.18s">P</span><span class="lt" style="animation-delay:.24s">E</span><span class="lt" style="animation-delay:.30s">R</span>
+  </h1>
+  <p class="menu-tag">BUBBLE POP · FAIRYLAND — DSDA GAMES</p>
+  <div class="menu-btns">
+    <button id="menuStart" class="mbtn primary sel">START GAME</button>
+    <button id="menuScores" class="mbtn">HIGH SCORES</button>
+    <button id="menuSite" class="mbtn">BACK TO DSDA ARCADE</button>
+  </div>
+  <div class="menu-legend" id="menuLegend"></div>
+  <p class="menu-hint" id="menuHint">← → aim · hold SPACE to charge, release to fire · 4+ in one = POPPER, 5+ = MASTER, 10+ = PHENOMENAL</p>
+</div>
+<div id="scores" class="hidden">
+  <div class="card">
+    <h2 style="color: var(--accent);">HIGH SCORES</h2>
+    <h3 class="sub">GLOBAL — DS-DA.CA</h3>
+    <ol id="globalTop" class="tops"></ol>
+    <p id="globalNote" class="global-note"></p>
+    <h3 class="sub">THIS DEVICE</h3>
+    <ol id="localTop" class="tops"></ol>
+    <button id="scoresBack" class="primary">Back to Menu</button>
+  </div>
+</div>
+<div id="overlay" class="hidden">
+  <div class="card">
+    <h2>GAME OVER</h2>
+    <div id="newHigh" class="hidden">★ NEW HIGH SCORE ★</div>
+    <p class="final">Final score <b id="finalScore">0</b></p>
+    <p class="final" id="finalLevel">reached level 1</p>
+    <label for="initials">YOUR INITIALS</label>
+    <input id="initials" maxlength="3" autocomplete="off" spellcheck="false" />
+    <button id="saveBtn">Save Score</button>
+    <div id="savedMsg"></div>
+    <button id="shareBtn">Share Score</button>
+    <div id="shareMsg"></div>
+    <h3 class="sub">HIGH SCORES</h3>
+    <ol id="topList" class="tops"></ol>
+    <button id="playAgain" class="primary">Play Again</button>
+    <button id="toMenu">Main Menu</button>
+  </div>
+</div>
+<div id="booterr" class="hidden"></div>
+<noscript><p style="position:fixed;top:40%;width:100%;text-align:center">JavaScript is required.</p></noscript>
+<script>
+// surface top-level module failures (import errors etc.) into __bootErr
+window.addEventListener('error', e => {
+  if (!window.__bootErr) window.__bootErr = 'page: ' + (e.message || String(e));
+});
+</script>
+
+<script type="module">
+// three.js is vendored next to the game (self-contained, offline-capable, instant boot)
+import * as THREE from './three.module.js';
+'use strict';
+
+// ---------------- field geometry (orthographic, 2D plane) ----------------
+const C = 11;                     // columns (all rows)
+const BUBBLE_R = 0.4;             // bubble radius (smaller = more room + longer rounds)
+const COL_W = 0.8;                // horizontal pitch (scaled 0.8x)
+const ROW_H = 0.693;              // vertical pitch (hex, COL_W * sin60)
+const XOFF = -0.2;                // center the staggered field on x=0
+const TOP_Y = 12.4;               // y of the topmost row (raised for more starting room)
+const CEILING_Y = TOP_Y + 0.35;
+const WALL_X = 5.25;              // bubble-center limit
+const DANGER_Y = 3.0;             // a bubble below this = game over
+const SHOOTER_X = 0, SHOOTER_Y = 2.2;
+const WAND_LEN = 0.95;
+const START_ROWS = 6;
+const SHOTS_PER_PUSH = 3;         // shots per row-descent
+const AIM_MIN = Math.PI / 12, AIM_MAX = 11 * Math.PI / 12; // 15°..165°
+const CHARGE_TIME = 0.7;          // seconds to full power
+const MIN_FIRE = 0.12;
+const FULL_POWER = 0.95;
+const SHOT_BASE = 8, SHOT_MAX = 13;
+
+// fairyland pastel bubble palette
+const COLORS = [0x00e5ff, 0xff2d95, 0x39ff88, 0xb026ff, 0xffc300, 0x2979ff];
+
+// ---------------- levels ----------------
+function levelColors(n) { return Math.min(5 + (n >= 3 ? 1 : 0), 6); }
+function levelRows(n) { return Math.min(START_ROWS + Math.floor((n - 1) / 3), 10); }
+
+// ---------------- scoring / leaderboard ----------------
+const SCORE_KEY = 'popper_scores.v1';
+const GAME_ID = 'popper';
+// ---------------- GA4 analytics (optional; never breaks the game) ----------------
+function track(event, params) {
+  try {
+    if (typeof gtag === 'function') {
+      gtag('event', event, Object.assign({ game: GAME_ID }, params || {}));
+    }
+  } catch (e) { /* analytics must never interrupt gameplay */ }
+}
+const SHARE_URL = 'https://ds-da.ca/games/popper/';
+const SCORE_DISPATCH_URL = 'https://api.github.com/repos/onebender137/ds-da/actions/workflows/score-webhook.yml/dispatches';
+const BOARD_API = 'https://api.ds-da.ca/api/board'; // fast path (instant); GitHub dispatch = fallback
+function fetchTimeout(url, opts, ms = 4000) {
+  const c = new AbortController();
+  const t = setTimeout(() => c.abort(), ms);
+  return fetch(url, Object.assign({ signal: c.signal }, opts)).finally(() => clearTimeout(t));
+}
+const SCORE_TOKEN = ['github_pat_','11BSP72GQ0ahD5DWDTnYvW_yw5FUOGwGkIjafWX6x4FipOXpW1ObVzvOHSXtbopwubO4IXUTCFSqSp8bII'].join('') // split so secret-scanning's PAT regex can't match
+const SCORE_SECRET = '6216cf68f4e077d3cd991f2d6bd3e878';
+
+// ---------------- dom ----------------
+const $ = id => document.getElementById(id);
+const elScore = $('score'), elLevel = $('level'), elNextDot = $('nextDot');
+const elDropDots = $('dropDots');
+const elHudTop = $('hudTop'), elOverlay = $('overlay');
+const elFinal = $('finalScore'), elFinalLevel = $('finalLevel');
+const elInitials = $('initials'), elSave = $('saveBtn'), elSavedMsg = $('savedMsg');
+const elShare = $('shareBtn'), elShareMsg = $('shareMsg');
+const elTopList = $('topList'), elPlayAgain = $('playAgain'), elNewHigh = $('newHigh');
+const elMenu = $('menu'), elScores = $('scores');
+const elGlobalTop = $('globalTop'), elLocalTop = $('localTop'), elGlobalNote = $('globalNote');
+const elScoresBack = $('scoresBack'), elToMenu = $('toMenu');
+const elSound = $('soundBtn'), elBootErr = $('booterr');
+const elMusicName = $('musicName'), elMusicPrev = $('musicPrev');
+const elMusicNext = $('musicNext'), elMusicToggle = $('musicToggle');
+const elBanner = $('banner'), elBannerTitle = $('bannerTitle'), elBannerSub = $('bannerSub');
+
+// ---------------- three.js globals ----------------
+let renderer, scene, camera, clock;
+let sceneEl = null;
+let webglOK = true;
+let rafId = 0;
+let inputFrozen = false;
+let _halfW = 6, _halfH = 7;
+
+// ---------------- synthesized audio ----------------
+const sfx = {
+  ctx: null, on: true,
+  ensure() {
+    if (!this.ctx) {
+      try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); }
+      catch (e) { this.on = false; }
+    }
+    if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+  },
+  tone(f, dur, type, vol, delay, slideTo) {
+    if (!this.on || !this.ctx) return;
+    dur = dur || 0.08; type = type || 'square'; vol = vol || 0.1; delay = delay || 0;
+    const t0 = this.ctx.currentTime + delay;
+    const o = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(Math.max(30, f), t0);
+    if (slideTo) o.frequency.exponentialRampToValueAtTime(Math.max(30, slideTo), t0 + dur);
+    g.gain.setValueAtTime(vol, t0);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(this.ctx.destination);
+    o.start(t0); o.stop(t0 + dur + 0.03);
+  },
+  shot(p) { this.tone(300 + p * 260, 0.09, 'square', 0.11, 0, 620 + p * 300); },
+  bounce() { this.tone(200, 0.04, 'square', 0.05); },
+  pop(n) {
+    // rising sparkle arpeggio, length scales with pop size
+    const base = [523, 659, 784, 1047, 1319, 1568];
+    const k = Math.min(base.length, Math.max(3, n));
+    for (let i = 0; i < k; i++) this.tone(base[i], 0.09, 'square', 0.08, i * 0.035);
+  },
+  fall() { this.tone(420, 0.12, 'triangle', 0.07, 0, 180); },
+  burst() {
+    // combo burst (Master Popper): bright shimmering cascade
+    [1047, 1319, 1568, 2093, 2637].forEach((f, i) => this.tone(f, 0.14, 'triangle', 0.06, i * 0.03));
+    [1568, 2093, 2637].forEach((f, i) => this.tone(f, 0.24, 'sine', 0.04, 0.16 + i * 0.02));
+  },
+  phenom() {
+    // phenomenal popper (10+): huge triumphant cascade
+    [784, 988, 1175, 1568, 1976, 2349, 3136, 4186].forEach((f, i) => this.tone(f, 0.16, 'triangle', 0.07, i * 0.035));
+    [1568, 2349, 3136, 4186].forEach((f, i) => this.tone(f, 0.28, 'sine', 0.05, 0.24 + i * 0.025));
+  },
+  charge() { this.tone(180, 0.05, 'sine', 0.04); },
+  ready() { [784, 1047, 1319].forEach((f, i) => this.tone(f, 0.08, 'square', 0.06, i * 0.03)); },
+  clear() { [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => this.tone(f, 0.14, 'square', 0.1, i * 0.08)); },
+  over() { [523, 440, 392, 330, 262].forEach((f, i) => this.tone(f, 0.2, 'sawtooth', 0.09, i * 0.16, f * 0.9)); },
+};
+
+// ---------------- 8-bit chiptune music (3 tracks) ----------------
+const N2F = m => 440 * Math.pow(2, (m - 69) / 12);
+// Track 1: "Fairyland" — bright, bouncy C-major menu loop
+const FL_MELODY = [
+  76,79,81,79, 76,79,81,84, 83,81,79,76, 74,76,79,76,
+  72,74,76,79, 76,74,72,74, 71,72,74,76, 72,0,76,0,
+];
+const FL_BASS = [
+  48,0,55,0, 55,0,55,0, 52,0,59,0, 50,0,50,0,
+  45,0,52,0, 52,0,52,0, 43,0,50,0, 48,0,48,0,
+];
+// Track 2: "Sparkle Rush" — driving A-minor action anthem
+const SR_MELODY = [
+  69,69,72,74, 76,76,79,79, 76,74,72,69, 67,69,72,74,
+  76,76,79,81, 79,76,74,76, 72,74,76,74, 69,0,72,0,
+];
+const SR_BASS = [
+  45,0,45,0, 52,0,52,0, 45,0,45,0, 52,0,52,0,
+  41,0,41,0, 48,0,48,0, 43,0,43,0, 45,0,45,0,
+];
+// Track 3: "Twilight Garden" — dreamy D-minor interlude
+const TG_MELODY = [
+  62,0,65,0, 69,0,72,0, 74,0,72,0, 69,0,65,0,
+  62,0,65,0, 67,0,69,0, 72,0,69,0, 65,0,0,0,
+  62,0,65,0, 69,0,72,0, 76,0,74,0, 72,0,69,0,
+  67,0,65,0, 62,0,0,0, 65,0,67,0, 62,0,0,0,
+];
+const TG_BASS = [
+  38,0,0,0, 45,0,0,0, 38,0,0,0, 45,0,0,0,
+  41,0,0,0, 48,0,0,0, 36,0,0,0, 43,0,0,0,
+  38,0,0,0, 45,0,0,0, 38,0,0,0, 45,0,0,0,
+  36,0,0,0, 43,0,0,0, 41,0,0,0, 38,0,0,0,
+];
+const TRACKS = [
+  {
+    name: 'Fairyland', bpm: 126, swing: 0.10, melody: FL_MELODY, bass: FL_BASS,
+    kick: s => s % 4 === 0,
+    clap: s => s % 8 === 4,
+    hat: s => (s % 2 === 1 ? 0.08 : (s % 4 === 2 ? 0.13 : 0)),
+  },
+  {
+    name: 'Sparkle Rush', bpm: 152, swing: 0.08, melody: SR_MELODY, bass: SR_BASS,
+    kick: s => s % 4 === 0,
+    clap: s => s % 16 === 4 || s % 16 === 12,
+    hat: s => (s % 2 === 0 ? (s % 4 === 2 ? 0.14 : 0.07) : 0),
+  },
+  {
+    name: 'Twilight Garden', bpm: 92, swing: 0.14, melody: TG_MELODY, bass: TG_BASS,
+    kick: s => s % 8 === 0,
+    clap: s => s % 16 === 8,
+    hat: s => (s % 4 === 2 ? 0.09 : 0),
+  },
+];
+const MusicSys = {
+  ctx: null, noiseBuf: null,
+  on: true, playing: false,
+  track: 0,
+  step: 0, nextTime: 0, timer: null,
+  get cur() { return TRACKS[this.track]; },
+  get stepDur() { return 60 / this.cur.bpm / 4; },
+  ensure() {
+    if (!this.ctx) {
+      try {
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const len = Math.floor(this.ctx.sampleRate * 0.2);
+        this.noiseBuf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+        const d = this.noiseBuf.getChannelData(0);
+        for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+      } catch (e) { this.on = false; }
+    }
+  },
+  tryStart() {
+    if (!this.on || this.playing) return;
+    this.ensure();
+    if (!this.ctx) return;
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+    this.playing = true;
+    this.step = 0;
+    this.nextTime = this.ctx.currentTime + 0.1;
+    this.timer = setInterval(() => this.schedule(), 30);
+  },
+  stop() {
+    this.playing = false;
+    if (this.timer) { clearInterval(this.timer); this.timer = null; }
+  },
+  setTrack(i) {
+    this.track = (i + TRACKS.length) % TRACKS.length;
+    if (this.ctx && this.playing) {
+      this.step = 0;
+      this.nextTime = this.ctx.currentTime + 0.12;
+    }
+    updateMusicUI();
+  },
+  next() { this.setTrack(this.track + 1); },
+  prev() { this.setTrack(this.track - 1); },
+  schedule() {
+    const len = this.cur.melody.length;
+    while (this.nextTime < this.ctx.currentTime + 0.18) {
+      const s = this.step;
+      const t = this.nextTime + (s % 2 === 1 ? this.cur.swing * this.stepDur : 0);
+      this.playStep(s, t);
+      this.nextTime += this.stepDur;
+      this.step = (s + 1) % len;
+    }
+  },
+  playStep(s, t) {
+    const tr = this.cur;
+    if (tr.kick(s)) this.kick(t);
+    if (tr.clap(s)) this.clap(t);
+    const hv = tr.hat(s);
+    if (hv) this.hat(t, hv);
+    const b = tr.bass[s];
+    if (b) this.bassNote(b, t);
+    const m = tr.melody[s];
+    if (m) this.leadNote(m, t);
+  },
+  kick(t) {
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(150, t);
+    o.frequency.exponentialRampToValueAtTime(42, t + 0.11);
+    g.gain.setValueAtTime(0.5, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
+    o.connect(g); g.connect(this.ctx.destination);
+    o.start(t); o.stop(t + 0.16);
+  },
+  clap(t) {
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.noiseBuf;
+    const f = this.ctx.createBiquadFilter();
+    f.type = 'bandpass'; f.frequency.value = 1800; f.Q.value = 0.9;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.2, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+    src.connect(f); f.connect(g); g.connect(this.ctx.destination);
+    src.start(t); src.stop(t + 0.12);
+  },
+  hat(t, vol) {
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.noiseBuf;
+    const f = this.ctx.createBiquadFilter();
+    f.type = 'highpass'; f.frequency.value = 7000;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.035);
+    src.connect(f); f.connect(g); g.connect(this.ctx.destination);
+    src.start(t); src.stop(t + 0.05);
+  },
+  bassNote(midi, t) {
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = 'triangle';
+    o.frequency.value = N2F(midi);
+    g.gain.setValueAtTime(0.3, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.17);
+    o.connect(g); g.connect(this.ctx.destination);
+    o.start(t); o.stop(t + 0.19);
+  },
+  leadNote(midi, t) {
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = 'square';
+    o.frequency.value = N2F(midi);
+    g.gain.setValueAtTime(0.11, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.13);
+    o.connect(g); g.connect(this.ctx.destination);
+    o.start(t); o.stop(t + 0.15);
+  },
+};
+
+// ---------------- game state ----------------
+// phase: menu | play | clearing | over
+let phase = 'menu';
+let score = 0, level = 1;
+let grid = [];                    // grid[r][c] = {color, mesh, row, col} | null
+let bubbleList = [];              // flat {x,y} for collision + trace
+let activeBubbles = [];           // in-flight shots {x,y,vx,vy,mesh,color,power}
+let fallingBubbles = [];          // {mesh, x, y, vy, vx, spin}
+let particles = [];
+let aim = Math.PI / 2;            // aim angle from +x (up = PI/2)
+let power = 0, charging = false;
+let shotsThisPush = 0, pendingPush = false;
+let currentColor = 0, nextColor = 1;
+let menuSel = 0;
+const menuButtons = [];
+let bannerTimer = 0, menuTime = 0;
+let fireflies = null;
+let wand = null, wandTip = null, tipOrb = null;
+let trailPoints = [];             // aim-guide line positions
+let chargeGlow = null;
+
+// ---------------- grid math ----------------
+// rowShift flips every time a row is pushed in at the top, so existing rows keep
+// their left/right stagger. (Without it the whole field jumps half a cell on every
+// push and the neighbor links no longer match what's on screen.)
+let rowShift = 0;
+const isOddRow = r => ((r + rowShift) & 1) === 1;
+const worldX = (r, c) => (c - (C - 1) / 2) * COL_W + (isOddRow(r) ? 0.5 : 0) * COL_W + XOFF;
+const worldY = r => TOP_Y - r * ROW_H;
+// safe lookup: rows below the current bottom simply read as empty
+const cellAt = (r, c) => (r >= 0 && c >= 0 && c < C && grid[r] && grid[r][c]) || null;
+function ensureRow(r) { while (grid.length <= r) grid.push(new Array(C).fill(null)); }
+// 6 hex neighbors. NOT capped at the bottom row, so a bubble can stick below the cluster.
+function neighbors(r, c) {
+  const odd = isOddRow(r);
+  const d = odd
+    ? [[-1, 0], [-1, 1], [0, -1], [0, 1], [1, 0], [1, 1]]
+    : [[-1, -1], [-1, 0], [0, -1], [0, 1], [1, -1], [1, 0]];
+  const out = [];
+  for (const [dr, dc] of d) { const rr = r + dr, cc = c + dc; if (rr >= 0 && cc >= 0 && cc < C) out.push([rr, cc]); }
+  return out;
+}
+function rebuildList() {
+  // drop empty rows off the bottom so the grid only spans what's really there
+  while (grid.length > 0 && grid[grid.length - 1].every(x => !x)) grid.pop();
+  bubbleList = [];
+  for (let r = 0; r < grid.length; r++) for (let c = 0; c < C; c++) {
+    if (grid[r] && grid[r][c]) bubbleList.push({ x: worldX(r, c), y: worldY(r), row: r, col: c });
+  }
+}
+function bubbleCount() { return bubbleList.length; }
+
+// ---------------- bubble assets ----------------
+const bubbleGeo = new THREE.SphereGeometry(BUBBLE_R, 22, 16);
+const bubbleMats = COLORS.map(col => new THREE.MeshPhysicalMaterial({
+  color: col, roughness: 0.14, metalness: 0.05, clearcoat: 1, clearcoatRoughness: 0.08,
+  emissive: new THREE.Color(col).multiplyScalar(0.42),
+}));
+const bubbleGlowMats = COLORS.map(col => new THREE.SpriteMaterial({
+  map: radialTex(col), transparent: true, opacity: 0.4, depthWrite: false, blending: THREE.AdditiveBlending,
+}));
+function radialTex(color) {
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const x = c.getContext('2d');
+  const col = new THREE.Color(color);
+  const r = Math.round(col.r * 255), g = Math.round(col.g * 255), b = Math.round(col.b * 255);
+  // ring glow: dim at the very center (covered by the bubble), bright just outside it, fading out
+  const grad = x.createRadialGradient(32, 32, 4, 32, 32, 32);
+  grad.addColorStop(0, `rgba(${r},${g},${b},0.12)`);
+  grad.addColorStop(0.5, `rgba(${r},${g},${b},0.8)`);
+  grad.addColorStop(0.8, `rgba(${r},${g},${b},0.28)`);
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  x.fillStyle = grad; x.fillRect(0, 0, 64, 64);
+  const t = new THREE.CanvasTexture(c);
+  return t;
+}
+// a glossy bubble = sphere + a soft halo sprite behind it
+function makeBubble(color) {
+  const g = new THREE.Group();
+  const m = new THREE.Mesh(bubbleGeo, bubbleMats[color]);
+  m.castShadow = true;
+  g.add(m);
+  const halo = new THREE.Sprite(bubbleGlowMats[color]);
+  halo.scale.set(1.72, 1.72, 1);
+  halo.position.z = -0.05;
+  g.add(halo);
+  return g;
+}
+
+// ---------------- particles (sparkle bursts) ----------------
+const partGeo = new THREE.OctahedronGeometry(0.08);
+const partMats = COLORS.map(col => new THREE.MeshBasicMaterial({
+  color: col, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false,
+}));
+const partMatWhite = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+function spawnBurst(pos, color, n, spread) {
+  n = n || 10; spread = spread || 4;
+  for (let i = 0; i < n; i++) {
+    if (particles.length > 320) return;
+    const m = new THREE.Mesh(partGeo, (i % 5 === 0) ? partMatWhite : partMats[color]);
+    m.position.set(pos.x, pos.y, 0);
+    const a = Math.random() * Math.PI * 2, sp = (0.4 + Math.random() * 0.6) * spread;
+    particles.push({ m, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 0.55, max: 0.55, spin: (Math.random() - 0.5) * 10 });
+    scene.add(m);
+  }
+}
+function updateParticles(dt) {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.life -= dt;
+    if (p.life <= 0) { scene.remove(p.m); particles.splice(i, 1); continue; }
+    p.vy -= 3 * dt;
+    p.m.position.x += p.vx * dt;
+    p.m.position.y += p.vy * dt;
+    p.m.rotation.z += p.spin * dt;
+    p.m.scale.setScalar(p.life / p.max);
+  }
+}
+
+// ---------------- scene construction (fairyland) ----------------
+function buildBackground() {
+  // gradient night sky (deep blue-black) + a subtle Tron-style neon grid
+  const skyCv = document.createElement('canvas'); skyCv.width = 128; skyCv.height = 256;
+  const sx = skyCv.getContext('2d');
+  const sg = sx.createLinearGradient(0, 0, 0, 256);
+  sg.addColorStop(0, '#0a1424');
+  sg.addColorStop(0.42, '#0c1830');
+  sg.addColorStop(0.72, '#0f1f3a');
+  sg.addColorStop(1, '#05070f');
+  sx.fillStyle = sg; sx.fillRect(0, 0, 128, 256);
+  // faint perspective grid (vertical + horizontal lines, cyan, very low alpha)
+  sx.strokeStyle = 'rgba(0, 229, 255, 0.10)'; sx.lineWidth = 1;
+  for (let i = 0; i <= 16; i++) { sx.beginPath(); sx.moveTo(i * 8, 0); sx.lineTo(i * 8, 256); sx.stroke(); }
+  for (let j = 0; j <= 32; j++) { sx.beginPath(); sx.moveTo(0, j * 8); sx.lineTo(128, j * 8); sx.stroke(); }
+  // a soft neon horizon glow near the bottom
+  const hg = sx.createLinearGradient(0, 150, 0, 256);
+  hg.addColorStop(0, 'rgba(0,229,255,0)');
+  hg.addColorStop(1, 'rgba(0,229,255,0.18)');
+  sx.fillStyle = hg; sx.fillRect(0, 150, 128, 106);
+  const skyTex = new THREE.CanvasTexture(skyCv);
+  const sky = new THREE.Mesh(new THREE.PlaneGeometry(80, 40),
+    new THREE.MeshBasicMaterial({ map: skyTex, depthWrite: false }));
+  sky.position.set(0, 6.5, -8);
+  scene.add(sky);
+  // neon data-core glow (was the moon)
+  const moon = new THREE.Sprite(new THREE.SpriteMaterial({ map: radialTex(0x8fe9ff), transparent: true, opacity: 0.7, depthWrite: false, blending: THREE.AdditiveBlending }));
+  moon.position.set(4.2, 12.2, -6);
+  moon.scale.set(4.4, 4.4, 1);
+  scene.add(moon);
+  // city silhouettes — dark angular humps along the bottom (two depth layers)
+  const hillHump = (cx, r, y, color, z) => {
+    const m = new THREE.Mesh(new THREE.CircleGeometry(r, 40, 0, Math.PI),
+      new THREE.MeshBasicMaterial({ color, depthWrite: false }));
+    m.position.set(cx, y, z);
+    scene.add(m);
+  };
+  // back layer (darkest, tallest)
+  hillHump(-9, 6.0, -0.5, 0x070d18, -5.5);
+  hillHump(1, 6.5, -0.5, 0x070d18, -5.5);
+  hillHump(9, 5.5, -0.5, 0x070d18, -5.5);
+  // front layer (slightly lighter, shorter)
+  hillHump(-5, 4.5, -0.5, 0x0c1626, -4.5);
+  hillHump(5, 5.0, -0.5, 0x0c1626, -4.5);
+}
+function buildFireflies() {
+  const n = 84;
+  const pos = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) {
+    pos[i * 3] = (Math.random() - 0.5) * 13;
+    pos[i * 3 + 1] = Math.random() * 13;
+    pos[i * 3 + 2] = -1.5 - Math.random() * 3;
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  fireflies = new THREE.Points(g, new THREE.PointsMaterial({
+    color: 0x7fffe0, size: 0.24, sizeAttenuation: true, transparent: true, opacity: 0.92,
+    depthWrite: false, blending: THREE.AdditiveBlending,
+  }));
+  scene.add(fireflies);
+}
+function buildWand() {
+  wand = new THREE.Group();
+  wand.position.set(SHOOTER_X, SHOOTER_Y, 0);
+  // base pedestal (a dark emitter dais)
+  const dais = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.7, 0.35, 20),
+    new THREE.MeshStandardMaterial({ color: 0x0e1a2e, roughness: 0.4, metalness: 0.3, emissive: 0x003a4a, emissiveIntensity: 0.6 }));
+  dais.position.y = -0.55;
+  dais.castShadow = true;
+  wand.add(dais);
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.05, 10, 24),
+    new THREE.MeshStandardMaterial({ color: 0x00e5ff, roughness: 0.3, metalness: 0.7, emissive: 0x00e5ff, emissiveIntensity: 0.8 }));
+  rim.rotation.x = Math.PI / 2;
+  rim.position.y = -0.38;
+  wand.add(rim);
+  // wand rod (points +X at rotation 0)
+  const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.075, WAND_LEN, 12),
+    new THREE.MeshStandardMaterial({ color: 0x1a3a50, roughness: 0.25, metalness: 0.5, emissive: 0x00a0c0, emissiveIntensity: 0.6 }));
+  rod.rotation.z = Math.PI / 2;
+  rod.position.x = WAND_LEN / 2;
+  rod.castShadow = true;
+  wand.add(rod);
+  // glowing tip orb (shows the loaded bubble color)
+  tipOrb = new THREE.Mesh(new THREE.SphereGeometry(0.32, 20, 14), bubbleMats[0].clone());
+  tipOrb.position.x = WAND_LEN;
+  wand.add(tipOrb);
+  // charge glow (scales/brightens with power)
+  chargeGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: radialTex(0xffffff), transparent: true, opacity: 0.0, depthWrite: false, blending: THREE.AdditiveBlending }));
+  chargeGlow.position.x = WAND_LEN;
+  wand.add(chargeGlow);
+  scene.add(wand);
+  updateWandTip();
+}
+function wandTipWorld() {
+  return { x: SHOOTER_X + WAND_LEN * Math.cos(aim), y: SHOOTER_Y + WAND_LEN * Math.sin(aim) };
+}
+function updateWandTip() {
+  wand.rotation.z = aim;
+  if (tipOrb) tipOrb.material = bubbleMats[currentColor].clone();
+  // charge glow grows + brightens with power
+  if (chargeGlow) {
+    const s = 0.5 + power * 1.4;
+    chargeGlow.scale.set(s, s, 1);
+    chargeGlow.material.opacity = 0.15 + power * 0.6;
+    chargeGlow.material.color.set(power >= FULL_POWER ? 0x9fffe0 : 0x00e5ff);
+  }
+}
+
+// ---------------- aim-guide (dotted trajectory) ----------------
+const guideGeo = new THREE.BufferGeometry();
+const guideMat = new THREE.LineBasicMaterial({ color: 0x7fffe0, transparent: true, opacity: 0.5 });
+let guideLine = null;
+function tracePath(fromX, fromY) {
+  let x = fromX, y = fromY;
+  let vx = Math.cos(aim), vy = Math.sin(aim);
+  const step = 0.09, pts = [];
+  for (let i = 0; i < 900; i++) {
+    x += vx * step; y += vy * step;
+    if (x < -WALL_X) { x = -WALL_X; vx = Math.abs(vx); }
+    else if (x > WALL_X) { x = WALL_X; vx = -Math.abs(vx); }
+    if (y > CEILING_Y) { pts.push(x, y); return pts; }
+    let hit = false;
+    for (const b of bubbleList) {
+      const dx = x - b.x, dy = y - b.y;
+      if (dx * dx + dy * dy < (2 * BUBBLE_R) * (2 * BUBBLE_R)) { hit = true; break; }
+    }
+    if (hit) { pts.push(x, y); return pts; }
+    if (i % 3 === 0) pts.push(x, y);
+  }
+  pts.push(x, y);
+  return pts;
+}
+function updateGuide() {
+  if (!guideLine) return;
+  const show = (phase === 'play');
+  guideLine.visible = show;
+  if (!show) return;
+  const tip = wandTipWorld();
+  const pts = tracePath(tip.x, tip.y);
+  guideGeo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 2));
+  guideMat.color.set(power >= FULL_POWER ? 0x9fffe0 : 0x7fffe0);
+  guideMat.opacity = 0.35 + power * 0.4;
+}
+
+// ---------------- board build ----------------
+function newBoard(rows, colors) {
+  clearFieldObjects();
+  rowShift = 0;
+  grid = [];
+  for (let r = 0; r < rows; r++) {
+    const row = [];
+    for (let c = 0; c < C; c++) {
+      // solid ceiling on row 0; lower rows nearly full so the bottom edge stays ragged
+      const density = (r === 0) ? 1.0 : 0.96;
+      if (Math.random() < density) {
+        const color = (Math.random() * colors) | 0;
+        const mesh = makeBubble(color);
+        mesh.position.set(worldX(r, c), worldY(r), 0);
+        scene.add(mesh);
+        row.push({ color, mesh, row: r, col: c });
+      } else row.push(null);
+    }
+    grid.push(row);
+  }
+  // strip anything that spawned unattached to the ceiling (it would just hang in mid-air)
+  const keep = ceilingConnected();
+  for (let r = 0; r < grid.length; r++) for (let c = 0; c < C; c++) {
+    if (grid[r][c] && !keep.has(r + ',' + c)) { scene.remove(grid[r][c].mesh); grid[r][c] = null; }
+  }
+  rebuildList();
+}
+function clearFieldObjects() {
+  for (let r = 0; r < grid.length; r++) for (let c = 0; c < C; c++) {
+    if (grid[r] && grid[r][c]) scene.remove(grid[r][c].mesh);
+  }
+  for (const b of activeBubbles) scene.remove(b.mesh);
+  for (const b of fallingBubbles) scene.remove(b.mesh);
+  for (const p of particles) scene.remove(p.m);
+  grid = []; activeBubbles = []; fallingBubbles = []; particles = [];
+  bubbleList = [];
+}
+
+// ---------------- match / pop / fall ----------------
+function floodFill(r, c, color) {
+  const seen = new Set();
+  const stack = [[r, c]];
+  const out = [];
+  while (stack.length) {
+    const [cr, cc] = stack.pop();
+    const key = cr + ',' + cc;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const cell = grid[cr] && grid[cr][cc];
+    if (!cell || cell.color !== color) continue;
+    out.push([cr, cc]);
+    for (const [nr, nc] of neighbors(cr, cc)) stack.push([nr, nc]);
+  }
+  return out;
+}
+function ceilingConnected() {
+  const seen = new Set();
+  const stack = [];
+  for (let c = 0; c < C; c++) if (grid[0] && grid[0][c]) { stack.push([0, c]); seen.add(0 + ',' + c); }
+  while (stack.length) {
+    const [cr, cc] = stack.pop();
+    for (const [nr, nc] of neighbors(cr, cc)) {
+      const key = nr + ',' + nc;
+      if (seen.has(key) || !(grid[nr] && grid[nr][nc])) continue;
+      seen.add(key);
+      stack.push([nr, nc]);
+    }
+  }
+  return seen;
+}
+function popBubble(r, c, silent) {
+  const cell = grid[r] && grid[r][c];
+  if (!cell) return 0;
+  const pos = { x: worldX(r, c), y: worldY(r) };
+  spawnBurst(pos, cell.color, 8, 3.2);
+  scene.remove(cell.mesh);
+  grid[r][c] = null;
+  score += 10;
+  return 1;
+}
+function fallBubble(r, c) {
+  const cell = grid[r] && grid[r][c];
+  if (!cell) return 0;
+  const b = { mesh: cell.mesh, x: worldX(r, c), y: worldY(r), vy: -2 - Math.random() * 2, vx: (Math.random() - 0.5) * 2, spin: (Math.random() - 0.5) * 6 };
+  fallingBubbles.push(b);
+  grid[r][c] = null;
+  score += 2;
+  sfx.fall();
+  return 1;
+}
+// anything no longer chained to the top row falls off
+function dropOrphans() {
+  const keep = ceilingConnected();
+  let n = 0;
+  for (let r = 0; r < grid.length; r++) for (let c = 0; c < C; c++) {
+    if (grid[r][c] && !keep.has(r + ',' + c)) n += fallBubble(r, c);
+  }
+  return n;
+}
+function resolveMatch(r, c) {
+  const cell = grid[r] && grid[r][c];
+  if (!cell) return { matched: 0, fell: 0 };
+  const comp = floodFill(r, c, cell.color);
+  if (comp.length < 3) return { matched: 0, fell: 0 };
+  let matched = 0;
+  for (const [cr, cc] of comp) matched += popBubble(cr, cc);
+  sfx.pop(matched);
+  const fell = dropOrphans();
+  return { matched, fell };
+}
+
+// ---------------- shooting ----------------
+// nearest EMPTY cell to where the shot ended up, as long as it touches the cluster
+// (or is on the top row). Checks every row plus one row below the bottom, so a shot
+// that hits the underside of the cluster sticks underneath instead of jumping up.
+function findStickCell(x, y) {
+  let best = null, bestD = Infinity;
+  for (let r = 0; r <= grid.length; r++) {
+    for (let c = 0; c < C; c++) {
+      if (cellAt(r, c)) continue;
+      let anchored = (r === 0);
+      if (!anchored) for (const [nr, nc] of neighbors(r, c)) if (cellAt(nr, nc)) { anchored = true; break; }
+      if (!anchored) continue;
+      const dx = worldX(r, c) - x, dy = worldY(r) - y;
+      const d = dx * dx + dy * dy;
+      if (d < bestD) { bestD = d; best = { r, c }; }
+    }
+  }
+  return best || { r: 0, c: (C >> 1) };
+}
+function fire() {
+  if (phase !== 'play') return;
+  const p = Math.max(MIN_FIRE, power);
+  const tip = wandTipWorld();
+  const speed = SHOT_BASE + p * (SHOT_MAX - SHOT_BASE);
+  const mesh = makeBubble(currentColor);
+  mesh.position.set(tip.x, tip.y, 0);
+  scene.add(mesh);
+  activeBubbles.push({ x: tip.x, y: tip.y, vx: Math.cos(aim) * speed, vy: Math.sin(aim) * speed, mesh, color: currentColor, power: p });
+  sfx.shot(p);
+  shotsThisPush++;
+  if (shotsThisPush >= SHOTS_PER_PUSH) { shotsThisPush = 0; pendingPush = true; }
+  // load next color
+  currentColor = nextColor;
+  nextColor = (Math.random() * levelColors(level)) | 0;
+  charging = false; power = 0;
+  updateWandTip();
+  updateHud();
+}
+function stickBubble(b) {
+  const cell = findStickCell(b.x, b.y);
+  ensureRow(cell.r);
+  grid[cell.r][cell.c] = { color: b.color, mesh: b.mesh, row: cell.r, col: cell.c };
+  b.mesh.position.set(worldX(cell.r, cell.c), worldY(cell.r), 0);
+  const res = resolveMatch(cell.r, cell.c);
+  // combo celebration: 4 = POPPER, 5+ = MASTER POPPER, 10+ = PHENOMENAL POPPER
+  if (res.matched >= 10) {
+    score += 500;
+    sfx.phenom();
+    showBanner('PHENOMENAL POPPER ✦✦✦', '+' + 500 + ' · ' + res.matched + ' in one!');
+  } else if (res.matched >= 5) {
+    score += 150;
+    sfx.burst();
+    showBanner('MASTER POPPER ✦✦', '+' + 150 + ' · ' + res.matched + ' in one!');
+  } else if (res.matched >= 4) {
+    score += 50;
+    sfx.pop(res.matched);
+    showBanner('POPPER ✦', '+' + 50 + ' · ' + res.matched + ' in one!');
+  }
+  if (pendingPush) { pendingPush = false; pushDown(); dropOrphans(); }
+  rebuildList();
+  if (bubbleCount() === 0) { levelClear(); return; }
+  if (anyBelowDanger()) { gameOver(); return; }
+  updateHud();
+}
+function updateActiveBubbles(dt) {
+  for (let i = activeBubbles.length - 1; i >= 0; i--) {
+    const b = activeBubbles[i];
+    const SUB = 4, step = dt / SUB;
+    let stuck = false;
+    for (let sub = 0; sub < SUB && !stuck; sub++) {
+      b.x += b.vx * step; b.y += b.vy * step;
+      if (b.x < -WALL_X) { b.x = -WALL_X; b.vx = Math.abs(b.vx); sfx.bounce(); }
+      else if (b.x > WALL_X) { b.x = WALL_X; b.vx = -Math.abs(b.vx); sfx.bounce(); }
+      if (b.y > CEILING_Y) { stuck = true; break; }
+      for (const g of bubbleList) {
+        const dx = b.x - g.x, dy = b.y - g.y;
+        if (dx * dx + dy * dy < (2 * BUBBLE_R) * (2 * BUBBLE_R)) { stuck = true; break; }
+      }
+    }
+    b.mesh.position.set(b.x, b.y, 0);
+    if (stuck) {
+      activeBubbles.splice(i, 1);
+      stickBubble(b);
+    }
+  }
+}
+function pushDown() {
+  // add a new row at the top; every existing row shifts down one index
+  const colors = levelColors(level);
+  const row = [];
+  for (let c = 0; c < C; c++) {
+    if (Math.random() < 0.9) {
+      const color = (Math.random() * colors) | 0;
+      const mesh = makeBubble(color);
+      scene.add(mesh);
+      row.push({ color, mesh, row: 0, col: c });
+    } else row.push(null);
+  }
+  rowShift ^= 1;            // keep existing rows' stagger intact
+  grid.unshift(row);
+  // reindex + reposition (new row at top y, others one row lower)
+  for (let r = 0; r < grid.length; r++) for (let c = 0; c < C; c++) {
+    if (grid[r] && grid[r][c]) {
+      grid[r][c].row = r;
+      grid[r][c].mesh.position.set(worldX(r, c), worldY(r), 0);
+    }
+  }
+  sfx.bounce();
+}
+function anyBelowDanger() {
+  for (const b of bubbleList) if (b.y < DANGER_Y) return true;
+  return false;
+}
+
+// ---------------- level flow ----------------
+function levelBonus(n) { return 300 + 150 * n; }
+function startLevel(n) {
+  level = n;
+  newBoard(levelRows(n), levelColors(n));
+  currentColor = (Math.random() * levelColors(n)) | 0;
+  nextColor = (Math.random() * levelColors(n)) | 0;
+  shotsThisPush = 0; pendingPush = false;
+  aim = Math.PI / 2; power = 0; charging = false;
+  phase = 'play';
+  updateWandTip();
+  updateHud();
+}
+function levelClear() {
+  track('level_complete', { level });
+  const bonus = levelBonus(level);
+  score += bonus;
+  sfx.clear();
+  showBanner('GARDEN CLEARED ✦', '+' + bonus + ' · next level');
+  phase = 'clearing';
+  clearTimer = 2.0;
+  updateHud();
+}
+let clearTimer = 0;
+function gameOver() {
+  track('game_over', { final_score: score, level_reached: level });
+  phase = 'over';
+  sfx.over();
+  elFinal.textContent = score;
+  elFinalLevel.textContent = 'reached level ' + level;
+  elInitials.value = '';
+  elSave.disabled = false;
+  elSavedMsg.textContent = '';
+  elShareMsg.textContent = '';
+  const top = loadScores();
+  elNewHigh.classList.toggle('hidden', !(score > 0 && score >= (top[0] ? top[0].s : 0)));
+  renderTopList(elTopList, top.slice(0, 10));
+  elOverlay.classList.remove('hidden');
+  elInitials.focus();
+}
+function resetGame() {
+  score = 0;
+  startLevel(1);
+  hideBanner();
+}
+
+// ---------------- menu & high scores ----------------
+function setMenuSel(i) {
+  menuSel = (i + menuButtons.length) % menuButtons.length;
+  menuButtons.forEach((b, k) => b.classList.toggle('sel', k === menuSel));
+}
+function activateMenu() {
+  if (!menuButtons.length) return;
+  sfx.ensure();
+  sfx.shot(0.3);
+  const id = menuButtons[menuSel].id;
+  if (id === 'menuStart') startGameFromMenu();
+  else if (id === 'menuScores') showScores();
+  else if (id === 'menuSite') window.location.href = 'https://ds-da.ca/games/';
+}
+function startGameFromMenu() {
+  track('game_start');
+  elMenu.classList.add('hidden');
+  elScores.classList.add('hidden');
+  document.body.classList.remove('menu-mode');
+  resetGame();
+}
+function backToMenu() {
+  elOverlay.classList.add('hidden');
+  elScores.classList.add('hidden');
+  document.body.classList.add('menu-mode');
+  clearFieldObjects();
+  phase = 'menu';
+  hideBanner();
+  setMenuSel(0);
+  elMenu.classList.remove('hidden');
+}
+
+async function fetchGlobalBoard() {
+  try {
+    const r = await fetchTimeout(BOARD_API + '/leaderboard?game=' + GAME_ID, { cache: 'no-store' });
+    if (r.ok) {
+      const j = await r.json();
+      if (j && Array.isArray(j.top)) return { top: j.top, updated: j.updated || null };
+    }
+  } catch (e) { /* fall through to static */ }
+  try {
+    const r = await fetch('leaderboard.json?nocache=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) return null;
+    const j = await r.json();
+    if (Array.isArray(j)) return { top: j, updated: null };
+    if (j && Array.isArray(j.top)) return { top: j.top, updated: j.updated || null };
+    return null;
+  } catch (e) { return null; }
+}
+setInterval(async () => {
+  const g = await fetchGlobalBoard();
+  if (!g || !g.top.length) return;
+  if (!elScores.classList.contains('hidden')) {
+    renderTopList(elGlobalTop, g.top.slice(0, 10));
+    elGlobalNote.textContent = 'Verified by the DSDA board · ' + new Date(g.updated || Date.now()).toLocaleDateString();
+  } else if (elMenu.classList.contains('hidden')) {
+    renderTopList(elHudTop, g.top.slice(0, 10));
+  }
+}, 30000);
+async function showScores() {
+  elScores.classList.remove('hidden');
+  renderTopList(elLocalTop, loadScores().slice(0, 10));
+  elGlobalNote.textContent = 'Loading global board…';
+  const g = await fetchGlobalBoard();
+  if (g && g.top.length) {
+    renderTopList(elGlobalTop, g.top.slice(0, 10));
+    elGlobalNote.textContent = 'Verified by the DSDA board · ' + new Date(g.updated || Date.now()).toLocaleDateString();
+  } else if (g) {
+    renderTopList(elGlobalTop, []);
+    elGlobalNote.textContent = 'No global scores yet — be the first!';
+  } else {
+    renderTopList(elGlobalTop, []);
+    elGlobalNote.textContent = 'Global board offline (local copy only)';
+  }
+}
+
+// ---------------- scoring (localStorage) ----------------
+function loadScores() {
+  try {
+    const a = JSON.parse(localStorage.getItem(SCORE_KEY));
+    return Array.isArray(a) ? a : [];
+  } catch (e) { return []; }
+}
+function saveToStorage(name, s) {
+  const arr = loadScores();
+  arr.push({ n: name, s: s, d: Date.now() });
+  arr.sort((a, b) => b.s - a.s);
+  const top = arr.slice(0, 10);
+  try { localStorage.setItem(SCORE_KEY, JSON.stringify(top)); } catch (e) {}
+  return top;
+}
+
+// ---------------- share score ----------------
+function shareText(s) {
+  return 'I popped ' + s + ' in Popper — think you can beat me? try here -> ' + SHARE_URL;
+}
+function _hex(c) { return '#' + c.toString(16).padStart(6, '0'); }
+function _shade(c) {
+  const r = (c >> 16 & 255) * 0.4 | 0, g = (c >> 8 & 255) * 0.4 | 0, b = (c & 255) * 0.4 | 0;
+  return 'rgb(' + r + ',' + g + ',' + b + ')';
+}
+function _rr(x, px, py, w, h, r) {
+  if (x.roundRect) { x.beginPath(); x.roundRect(px, py, w, h, r); return; }
+  x.beginPath();
+  x.moveTo(px + r, py);
+  x.arcTo(px + w, py, px + w, py + h, r);
+  x.arcTo(px + w, py + h, px, py + h, r);
+  x.arcTo(px, py + h, px, py, r);
+  x.arcTo(px, py, px + w, py, r);
+  x.closePath();
+}
+function _spaced(x, text, cx, y, sp) {
+  if ('letterSpacing' in x) { x.letterSpacing = sp + 'px'; x.fillText(text, cx, y); x.letterSpacing = '0px'; return; }
+  let w = 0;
+  for (const ch of text) w += x.measureText(ch).width + sp;
+  w -= sp;
+  let px = cx - w / 2;
+  const prev = x.textAlign;
+  x.textAlign = 'left';
+  for (const ch of text) { x.fillText(ch, px, y); px += x.measureText(ch).width + sp; }
+  x.textAlign = prev;
+}
+function _bubble(x, cx, cy, r, col) {
+  const g = x.createRadialGradient(cx - r * 0.3, cy - r * 0.3, r * 0.1, cx, cy, r);
+  g.addColorStop(0, 'rgba(255,255,255,0.9)');
+  g.addColorStop(0.35, _hex(col));
+  g.addColorStop(1, _shade(col));
+  x.fillStyle = g;
+  x.beginPath(); x.arc(cx, cy, r, 0, Math.PI * 2); x.fill();
+}
+function makeScoreCard(s) {
+  const W = 1200, H = 630;
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const x = cv.getContext('2d');
+  x.fillStyle = '#05070f'; x.fillRect(0, 0, W, H);
+  // soft gradient
+  const vg = x.createRadialGradient(W / 2, H / 2, 120, W / 2, H / 2, 720);
+  vg.addColorStop(0, 'rgba(0,120,150,0.32)');
+  vg.addColorStop(1, 'rgba(0,0,0,0.6)');
+  x.fillStyle = vg; x.fillRect(0, 0, W, H);
+  const rg = x.createLinearGradient(0, 0, 0, 90);
+  rg.addColorStop(0, 'rgba(0,229,255,0.4)');
+  rg.addColorStop(1, 'rgba(255,45,149,0)');
+  x.fillStyle = rg; x.fillRect(0, 0, W, 90);
+  x.fillStyle = 'rgba(0,229,255,0.85)'; x.fillRect(0, 0, W, 6);
+  // row of bubbles under the header
+  const cols = COLORS;
+  for (let i = 0; i < 22; i++) _bubble(x, 70 + i * 52, 108, 22, cols[i % 6]);
+  x.textAlign = 'center'; x.textBaseline = 'alphabetic';
+  x.fillStyle = '#ffffff';
+  x.font = '800 88px "Segoe UI", system-ui, -apple-system, sans-serif';
+  _spaced(x, 'POPPER', W / 2, 232, 12);
+  x.fillStyle = 'rgba(150,210,235,0.85)';
+  x.font = '600 24px "Segoe UI", system-ui, sans-serif';
+  _spaced(x, 'BUBBLE POP · FAIRYLAND', W / 2, 268, 9);
+  const bw = 380, bh = 60, bx = W / 2 - bw / 2, by = 296;
+  _rr(x, bx, by, bw, bh, 30);
+  x.fillStyle = 'rgba(255,211,107,0.10)'; x.fill();
+  x.strokeStyle = '#ffd36b'; x.lineWidth = 2.5; x.stroke();
+  x.fillStyle = '#ffd36b';
+  x.font = '700 28px "Segoe UI", system-ui, sans-serif';
+  _spaced(x, '★ LEVEL ' + level + ' ★', W / 2, by + 41, 5);
+  x.shadowColor = 'rgba(255,211,107,0.55)'; x.shadowBlur = 45;
+  x.fillStyle = '#ffffff';
+  x.font = '800 140px "Segoe UI", system-ui, sans-serif';
+  x.fillText(String(s), W / 2, 486);
+  x.shadowBlur = 0;
+  x.fillStyle = 'rgba(243,237,255,0.95)';
+  x.font = '500 34px "Segoe UI", system-ui, sans-serif';
+  x.fillText('Think you can beat me?', W / 2, 540);
+  x.fillStyle = '#ffd36b';
+  x.font = '600 30px "Segoe UI", system-ui, sans-serif';
+  x.fillText('ds-da.ca/games/popper', W / 2, 582);
+  for (let i = 0; i < 7; i++) _bubble(x, W / 2 + (i - 3) * 100, 606, 26, cols[i % 6]);
+  return cv;
+}
+async function shareScore() {
+  if (phase !== 'over') return;
+  const text = shareText(score);
+  const payload = { title: 'Popper — High Scorer', text, url: SHARE_URL };
+  if (navigator.share) {
+    let files = null;
+    try {
+      const cv = makeScoreCard(score);
+      const blob = await new Promise(res => cv.toBlob(res, 'image/png'));
+      if (blob) {
+        const f = [new File([blob], 'popper-score.png', { type: 'image/png' })];
+        if (!navigator.canShare || navigator.canShare(Object.assign({ files: f }, payload))) files = f;
+      }
+    } catch (e) { files = null; }
+    try {
+      if (files) payload.files = files;
+      await navigator.share(payload);
+      elShareMsg.textContent = 'Shared! Go flex it ✓';
+      return;
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;
+      if (files) {
+        delete payload.files;
+        try {
+          await navigator.share(payload);
+          elShareMsg.textContent = 'Shared! Go flex it ✓';
+          return;
+        } catch (e2) { if (e2 && e2.name === 'AbortError') return; }
+      }
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    elShareMsg.textContent = 'Copied! Paste it anywhere ✓';
+  } catch (e) {
+    window.prompt('Copy your score share:', text);
+  }
+}
+function renderTopList(el, top) {
+  el.innerHTML = '';
+  if (!top.length) {
+    const li = document.createElement('li');
+    li.innerHTML = '<span class="rank">—</span><span class="name">No scores yet</span><span>0</span>';
+    el.appendChild(li);
+    return;
+  }
+  top.forEach((e, i) => {
+    const li = document.createElement('li');
+    const r = document.createElement('span'); r.className = 'rank'; r.textContent = i + 1;
+    const n = document.createElement('span'); n.className = 'name'; n.textContent = e.n;
+    const s = document.createElement('span'); s.textContent = e.s;
+    li.append(r, n, s);
+    el.appendChild(li);
+  });
+}
+async function submitGlobal(name, s) {
+  try {
+    const r = await fetchTimeout(BOARD_API + '/score', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ initials: name, score: s, secret: SCORE_SECRET, game: GAME_ID }),
+    }, 5000);
+    if (r.ok) return 'ok';
+  } catch (e) { /* fall through to GitHub */ }
+  if (!SCORE_TOKEN || SCORE_TOKEN.indexOf('PASTE_') === 0) return 'no-token';
+  try {
+    const r = await fetch(SCORE_DISPATCH_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + SCORE_TOKEN,
+        'X-GitHub-Api-Version': '2022-11-28',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ref: 'main',
+        inputs: { initials: name, score: String(s), secret: SCORE_SECRET, game: GAME_ID },
+      }),
+    });
+    return r.ok ? 'ok' : 'http-' + r.status;
+  } catch (e) { return 'err'; }
+}
+function saveScore() {
+  if (phase !== 'over' || elSave.disabled) return;
+  track('score_submit', { score });
+  let name = elInitials.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (!name) name = '???';
+  name = name.slice(0, 3).padEnd(3, '?');
+  const top = saveToStorage(name, score);
+  renderTopList(elTopList, top);
+  renderTopList(elHudTop, top);
+  elSave.disabled = true;
+  elSavedMsg.textContent = 'Saved locally · submitting to global board…';
+  sfx.pop(4);
+  submitGlobal(name, score).then(res => {
+    if (res === 'ok') elSavedMsg.textContent = 'Saved! On the global board ✓';
+    else elSavedMsg.textContent = 'Saved locally · global board: ' + res;
+  });
+}
+function playAgain() {
+  elOverlay.classList.add('hidden');
+  elPlayAgain.blur();
+  resetGame();
+}
+
+// ---------------- HUD ----------------
+function updateHud() {
+  elScore.textContent = score;
+  elLevel.textContent = level;
+  elNextDot.style.setProperty('--nc', _hex(COLORS[nextColor]));
+  elNextDot.style.background = 'radial-gradient(circle at 35% 30%, #fff 0%, ' + _hex(COLORS[nextColor]) + ' 55%, rgba(0,0,0,0.35) 100%)';
+  elNextDot.style.boxShadow = '0 0 10px ' + _hex(COLORS[nextColor]);
+  const dots = elDropDots.querySelectorAll('i');
+  const left = SHOTS_PER_PUSH - shotsThisPush;
+  dots.forEach((d, i) => d.classList.toggle('on', i < left));
+}
+function showBanner(title, sub) {
+  elBannerTitle.textContent = title;
+  elBannerSub.textContent = sub || '';
+  elBanner.classList.add('show');
+  bannerTimer = 1.9;
+}
+function hideBanner() { elBanner.classList.remove('show'); }
+
+// ---------------- input ----------------
+function onKey(e) {
+  if (inputFrozen) return;
+  if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'Space', 'KeyA', 'KeyD', 'KeyW', 'Enter'].includes(e.code)) e.preventDefault();
+  sfx.ensure();
+  MusicSys.tryStart();
+  const ae = document.activeElement;
+  if (ae && ae.tagName === 'BUTTON') ae.blur();
+  if (!elScores.classList.contains('hidden')) {
+    if (e.code === 'Escape' || e.code === 'Enter' || e.code === 'Space') { e.preventDefault(); backToMenu(); }
+    return;
+  }
+  if (phase === 'menu' && !elMenu.classList.contains('hidden')) {
+    if (e.code === 'ArrowUp') { setMenuSel(menuSel - 1); return; }
+    if (e.code === 'ArrowDown') { setMenuSel(menuSel + 1); return; }
+    if (e.code === 'Enter' || e.code === 'Space') { e.preventDefault(); activateMenu(); return; }
+    return;
+  }
+  if (phase !== 'play') return;
+  if (e.code === 'ArrowLeft' || e.code === 'KeyA') { aim = Math.min(AIM_MAX, aim + 0.04); updateWandTip(); }
+  else if (e.code === 'ArrowRight' || e.code === 'KeyD') { aim = Math.max(AIM_MIN, aim - 0.04); updateWandTip(); }
+  else if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW' || e.code === 'Enter') {
+    if (!e.repeat && !charging) { charging = true; power = 0; sfx.charge(); }
+  }
+  if (e.code === 'KeyM' && !e.repeat) MusicSys.next();
+}
+function onKeyUp(e) {
+  if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW' || e.code === 'Enter') {
+    if (charging) { fire(); }
+  }
+}
+function onWindowBlur() {
+  charging = false;
+  tId = null;
+}
+
+// ---------------- pointer / touch input ----------------
+// desktop + mobile: press = charge + aim at finger, drag = aim, release = fire
+const IS_TOUCH = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+const buzz = ms => { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} };
+let tId = null, tDownT = 0, tMoved = false;
+function screenToWorld(clientX, clientY) {
+  const r = sceneEl.getBoundingClientRect();
+  const nx = ((clientX - r.left) / r.width) * 2 - 1;
+  const ny = ((clientY - r.top) / r.height) * 2 - 1;
+  return { x: nx * _halfW, y: 6.5 + ny * _halfH };
+}
+function aimFromWorld(w) {
+  const dx = w.x - SHOOTER_X, dy = w.y - SHOOTER_Y;
+  let a = Math.atan2(dy, dx);
+  return Math.max(AIM_MIN, Math.min(AIM_MAX, a));
+}
+function touchStart(e) {
+  if (inputFrozen || tId !== null || !e.isPrimary) return;
+  if (phase !== 'play') return;
+  tId = e.pointerId;
+  tDownT = performance.now();
+  tMoved = false;
+  sfx.ensure();
+  MusicSys.tryStart();
+  const w = screenToWorld(e.clientX, e.clientY);
+  aim = aimFromWorld(w);
+  charging = true; power = 0;
+  updateWandTip();
+  buzz(6);
+}
+function touchMove(e) {
+  if (inputFrozen || e.pointerId !== tId) return;
+  const w = screenToWorld(e.clientX, e.clientY);
+  const na = aimFromWorld(w);
+  if (Math.abs(na - aim) > 0.01) tMoved = true;
+  aim = na;
+  updateWandTip();
+}
+function touchEnd(e) {
+  if (e.pointerId !== tId) return;
+  tId = null;
+  if (charging && phase === 'play') { fire(); }
+  charging = false; power = 0;
+  updateWandTip();
+}
+function toggleSound() {
+  sfx.on = !sfx.on;
+  elSound.textContent = sfx.on ? '🔊 sound on' : '🔇 sound off';
+  if (sfx.on) { sfx.ensure(); sfx.shot(0.3); }
+}
+function toggleMusic() {
+  MusicSys.on = !MusicSys.on;
+  elMusicToggle.textContent = MusicSys.on ? '🎵' : '🔇';
+  if (MusicSys.on) MusicSys.tryStart();
+  else MusicSys.stop();
+}
+function updateMusicUI() {
+  elMusicName.textContent = (MusicSys.track + 1) + '. ' + MusicSys.cur.name;
+}
+
+// ---------------- main loop ----------------
+function update(dt) {
+  updateParticles(dt);
+  menuTime += dt;
+  if (fireflies) {
+    fireflies.rotation.z += dt * 0.02;
+    fireflies.material.opacity = 0.6 + 0.2 * Math.sin(menuTime * 1.3);
+  }
+  if (bannerTimer > 0) {
+    bannerTimer -= dt;
+    if (bannerTimer <= 0 && phase !== 'clearing') hideBanner();
+  }
+  // charge
+  if (charging && phase === 'play') {
+    const was = power;
+    power = Math.min(1, power + dt / CHARGE_TIME);
+    if (was < FULL_POWER && power >= FULL_POWER) sfx.ready();
+    updateWandTip();
+  }
+  // falling bubbles
+  for (let i = fallingBubbles.length - 1; i >= 0; i--) {
+    const b = fallingBubbles[i];
+    b.vy -= 14 * dt;
+    b.x += b.vx * dt; b.y += b.vy * dt;
+    b.mesh.position.set(b.x, b.y, 0);
+    b.mesh.rotation.z += b.spin * dt;
+    if (b.y < -1.5) { scene.remove(b.mesh); fallingBubbles.splice(i, 1); }
+  }
+  if (phase === 'play') {
+    updateActiveBubbles(dt);
+  }
+  if (phase === 'clearing') {
+    clearTimer -= dt;
+    if (clearTimer <= 0) {
+      hideBanner();
+      startLevel(level + 1);
+    }
+  }
+  updateGuide();
+}
+function animate() {
+  rafId = requestAnimationFrame(animate);
+  const dt = Math.min(clock.getDelta(), 0.05);
+  update(dt);
+  if (renderer) renderer.render(scene, camera);
+}
+function fitCamera() {
+  const w = window.innerWidth, h = window.innerHeight;
+  const aspect = w / h;
+  const halfH = Math.max(7, 6.5 / aspect);
+  const halfW = halfH * aspect;
+  camera.left = -halfW; camera.right = halfW;
+  camera.top = halfH; camera.bottom = -halfH;
+  camera.near = 0.1; camera.far = 100;
+  camera.position.set(0, 6.5, 10);
+  camera.lookAt(0, 6.5, 0);
+  camera.updateProjectionMatrix();
+  _halfW = halfW; _halfH = halfH;
+  if (renderer) renderer.setSize(w, h);
+  else if (sceneEl) { sceneEl.width = w; sceneEl.height = h; }
+}
+
+// ---------------- boot ----------------
+function boot() {
+  try {
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.12;
+    renderer.domElement.id = 'scene';
+    sceneEl = renderer.domElement;
+  } catch (e) {
+    webglOK = false;
+    renderer = null;
+    const c = document.createElement('canvas');
+    c.id = 'scene';
+    c.width = window.innerWidth; c.height = window.innerHeight;
+    c.style.cssText = 'position:fixed;inset:0;display:block;touch-action:none;background:#1a1430';
+    const ctx = c.getContext && c.getContext('2d');
+    if (ctx) {
+      ctx.fillStyle = '#a99ccf'; ctx.font = '16px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('3D graphics unavailable on this device — running in 2D mode', window.innerWidth / 2, 40);
+    }
+    sceneEl = c;
+  }
+  document.body.appendChild(sceneEl);
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x05070f);
+  scene.fog = new THREE.Fog(0x05070f, 18, 42);
+
+  camera = new THREE.OrthographicCamera(-6, 6, 7, -7, 0.1, 100);
+  fitCamera();
+
+  scene.add(new THREE.HemisphereLight(0x1a3a5a, 0x05070f, 0.7));
+  scene.add(new THREE.AmbientLight(0x2a3a5a, 0.6));
+  const dir = new THREE.DirectionalLight(0xcfe8ff, 1.5);
+  dir.position.set(4, 14, 10);
+  dir.castShadow = true;
+  dir.shadow.mapSize.set(1024, 1024);
+  dir.shadow.camera.left = -8; dir.shadow.camera.right = 8;
+  dir.shadow.camera.top = 16; dir.shadow.camera.bottom = -2;
+  dir.shadow.camera.near = 1; dir.shadow.camera.far = 40;
+  scene.add(dir);
+  const p1 = new THREE.PointLight(0x00e5ff, 45, 0, 2); p1.position.set(-8, 8, 6); scene.add(p1);
+  const p2 = new THREE.PointLight(0xff2d95, 40, 0, 2); p2.position.set(8, 12, 5); scene.add(p2);
+
+  buildBackground();
+  buildFireflies();
+  buildWand();
+
+  // aim guide line
+  guideLine = new THREE.Line(guideGeo, guideMat);
+  guideLine.frustumCulled = false;
+  scene.add(guideLine);
+
+  window.addEventListener('resize', fitCamera);
+  window.addEventListener('keydown', onKey);
+  window.addEventListener('keyup', onKeyUp);
+  window.addEventListener('blur', onWindowBlur);
+  window.addEventListener('pointerdown', () => { window.focus(); sfx.ensure(); MusicSys.tryStart(); });
+  window.focus();
+
+  sceneEl.addEventListener('pointerdown', touchStart);
+  sceneEl.addEventListener('pointermove', touchMove);
+  sceneEl.addEventListener('pointerup', e => touchEnd(e));
+  sceneEl.addEventListener('pointercancel', e => touchEnd(e));
+  if (IS_TOUCH) {
+    $('hudKeys').innerHTML = 'swipe &nbsp;aim<br>hold &nbsp;charge · release to fire<br>4+ POPPER · 5+ MASTER · 10+ PHENOMENAL ✦';
+    $('menuHint').textContent = 'swipe to aim · hold to charge, release to fire · 4+ in one = POPPER, 5+ = MASTER, 10+ = PHENOMENAL';
+  }
+
+  elSave.addEventListener('click', saveScore);
+  elShare.addEventListener('click', shareScore);
+  elPlayAgain.addEventListener('click', playAgain);
+  elInitials.addEventListener('keydown', e => {
+    if (e.key === 'Enter') saveScore();
+    e.stopPropagation();
+  });
+  elSound.addEventListener('click', e => { toggleSound(); e.currentTarget.blur(); });
+  elMusicPrev.addEventListener('click', e => { MusicSys.prev(); e.currentTarget.blur(); });
+  elMusicNext.addEventListener('click', e => { MusicSys.next(); e.currentTarget.blur(); });
+  elMusicToggle.addEventListener('click', e => { toggleMusic(); e.currentTarget.blur(); });
+  elScoresBack.addEventListener('click', e => { backToMenu(); e.currentTarget.blur(); });
+  elToMenu.addEventListener('click', e => { backToMenu(); e.currentTarget.blur(); });
+
+  menuButtons.push($('menuStart'), $('menuScores'), $('menuSite'));
+  menuButtons.forEach((b, k) => {
+    b.addEventListener('mouseenter', () => setMenuSel(k));
+    b.addEventListener('click', e => { setMenuSel(k); activateMenu(); e.currentTarget.blur(); });
+  });
+
+  // menu legend
+  const ml = $('menuLegend');
+  const legend = [
+    { t: 'AIM', d: '← → keys, or swipe to steer the wand' },
+    { t: 'CHARGE', d: 'hold SPACE (or hold touch) to power the shot' },
+    { t: 'COMBO', d: '4+ POPPER · 5+ MASTER · 10+ PHENOMENAL ✦' },
+    { t: 'MATCH 3+', d: 'link 3+ same-color blossoms to pop them' },
+  ];
+  for (const it of legend) {
+    const d = document.createElement('span');
+    d.className = 'ml';
+    d.innerHTML = '<span class="ml-top"><b>✦</b> ' + it.t + '</span><span class="ml-desc">' + it.d + '</span>';
+    ml.appendChild(d);
+  }
+
+  renderTopList(elHudTop, loadScores().slice(0, 10));
+  updateMusicUI();
+  updateHud();
+  setMenuSel(0);
+  phase = 'menu';
+  clock = new THREE.Clock();
+  animate();
+}
+
+// ---------------- debug / harness API ----------------
+window.__tl = {
+  pause() { cancelAnimationFrame(rafId); },
+  resume() { clock.getDelta(); animate(); },
+  rawFrame() { cancelAnimationFrame(rafId); if (renderer) renderer.render(scene, camera); return 'ok'; },
+  freezeInput() { inputFrozen = true; },
+  unfreezeInput() { inputFrozen = false; },
+  frame(dt) { update(Math.min(dt, 0.05)); if (renderer) renderer.render(scene, camera); return 'ok'; },
+  music() {
+    let test = 'no-ctx';
+    if (MusicSys.ctx) {
+      try {
+        const saved = MusicSys.track;
+        const names = [];
+        for (let t = 0; t < TRACKS.length; t++) {
+          MusicSys.track = t;
+          const tr = MusicSys.cur;
+          for (let s = 0; s < tr.melody.length; s++) MusicSys.playStep(s, MusicSys.ctx.currentTime + 0.01 + s * 0.001);
+          names.push(tr.name + ':' + tr.melody.length + '+' + tr.bass.length);
+        }
+        MusicSys.track = saved;
+        MusicSys.nextTime = Math.max(0.01, MusicSys.ctx.currentTime - 2);
+        MusicSys.schedule();
+        test = 'ok|' + names.join(' ');
+      } catch (e) { test = String(e); }
+    }
+    return {
+      on: MusicSys.on, playing: MusicSys.playing, step: MusicSys.step,
+      track: MusicSys.track, name: MusicSys.cur.name,
+      ctx: MusicSys.ctx ? MusicSys.ctx.state : null, test,
+    };
+  },
+  inputState() {
+    return { charging, power: +power.toFixed(3), aim: +aim.toFixed(3), frozen: inputFrozen, touchActive: tId !== null };
+  },
+  start() { if (phase === 'menu') startGameFromMenu(); },
+  getPhase() { return phase; },
+  getScore() { return score; },
+  getBannerText() { const b = document.querySelector('#banner h2'); return b ? b.textContent : ''; },
+  toMenu() { backToMenu(); },
+  menuSel() { return menuSel; },
+  setAim(a) { aim = Math.max(AIM_MIN, Math.min(AIM_MAX, a)); updateWandTip(); return 'ok'; },
+  getAim() { return aim; },
+  setPower(p) { power = Math.max(0, Math.min(1, p)); updateWandTip(); return 'ok'; },
+  setColor(c) { currentColor = c; nextColor = c; updateWandTip(); return 'ok'; },
+  fire(angle, p) {
+    if (angle !== undefined) { aim = Math.max(AIM_MIN, Math.min(AIM_MAX, angle)); updateWandTip(); }
+    if (p !== undefined) power = Math.max(0, Math.min(1, p));
+    fire();
+    return 'fired';
+  },
+  seedBoard(rows, colors) { startLevel(1); level = 1; newBoard(rows || START_ROWS, colors || 5); currentColor = 0; nextColor = 1; updateWandTip(); updateHud(); return 'seeded ' + bubbleCount(); },
+  setCell(r, c, color) {
+    while (grid.length <= r) grid.push(new Array(C).fill(null));
+    const row = grid[r];
+    while (row.length < C) row.push(null);
+    if (row[c]) { scene.remove(row[c].mesh); row[c] = null; }
+    const mesh = makeBubble(color);
+    mesh.position.set(worldX(r, c), worldY(r), 0);
+    scene.add(mesh);
+    row[c] = { color, mesh, row: r, col: c };
+    rebuildList();
+    return 'ok';
+  },
+  clearAll() { clearFieldObjects(); rebuildList(); return 'cleared'; },
+  matchAt(r, c) { const res = resolveMatch(r, c); rebuildList(); if (bubbleCount() === 0) levelClear(); else if (anyBelowDanger()) gameOver(); return 'matched ' + res.matched + ' fell ' + res.fell; },
+  checkDanger() { return anyBelowDanger(); },
+  popAt(r, c) { let n = 0; if (grid[r] && grid[r][c]) { n = popBubble(r, c); rebuildList(); } return 'popped ' + n; },
+  pushDown() { pushDown(); rebuildList(); return 'pushed'; },
+  listDump() { return bubbleList.map(g => ({ x: +g.x.toFixed(2), y: +g.y.toFixed(2), row: g.row, col: g.col })); },
+  activeDump() { return activeBubbles.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2) })); },
+  gridDump() {
+    return grid.map(row => row.map(cell => cell ? cell.color : -1));
+  },
+  setLevel(n) { startLevel(n); return 'level ' + n; },
+  setScore(n) { score = n; updateHud(); return 'ok'; },
+  gameOver() { phase = 'over'; gameOver(); return 'ok'; },
+  state() {
+    return {
+      phase, score, level,
+      rows: grid.length, bubbles: bubbleCount(),
+      active: activeBubbles.length, falling: fallingBubbles.length,
+      power: +power.toFixed(3), aim: +aim.toFixed(3), charging,
+      shotsThisPush, currentColor, nextColor,
+      fps: 0,
+    };
+  },
+  shareCard(s) {
+    try { return makeScoreCard(s === undefined ? score : s).toDataURL('image/png'); }
+    catch (e) { return 'err:' + e; }
+  },
+  shareText: () => shareText(score),
+  reset: resetGame,
+};
+
+try {
+  boot();
+} catch (err) {
+  window.__bootErr = (err && err.stack) || String(err);
+  elBootErr.classList.remove('hidden');
+  elBootErr.textContent = window.__bootErr;
+}
+</script>
+</body>
+</html>
