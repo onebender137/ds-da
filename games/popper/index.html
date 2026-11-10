@@ -794,23 +794,34 @@ function updateWandTip() {
 const guideGeo = new THREE.BufferGeometry();
 const guideMat = new THREE.LineBasicMaterial({ color: 0x7fffe0, transparent: true, opacity: 0.5 });
 let guideLine = null;
-function tracePath(fromX, fromY) {
+function tracePath(fromX, fromY, speed) {
   let x = fromX, y = fromY;
-  let vx = Math.cos(aim), vy = Math.sin(aim);
-  // Fine step (matches the sim's dt/4 substep granularity) so the predicted
-  // path — especially bank shots off the walls — lands where the sim will.
-  const step = 0.008, pts = [];
-  for (let i = 0; i < 10125; i++) {
+  // Use the same velocity magnitude as the sim so step sizes match exactly.
+  let vx = Math.cos(aim) * speed, vy = Math.sin(aim) * speed;
+  // Step in "seconds" matching the sim's dt/16 substep at 60fps (0.016/16).
+  const step = 0.001, pts = [];
+  const maxSteps = Math.ceil(85 / (speed * step)) + 20;
+  for (let i = 0; i < maxSteps; i++) {
     x += vx * step; y += vy * step;
     if (x < -WALL_X) { x = -WALL_X; vx = Math.abs(vx); }
     else if (x > WALL_X) { x = WALL_X; vx = -Math.abs(vx); }
-    if (y > CEILING_Y) { pts.push(x, y); return pts; }
+    if (y > CEILING_Y) {
+      // Snap to the grid cell the ball will actually land in
+      const cell = findStickCell(x, y);
+      if (cell) { x = worldX(cell.r, cell.c); y = worldY(cell.r); }
+      pts.push(x, y); return pts;
+    }
     let hit = false;
     for (const b of bubbleList) {
       const dx = x - b.x, dy = y - b.y;
       if (dx * dx + dy * dy < (2 * BUBBLE_R) * (2 * BUBBLE_R)) { hit = true; break; }
     }
-    if (hit) { pts.push(x, y); return pts; }
+    if (hit) {
+      // Snap to the grid cell the ball will actually land in
+      const cell = findStickCell(x, y);
+      if (cell) { x = worldX(cell.r, cell.c); y = worldY(cell.r); }
+      pts.push(x, y); return pts;
+    }
     if (i % 4 === 0) pts.push(x, y);
   }
   pts.push(x, y);
@@ -822,7 +833,9 @@ function updateGuide() {
   guideLine.visible = show;
   if (!show) return;
   const tip = wandTipWorld();
-  const pts = tracePath(tip.x, tip.y);
+  const p = Math.max(MIN_FIRE, power);
+  const speed = SHOT_BASE + p * (SHOT_MAX - SHOT_BASE);
+  const pts = tracePath(tip.x, tip.y, speed);
   guideGeo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 2));
   guideMat.color.set(power >= FULL_POWER ? 0x9fffe0 : 0x7fffe0);
   guideMat.opacity = 0.35 + power * 0.4;
