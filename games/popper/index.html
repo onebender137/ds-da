@@ -1422,7 +1422,8 @@ function onWindowBlur() {
 // desktop + mobile: press = charge + aim at finger, drag = aim, release = fire
 const IS_TOUCH = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
 const buzz = ms => { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} };
-let tId = null, tDownT = 0, tMoved = false;
+let tId = null, tDownT = 0, tMoved = false, tStartX = 0, tStartAim = Math.PI / 2;
+const TOUCH_AIM_SENS = 2.0;  // mobile drag sensitivity (higher = more dramatic; 2.0 = half-screen swipe spans full aim range)
 function screenToWorld(clientX, clientY) {
   const r = sceneEl.getBoundingClientRect();
   const nx = ((clientX - r.left) / r.width) * 2 - 1;
@@ -1440,18 +1441,21 @@ function touchStart(e) {
   tId = e.pointerId;
   tDownT = performance.now();
   tMoved = false;
+  tStartX = e.clientX;
+  tStartAim = aim;  // relative drag: start from the current aim (no jump on touch)
   sfx.ensure();
   MusicSys.tryStart();
-  const w = screenToWorld(e.clientX, e.clientY);
-  aim = aimFromWorld(w);
   charging = true; power = 0;
   updateWandTip();
   buzz(6);
 }
 function touchMove(e) {
   if (inputFrozen || e.pointerId !== tId) return;
-  const w = screenToWorld(e.clientX, e.clientY);
-  const na = aimFromWorld(w);
+  const dragX = e.clientX - tStartX;
+  const screenW = sceneEl.getBoundingClientRect().width;
+  // relative drag: horizontal swipe steers the wand; right swipe -> lower angle (right), left swipe -> higher angle (left)
+  const aimDelta = -(dragX / screenW) * (AIM_MAX - AIM_MIN) * TOUCH_AIM_SENS;
+  const na = Math.max(AIM_MIN, Math.min(AIM_MAX, tStartAim + aimDelta));
   if (Math.abs(na - aim) > 0.01) tMoved = true;
   aim = na;
   updateWandTip();
