@@ -489,11 +489,15 @@
 
       // Theme-reactive scene: light theme = bright hall with visible cabinet
       // shadows; dark theme = the original moody neon look (unchanged).
+      // Mutates existing objects in place (no new Fog/Color) to avoid a full
+      // shader recompile on toggle, which would freeze the render loop.
       function applySceneTheme(theme) {
         const light = theme === 'light';
         const bg = light ? 0xe9edf3 : 0x04070d;
-        scene.background = new THREE.Color(bg);
-        scene.fog = new THREE.Fog(bg, light ? 16 : 12, light ? 42 : 30);
+        scene.background.setHex(bg);
+        scene.fog.color.setHex(bg);
+        scene.fog.near = light ? 16 : 12;
+        scene.fog.far = light ? 42 : 30;
         if (floorMat) {
           floorMat.color.setHex(light ? 0x6d7888 : 0x0b1220);
           floorMat.roughness = light ? 0.85 : 0.32;
