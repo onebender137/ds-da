@@ -1,9 +1,17 @@
 {
-  "updated": 0,
-  "top": [],
+  "top": [
+    {
+      "n": "MP",
+      "s": 501813,
+      "d": 1794350641835
+    }
+  ],
   "stats": {
-    "saves": 0,
-    "players": 0,
-    "initials": []
-  }
+    "saves": 1,
+    "players": 1,
+    "initials": [
+      "MP"
+    ]
+  },
+  "updated": 1794350641835
 }
