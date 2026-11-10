@@ -33,6 +33,16 @@
       html, body { overflow: hidden; height: 100%; }
       #scene { position: fixed; inset: 0; z-index: 0; display: block; touch-action: none; cursor: grab; }
       #scene.dragging { cursor: grabbing; }
+      #dragHint {
+        position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%);
+        z-index: 6; pointer-events: none;
+        font: 600 12px/1 'Inter', system-ui, sans-serif; letter-spacing: 2.5px;
+        color: rgba(250, 250, 248, 0.82); text-transform: uppercase;
+        background: rgba(10, 22, 40, 0.6); border: 1px solid rgba(201, 162, 39, 0.32);
+        padding: 10px 20px; border-radius: 999px; backdrop-filter: blur(6px);
+        transition: opacity 0.9s ease; white-space: nowrap;
+      }
+      #dragHint.hidden { opacity: 0; }
       .arcade-hall { position: relative; z-index: 1; height: 100vh; height: 100dvh; }
       #cards { position: fixed; inset: 0; z-index: 5; pointer-events: none; transition: opacity 0.45s ease; }
       .card {
@@ -92,6 +102,7 @@
     <canvas id="scene"></canvas>
     <div id="cards"></div>
     <div id="arcadeBootErr"></div>
+    <div id="dragHint">◀&nbsp;&nbsp;drag to explore&nbsp;&nbsp;▶</div>
 
     <!-- HEADER (standard site topper) -->
     <header class="header">
@@ -182,7 +193,7 @@
       const cardsEl = document.getElementById('cards');
       let renderer, scene, camera, clock = new THREE.Clock();
       let cabinets = [];           // { group, screen, screenMat, marqueeMat, spot, screenLight, x, game, card }
-      let state = { phase: 'hall', zoom: 0, hover: -1, time: 0, paused: false, camX: 0, dragging: false, lastInteract: -10 };
+      let state = { phase: 'hall', zoom: 0, hover: -1, time: 0, paused: false, camX: 0, dragging: false, dragVel: 0, lastInteract: -10 };
 
       const SCREEN_VERT = `
         varying vec2 vUv;
@@ -239,6 +250,8 @@
         canvas.addEventListener('pointermove', onPointerMove);
         canvas.addEventListener('pointerdown', onPointerDown);
         window.addEventListener('pointerup', onPointerUp);
+        canvas.addEventListener('wheel', onWheel, { passive: false });
+        setTimeout(hideDragHint, 6000);  // fade the hint even if the user never interacts
 
         window.__arcade = {
           pause()  { state.paused = true; },
@@ -247,6 +260,9 @@
           frame(ms) { advance((ms || 16.7) / 1000); render(); },
           play(i)  { startZoom(i); },
           pan(x)   { state.camX = x; },
+          camX()   { return state.camX; },
+          dragVel(){ return state.dragVel; },
+          debug()  { return { phase: state.phase, time: +state.time.toFixed(2), lastInteract: +state.lastInteract.toFixed(2), camX: +state.camX.toFixed(3), dragVel: +state.dragVel.toFixed(3), dragging: state.dragging, paused: state.paused }; },
           camPos() { return camera.position.toArray(); },
           view()   { return { renderer, scene, camera }; }
         };
@@ -486,12 +502,14 @@
       // ---------- interaction: drag to pan, tap to play ----------
       const raycaster = new THREE.Raycaster();
       const pointer = new THREE.Vector2();
-      const drag = { active: false, moved: false, startX: 0, lastX: 0 };
+      const drag = { active: false, moved: false, startX: 0, lastX: 0, lastTime: 0 };
       function onPointerDown(ev) {
         if (state.phase !== 'hall') return;
         drag.active = true; drag.moved = false;
         drag.startX = ev.clientX; drag.lastX = ev.clientX;
+        drag.lastTime = performance.now();
         state.lastInteract = state.time;
+        hideDragHint();
       }
 
       function onPointerMove(ev) {
@@ -505,9 +523,16 @@
             canvas.classList.add('dragging');
           }
           if (drag.moved) {
-            state.camX -= dx * unitsPerPx();  // content follows the finger
+            const now = performance.now();
+            const dtSec = Math.max((now - drag.lastTime) / 1000, 0.004);
+            const dxWorld = dx * unitsPerPx();
+            state.camX -= dxWorld;  // content follows the finger
+            // smooth velocity from real event timing (avoids single-event spikes)
+            state.dragVel = Math.max(-6, Math.min(6, state.dragVel * 0.5 + (dxWorld / dtSec) * 0.5));
             drag.lastX = ev.clientX;
+            drag.lastTime = now;
             state.lastInteract = state.time;
+            hideDragHint();
           }
           return;
         }
@@ -518,6 +543,25 @@
       function unitsPerPx() {
         const worldH = 2 * CAM_DIST * Math.tan(23 * Math.PI / 180);
         return (worldH * camera.aspect) / window.innerWidth;
+      }
+
+      let dragHintGone = false;
+      function hideDragHint() {
+        if (dragHintGone) return;
+        dragHintGone = true;
+        const h = document.getElementById('dragHint');
+        if (h) h.classList.add('hidden');
+      }
+      // desktop: mouse wheel / trackpad two-finger scroll pans the hall
+      function onWheel(ev) {
+        if (state.phase !== 'hall') return;
+        ev.preventDefault();
+        const raw = Math.abs(ev.deltaX) > Math.abs(ev.deltaY) ? ev.deltaX : ev.deltaY;
+        const delta = Math.max(-140, Math.min(140, raw));
+        state.camX -= delta * unitsPerPx();
+        state.dragVel = 0;            // cancel any coasting
+        state.lastInteract = state.time;
+        hideDragHint();
       }
 
       function pickCabinet(ev) {
@@ -601,7 +645,16 @@
 
         // infinite horizontal drift + wrap
         if (state.phase === 'hall') {
-          if (!state.dragging && (t - state.lastInteract) > 2.5) state.camX += DRIFT * dt;
+          // inertia: coast after a released drag (decays to ~0 in ~1s)
+          if (Math.abs(state.dragVel) > 0.01) {
+            state.camX -= state.dragVel * dt;
+            state.dragVel *= Math.pow(0.02, dt);
+            state.lastInteract = state.time;
+          } else {
+            state.dragVel = 0;
+          }
+          // auto-drift only when idle: not dragging, not coasting, >2.5s since interaction
+          if (!state.dragging && Math.abs(state.dragVel) < 0.01 && (t - state.lastInteract) > 2.5) state.camX += DRIFT * dt;
           if (state.camX > CYCLE_W / 2) { state.camX -= CYCLE_W; shiftWorld(-CYCLE_W); }
           else if (state.camX < -CYCLE_W / 2) { state.camX += CYCLE_W; shiftWorld(CYCLE_W); }
           camera.position.x = state.camX;
