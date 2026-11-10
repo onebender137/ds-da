@@ -11,7 +11,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DSDA Arcade | DSDA | Dream Syndicate Digital Assets</title>
-    <meta name="description" content="The DSDA Arcade — hand-built browser games in 3D cabinets. No downloads, no accounts, no friction. Play DropBlock, ShatterBlock, and Popper; high scores are headed for the blockchain.">
+    <meta name="description" content="The DSDA Arcade — hand-built browser games in 3D cabinets. No downloads, no accounts, no friction. Play DropBlock, ShatterBlock, Popper, and Slipstream; high scores are headed for the blockchain.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://ds-da.ca/games/">
     <meta property="og:title" content="DSDA Arcade | DSDA">
@@ -134,7 +134,7 @@
     <script>
       // Live play counters — totals aggregated from each game's leaderboard
       (function () {
-        var boards = ['dropblock/leaderboard.json', 'shatterblock/leaderboard.json', 'popper/leaderboard.json'];
+        var boards = ['dropblock/leaderboard.json', 'shatterblock/leaderboard.json', 'popper/leaderboard.json', 'slipstream/leaderboard.json'];
         Promise.all(boards.map(function (url) {
           return fetch(url, { cache: 'no-store' }).then(function (r) { return r.json(); }).catch(function () { return null; });
         })).then(function (results) {
@@ -190,16 +190,22 @@
           board: 'popper/leaderboard.json', dark: false
         },
         {
+          id: 'slipstream', name: 'Slipstream', tag: 'Burnout-Style Highway Draft',
+          desc: 'The car drives itself — steer left and right, tuck in behind traffic to slipstream and surge, dodge construction dirt, barriers and pedestrians. Fastest time to the flag wins. Radio on, windows down.',
+          shot: 'slipstream/screenshot.png', url: 'slipstream/',
+          board: 'slipstream/leaderboard.json', dark: false
+        },
+        {
           id: 'soon', name: 'Coming Soon', tag: 'Next game in development',
           desc: 'A new cabinet is being built in the DSDA workshop. The screen stays dark until it\u2019s ready.',
           shot: null, url: null, board: null, dark: true
         }
       ];
 
-      // infinite row: 5 cycles of the 3-game pattern
+      // infinite row: repeating 5-game pattern (4 live + Coming Soon)
       const NUM_CABS = 13;
       const SPACING = 2.3;
-      const CYCLE_W = SPACING * 4;          // 9.2 — wrap distance (4-game cycle)
+      const CYCLE_W = SPACING * 5;          // 11.5 — wrap distance (5-game cycle)
       const CAM_DIST = 5.9;
       const DRIFT = 0.22;                   // units/sec auto-scroll
 
@@ -445,7 +451,7 @@
       function buildCabinets() {
         for (let i = 0; i < NUM_CABS; i++) {
           const x = (i - (NUM_CABS - 1) / 2) * SPACING;
-          const game = GAMES[(((i - (NUM_CABS - 1) / 2) % 4) + 4) % 4];
+          const game = GAMES[(((i - (NUM_CABS - 1) / 2) % 5) + 5) % 5];
           cabinets.push(makeCabinet(game, x));
         }
       }
