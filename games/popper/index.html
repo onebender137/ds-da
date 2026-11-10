@@ -273,15 +273,15 @@ import * as THREE from './three.module.js';
 
 // ---------------- field geometry (orthographic, 2D plane) ----------------
 const C = 11;                     // columns (all rows)
-const BUBBLE_R = 0.4;             // bubble radius (smaller = more room + longer rounds)
-const COL_W = 0.8;                // horizontal pitch (scaled 0.8x)
-const ROW_H = 0.693;              // vertical pitch (hex, COL_W * sin60)
-const XOFF = -0.2;                // center the staggered field on x=0
+const BUBBLE_R = 0.34;            // bubble radius (smaller = more room + longer rounds)
+const COL_W = 0.68;               // horizontal pitch (scaled 0.85x)
+const ROW_H = 0.589;              // vertical pitch (hex, COL_W * sin60)
+const XOFF = -0.17;               // center the staggered field on x=0
 const TOP_Y = 12.4;               // y of the topmost row (raised for more starting room)
 const CEILING_Y = TOP_Y + 0.35;
-const WALL_X = 5.25;              // bubble-center limit
+const WALL_X = 4.46;              // bubble-center limit
 const DANGER_Y = 3.0;             // a bubble below this = game over
-const SHOOTER_X = 0, SHOOTER_Y = 2.2;
+const SHOOTER_X = 0, SHOOTER_Y = 1.8;
 const WAND_LEN = 0.95;
 const START_ROWS = 6;
 const SHOTS_PER_PUSH = 3;         // shots per row-descent
@@ -646,7 +646,7 @@ function makeBubble(color) {
   m.castShadow = true;
   g.add(m);
   const halo = new THREE.Sprite(bubbleGlowMats[color]);
-  halo.scale.set(1.72, 1.72, 1);
+  halo.scale.set(1.46, 1.46, 1);
   halo.position.z = -0.05;
   g.add(halo);
   return g;
@@ -801,10 +801,13 @@ function tracePath(fromX, fromY, speed) {
   // Step in "seconds" matching the sim's dt/16 substep at 60fps (0.016/16).
   const step = 0.001, pts = [];
   const maxSteps = Math.ceil(85 / (speed * step)) + 20;
+  let bounces = 0;
   for (let i = 0; i < maxSteps; i++) {
     x += vx * step; y += vy * step;
-    if (x < -WALL_X) { x = -WALL_X; vx = Math.abs(vx); }
-    else if (x > WALL_X) { x = WALL_X; vx = -Math.abs(vx); }
+    if (x < -WALL_X) { x = -WALL_X; vx = Math.abs(vx); bounces++; }
+    else if (x > WALL_X) { x = WALL_X; vx = -Math.abs(vx); bounces++; }
+    // Cap at 1 wall bounce — double-banks look aggressive and are rare in play
+    if (bounces > 1) { pts.push(x, y); return pts; }
     if (y > CEILING_Y) {
       // Snap to the grid cell the ball will actually land in
       const cell = findStickCell(x, y);
