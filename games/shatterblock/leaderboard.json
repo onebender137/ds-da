@@ -1,6 +1,11 @@
 {
-  "updated": 1794268839226,
+  "updated": 1794317448659,
   "top": [
+    {
+      "n": "DAD",
+      "s": 80511,
+      "d": 1794317448659
+    },
     {
       "n": "CJR",
       "s": 78089,
@@ -33,13 +38,14 @@
     }
   ],
   "stats": {
-    "saves": 6,
-    "players": 4,
+    "saves": 7,
+    "players": 5,
     "initials": [
       "CJR",
       "MP",
       "AKH",
-      "HWD"
+      "HWD",
+      "DAD"
     ]
   }
 }
