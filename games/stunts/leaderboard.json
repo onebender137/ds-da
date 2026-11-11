@@ -1,5 +1,17 @@
 {
-  "top": [],
-  "stats": { "saves": 0, "players": 0, "initials": [] },
-  "updated": 0
+  "updated": 1794440431959,
+  "top": [
+    {
+      "n": "TES",
+      "s": 100,
+      "d": 1794440431959
+    }
+  ],
+  "stats": {
+    "saves": 1,
+    "players": 1,
+    "initials": [
+      "TES"
+    ]
+  }
 }
