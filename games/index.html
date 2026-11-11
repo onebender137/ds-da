@@ -11,7 +11,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DSDA Arcade | DSDA | Dream Syndicate Digital Assets</title>
-    <meta name="description" content="The DSDA Arcade — hand-built browser games in 3D cabinets. No downloads, no accounts, no friction. Play DropBlock, ShatterBlock, Popper, and Slipstream; high scores are headed for the blockchain.">
+    <meta name="description" content="The DSDA Arcade — hand-built browser games in 3D cabinets. No downloads, no accounts, no friction. Play DropBlock, ShatterBlock, Popper, Slipstream, and STUNTS; high scores are headed for the blockchain.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://ds-da.ca/games/">
     <meta property="og:title" content="DSDA Arcade | DSDA">
@@ -134,7 +134,7 @@
     <script>
       // Live play counters — totals aggregated from each game's leaderboard
       (function () {
-        var boards = ['dropblock/leaderboard.json', 'shatterblock/leaderboard.json', 'popper/leaderboard.json', 'slipstream/leaderboard.json'];
+        var boards = ['dropblock/leaderboard.json', 'shatterblock/leaderboard.json', 'popper/leaderboard.json', 'slipstream/leaderboard.json', 'stunts/leaderboard.json'];
         Promise.all(boards.map(function (url) {
           return fetch(url, { cache: 'no-store' }).then(function (r) { return r.json(); }).catch(function () { return null; });
         })).then(function (results) {
@@ -196,6 +196,12 @@
           board: 'slipstream/leaderboard.json', dark: false
         },
         {
+          id: 'stunts', name: 'STUNTS', tag: '3D BMX · Trick Cam',
+          desc: 'Charge the lip, launch, and string backflips, 360s and banked MCTwists into a combo. Three runs, land clean to bank points — the trick cam closes in on every flip. Mountains, bloom, radio on.',
+          shot: 'stunts/screenshot.png', url: 'stunts/',
+          board: 'stunts/leaderboard.json', dark: false
+        },
+        {
           id: 'soon', name: 'Coming Soon', tag: 'Next game in development',
           desc: 'A new cabinet is being built in the DSDA workshop. The screen stays dark until it\u2019s ready.',
           shot: null, url: null, board: null, dark: true
@@ -205,7 +211,7 @@
       // infinite row: repeating 5-game pattern (4 live + Coming Soon)
       const NUM_CABS = 13;
       const SPACING = 2.3;
-      const CYCLE_W = SPACING * 5;          // 11.5 — wrap distance (5-game cycle)
+      const CYCLE_W = SPACING * 6;          // 13.8 — wrap distance (6-game cycle)
       const CAM_DIST = 5.9;
       const DRIFT = 0.22;                   // units/sec auto-scroll
 
@@ -451,7 +457,7 @@
       function buildCabinets() {
         for (let i = 0; i < NUM_CABS; i++) {
           const x = (i - (NUM_CABS - 1) / 2) * SPACING;
-          const game = GAMES[(((i - (NUM_CABS - 1) / 2) % 5) + 5) % 5];
+          const game = GAMES[(((i - (NUM_CABS - 1) / 2) % 6) + 6) % 6];
           cabinets.push(makeCabinet(game, x));
         }
       }
