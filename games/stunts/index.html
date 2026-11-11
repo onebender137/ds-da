@@ -2143,9 +2143,9 @@ function endRun(){
 
 /* ============================== GAME OVER + LEADERBOARD ============================== */
 const BOARD_API = 'https://api.ds-da.ca/api/board';
-const SCORE_SECRET = '356112edb435e46ac100c6ac7dcc004e';
+const SCORE_SECRET = '6216cf68f4e077d3cd991f2d6bd3e878';
 const SCORE_TOKEN = localStorage.getItem('gh-deploy-token') || '';
-const SCORE_DISPATCH_URL = 'https://api.github.com/repos/coryr/ds-da/actions/workflows/score-webhook.yml/dispatches';
+const SCORE_DISPATCH_URL = 'https://api.github.com/repos/onebender137/ds-da/actions/workflows/score-webhook.yml/dispatches';
 function fetchTimeout(url, opts, ms){
   const c = new AbortController();
   const t = setTimeout(() => c.abort(), ms);
