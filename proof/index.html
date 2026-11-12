@@ -14,6 +14,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
     <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
     <link rel="stylesheet" href="proof.css?v=17">
+    <link rel="stylesheet" href="proof-fx.css?v=1">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script>
       // Apply the saved theme on load (before the page renders, to avoid a flash)
@@ -22,6 +23,7 @@
     </script>
 </head>
 <body>
+    <div class="scroll-progress" aria-hidden="true"></div>
 
     <!-- HEADER -->
     <header class="header">
@@ -43,9 +45,12 @@
 
     <!-- HERO -->
     <section class="hero">
+        <canvas id="netCanvas" aria-hidden="true"></canvas>
         <div class="hero-inner">
-            <h1 class="hero-title">Proof of Creation</h1>
+            <div class="hero-eyebrow"><span class="dot"></span>Anchored on BSV &middot; Verifiable forever</div>
+            <h1 class="hero-title">Proof of <span class="gold">Creation</span></h1>
             <p class="hero-sub">Immutable BSV-anchored proof that you created something, at a time, that has not changed. Verifiable by anyone — no trust in us required.</p>
+            <div class="hero-chips"><span>&#9724; SHA-256</span><span>&#9724; timestamped on-chain</span><span>&#9724; no trust required</span></div>
         </div>
     </section>
 
@@ -437,5 +442,6 @@
     </script>
     <script src="proof.js?v=43"></script>
     <script src="../theme.js?v=1"></script>
+    <script src="../fx.js?v=1"></script>
 </body>
 </html>
