@@ -31,7 +31,7 @@
   gtag('config', 'G-M9D0GNYMWJ', { page_title: 'Plumber Bob', page_path: '/games/plumber-bob/' });
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script type="importmap">
 { "imports": { "three": "./three.module.js" } }
@@ -137,6 +137,8 @@
     <div class="mt-4">
       <button id="saveBtn" class="w-full bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold tracking-widest py-3 rounded-lg text-sm transition-colors">SAVE SCORE</button>
       <div id="savedMsg" class="text-xs text-slate-400 mt-2 h-4"></div>
+      <button id="shareBtn" class="mt-2 w-full border border-white/20 hover:border-amber-300/60 hover:text-amber-300 text-slate-200 font-semibold tracking-widest py-3 rounded-lg text-sm transition-colors">SHARE SCORE</button>
+      <div id="shareMsg" class="text-xs text-slate-400 mt-2 h-4"></div>
     </div>
     <div class="mt-5 text-left">
       <div class="text-[10px] uppercase tracking-widest text-slate-400 mb-2">Local Top 10</div>
@@ -1439,6 +1441,126 @@ async function submitGlobal(name, s) {
   } catch (e) { return 'err'; }
 }
 
+// ---------------- share score (DSDA house card) ----------------
+const SHARE_URL = 'https://ds-da.ca/games/plumber-bob/';
+const SHARE_CARD = { name: 'Plumber Bob', tag: 'Plunger Archery · Red Seal', id: 'plumber-bob', accent: 0xd97706 };
+function shareText(s) {
+  return "I scored " + s + " in Plumber Bob — 10 shots at a board two apprentices won't let sit still. Think you can beat me? \ud83e\udee0";
+}
+let __shot = null;
+(function(){ const im = new Image(); im.onload = () => { __shot = im; }; im.src = 'screenshot.png'; })();
+function _hexA(c, a){ return 'rgba(' + (c >> 16 & 255) + ',' + (c >> 8 & 255) + ',' + (c & 255) + ',' + a + ')'; }
+function _rr(x, px, py, w, h, r) {
+  if (x.roundRect) { x.beginPath(); x.roundRect(px, py, w, h, r); return; }
+  x.beginPath();
+  x.moveTo(px + r, py);
+  x.arcTo(px + w, py, px + w, py + h, r);
+  x.arcTo(px + w, py + h, px, py + h, r);
+  x.arcTo(px, py + h, px, py, r);
+  x.arcTo(px, py, px + w, py, r);
+  x.closePath();
+}
+function _spacedL(x, text, px, y, sp) {
+  if ('letterSpacing' in x) { x.letterSpacing = sp + 'px'; x.fillText(text, px, y); x.letterSpacing = '0px'; return; }
+  for (const ch of text) { x.fillText(ch, px, y); px += x.measureText(ch).width + sp; }
+}
+async function makeScoreCard(scoreLine, subLine) {
+  const W = 1200, H = 630;
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const x = cv.getContext('2d');
+  try { if (document.fonts && document.fonts.load) await document.fonts.load('600 62px "Playfair Display"'); } catch (e) {}
+  const A = SHARE_CARD.accent;
+  x.fillStyle = '#070b14'; x.fillRect(0, 0, W, H);
+  const g1 = x.createRadialGradient(220, 60, 40, 220, 60, 620);
+  g1.addColorStop(0, _hexA(A, 0.30)); g1.addColorStop(1, 'rgba(0,0,0,0)');
+  x.fillStyle = g1; x.fillRect(0, 0, W, H);
+  x.strokeStyle = 'rgba(255,255,255,0.035)'; x.lineWidth = 1;
+  for (let gx = 30; gx < W; gx += 60) { x.beginPath(); x.moveTo(gx, 0); x.lineTo(gx, H); x.stroke(); }
+  for (let gy = 30; gy < H; gy += 60) { x.beginPath(); x.moveTo(0, gy); x.lineTo(W, gy); x.stroke(); }
+  const vg = x.createRadialGradient(W / 2, H / 2, 240, W / 2, H / 2, 760);
+  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.55)');
+  x.fillStyle = vg; x.fillRect(0, 0, W, H);
+  x.fillStyle = 'rgba(212,175,55,0.9)'; x.fillRect(0, 0, W, 3);
+  // screenshot inset, right side
+  const sw = 540, sh = 304, sx = W - 56 - sw, sy = (H - sh) / 2 - 14;
+  x.save();
+  x.shadowColor = _hexA(A, 0.45); x.shadowBlur = 42;
+  _rr(x, sx, sy, sw, sh, 14);
+  x.fillStyle = '#0b1220'; x.fill();
+  x.restore();
+  if (__shot) { x.save(); _rr(x, sx, sy, sw, sh, 14); x.clip(); x.drawImage(__shot, sx, sy, sw, sh); x.restore(); }
+  x.strokeStyle = 'rgba(212,175,55,0.55)'; x.lineWidth = 2; _rr(x, sx, sy, sw, sh, 14); x.stroke();
+  // title + tag
+  x.textAlign = 'left'; x.textBaseline = 'alphabetic';
+  x.fillStyle = '#f7f4ec';
+  x.font = '600 62px "Playfair Display", Georgia, serif';
+  x.fillText(SHARE_CARD.name, 56, 116);
+  x.fillStyle = _hexA(A, 0.95);
+  x.font = '600 19px "Inter", "Segoe UI", system-ui, sans-serif';
+  _spacedL(x, SHARE_CARD.tag.toUpperCase(), 58, 148, 7);
+  // score (auto-shrink to fit the left zone)
+  const sl = String(scoreLine);
+  let spx = 140;
+  x.font = '800 ' + spx + 'px "Segoe UI", system-ui, -apple-system, sans-serif';
+  while (spx > 56 && x.measureText(sl).width > 520) { spx -= 6; x.font = '800 ' + spx + 'px "Segoe UI", system-ui, -apple-system, sans-serif'; }
+  x.shadowColor = _hexA(A, 0.55); x.shadowBlur = 46;
+  x.fillStyle = '#ffffff';
+  x.fillText(sl, 50, 396);
+  x.shadowBlur = 0;
+  x.fillStyle = 'rgba(222,230,248,0.92)';
+  x.font = '500 29px "Segoe UI", system-ui, sans-serif';
+  x.fillText(subLine, 56, 448);
+  x.fillStyle = '#ffd166';
+  x.font = '600 26px "Segoe UI", system-ui, sans-serif';
+  x.fillText('ds-da.ca/games/' + SHARE_CARD.id, 56, 490);
+  // DSDA lockup
+  x.fillStyle = '#f7f4ec';
+  x.font = '600 30px "Playfair Display", Georgia, serif';
+  x.fillText('DSDA', 56, 594);
+  const dw = x.measureText('DSDA').width;
+  x.fillStyle = '#d4af37';
+  x.font = '600 14px "Inter", "Segoe UI", sans-serif';
+  _spacedL(x, 'ARCADE', 58 + dw + 12, 592, 5);
+  x.fillStyle = _hexA(A, 0.85); x.fillRect(0, H - 3, W, 3);
+  return cv;
+}
+async function shareScore(){
+  if (state !== 'over') return;
+  const text = shareText(score.toLocaleString());
+  const payload = { title: 'Plumber Bob — DSDA Arcade', text, url: SHARE_URL };
+  if (navigator.share) {
+    let files = null;
+    try {
+      const cv = await makeScoreCard(score.toLocaleString(), 'Wind included · think you can beat me?');
+      const blob = await new Promise(res => cv.toBlob(res, 'image/png'));
+      if (blob) {
+        const f = [new File([blob], 'plumber-bob-score.png', { type: 'image/png' })];
+        if (!navigator.canShare || navigator.canShare(Object.assign({ files: f }, payload))) files = f;
+      }
+    } catch (e) { files = null; }
+    try {
+      if (files) payload.files = files;
+      await navigator.share(payload);
+      $('shareMsg').textContent = 'Shared! Go flex it ✓';
+      return;
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;
+      if (files) {
+        delete payload.files;
+        try { await navigator.share(payload); $('shareMsg').textContent = 'Shared! Go flex it ✓'; return; }
+        catch (e2) { if (e2 && e2.name === 'AbortError') return; }
+      }
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(text + ' ' + SHARE_URL);
+    $('shareMsg').textContent = 'Copied! Paste it anywhere ✓';
+  } catch (e) {
+    window.prompt('Copy your score share:', text + ' ' + SHARE_URL);
+  }
+}
+
 // ======================= round flow =======================
 let scoreSaved = false;
 function resetRound() {
@@ -1540,6 +1662,7 @@ function bindUI() {
   $('hsBtn').addEventListener('click', () => { sfx.ui(); showScores(); });
   $('scoresBack').addEventListener('click', () => { sfx.ui(); $('scoresOv').classList.add('hidden'); $('menu').classList.remove('hidden'); state = 'menu'; });
   $('saveBtn').addEventListener('click', () => { sfx.ui(); commitScore(); });
+  $('shareBtn').addEventListener('click', () => { sfx.ui(); shareScore(); });
   $('playAgain').addEventListener('click', () => { commitScore(); startGame(); sfx.ui(); });
   $('overMenu').addEventListener('click', () => { sfx.ui(); commitScore(); $('over').classList.add('hidden'); $('menu').classList.remove('hidden'); state = 'menu'; });
   $('soundPill').addEventListener('click', () => { Sfx.toggle(); sfx.ui(); });
@@ -1601,6 +1724,9 @@ window.__pb = {
   showScores() { return showScores().then(() => 'scores shown'); },
   dataLayer() { return (window.dataLayer || []).slice(); },
   savedMsg() { return $('savedMsg').textContent; },
+  shareMsg() { return $('shareMsg').textContent; },
+  shareText() { return shareText(score.toLocaleString()) + ' ' + SHARE_URL; },
+  shareCard() { return makeScoreCard(score.toLocaleString(), 'Wind included · think you can beat me?').then(cv => cv.toDataURL('image/png')); },
   shoutPlaying() { return !shout.paused; },
   aim(y, p) { yaw = clamp(y ?? yaw, -1.2, 1.2); pitch = clamp(p ?? pitch, -0.7, 0.5); return 'aimed'; },
   shoot(p) {
