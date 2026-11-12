@@ -792,7 +792,7 @@ function initDashboard() {
         const acct = document.getElementById('dashAccount');
         if (acct) {
             acct.innerHTML =
-                '<div><span class="k">ADDRESS</span><span class="v">' + user.address + '</span></div>' +
+                '<div><span class="k">ADDRESS</span><span class="v">' + esc(user.address) + '</span></div>' +
                 '<div><span class="k">NAME</span><span class="v">' + esc(user.display_name || '—') + '</span></div>' +
                 '<div><span class="k">WALLET BALANCE</span><span class="v" id="walletBalance">loading…</span></div>' +
                 '<div><span class="k">MEMBER SINCE</span><span class="v">' + new Date(user.created_at * 1000).toLocaleDateString() + '</span></div>' +
@@ -1076,20 +1076,28 @@ function loadCollections() {
 }
 
 // ===================== CREATE WALLET =====================
+// The WIF shown here exists ONLY in this modal — if it's lost, the wallet is lost.
+// So: no accidental close (backdrop click does nothing), a real backup download,
+// an explicit "I saved it" checkbox before Done, and the secret is wiped from the DOM on close.
 function initCreateWallet() {
     const createBtn = document.getElementById('createWalletBtn');
     const walletModal = document.getElementById('walletModal');
     const walletClose = document.getElementById('walletModalClose');
     const walletDone = document.getElementById('walletDoneBtn');
+    const savedChk = document.getElementById('walletSavedChk');
+    const dlBtn = document.getElementById('walletDownloadBtn');
     if (!createBtn || !walletModal) return;
+
+    const addrEl = document.getElementById('walletAddress');
+    const wifEl = document.getElementById('walletWif');
 
     createBtn.addEventListener('click', () => {
         try {
-            const key = new BSV.PrivateKey(); // random key
-            const address = key.toAddress().toString();
-            const wif = key.toWIF();
-            document.getElementById('walletAddress').value = address;
-            document.getElementById('walletWif').value = wif;
+            const key = new BSV.PrivateKey(); // random key (crypto.getRandomValues)
+            addrEl.value = key.toAddress().toString();
+            wifEl.value = key.toWIF();
+            savedChk.checked = false;
+            walletDone.disabled = true;
             document.getElementById('loginModal').style.display = 'none';
             walletModal.style.display = 'flex';
         } catch (e) {
@@ -1097,24 +1105,62 @@ function initCreateWallet() {
         }
     });
 
-    const closeWallet = () => { walletModal.style.display = 'none'; };
-    walletClose.addEventListener('click', closeWallet);
+    savedChk.addEventListener('change', () => { walletDone.disabled = !savedChk.checked; });
+
+    // Wipe the secret from the page
+    const wipe = () => { wifEl.value = ''; addrEl.value = ''; savedChk.checked = false; walletDone.disabled = true; };
+
+    // Downloading a backup counts as a (strong) step toward saving, but the user still has to tick the box.
+    dlBtn.addEventListener('click', () => {
+        if (!wifEl.value) return;
+        const text =
+            'DSDA Proof of Creation — wallet backup\n' +
+            'Created: ' + new Date().toISOString() + '\n\n' +
+            'Address: ' + addrEl.value + '\n' +
+            'WIF (PRIVATE KEY): ' + wifEl.value + '\n\n' +
+            'Anyone with this WIF can spend the BSV at this address and log in as you.\n' +
+            'Keep this file offline and private. There is no recovery.\n';
+        const url = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'dsda-wallet-' + addrEl.value.slice(0, 8) + '.txt';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        dlBtn.textContent = '✓ Backup downloaded';
+    });
+
+    // X button: only closes after an explicit confirmation if the user hasn't ticked the box
+    walletClose.addEventListener('click', () => {
+        if (!savedChk.checked && !confirm('You have not confirmed you saved your WIF.\n\nIf you close this, the key is gone for good and this wallet cannot be recovered.\n\nClose anyway?')) return;
+        walletModal.style.display = 'none';
+        wipe();
+        dlBtn.textContent = '⬇ Download backup (.txt)';
+    });
+
     walletDone.addEventListener('click', () => {
-        closeWallet();
+        if (!savedChk.checked) return;
         // Pre-fill the WIF in the login form so they can log in immediately
-        const wif = document.getElementById('walletWif').value;
         const loginWif = document.getElementById('loginWif');
-        if (wif && loginWif) loginWif.value = wif;
+        if (wifEl.value && loginWif) loginWif.value = wifEl.value;
+        walletModal.style.display = 'none';
+        wipe();
+        dlBtn.textContent = '⬇ Download backup (.txt)';
         document.getElementById('loginModal').style.display = 'flex';
     });
-    walletModal.addEventListener('click', (e) => { if (e.target === walletModal) closeWallet(); });
+
+    // Backdrop click does NOT close this modal — a stray click must never destroy the only copy of a key.
+    walletModal.addEventListener('click', (e) => {
+        if (e.target === walletModal) {
+            const m = walletModal.querySelector('.modal');
+            m.classList.remove('shake'); void m.offsetWidth; m.classList.add('shake');
+        }
+    });
 
     // Copy buttons
     document.querySelectorAll('.btn-copy').forEach(btn => {
         btn.addEventListener('click', () => {
-            const id = btn.dataset.copy;
-            const input = document.getElementById(id);
-            if (input) {
+            const input = document.getElementById(btn.dataset.copy);
+            if (input && input.value) {
                 navigator.clipboard.writeText(input.value).then(() => {
                     btn.textContent = '✓';
                     setTimeout(() => btn.textContent = '⧉', 1500);
