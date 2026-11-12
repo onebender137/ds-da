@@ -175,42 +175,42 @@
           id: 'dropblock', name: 'DropBlock', tag: 'Tetris \u00d7 Match-3',
           desc: 'Candy blocks fall one at a time \u2014 steer, stack, and clear runs of three. Chain reactions multiply your score.',
           shot: 'dropblock/screenshot.png', url: 'dropblock/',
-          board: 'dropblock/leaderboard.json', dark: false
+          board: 'dropblock/leaderboard.json', dark: false, accent: 0xff5fa2
         },
         {
           id: 'shatterblock', name: 'ShatterBlock', tag: 'Breakout, die-hard',
           desc: 'Twenty levels of bricks and eight power-ups. Levels 11\u201320 are a wall only fast reflexes get through.',
           shot: 'shatterblock/screenshot.png', url: 'shatterblock/',
-          board: 'shatterblock/leaderboard.json', dark: false
+          board: 'shatterblock/leaderboard.json', dark: false, accent: 0x38bdf8
         },
         {
           id: 'popper', name: 'Popper', tag: 'Bubble Pop \u00b7 Fairyland',
           desc: 'Aim the wand, charge the sparkle, and burst the garden. Match three, drop the orphans \u2014 chain 4+ for a POPPER, 5+ for a MASTER POPPER.',
           shot: 'popper/screenshot.png', url: 'popper/',
-          board: 'popper/leaderboard.json', dark: false
+          board: 'popper/leaderboard.json', dark: false, accent: 0xb78bff
         },
         {
           id: 'slipstream', name: 'Slipstream', tag: 'Burnout-Style Highway Draft',
           desc: 'The car drives itself — steer left and right, tuck in behind traffic to slipstream and surge, dodge construction dirt, barriers and pedestrians. Fastest time to the flag wins. Radio on, windows down.',
           shot: 'slipstream/screenshot.png', url: 'slipstream/',
-          board: 'slipstream/leaderboard.json', dark: false
+          board: 'slipstream/leaderboard.json', dark: false, accent: 0xff8a3c
         },
         {
           id: 'stunts', name: 'STUNTS', tag: '3D BMX · Trick Cam',
           desc: 'Charge the lip, launch, and string backflips, 360s and banked MCTwists into a combo. Three runs, land clean to bank points — the trick cam closes in on every flip. Mountains, bloom, radio on.',
           shot: 'stunts/screenshot.png', url: 'stunts/',
-          board: 'stunts/leaderboard.json', dark: false
+          board: 'stunts/leaderboard.json', dark: false, accent: 0x4ade80
         },
         {
           id: 'blockcrush', name: 'BlockCrush', tag: 'Candy-Crush · Neon Match-3',
           desc: 'Crush neon blocks — match 3+, forge Blasters, Novas and Prisms, chain mega combos and ride FEVER ×2 through a never-ending level frontier. The classic candy match-3, our take.',
           shot: 'blockcrush/screenshot.png', url: 'blockcrush/',
-          board: 'blockcrush/leaderboard.json', dark: false
+          board: 'blockcrush/leaderboard.json', dark: false, accent: 0xff4757
         },
         {
           id: 'soon', name: 'Coming Soon', tag: 'Next game in development',
           desc: 'A new cabinet is being built in the DSDA workshop. The screen stays dark until it\u2019s ready.',
-          shot: null, url: null, board: null, dark: true
+          shot: null, url: null, board: null, dark: true, accent: 0x64748b
         }
       ];
 
@@ -222,6 +222,26 @@
       const DRIFT = 0.22;                   // units/sec auto-scroll
 
       const GOLD = 0xc9a227, NAVY = 0x0a1628;
+      const SPOT_I = 140, GLOW_I = 6;      // per-cabinet spotlight / screen-glow intensity
+
+      // Cabinet build constants. These live up here (not beside makeCabinet)
+      // because boot() runs before the code below it is evaluated — a const/let
+      // declared further down is still in its dead zone when boot() needs it.
+      const CAB_W = 0.86;                  // interior width between the side panels
+      const PANEL_T = 0.035;               // side panel thickness
+      // side profile as [z, y] — front of the cabinet is +z
+      const PROFILE = [
+        [-0.36, 0.00], [0.30, 0.00], [0.30, 0.84],   // back foot, front foot, up the kick panel
+        [0.47, 0.94], [0.47, 1.02],                  // control panel nose
+        [0.29, 1.09], [0.19, 1.66],                  // screen, leaning back
+        [0.35, 1.72], [0.35, 1.96],                  // marquee overhang
+        [-0.36, 1.88]                                // top, sloping to the back
+      ];
+      const PZ0 = -0.36, PZW = 0.83, PYH = 2.0;      // profile bounds, for side-art UVs
+
+      let _kit = null;                     // shared geometry + neutral materials (cabKit)
+      const _gameKits = {};                // per-game textures + accent materials (gameKit)
+      const css = (hex) => '#' + hex.toString(16).padStart(6, '0');
       const canvas = document.getElementById('scene');
       const cardsEl = document.getElementById('cards');
       let renderer, scene, camera, clock = new THREE.Clock();
@@ -233,21 +253,34 @@
       const SCREEN_VERT = `
         varying vec2 vUv;
         void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
+      // CRT tube: barrel warp, rounded corners, scanlines that fade out when the
+      // screen is too small on-page to resolve them (no moire), glass glare, and
+      // the linear->sRGB output conversion (without it the screenshots render
+      // dark and muddy).
       const SCREEN_FRAG = `
         uniform sampler2D uMap; uniform float uTime; uniform float uGlow; uniform float uDim;
         varying vec2 vUv;
         void main(){
           vec2 c = vUv - 0.5;
-          float r2 = dot(c, c);
-          vec2 uv = c * (1.0 + 0.10 * r2) + 0.5;
-          vec3 col = vec3(0.0);
-          if (uv.x >= 0.0 && uv.x <= 1.0 && uv.y >= 0.0 && uv.y <= 1.0) col = texture2D(uMap, uv).rgb;
-          float scan  = 0.93 + 0.07 * sin(vUv.y * 380.0 + uTime * 2.5);
-          float flick = 0.975 + 0.025 * sin(uTime * 43.0) * sin(uTime * 29.0);
-          float vig   = smoothstep(0.95, 0.30, length(c) * 1.5);
-          col *= uGlow * flick * scan * (0.30 + 0.70 * vig);
-          col *= uDim;
-          gl_FragColor = vec4(col, 1.0);
+          vec2 uv = c * (1.0 + 0.16 * dot(c, c)) + 0.5;
+          // rounded tube face
+          vec2 q = max(abs(uv - 0.5) * 2.0 - 0.90, 0.0);
+          float face = 1.0 - smoothstep(0.075, 0.10, length(q));
+          // picture, with a hair of colour fringing toward the edges
+          float ca = 0.0035 * dot(c, c);
+          vec3 col = vec3(texture2D(uMap, uv + vec2(ca, 0.0)).r, texture2D(uMap, uv).g, texture2D(uMap, uv - vec2(ca, 0.0)).b);
+          float lines = uv.y * 230.0;
+          float keep  = clamp(1.0 - fwidth(lines) * 1.6, 0.0, 1.0);
+          float scan  = 1.0 - 0.16 * keep * (0.5 + 0.5 * sin(lines * 6.2832 + uTime * 2.5));
+          float flick = 0.985 + 0.015 * sin(uTime * 43.0) * sin(uTime * 29.0);
+          float vig   = smoothstep(1.05, 0.25, length(c) * 1.45);
+          col = col * uGlow * flick * scan * (0.45 + 0.55 * vig) * uDim;
+          // phosphor floor + glass: a dead tube still catches the room
+          col += vec3(0.010, 0.014, 0.024) * vig;
+          float glare = smoothstep(0.30, 0.0, abs(vUv.x * 0.7 + vUv.y - 1.32));
+          col += vec3(0.80, 0.88, 1.0) * (0.045 * glare + 0.03 * smoothstep(0.55, 1.0, vUv.y));
+          gl_FragColor = vec4(col * face, 1.0);
+          #include <colorspace_fragment>
         }`;
 
       // ---------- boot ----------
@@ -350,111 +383,225 @@
       }
 
       // ---------- cabinet ----------
-      function makeMarqueeTexture(title, tag, dark) {
-        const c = document.createElement('canvas'); c.width = 1024; c.height = 200;
-        const g = c.getContext('2d');
-        g.fillStyle = '#081120'; g.fillRect(0, 0, 1024, 200);
-        const grd = g.createLinearGradient(0, 0, 0, 200);
-        grd.addColorStop(0, 'rgba(201,162,39,0.18)'); grd.addColorStop(0.5, 'rgba(201,162,39,0)'); grd.addColorStop(1, 'rgba(201,162,39,0.18)');
-        g.fillStyle = grd; g.fillRect(0, 0, 1024, 200);
-        g.textAlign = 'center';
-        g.fillStyle = dark ? 'rgba(201,162,39,0.4)' : '#e8c95a';
-        g.font = '700 92px Georgia, "Times New Roman", serif';
-        g.fillText(title.toUpperCase(), 512, 108);
-        g.fillStyle = dark ? 'rgba(148,163,184,0.4)' : 'rgba(250,250,248,0.75)';
-        g.font = '500 34px Inter, system-ui, sans-serif';
-        g.fillText(tag.split('').join('\u2009\u2009'), 512, 168);
-        const t = new THREE.CanvasTexture(c);
-        t.colorSpace = THREE.SRGBColorSpace;
-        return t;
+      // Classic upright: two profiled side panels (gold T-molding on the edge,
+      // per-game side art), a recessed CRT, a lit marquee box under a speaker
+      // overhang, a sloped control panel and a coin door. Geometry + neutral
+      // materials are built once and shared by every cabinet; anything coloured
+      // by the game comes from gameKit() and is shared by that game's cabinets.
+      function cabKit() {
+        if (_kit) return _kit;
+        const std = (color, roughness, metalness, extra) => new THREE.MeshStandardMaterial(Object.assign({ color, roughness, metalness }, extra || {}));
+        const shape = new THREE.Shape();
+        PROFILE.forEach(([z, y], i) => i ? shape.lineTo(z, y) : shape.moveTo(z, y));
+        shape.closePath();
+        const panel = new THREE.ExtrudeGeometry(shape, { depth: PANEL_T - 0.012, bevelEnabled: true, bevelThickness: 0.006, bevelSize: 0.006, bevelSegments: 2, steps: 1 });
+        panel.rotateY(-Math.PI / 2);       // shape x -> world z, extrusion -> world -x
+        panel.translate(PANEL_T - 0.006, 0, 0);   // panel now spans x 0..PANEL_T
+
+        const grille = document.createElement('canvas'); grille.width = 256; grille.height = 64;
+        const g = grille.getContext('2d');
+        g.fillStyle = '#0b1220'; g.fillRect(0, 0, 256, 64);
+        g.fillStyle = '#02040a';
+        for (let x = 20; x < 240; x += 9) g.fillRect(x, 14, 4, 36);
+        const grilleTex = new THREE.CanvasTexture(grille); grilleTex.colorSpace = THREE.SRGBColorSpace;
+
+        _kit = {
+          geo: {
+            panel,
+            core:     new THREE.BoxGeometry(CAB_W, 1.88, 0.51),
+            front:    new THREE.BoxGeometry(CAB_W, 0.78, 0.03),
+            toe:      new THREE.BoxGeometry(CAB_W, 0.10, 0.03),
+            under:    new THREE.BoxGeometry(CAB_W, 0.02, 0.20),
+            nose:     new THREE.BoxGeometry(CAB_W, 0.08, 0.02),
+            noseTrim: new THREE.BoxGeometry(CAB_W, 0.012, 0.006),
+            deck:     new THREE.BoxGeometry(CAB_W, 0.03, 0.205),
+            shaft:    new THREE.CylinderGeometry(0.008, 0.008, 0.075, 10),
+            washer:   new THREE.CylinderGeometry(0.03, 0.034, 0.008, 20),
+            ball:     new THREE.SphereGeometry(0.03, 20, 14),
+            button:   new THREE.CylinderGeometry(0.024, 0.027, 0.018, 20),
+            bezel:    new THREE.BoxGeometry(CAB_W, 0.575, 0.02),
+            screen:   new THREE.PlaneGeometry(0.78, 0.439),
+            strip:    new THREE.PlaneGeometry(0.78, 0.022),
+            mqBox:    new THREE.BoxGeometry(CAB_W, 0.24, 0.26),
+            mqFace:   new THREE.PlaneGeometry(CAB_W, 0.20),
+            mqRail:   new THREE.BoxGeometry(CAB_W, 0.02, 0.014),
+            speaker:  new THREE.BoxGeometry(CAB_W, 0.012, 0.172),
+            door:     new THREE.BoxGeometry(0.30, 0.36, 0.012),
+            slot:     new THREE.BoxGeometry(0.03, 0.062, 0.008),
+            cup:      new THREE.BoxGeometry(0.06, 0.045, 0.008),
+            lock:     new THREE.CylinderGeometry(0.011, 0.011, 0.008, 12)
+          },
+          mat: {
+            body:    std(NAVY, 0.45, 0.35),
+            dark:    std(0x0d1524, 0.5, 0.3),
+            tube:    std(0x020306, 0.95, 0.0),     // matte bezel: soaks up the spotlight so the screen is the bright thing
+            gold:    std(GOLD, 0.3, 0.85, { emissive: GOLD, emissiveIntensity: 0.12 }),
+            deck:    std(0x111c30, 0.35, 0.45),
+            chrome:  std(0xb8c2d0, 0.2, 0.9),
+            door:    std(0x151f33, 0.35, 0.7),
+            speaker: std(0xffffff, 0.8, 0.1, { map: grilleTex }),
+            slotOn:  std(0x2a0803, 0.4, 0.2, { emissive: 0xff4a1c, emissiveIntensity: 1.6 }),
+            slotOff: std(0x14090a, 0.5, 0.2)
+          }
+        };
+        return _kit;
+      }
+
+      function drawMarquee(c, game) {
+        const W = c.width, H = c.height, g = c.getContext('2d'), acc = css(game.accent);
+        g.fillStyle = '#060d1a'; g.fillRect(0, 0, W, H);
+        // backlight: accent bleeding in from both ends, gold wash top + bottom
+        const side = g.createLinearGradient(0, 0, W, 0);
+        side.addColorStop(0, acc); side.addColorStop(0.24, 'rgba(0,0,0,0)'); side.addColorStop(0.76, 'rgba(0,0,0,0)'); side.addColorStop(1, acc);
+        g.globalAlpha = game.dark ? 0.10 : 0.42; g.fillStyle = side; g.fillRect(0, 0, W, H); g.globalAlpha = 1;
+        const grd = g.createLinearGradient(0, 0, 0, H);
+        grd.addColorStop(0, 'rgba(201,162,39,0.20)'); grd.addColorStop(0.5, 'rgba(201,162,39,0)'); grd.addColorStop(1, 'rgba(201,162,39,0.20)');
+        g.fillStyle = grd; g.fillRect(0, 0, W, H);
+        g.strokeStyle = game.dark ? 'rgba(201,162,39,0.25)' : 'rgba(232,201,90,0.85)'; g.lineWidth = 4;
+        g.strokeRect(14, 14, W - 28, H - 28);
+        // title — shrink to fit so long names never clip
+        g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+        const title = game.name.toUpperCase();
+        let px = 118;
+        do { g.font = `700 ${px}px "Playfair Display", Georgia, "Times New Roman", serif`; px -= 4; } while (g.measureText(title).width > W - 150 && px > 48);
+        if (!game.dark) { g.shadowColor = 'rgba(232,201,90,0.55)'; g.shadowBlur = 22; }
+        g.fillStyle = game.dark ? 'rgba(201,162,39,0.4)' : '#f0d572';
+        g.fillText(title, W / 2, 136);
+        g.shadowBlur = 0;
+        g.fillStyle = game.dark ? 'rgba(100,116,139,0.5)' : acc;
+        g.fillRect(W / 2 - 110, 156, 220, 4);
+        g.fillStyle = game.dark ? 'rgba(148,163,184,0.4)' : 'rgba(250,250,248,0.85)';
+        g.font = '600 32px Inter, system-ui, sans-serif';
+        g.fillText(game.tag.toUpperCase().split('').join(' '), W / 2, 204);
+      }
+
+      function drawSideArt(c, game) {
+        // u runs back -> front, v runs floor -> top (canvas y is flipped)
+        const W = c.width, H = c.height, g = c.getContext('2d'), acc = css(game.accent);
+        const base = g.createLinearGradient(0, 0, 0, H);
+        base.addColorStop(0, '#0d1b33'); base.addColorStop(1, '#060d1a');
+        g.fillStyle = base; g.fillRect(0, 0, W, H);
+        const band = (y0, wide, alpha, color) => {
+          g.globalAlpha = alpha; g.fillStyle = color;
+          g.beginPath(); g.moveTo(0, y0 + 300); g.lineTo(W, y0); g.lineTo(W, y0 + wide); g.lineTo(0, y0 + 300 + wide); g.closePath(); g.fill();
+        };
+        const k = game.dark ? 0.25 : 1;
+        band(250, 150, 0.85 * k, acc);
+        band(425, 46, 0.45 * k, acc);
+        band(495, 10, 0.9 * k, '#c9a227');
+        band(205, 10, 0.9 * k, '#c9a227');
+        g.globalAlpha = 1;
+        // no lettering here: the same art is mirrored onto the opposite panel
+      }
+
+      function gameKit(game) {
+        if (_gameKits[game.id]) return _gameKits[game.id];
+        const aniso = renderer.capabilities.getMaxAnisotropy();
+        const tex = (w, h, draw) => {
+          const c = document.createElement('canvas'); c.width = w; c.height = h;
+          draw(c, game);
+          const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = aniso;
+          return t;
+        };
+        const marqueeTex = tex(1024, 238, drawMarquee);
+        // the page's display font may land after boot — repaint the sign when it does
+        if (document.fonts && document.fonts.load) {
+          document.fonts.load('700 96px "Playfair Display"').then((f) => {
+            if (f && f.length) { drawMarquee(marqueeTex.image, game); marqueeTex.needsUpdate = true; }
+          }).catch(() => {});
+        }
+        const sideTex = tex(512, 1024, drawSideArt);
+        sideTex.repeat.set(1 / PZW, 1 / PYH); sideTex.offset.set(-PZ0 / PZW, 0);
+        const lit = game.dark ? 0.04 : 1;
+        const shotTex = game.dark ? makeBlankTexture() : new THREE.TextureLoader().load(game.shot);
+        shotTex.colorSpace = THREE.SRGBColorSpace; shotTex.anisotropy = aniso;
+        const glow = (hex, i) => new THREE.MeshStandardMaterial({ color: hex, roughness: 0.3, metalness: 0.3, emissive: hex, emissiveIntensity: i * lit + 0.03 });
+        return (_gameKits[game.id] = {
+          marqueeTex, shotTex,
+          side:  new THREE.MeshStandardMaterial({ map: sideTex, roughness: 0.5, metalness: 0.25 }),
+          strip: new THREE.MeshBasicMaterial({ color: new THREE.Color(game.accent).multiplyScalar(game.dark ? 0.06 : 0.85) }),
+          ball:  new THREE.MeshStandardMaterial({ color: game.accent, roughness: 0.18, metalness: 0.25, emissive: game.accent, emissiveIntensity: 0.12 * lit }),
+          buttons: [glow(GOLD, 0.35), glow(game.accent, 0.55), glow(0xf4f1e8, 0.3)]
+        });
       }
 
       function makeBlankTexture() {
         const c = document.createElement('canvas'); c.width = 64; c.height = 36;
         const g = c.getContext('2d');
         g.fillStyle = '#0a0f18'; g.fillRect(0, 0, 64, 36);
-        const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
-        return t;
+        return new THREE.CanvasTexture(c);
       }
 
       function makeCabinet(game, x) {
+        const { geo, mat } = cabKit();
+        const gk = gameKit(game);
         const grp = new THREE.Group();
         grp.position.set(x, 0, 0);
 
-        const bodyMat = new THREE.MeshStandardMaterial({ color: NAVY, roughness: 0.45, metalness: 0.35 });
-        const darkMat = new THREE.MeshStandardMaterial({ color: 0x0d1524, roughness: 0.5, metalness: 0.3 });
-        const goldMat = new THREE.MeshStandardMaterial({ color: GOLD, roughness: 0.3, metalness: 0.85, emissive: GOLD, emissiveIntensity: 0.12 });
-        const deckMat = new THREE.MeshStandardMaterial({ color: 0x111c30, roughness: 0.4, metalness: 0.4 });
-
-        const add = (geo, mat, px, py, pz, rx = 0) => {
-          const m = new THREE.Mesh(geo, mat);
-          m.position.set(px, py, pz); m.rotation.x = rx;
-          m.castShadow = true; m.receiveShadow = true;
-          grp.add(m); return m;
+        // only the big silhouette pieces cast shadows (cheap shadow pass)
+        const add = (parent, g, m, px, py, pz, rx = 0, shadow = false) => {
+          const mesh = new THREE.Mesh(g, m);
+          mesh.position.set(px, py, pz); mesh.rotation.x = rx;
+          mesh.castShadow = shadow; mesh.receiveShadow = true;
+          parent.add(mesh); return mesh;
         };
 
-        // plinth + body
-        add(new THREE.BoxGeometry(1.02, 0.12, 0.78), darkMat, 0, 0.06, 0);
-        add(new THREE.BoxGeometry(0.88, 1.60, 0.62), bodyMat, 0, 0.92, 0);
+        // side panels: art on the faces, gold T-molding on the edge
+        const panelMats = [gk.side, mat.gold];
+        add(grp, geo.panel, panelMats,  CAB_W / 2, 0, 0, 0, true);
+        add(grp, geo.panel, panelMats, -CAB_W / 2 - PANEL_T, 0, 0, 0, true);
 
-        // gold trim
-        add(new THREE.BoxGeometry(0.022, 1.60, 0.022), goldMat, -0.44, 0.92, 0.305);
-        add(new THREE.BoxGeometry(0.022, 1.60, 0.022), goldMat,  0.44, 0.92, 0.305);
-        add(new THREE.BoxGeometry(0.88, 0.022, 0.022), goldMat, 0, 1.70, 0.305);
-        add(new THREE.BoxGeometry(0.02, 1.3, 0.02), goldMat, -0.445, 0.95, 0.05);
-        add(new THREE.BoxGeometry(0.02, 1.3, 0.02), goldMat,  0.445, 0.95, 0.05);
+        // carcass between the panels
+        add(grp, geo.core,  mat.dark, 0, 0.94, -0.085, 0, true);
+        add(grp, geo.front, mat.body, 0, 0.49, 0.285);
+        add(grp, geo.toe,   mat.tube, 0, 0.05, 0.255);
+        add(grp, geo.under, mat.dark, 0, 0.885, 0.385, -0.532);
+        add(grp, geo.nose,  mat.dark, 0, 0.98, 0.462);
+        add(grp, geo.noseTrim, mat.gold, 0, 1.012, 0.474);
 
-        // marquee (tilted, glowing)
-        const mq = new THREE.Group();
-        mq.position.set(0, 1.84, 0.26); mq.rotation.x = -0.22; grp.add(mq);
-        const mqBox = new THREE.Mesh(new THREE.BoxGeometry(0.88, 0.17, 0.05), darkMat);
-        mqBox.castShadow = true; mq.add(mqBox);
-        // self-lit sign: unlit basic material so the cabinet spotlight can't wash it out
-        const mqMat = new THREE.MeshBasicMaterial({
-          map: makeMarqueeTexture(game.name, game.tag, game.dark),
-          color: 0xffffff
+        // coin door
+        add(grp, geo.door, mat.door, 0, 0.52, 0.304);
+        const slotMat = game.dark ? mat.slotOff : mat.slotOn;
+        [-0.075, 0.075].forEach((sx) => {          // two coin mechs: lit slot over a reject cup
+          add(grp, geo.slot, slotMat, sx, 0.60, 0.312);
+          add(grp, geo.cup,  mat.tube, sx, 0.49, 0.312);
         });
-        const mqFace = new THREE.Mesh(new THREE.PlaneGeometry(0.84, 0.14), mqMat);
-        mqFace.position.z = 0.028; mq.add(mqFace);
+        add(grp, geo.lock, mat.gold, 0, 0.635, 0.312, Math.PI / 2);
 
-        // screen assembly (tilted back)
+        // control panel (slopes down toward the player)
+        const dk = new THREE.Group();
+        dk.position.set(0, 1.055, 0.38); dk.rotation.x = 0.371; grp.add(dk);
+        add(dk, geo.deck,   mat.deck,   0, -0.015, 0, 0, true);
+        add(dk, geo.washer, mat.dark,   -0.2, 0.004, 0);
+        add(dk, geo.shaft,  mat.chrome, -0.2, 0.04, 0);
+        add(dk, geo.ball,   gk.ball,    -0.2, 0.095, 0);
+        gk.buttons.forEach((bm, i) => add(dk, geo.button, bm, 0.06 + i * 0.085, 0.009, 0.012 - Math.abs(i - 1) * 0.022));
+
+        // recessed CRT (leans back, sits behind the panel edges)
         const sg = new THREE.Group();
-        sg.position.set(0, 1.36, 0.285); sg.rotation.x = -0.17; grp.add(sg);
-        const bezel = new THREE.Mesh(new THREE.BoxGeometry(0.82, 0.54, 0.06), darkMat);
-        bezel.castShadow = true; sg.add(bezel);
-        const shotTex = game.dark ? makeBlankTexture() : new THREE.TextureLoader().load(game.shot);
-        if (!game.dark) shotTex.colorSpace = THREE.SRGBColorSpace;
+        sg.position.set(0, 1.369, 0.2055); sg.rotation.x = -0.1737; grp.add(sg);
+        add(sg, geo.bezel, mat.tube, 0, 0, 0);
         const scrMat = new THREE.ShaderMaterial({
           uniforms: {
-            uMap: { value: shotTex },
+            uMap: { value: gk.shotTex },
             uTime: { value: 0 },
             uGlow: { value: 1 },
             uDim: { value: game.dark ? 0.05 : 1.0 }
           },
           vertexShader: SCREEN_VERT, fragmentShader: SCREEN_FRAG
         });
-        const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.74, 0.416), scrMat);
-        scr.position.z = 0.032; sg.add(scr);
+        const scr = new THREE.Mesh(geo.screen, scrMat);
+        scr.position.set(0, 0.035, 0.012); sg.add(scr);
+        add(sg, geo.strip, gk.strip, 0, -0.232, 0.012).receiveShadow = false;
 
-        // control deck
-        const dk = new THREE.Group();
-        dk.position.set(0, 1.03, 0.34); dk.rotation.x = 0.42; grp.add(dk);
-        const deck = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.055, 0.46), deckMat);
-        deck.castShadow = true; dk.add(deck);
-        const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.024, 0.11, 12), darkMat);
-        stick.position.set(-0.2, 0.08, 0.05); dk.add(stick);
-        const knob = new THREE.Mesh(new THREE.SphereGeometry(0.042, 16, 12), new THREE.MeshStandardMaterial({ color: 0x1a2438, roughness: 0.25, metalness: 0.6 }));
-        knob.position.set(-0.2, 0.145, 0.05); knob.castShadow = true; dk.add(knob);
-        [GOLD, 0x8a2be2, 0xd43f5e].forEach((bc, i) => {
-          const b = new THREE.Mesh(new THREE.CylinderGeometry(0.034, 0.038, 0.028, 16),
-            new THREE.MeshStandardMaterial({ color: bc, roughness: 0.3, metalness: 0.3, emissive: bc, emissiveIntensity: game.dark ? 0.05 : 0.25 }));
-          b.position.set(0.08 + i * 0.11, 0.04, 0.08); b.castShadow = true; dk.add(b);
-        });
-
-        // coin door
-        const coin = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.2, 0.02), darkMat);
-        coin.position.set(0.26, 0.72, 0.315); grp.add(coin);
-        add(new THREE.BoxGeometry(0.015, 0.12, 0.005), goldMat, 0.26, 0.72, 0.328);
+        // marquee light box + speaker overhang
+        add(grp, geo.mqBox, mat.dark, 0, 1.84, 0.205, 0, true);
+        // self-lit sign: unlit basic material so the cabinet spotlight can't wash it out
+        const mqMat = new THREE.MeshBasicMaterial({ map: gk.marqueeTex, color: 0xffffff });
+        add(grp, geo.mqFace, mqMat, 0, 1.84, 0.337).receiveShadow = false;
+        add(grp, geo.mqRail, mat.gold, 0, 1.95, 0.342);
+        add(grp, geo.mqRail, mat.gold, 0, 1.73, 0.342);
+        add(grp, geo.speaker, mat.speaker, 0, 1.688, 0.268, -0.359);
 
         scene.add(grp);
         return { group: grp, screen: scr, screenMat: scrMat, marqueeMat: mqMat, x, game, hoverGlow: game.dark ? 0 : 1.0 };
@@ -490,7 +637,7 @@
 
         cabinets.forEach(c => {
           if (c.game.dark) return;
-          const spot = new THREE.SpotLight(0xffd9a0, 140, 14, 0.46, 0.55, 1.6);
+          const spot = new THREE.SpotLight(0xffd9a0, SPOT_I, 14, 0.46, 0.55, 1.6);
           spot.position.set(c.x * 0.82, 4.1, 2.2);
           spot.target.position.set(c.x, 1.1, 0);
           spot.castShadow = false;   // enabled per-frame for near cabinets only
@@ -498,7 +645,8 @@
           spot.shadow.bias = -0.002;
           scene.add(spot, spot.target);
           c.spot = spot;
-          const pl = new THREE.PointLight(0x9fc4ff, 6, 3.2, 2);
+          // screen glow spills onto the deck + floor, tinted by the game's accent
+          const pl = new THREE.PointLight(new THREE.Color(0x9fc4ff).lerp(new THREE.Color(c.game.accent), 0.45), GLOW_I, 3.2, 2);
           pl.position.set(c.x, 1.36, 0.75);
           scene.add(pl);
           c.screenLight = pl;
@@ -758,8 +906,8 @@
           state.zoom = e;
           cabinets.forEach(c => {
             const f = (c === cabinets[zoomState.i]) ? 1 : (1 - e);
-            if (c.spot) c.spot.intensity = 140 * f;
-            if (c.screenLight) c.screenLight.intensity = 6 * f;
+            if (c.spot) c.spot.intensity = SPOT_I * f;
+            if (c.screenLight) c.screenLight.intensity = GLOW_I * f;
           });
           if (zoomState.t >= 1) {
             state.phase = 'loading';
