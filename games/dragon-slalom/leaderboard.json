@@ -1,17 +1,23 @@
 {
-  "updated": 1794455142302,
+  "updated": 1794455231602,
   "top": [
     {
       "n": "CJR",
       "s": 2847,
       "d": 1794455142302
+    },
+    {
+      "n": "COR",
+      "s": 1,
+      "d": 1794455231602
     }
   ],
   "stats": {
-    "saves": 1,
-    "players": 1,
+    "saves": 2,
+    "players": 2,
     "initials": [
-      "CJR"
+      "CJR",
+      "COR"
     ]
   }
 }
