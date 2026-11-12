@@ -237,7 +237,8 @@ input:focus{border-color:var(--gold);box-shadow:0 0 15px rgba(255,203,99,.28)}
       <div><b id="stPearls" style="color:var(--violet)">0</b><i>PEARLS</i></div>
       <div><b id="stTime" style="color:var(--info)">0</b><i>SECONDS</i></div>
     </div>
-    <input id="name" maxlength="16" placeholder="Your name for the leaderboard">
+    <div class="sec" style="margin-top:4px">YOUR INITIALS</div>
+    <input id="name" maxlength="3" placeholder="WYM" style="text-transform:uppercase">
     <button class="btn gold" id="saveBtn" onclick="Game.save()">SAVE SCORE</button>
     <div id="saveMsg"></div>
     <button class="btn" id="shareBtn" onclick="Game.share()">SHARE SCORE</button>
@@ -245,6 +246,7 @@ input:focus{border-color:var(--gold);box-shadow:0 0 15px rgba(255,203,99,.28)}
     <br>
     <button class="btn" onclick="Game.start()">FLY AGAIN</button>
     <button class="btn ghost" onclick="Game.board('endBoard',this)">LEADERBOARD</button>
+    <button class="btn ghost" onclick="Game.quit()">MAIN MENU</button>
     <div class="board hide" id="endBoard"></div>
   </section>
 </div>
@@ -782,7 +784,7 @@ function resetRun(){
   layoutRings();layoutOrbs();specials=[];clearParticles();resetTrail();buildSpine();
   for(var i=0;i<trees.length;i++)if(trees[i].z<S.z-60)placeTree(trees[i],trees[i].z+3000);
   $("saveBtn").disabled=false;$("saveBtn").textContent="SAVE SCORE";$("endBoard").classList.add("hide");
-  $("name").value=store("ds.lastName")||"";document.body.classList.remove("hintfade");$("hint").style.opacity="";syncHUD();
+  $("name").value=String(store("ds.lastName")||"").toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,3);document.body.classList.remove("hintfade");$("hint").style.opacity="";syncHUD();
 }
 function startGame(){
   Audio.init();Audio.resume();Audio.click();Audio.duck(false);
@@ -819,12 +821,13 @@ function finishRun(){
 }
 function showPanel(id){$("shade").classList.toggle("hide",!id);["menu","pausePanel","endPanel","scoresPanel"].forEach(function(p){$(p).classList.toggle("hide",p!==id);});}
 function saveScore(){
-  if(S.saved)return;var name=($("name").value.trim()||"Wyrm Rider").slice(0,16);store("ds.lastName",name);
-  var l=scores();l.push({name:name,score:S.score,diff:DIFF[S.diff].label,time:+S.elapsed.toFixed(1),pearls:S.pearls,date:Date.now()});
+  if(S.saved)return;
+  var init=$("name").value.trim().toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,3)||"WYM";
+  $("name").value=init;store("ds.lastName",init);
+  var l=scores();l.push({name:init,score:S.score,diff:DIFF[S.diff].label,time:+S.elapsed.toFixed(1),pearls:S.pearls,date:Date.now()});
   l.sort(function(a,b){return b.score-a.score||a.time-b.time;});try{store(LB,JSON.stringify(l.slice(0,50)));}catch(e){}
   S.saved=true;$("saveBtn").disabled=true;$("saveBtn").textContent="SAVED ✓";paintBoard($("endBoard"));$("endBoard").classList.remove("hide");
   track("score_submit",{score:S.score});
-  var init=name.toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,3)||"WYM";
   var nm=$("saveMsg");nm.textContent="Submitting to the global board…";
   submitGlobal(init,S.score).then(function(res){
     nm.textContent=res==="ok"?"On the global board ✓":"Saved locally · global: "+res;

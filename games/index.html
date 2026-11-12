@@ -226,8 +226,11 @@
         }
       ];
 
-      // infinite row: repeating 9-game pattern (8 live + Coming Soon)
-      const NUM_CABS = 13;
+      // infinite row: repeating 9-game pattern (8 live + Coming Soon).
+      // NUM_CABS spans two full cycles + the centre (p = -9..+9) so every game
+      // appears on BOTH sides of the centre — without this the right edge ends
+      // at Plumber Bob and Dragon Slalom / Coming Soon only exist on the left.
+      const NUM_CABS = 19;
       const SPACING = 2.3;
       const CYCLE_W = SPACING * 9;          // 20.7 — wrap distance (9-game cycle)
       const CAM_DIST = 5.9;
@@ -894,6 +897,17 @@
           if (!state.dragging && Math.abs(state.dragVel) < 0.01 && (t - state.lastInteract) > 2.5) state.camX += DRIFT * dt;
           if (state.camX > CYCLE_W / 2) { state.camX -= CYCLE_W; shiftWorld(-CYCLE_W); }
           else if (state.camX < -CYCLE_W / 2) { state.camX += CYCLE_W; shiftWorld(CYCLE_W); }
+          // Re-center the finite cabinet window under the camera so the row is
+          // truly infinite in both directions. The wrap above shifts the world by
+          // exactly one cycle per pass, so the window drifts as you pan and would
+          // eventually run out. The pattern is periodic with period CYCLE_W, so
+          // snapping the world back by a whole number of cycles is seamless and
+          // keeps the window centred on the camera forever.
+          {
+            const _c = cabinets[(cabinets.length - 1) / 2];
+            const _r = state.camX - _c.x;
+            if (Math.abs(_r) > CYCLE_W) shiftWorld(Math.round(_r / CYCLE_W) * CYCLE_W);
+          }
           camera.position.x = state.camX;
           camera.lookAt(state.camX, 0.62, 0);
           // keep the shadow-casting sun over the visible cabinets, offset to
