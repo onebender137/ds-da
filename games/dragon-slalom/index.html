@@ -123,7 +123,7 @@ h1{font-size:clamp(27px,6vw,40px);letter-spacing:3px;font-weight:1000;margin:5px
   border:1px solid rgba(34,224,141,.34);background:rgba(5,16,11,.66);color:var(--dim)}
 .seg button.on{border-color:var(--gold);color:var(--gold);background:linear-gradient(180deg,rgba(255,203,99,.22),rgba(255,203,99,.06));
   box-shadow:0 0 18px rgba(255,203,99,.28)}
-.btn{display:inline-block;padding:13px 30px;margin:4px;border:0;border-radius:99px;cursor:pointer;font-weight:1000;
+.btn{display:inline-block;padding:11px 26px;margin:2px;border:0;border-radius:99px;cursor:pointer;font-weight:1000;
   letter-spacing:2px;font-size:13px;color:#04130c;background:linear-gradient(90deg,var(--jade),var(--emerald));
   box-shadow:0 10px 30px rgba(34,224,141,.45)}
 .btn:active{transform:scale(.97)}
@@ -140,9 +140,15 @@ h1{font-size:clamp(27px,6vw,40px);letter-spacing:3px;font-weight:1000;margin:5px
 .row .df{font-size:8px;letter-spacing:1px;color:var(--dim);border:1px solid rgba(169,194,178,.3);padding:1px 5px;border-radius:6px}
 .row .pt{color:var(--emerald);font-weight:1000}
 .empty{text-align:center;color:var(--dim);padding:10px}
+#menu{padding:20px 28px}
+#menu h1{font-size:clamp(24px,5vw,32px)}
+#menu .sub{margin-bottom:6px}
+#menu .copy{margin-bottom:8px;line-height:1.45}
+#menu #diff{margin-bottom:8px}
+#menu .mark{font-size:30px}
 .sec{font-size:10px;letter-spacing:2px;color:var(--dim);margin:13px 0 6px}
 #saveMsg,#shareMsg{margin-top:8px;font-size:11px;letter-spacing:1px;color:var(--dim);min-height:14px}
-#best{margin-top:12px;font-size:11px;letter-spacing:1px;color:var(--gold);min-height:15px}
+#best{margin-top:6px;font-size:11px;letter-spacing:1px;color:var(--gold);min-height:15px}
 input{width:100%;padding:12px 14px;margin:10px 0 4px;border-radius:12px;text-align:center;letter-spacing:1px;font-size:15px;
   color:var(--text);background:rgba(3,9,6,.74);border:1px solid rgba(34,224,141,.4);outline:0}
 input:focus{border-color:var(--gold);box-shadow:0 0 15px rgba(255,203,99,.28)}
@@ -184,11 +190,10 @@ input:focus{border-color:var(--gold);box-shadow:0 0 15px rgba(255,203,99,.28)}
     <div class="mark">🐉</div>
     <h1>DRAGON SLALOM</h1>
     <div class="sub">SKYREACH · DS-DA.CA / GAMES</div>
-    <div class="status"><i></i> READY · NO DOWNLOADS · WORKS OFFLINE</div>
+    <button class="btn ghost" onclick="Game.scores()">LEADERBOARD</button>
+    <a class="btn ghost" href="/games/" style="text-decoration:none">← BACK TO DSDA ARCADE</a>
     <div class="copy">
-      Thread the dragon through <b class="e">20 sky-rings</b> across an open course.<br>
-      Dead-centre <b class="g">PERFECT +100</b> · combos multiply · miss <b class="r">−50</b><br>
-      Collect <b class="v">sky-pearls</b> between rings for bonus points.<br>
+      Thread the dragon through <b class="e">20 sky-rings</b> · dead-centre <b class="g">PERFECT</b> ×1.5 · combos multiply · <b class="v">sky-pearls</b> for bonus<br>
       <span style="color:var(--dim);font-size:11px">Arrow keys / WASD · swipe &amp; drag · Shift to boost</span>
     </div>
     <div class="seg" id="diff">
@@ -197,8 +202,6 @@ input:focus{border-color:var(--gold);box-shadow:0 0 15px rgba(255,203,99,.28)}
       <button onclick="Game.diff('fierce',this)">FIERCE</button>
     </div>
     <button class="btn" onclick="Game.start()">TAKE FLIGHT</button>
-    <button class="btn ghost" onclick="Game.scores()">LEADERBOARD</button><br>
-    <a class="btn ghost" href="/games/" style="text-decoration:none">← BACK TO DSDA ARCADE</a>
     <div class="board hide" id="menuBoard"></div>
     <div id="best"></div>
   </section>
