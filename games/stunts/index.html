@@ -10,11 +10,11 @@
 <meta property="og:url" content="https://ds-da.ca/games/stunts/" />
 <meta property="og:title" content="Play STUNTS at ds-da.ca" />
 <meta property="og:description" content="3D BMX stunt arcade. Charge the lip, launch, and string backflips, 360s and banked MCTwists into a combo. Three runs, land clean to bank points. Mountains, bloom, trick cam, radio on." />
-<meta property="og:image" content="https://ds-da.ca/games/stunts/screenshot.png" />
+<meta property="og:image" content="https://ds-da.ca/games/stunts/og.png" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Play STUNTS at ds-da.ca" />
 <meta name="twitter:description" content="3D BMX stunt arcade — flips, spins, banked MCTwists. Three runs, land clean to bank points." />
-<meta name="twitter:image" content="https://ds-da.ca/games/stunts/screenshot.png" />
+<meta name="twitter:image" content="https://ds-da.ca/games/stunts/og.png" />
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -22,7 +22,7 @@
   "name": "STUNTS",
   "description": "3D BMX stunt arcade. Charge the lip, launch, and string backflips, 360s and banked MCTwists into a combo. Three runs, land clean to bank points.",
   "url": "https://ds-da.ca/games/stunts/",
-  "image": "https://ds-da.ca/games/stunts/screenshot.png",
+  "image": "https://ds-da.ca/games/stunts/og.png",
   "genre": "Arcade",
   "playUrl": "https://ds-da.ca/games/stunts/",
   "applicationCategory": "Game",
@@ -183,6 +183,8 @@
   #goInitials{ width:64px; background:rgba(10,22,40,.8); border:1px solid rgba(201,162,39,.4); border-radius:8px; color:#fff; font-size:18px; font-weight:900; letter-spacing:4px; text-align:center; text-transform:uppercase; padding:8px 4px; outline:none; }
   #goSave{ background:var(--gold); color:var(--navy); border:none; border-radius:8px; padding:8px 16px; font-size:13px; font-weight:900; letter-spacing:2px; cursor:pointer; }
   #goSaveMsg{ margin-top:8px; font-size:12px; font-weight:700; letter-spacing:1px; min-height:14px; }
+  #goShare{ background:transparent; color:var(--gold); border:1px solid var(--gold); border-radius:8px; padding:8px 14px; font-size:13px; font-weight:900; letter-spacing:2px; cursor:pointer; }
+  #goShareMsg{ margin-top:8px; font-size:12px; font-weight:700; letter-spacing:1px; min-height:14px; }
   .go-btns{ margin-top:14px; display:flex; gap:10px; }
   #goAgain{ background:var(--gold); color:var(--navy); border:none; border-radius:10px; padding:11px 30px; font-size:15px; font-weight:900; letter-spacing:2px; cursor:pointer; box-shadow:0 6px 24px rgba(201,162,39,.4); }
   #goMenu{ background:transparent; color:#cfd8e3; border:1px solid rgba(201,162,39,.4); border-radius:10px; padding:11px 24px; font-size:14px; font-weight:800; letter-spacing:2px; cursor:pointer; }
@@ -206,6 +208,9 @@
     #goAgain{ padding:11px 24px; font-size:14px; }
   }
 </style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
 <div id="scene"></div>
@@ -283,8 +288,10 @@
   <div class="go-save">
     <input id="goInitials" maxlength="3" placeholder="ABC" autocomplete="off" spellcheck="false">
     <button id="goSave">SAVE SCORE</button>
+    <button id="goShare">SHARE SCORE</button>
   </div>
   <div id="goSaveMsg"></div>
+  <div id="goShareMsg"></div>
   <div class="go-btns">
     <button id="goAgain">RIDE AGAIN</button>
     <button id="goMenu">MENU</button>
@@ -2168,6 +2175,129 @@ function endRun(){
   }
 }
 
+// ---------------- share score (DSDA house card) ----------------
+const SHARE_URL = 'https://ds-da.ca/games/stunts/';
+const SHARE_CARD = { name: 'STUNTS', tag: '3D BMX · Trick Cam', id: 'stunts', accent: 0x4ade80 };
+function shareText(s) {
+  return 'I banked ' + s + ' across 3 runs in STUNTS — think you can beat me? \ud83d\ude72';
+}
+let __shot = null;
+(function(){ const im = new Image(); im.onload = () => { __shot = im; }; im.src = 'screenshot.png'; })();
+function _hexA(c, a){ return 'rgba(' + (c >> 16 & 255) + ',' + (c >> 8 & 255) + ',' + (c & 255) + ',' + a + ')'; }
+function _rr(x, px, py, w, h, r) {
+  if (x.roundRect) { x.beginPath(); x.roundRect(px, py, w, h, r); return; }
+  x.beginPath();
+  x.moveTo(px + r, py);
+  x.arcTo(px + w, py, px + w, py + h, r);
+  x.arcTo(px + w, py + h, px + w, py + h - r, r);
+  x.arcTo(px + w, py + h, px, py + h, r);
+  x.arcTo(px, py + h, px, py + h - r, r);
+  x.arcTo(px, py + r, px, py, r);
+  x.arcTo(px, py, px + r, py, r);
+  x.closePath();
+}
+function _spacedL(x, text, px, y, sp) {
+  if ('letterSpacing' in x) { x.letterSpacing = sp + 'px'; x.fillText(text, px, y); x.letterSpacing = '0px'; return; }
+  for (const ch of text) { x.fillText(ch, px, y); px += x.measureText(ch).width + sp; }
+}
+async function makeScoreCard(scoreLine, subLine) {
+  const W = 1200, H = 630;
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const x = cv.getContext('2d');
+  try { if (document.fonts && document.fonts.load) await document.fonts.load('600 62px "Playfair Display"'); } catch (e) {}
+  const A = SHARE_CARD.accent;
+  x.fillStyle = '#070b14'; x.fillRect(0, 0, W, H);
+  const g1 = x.createRadialGradient(220, 60, 40, 220, 60, 620);
+  g1.addColorStop(0, _hexA(A, 0.30)); g1.addColorStop(1, 'rgba(0,0,0,0)');
+  x.fillStyle = g1; x.fillRect(0, 0, W, H);
+  x.strokeStyle = 'rgba(255,255,255,0.035)'; x.lineWidth = 1;
+  for (let gx = 30; gx < W; gx += 60) { x.beginPath(); x.moveTo(gx, 0); x.lineTo(gx, H); x.stroke(); }
+  for (let gy = 30; gy < H; gy += 60) { x.beginPath(); x.moveTo(0, gy); x.lineTo(W, gy); x.stroke(); }
+  const vg = x.createRadialGradient(W / 2, H / 2, 240, W / 2, H / 2, 760);
+  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.55)');
+  x.fillStyle = vg; x.fillRect(0, 0, W, H);
+  x.fillStyle = 'rgba(212,175,55,0.9)'; x.fillRect(0, 0, W, 3);
+  // screenshot inset, right side
+  const sw = 540, sh = 304, sx = W - 56 - sw, sy = (H - sh) / 2 - 14;
+  x.save();
+  x.shadowColor = _hexA(A, 0.45); x.shadowBlur = 42;
+  _rr(x, sx, sy, sw, sh, 14);
+  x.fillStyle = '#0b1220'; x.fill();
+  x.restore();
+  if (__shot) { x.save(); _rr(x, sx, sy, sw, sh, 14); x.clip(); x.drawImage(__shot, sx, sy, sw, sh); x.restore(); }
+  x.strokeStyle = 'rgba(212,175,55,0.55)'; x.lineWidth = 2; _rr(x, sx, sy, sw, sh, 14); x.stroke();
+  // title + tag
+  x.textAlign = 'left'; x.textBaseline = 'alphabetic';
+  x.fillStyle = '#f7f4ec';
+  x.font = '600 62px "Playfair Display", Georgia, serif';
+  x.fillText(SHARE_CARD.name, 56, 116);
+  x.fillStyle = _hexA(A, 0.95);
+  x.font = '600 19px "Inter", "Segoe UI", system-ui, sans-serif';
+  _spacedL(x, SHARE_CARD.tag.toUpperCase(), 58, 148, 7);
+  // score (auto-shrink to fit the left zone)
+  const sl = String(scoreLine);
+  let spx = 140;
+  x.font = '800 ' + spx + 'px "Segoe UI", system-ui, -apple-system, sans-serif';
+  while (spx > 56 && x.measureText(sl).width > 520) { spx -= 6; x.font = '800 ' + spx + 'px "Segoe UI", system-ui, -apple-system, sans-serif'; }
+  x.shadowColor = _hexA(A, 0.55); x.shadowBlur = 46;
+  x.fillStyle = '#ffffff';
+  x.fillText(sl, 50, 396);
+  x.shadowBlur = 0;
+  x.fillStyle = 'rgba(222,230,248,0.92)';
+  x.font = '500 29px "Segoe UI", system-ui, sans-serif';
+  x.fillText(subLine, 56, 448);
+  x.fillStyle = '#ffd166';
+  x.font = '600 26px "Segoe UI", system-ui, sans-serif';
+  x.fillText('ds-da.ca/games/' + SHARE_CARD.id, 56, 490);
+  // DSDA lockup
+  x.fillStyle = '#f7f4ec';
+  x.font = '600 30px "Playfair Display", Georgia, serif';
+  x.fillText('DSDA', 56, 594);
+  const dw = x.measureText('DSDA').width;
+  x.fillStyle = '#d4af37';
+  x.font = '600 14px "Inter", "Segoe UI", sans-serif';
+  _spacedL(x, 'ARCADE', 58 + dw + 12, 592, 5);
+  x.fillStyle = _hexA(A, 0.85); x.fillRect(0, H - 3, W, 3);
+  return cv;
+}
+async function shareScore(){
+  if (S.phase !== 'over') return;
+  const s = (S.lastTotal === undefined) ? 0 : S.lastTotal;
+  const text = shareText(s.toLocaleString());
+  const payload = { title: 'STUNTS — DSDA Arcade', text, url: SHARE_URL };
+  if (navigator.share) {
+    let files = null;
+    try {
+      const cv = await makeScoreCard(s.toLocaleString(), '3 runs · think you can beat me?');
+      const blob = await new Promise(res => cv.toBlob(res, 'image/png'));
+      if (blob) {
+        const f = [new File([blob], 'stunts-score.png', { type: 'image/png' })];
+        if (!navigator.canShare || navigator.canShare(Object.assign({ files: f }, payload))) files = f;
+      }
+    } catch (e) { files = null; }
+    try {
+      if (files) payload.files = files;
+      await navigator.share(payload);
+      $('goShareMsg').textContent = 'Shared! Go flex it ✓';
+      return;
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;
+      if (files) {
+        delete payload.files;
+        try { await navigator.share(payload); $('goShareMsg').textContent = 'Shared! Go flex it ✓'; return; }
+        catch (e2) { if (e2 && e2.name === 'AbortError') return; }
+      }
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(text + ' ' + SHARE_URL);
+    $('goShareMsg').textContent = 'Copied! Paste it anywhere ✓';
+  } catch (e) {
+    window.prompt('Copy your score share:', text + ' ' + SHARE_URL);
+  }
+}
+
 /* ============================== GAME OVER + LEADERBOARD ============================== */
 const BOARD_API = 'https://api.ds-da.ca/api/board';
 const SCORE_SECRET = '6216cf68f4e077d3cd991f2d6bd3e878';
@@ -2234,6 +2364,8 @@ function showGameOver(total, isBest){
     '<div class="go-run"><div class="r-lbl">RUN ' + (i+1) + '</div><div class="r-val">' + s.toLocaleString() + '</div></div>'
   ).join('');
   $('goSaveMsg').textContent = '';
+  $('goShareMsg').textContent = '';
+  S.lastTotal = total;
   $('goSave').disabled = false;
   $('goSave').style.opacity = '1';
   $('goInitials').readOnly = false;
@@ -2258,6 +2390,7 @@ function saveScore(){
   });
 }
 $('goSave').addEventListener('click', saveScore);
+  $('goShare').addEventListener('click', shareScore);
 $('goInitials').addEventListener('keydown', e => { if (e.key === 'Enter') saveScore(); });
 $('goAgain').addEventListener('click', () => {
   $('gameover').classList.add('hidden');
@@ -2447,6 +2580,12 @@ window.__tl = {
   finishRun(score){ S.score = score; S.runEnded = false; endRun(); },
   pose(){ return { handL:{...poseCur.handL}, handR:{...poseCur.handR}, footL:{...poseCur.footL}, footR:{...poseCur.footR}, lean:poseCur.lean }; },
   runs(){ return { runNumber:S.runNumber, runScores:[...S.runScores], runEnded:S.runEnded, score:S.score, best:S.best }; },
+  async shareCard(s){
+    const sc = (s === undefined) ? (S.lastTotal || 0) : s;
+    try { return (await makeScoreCard(sc.toLocaleString(), '3 runs · think you can beat me?')).toDataURL('image/png'); }
+    catch(e){ return 'err:' + e; }
+  },
+  shareText: () => shareText((S.lastTotal || 0).toLocaleString()),
   boardHTML(){ return $('goBoard').innerHTML; },
   voices(){ return { crash: AU.voices.crash.length, land: AU.voices.land.length, ac: !!AU.ac }; },
   speak(cat){ AU.speak(cat); },

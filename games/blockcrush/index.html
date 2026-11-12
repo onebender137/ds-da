@@ -18,11 +18,11 @@ DEPLOYMENT:
 <meta property="og:url" content="https://ds-da.ca/games/blockcrush/" />
 <meta property="og:title" content="Play BlockCrush at ds-da.ca" />
 <meta property="og:description" content="Crush neon blocks — match 3+, forge Blasters, Novas and Prisms, chain mega combos and ride FEVER ×2 through a never-ending level frontier. Free in your browser." />
-<meta property="og:image" content="https://ds-da.ca/games/blockcrush/screenshot.png" />
+<meta property="og:image" content="https://ds-da.ca/games/blockcrush/og.png" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Play BlockCrush at ds-da.ca" />
 <meta name="twitter:description" content="Candy-Crush-style match-3 with neon blocks, combo recipes and FEVER mode." />
-<meta name="twitter:image" content="https://ds-da.ca/games/blockcrush/screenshot.png" />
+<meta name="twitter:image" content="https://ds-da.ca/games/blockcrush/og.png" />
 <meta name="description" content="Crush neon blocks — match 3+, forge Blasters, Novas and Prisms, chain mega combos and ride FEVER ×2 through a never-ending level frontier. The classic candy match-3, our take. Play free in your browser." />
 <link rel="canonical" href="https://ds-da.ca/games/blockcrush/" />
 <script type="application/ld+json">
@@ -32,7 +32,7 @@ DEPLOYMENT:
   "name": "BlockCrush",
   "description": "Candy-Crush-style match-3 with neon blocks, combo recipes and FEVER mode. Free in your browser.",
   "url": "https://ds-da.ca/games/blockcrush/",
-  "image": "https://ds-da.ca/games/blockcrush/screenshot.png",
+  "image": "https://ds-da.ca/games/blockcrush/og.png",
   "genre": "Puzzle",
   "playUrl": "https://ds-da.ca/games/blockcrush/",
   "applicationCategory": "Game",
@@ -273,6 +273,9 @@ details[open] summary::after{transform:rotate(180deg)}
 }
 @media (prefers-reduced-motion:reduce){.logo,#veil .logo,.btn.primary,#grain,#feverBadge{animation:none}}
 </style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body data-state="boot">
 <script>
@@ -1767,80 +1770,99 @@ function saveScore(prefix){
 }
 
 // ---- share score (canvas hero card) ----
-function shareText(s){
-  return 'I crushed '+fmt(s)+' on level '+currentLevel+' in BlockCrush — think you can beat me? try here -> '+SHARE_URL;
+// ---------------- share score (DSDA house card) ----------------
+const SHARE_CARD = { name: 'BLOCKCRUSH', tag: 'Candy-Crush · Neon Match-3', id: 'blockcrush', accent: 0xff4757 };
+function shareText(s) {
+  return 'I crushed ' + fmt(s) + ' on level ' + currentLevel + ' in BlockCrush — think you can beat me? \ud83c\udf6c';
 }
-function _bcSpaced(x,text,cx,y,sp){
-  if('letterSpacing' in x){x.letterSpacing=sp+'px';x.fillText(text,cx,y);x.letterSpacing='0px';return;}
-  let w=0;
-  for(const ch of text)w+=x.measureText(ch).width+sp;
-  w-=sp;
-  let px=cx-w/2;
-  const prev=x.textAlign;
-  x.textAlign='left';
-  for(const ch of text){x.fillText(ch,px,y);px+=x.measureText(ch).width+sp;}
-  x.textAlign=prev;
-}
-function _bcRr(x,px,py,w,h,r){
-  if(x.roundRect){x.beginPath();x.roundRect(px,py,w,h,r);return;}
-  x.beginPath();x.moveTo(px+r,py);
-  x.arcTo(px+w,py,px+w,py+h,r);
-  x.arcTo(px+w,py+h,px,py+h,r);
-  x.arcTo(px,py+h,px,py,r);
-  x.arcTo(px,py,px+w,py,r);
+let __shot = null;
+(function(){ const im = new Image(); im.onload = () => { __shot = im; }; im.src = 'screenshot.png'; })();
+function _hexA(c, a){ return 'rgba(' + (c >> 16 & 255) + ',' + (c >> 8 & 255) + ',' + (c & 255) + ',' + a + ')'; }
+function _rr(x, px, py, w, h, r) {
+  if (x.roundRect) { x.beginPath(); x.roundRect(px, py, w, h, r); return; }
+  x.beginPath();
+  x.moveTo(px + r, py);
+  x.arcTo(px + w, py, px + w, py + h, r);
+  x.arcTo(px + w, py + h, px + w, py + h - r, r);
+  x.arcTo(px + w, py + h, px, py + h, r);
+  x.arcTo(px, py + h, px, py + h - r, r);
+  x.arcTo(px, py + r, px, py, r);
+  x.arcTo(px, py, px + r, py, r);
   x.closePath();
 }
-function makeScoreCard(s,level,stars){
-  const W=1200,H=630;
-  const cv=document.createElement('canvas');
-  cv.width=W;cv.height=H;
-  const x=cv.getContext('2d');
-  x.fillStyle='#070312';x.fillRect(0,0,W,H);
-  const vg=x.createRadialGradient(W/2,H/2,120,W/2,H/2,760);
-  vg.addColorStop(0,'rgba(120,40,160,0.30)');
-  vg.addColorStop(1,'rgba(0,0,0,0.62)');
-  x.fillStyle=vg;x.fillRect(0,0,W,H);
-  const rg=x.createLinearGradient(0,0,0,96);
-  rg.addColorStop(0,'rgba(255,45,120,0.42)');
-  rg.addColorStop(1,'rgba(34,217,255,0)');
-  x.fillStyle=rg;x.fillRect(0,0,W,96);
-  x.fillStyle='rgba(255,45,120,0.85)';x.fillRect(0,0,W,6);
-  // neon block strip under the header
-  const cols=['#ff2d78','#22d9ff','#8aff3c','#ffb020','#b45bff','#3f6dff'];
-  for(let i=0;i<22;i++){
-    _bcRr(x,72+i*50,112,38,38,9);
-    x.fillStyle=cols[i%6];x.fill();
-    x.fillStyle='rgba(255,255,255,0.35)';
-    _bcRr(x,78+i*50,118,26,10,5);x.fill();
-  }
-  x.textAlign='center';x.textBaseline='alphabetic';
-  x.fillStyle='#f2edff';
-  x.font='700 84px "Bungee","Arial Black",sans-serif';
-  _bcSpaced(x,'BLOCK CRUSH',W/2,272,6);
-  x.fillStyle='#9d92c4';
-  x.font='800 26px "Rubik",system-ui,sans-serif';
-  _bcSpaced(x,'DSDA ARCADE',W/2,318,14);
-  x.fillStyle='#ffb020';
-  x.font='700 150px "Bungee","Arial Black",sans-serif';
-  x.shadowColor='rgba(255,176,32,0.55)';x.shadowBlur=34;
-  x.fillText(fmt(s),W/2,478);
-  x.shadowBlur=0;
-  const starStr=stars?Array.from({length:3},(_,i)=>i<stars?'★':'☆').join('  '):'';
-  x.fillStyle='#22d9ff';
-  x.font='800 30px "Rubik",system-ui,sans-serif';
-  x.fillText('LEVEL '+(level||1)+(starStr?'   '+starStr:''),W/2,540);
-  x.fillStyle='#9d92c4';
-  x.font='700 24px "Rubik",system-ui,sans-serif';
-  _bcSpaced(x,'ds-da.ca/games/blockcrush',W/2,592,4);
+function _spacedL(x, text, px, y, sp) {
+  if ('letterSpacing' in x) { x.letterSpacing = sp + 'px'; x.fillText(text, px, y); x.letterSpacing = '0px'; return; }
+  for (const ch of text) { x.fillText(ch, px, y); px += x.measureText(ch).width + sp; }
+}
+async function makeScoreCard(scoreLine, subLine) {
+  const W = 1200, H = 630;
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const x = cv.getContext('2d');
+  try { if (document.fonts && document.fonts.load) await document.fonts.load('600 62px "Playfair Display"'); } catch (e) {}
+  const A = SHARE_CARD.accent;
+  x.fillStyle = '#070b14'; x.fillRect(0, 0, W, H);
+  const g1 = x.createRadialGradient(220, 60, 40, 220, 60, 620);
+  g1.addColorStop(0, _hexA(A, 0.30)); g1.addColorStop(1, 'rgba(0,0,0,0)');
+  x.fillStyle = g1; x.fillRect(0, 0, W, H);
+  x.strokeStyle = 'rgba(255,255,255,0.035)'; x.lineWidth = 1;
+  for (let gx = 30; gx < W; gx += 60) { x.beginPath(); x.moveTo(gx, 0); x.lineTo(gx, H); x.stroke(); }
+  for (let gy = 30; gy < H; gy += 60) { x.beginPath(); x.moveTo(0, gy); x.lineTo(W, gy); x.stroke(); }
+  const vg = x.createRadialGradient(W / 2, H / 2, 240, W / 2, H / 2, 760);
+  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.55)');
+  x.fillStyle = vg; x.fillRect(0, 0, W, H);
+  x.fillStyle = 'rgba(212,175,55,0.9)'; x.fillRect(0, 0, W, 3);
+  // screenshot inset, right side
+  const sw = 540, sh = 304, sx = W - 56 - sw, sy = (H - sh) / 2 - 14;
+  x.save();
+  x.shadowColor = _hexA(A, 0.45); x.shadowBlur = 42;
+  _rr(x, sx, sy, sw, sh, 14);
+  x.fillStyle = '#0b1220'; x.fill();
+  x.restore();
+  if (__shot) { x.save(); _rr(x, sx, sy, sw, sh, 14); x.clip(); x.drawImage(__shot, sx, sy, sw, sh); x.restore(); }
+  x.strokeStyle = 'rgba(212,175,55,0.55)'; x.lineWidth = 2; _rr(x, sx, sy, sw, sh, 14); x.stroke();
+  // title + tag
+  x.textAlign = 'left'; x.textBaseline = 'alphabetic';
+  x.fillStyle = '#f7f4ec';
+  x.font = '600 62px "Playfair Display", Georgia, serif';
+  x.fillText(SHARE_CARD.name, 56, 116);
+  x.fillStyle = _hexA(A, 0.95);
+  x.font = '600 19px "Inter", "Segoe UI", system-ui, sans-serif';
+  _spacedL(x, SHARE_CARD.tag.toUpperCase(), 58, 148, 7);
+  // score (auto-shrink to fit the left zone)
+  const sl = String(scoreLine);
+  let spx = 140;
+  x.font = '800 ' + spx + 'px "Segoe UI", system-ui, -apple-system, sans-serif';
+  while (spx > 56 && x.measureText(sl).width > 520) { spx -= 6; x.font = '800 ' + spx + 'px "Segoe UI", system-ui, -apple-system, sans-serif'; }
+  x.shadowColor = _hexA(A, 0.55); x.shadowBlur = 46;
+  x.fillStyle = '#ffffff';
+  x.fillText(sl, 50, 396);
+  x.shadowBlur = 0;
+  x.fillStyle = 'rgba(222,230,248,0.92)';
+  x.font = '500 29px "Segoe UI", system-ui, sans-serif';
+  x.fillText(subLine, 56, 448);
+  x.fillStyle = '#ffd166';
+  x.font = '600 26px "Segoe UI", system-ui, sans-serif';
+  x.fillText('ds-da.ca/games/' + SHARE_CARD.id, 56, 490);
+  // DSDA lockup
+  x.fillStyle = '#f7f4ec';
+  x.font = '600 30px "Playfair Display", Georgia, serif';
+  x.fillText('DSDA', 56, 594);
+  const dw = x.measureText('DSDA').width;
+  x.fillStyle = '#d4af37';
+  x.font = '600 14px "Inter", "Segoe UI", sans-serif';
+  _spacedL(x, 'ARCADE', 58 + dw + 12, 592, 5);
+  x.fillStyle = _hexA(A, 0.85); x.fillRect(0, H - 3, W, 3);
   return cv;
 }
+
 async function shareScore(prefix){
   const s=Math.round(score);
   const stars=state==='win'?lastStars:0;
   const text=shareText(s);
   const payload={title:'BlockCrush — DSDA Arcade',text,url:SHARE_URL};
   try{
-    const cv=makeScoreCard(s,currentLevel,stars);
+    const cv=await makeScoreCard(fmt(s),'Level '+currentLevel+' — think you can beat me?');
     if(navigator.share&&window.HTMLCanvasElement&&cv.toBlob){
       const blob=await new Promise(res=>cv.toBlob(b=>res(b),'image/png'));
       if(blob){
@@ -1859,7 +1881,7 @@ async function shareScore(prefix){
     }
   }catch(e){/* fall through to clipboard */}
   try{
-    await navigator.clipboard.writeText(text);
+    await navigator.clipboard.writeText(text + ' ' + SHARE_URL);
     showToast('<b>SCORE COPIED!</b> Paste it anywhere.');
     sfx.click();
   }catch(e){
@@ -1926,8 +1948,8 @@ window.__tl={
   showScores(){showScores();return'scores';},
   dataLayer(){return(window.dataLayer||[]).map(e=>Array.from(e));},
   shareText:()=>shareText(Math.round(score)),
-  shareCard(s){
-    try{return makeScoreCard(s===undefined?score:s,currentLevel,state==='win'?lastStars:0).toDataURL('image/png');}
+  async shareCard(s){
+    try{return (await makeScoreCard(fmt(s===undefined?score:s),'Level '+currentLevel+' — think you can beat me?')).toDataURL('image/png');}
     catch(e){return'err:'+e;}
   },
   reset(){enterMenu();return'menu';},

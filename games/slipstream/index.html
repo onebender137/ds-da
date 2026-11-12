@@ -9,11 +9,11 @@
 <meta property="og:url" content="https://ds-da.ca/games/slipstream/" />
 <meta property="og:title" content="Play Slipstream at ds-da.ca" />
 <meta property="og:description" content="Burnout-style highway racing. The car drives itself — steer left and right, tuck in behind traffic to slipstream and surge, dodge construction dirt, barriers and pedestrians. Fastest time to the flag wins. Radio on, windows down." />
-<meta property="og:image" content="https://ds-da.ca/games/slipstream/screenshot.png" />
+<meta property="og:image" content="https://ds-da.ca/games/slipstream/og.png" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Play Slipstream at ds-da.ca" />
 <meta name="twitter:description" content="Burnout-style highway draft racing. Steer, slipstream, dodge — fastest to the flag." />
-<meta name="twitter:image" content="https://ds-da.ca/games/slipstream/screenshot.png" />
+<meta name="twitter:image" content="https://ds-da.ca/games/slipstream/og.png" />
 <meta name="description" content="Burnout-style highway racing. The car drives itself — steer, slipstream behind traffic to surge, dodge dirt, barriers and pedestrians. Fastest time to the flag wins." />
 <link rel="canonical" href="https://ds-da.ca/games/slipstream/" />
 <script type="application/ld+json">
@@ -23,7 +23,7 @@
   "name": "Slipstream",
   "description": "Burnout-style highway racing. The car drives itself — steer, slipstream behind traffic to surge, dodge dirt, barriers and pedestrians. Fastest time to the flag wins.",
   "url": "https://ds-da.ca/games/slipstream/",
-  "image": "https://ds-da.ca/games/slipstream/screenshot.png",
+  "image": "https://ds-da.ca/games/slipstream/og.png",
   "genre": "Racing",
   "playUrl": "https://ds-da.ca/games/slipstream/",
   "applicationCategory": "Game",
@@ -194,6 +194,9 @@
     .menu-legend { display: none; }
   }
 </style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body class="menu-mode">
 <div id="fx"></div>
@@ -1484,54 +1487,92 @@ function saveToStorage(name, tMs) {
 }
 
 // ---------------- share ----------------
+// ---------------- share score (DSDA house card) ----------------
+const SHARE_CARD = { name: 'SLIPSTREAM', tag: 'Burnout-Style Highway Draft', id: 'slipstream', accent: 0xff8a3c };
 function shareText(tMs) {
-  return 'I ran ' + fmtClock(tMs) + ' in Slipstream — fastest to the flag. Think you can beat me? -> ' + SHARE_URL;
+  return 'I ran ' + fmtClock(tMs) + ' in Slipstream — fastest to the flag. Think you can beat me? \ud83c\udfc1';
 }
-function _shade(c) { const r = (c >> 16 & 255) * 0.4 | 0, g = (c >> 8 & 255) * 0.4 | 0, b = (c & 255) * 0.4 | 0; return 'rgb(' + r + ',' + g + ',' + b + ')'; }
-function _rr(x, px, py, w, h, r) { if (x.roundRect) { x.beginPath(); x.roundRect(px, py, w, h, r); return; } x.beginPath(); x.moveTo(px + r, py); x.arcTo(px + w, py, px + w, py + h, r); x.arcTo(px + w, py + h, px + py + h, py, r); x.arcTo(px, py + h, px, py, r); x.arcTo(px, py, px + w, py, px + w, py, r); x.closePath(); }
-function _spaced(x, text, cx, y, sp) { if ('letterSpacing' in x) { x.letterSpacing = sp + 'px'; x.fillText(text, cx, y); x.letterSpacing = '0px'; return; } let w = 0; for (const ch of text) w += x.measureText(ch).width + sp; w -= sp; let px = cx - w / 2; const prev = x.textAlign; x.textAlign = 'left'; for (const ch of text) { x.fillText(ch, px, y); px += x.measureText(ch).width + sp; } x.textAlign = prev; }
-function makeScoreCard(tMs) {
+let __shot = null;
+(function(){ const im = new Image(); im.onload = () => { __shot = im; }; im.src = 'screenshot.png'; })();
+function _hexA(c, a){ return 'rgba(' + (c >> 16 & 255) + ',' + (c >> 8 & 255) + ',' + (c & 255) + ',' + a + ')'; }
+function _rr(x, px, py, w, h, r) {
+  if (x.roundRect) { x.beginPath(); x.roundRect(px, py, w, h, r); return; }
+  x.beginPath();
+  x.moveTo(px + r, py);
+  x.arcTo(px + w, py, px + w, py + h, r);
+  x.arcTo(px + w, py + h, px + w, py + h - r, r);
+  x.arcTo(px + w, py + h, px, py + h, r);
+  x.arcTo(px, py + h, px, py + h - r, r);
+  x.arcTo(px, py + r, px, py, r);
+  x.arcTo(px, py, px + r, py, r);
+  x.closePath();
+}
+function _spacedL(x, text, px, y, sp) {
+  if ('letterSpacing' in x) { x.letterSpacing = sp + 'px'; x.fillText(text, px, y); x.letterSpacing = '0px'; return; }
+  for (const ch of text) { x.fillText(ch, px, y); px += x.measureText(ch).width + sp; }
+}
+async function makeScoreCard(scoreLine, subLine) {
   const W = 1200, H = 630;
-  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
   const x = cv.getContext('2d');
-  x.fillStyle = '#0a0710'; x.fillRect(0, 0, W, H);
-  const vg = x.createRadialGradient(W / 2, H / 2, 120, W / 2, H / 2, 720);
-  vg.addColorStop(0, 'rgba(255,138,61,0.30)');
-  vg.addColorStop(1, 'rgba(0,0,0,0.65)');
+  try { if (document.fonts && document.fonts.load) await document.fonts.load('600 62px "Playfair Display"'); } catch (e) {}
+  const A = SHARE_CARD.accent;
+  x.fillStyle = '#070b14'; x.fillRect(0, 0, W, H);
+  const g1 = x.createRadialGradient(220, 60, 40, 220, 60, 620);
+  g1.addColorStop(0, _hexA(A, 0.30)); g1.addColorStop(1, 'rgba(0,0,0,0)');
+  x.fillStyle = g1; x.fillRect(0, 0, W, H);
+  x.strokeStyle = 'rgba(255,255,255,0.035)'; x.lineWidth = 1;
+  for (let gx = 30; gx < W; gx += 60) { x.beginPath(); x.moveTo(gx, 0); x.lineTo(gx, H); x.stroke(); }
+  for (let gy = 30; gy < H; gy += 60) { x.beginPath(); x.moveTo(0, gy); x.lineTo(W, gy); x.stroke(); }
+  const vg = x.createRadialGradient(W / 2, H / 2, 240, W / 2, H / 2, 760);
+  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.55)');
   x.fillStyle = vg; x.fillRect(0, 0, W, H);
-  // road stripes
-  for (let i = 0; i < 14; i++) { x.fillStyle = i % 2 ? 'rgba(255,179,71,0.14)' : 'rgba(255,61,90,0.12)'; x.fillRect(i * 90, 0, 45, 90); }
-  const rg = x.createLinearGradient(0, 0, 0, 90);
-  rg.addColorStop(0, 'rgba(255,179,71,0.4)'); rg.addColorStop(1, 'rgba(255,61,90,0)');
-  x.fillStyle = rg; x.fillRect(0, 0, W, 90);
-  x.fillStyle = 'rgba(255,179,71,0.85)'; x.fillRect(0, 0, W, 6);
-  x.textAlign = 'center'; x.textBaseline = 'alphabetic';
+  x.fillStyle = 'rgba(212,175,55,0.9)'; x.fillRect(0, 0, W, 3);
+  // screenshot inset, right side
+  const sw = 540, sh = 304, sx = W - 56 - sw, sy = (H - sh) / 2 - 14;
+  x.save();
+  x.shadowColor = _hexA(A, 0.45); x.shadowBlur = 42;
+  _rr(x, sx, sy, sw, sh, 14);
+  x.fillStyle = '#0b1220'; x.fill();
+  x.restore();
+  if (__shot) { x.save(); _rr(x, sx, sy, sw, sh, 14); x.clip(); x.drawImage(__shot, sx, sy, sw, sh); x.restore(); }
+  x.strokeStyle = 'rgba(212,175,55,0.55)'; x.lineWidth = 2; _rr(x, sx, sy, sw, sh, 14); x.stroke();
+  // title + tag
+  x.textAlign = 'left'; x.textBaseline = 'alphabetic';
+  x.fillStyle = '#f7f4ec';
+  x.font = '600 62px "Playfair Display", Georgia, serif';
+  x.fillText(SHARE_CARD.name, 56, 116);
+  x.fillStyle = _hexA(A, 0.95);
+  x.font = '600 19px "Inter", "Segoe UI", system-ui, sans-serif';
+  _spacedL(x, SHARE_CARD.tag.toUpperCase(), 58, 148, 7);
+  // score (auto-shrink to fit the left zone)
+  const sl = String(scoreLine);
+  let spx = 140;
+  x.font = '800 ' + spx + 'px "Segoe UI", system-ui, -apple-system, sans-serif';
+  while (spx > 56 && x.measureText(sl).width > 520) { spx -= 6; x.font = '800 ' + spx + 'px "Segoe UI", system-ui, -apple-system, sans-serif'; }
+  x.shadowColor = _hexA(A, 0.55); x.shadowBlur = 46;
   x.fillStyle = '#ffffff';
-  x.font = '800 84px "Segoe UI", system-ui, -apple-system, sans-serif';
-  _spaced(x, 'SLIPSTREAM', W / 2, 224, 12);
-  x.fillStyle = 'rgba(244,240,255,0.8)';
-  x.font = '600 24px "Segoe UI", system-ui, sans-serif';
-  _spaced(x, 'HIGHWAY DRAFT · FASTEST TO THE FLAG', W / 2, 262, 8);
-  const bw = 360, bh = 56, bx = W / 2 - bw / 2, by = 292;
-  _rr(x, bx, by, bw, bh, 28);
-  x.fillStyle = 'rgba(53,230,255,0.10)'; x.fill();
-  x.strokeStyle = '#35e6ff'; x.lineWidth = 2.5; x.stroke();
-  x.fillStyle = '#35e6ff';
-  x.font = '700 26px "Segoe UI", system-ui, sans-serif';
-  _spaced(x, '🏁 FINISH TIME', W / 2, by + 38, 5);
-  x.shadowColor = 'rgba(255,179,71,0.55)'; x.shadowBlur = 45;
-  x.fillStyle = '#ffffff';
-  x.font = '800 140px "Segoe UI", system-ui, sans-serif';
-  x.fillText(fmtClock(tMs), W / 2, 486);
+  x.fillText(sl, 50, 396);
   x.shadowBlur = 0;
-  x.fillStyle = 'rgba(243,237,255,0.95)';
-  x.font = '500 34px "Segoe UI", system-ui, sans-serif';
-  x.fillText('Think you can beat me?', W / 2, 540);
-  x.fillStyle = '#ffb347';
-  x.font = '600 30px "Segoe UI", system-ui, sans-serif';
-  x.fillText('ds-da.ca/games/slipstream', W / 2, 582);
+  x.fillStyle = 'rgba(222,230,248,0.92)';
+  x.font = '500 29px "Segoe UI", system-ui, sans-serif';
+  x.fillText(subLine, 56, 448);
+  x.fillStyle = '#ffd166';
+  x.font = '600 26px "Segoe UI", system-ui, sans-serif';
+  x.fillText('ds-da.ca/games/' + SHARE_CARD.id, 56, 490);
+  // DSDA lockup
+  x.fillStyle = '#f7f4ec';
+  x.font = '600 30px "Playfair Display", Georgia, serif';
+  x.fillText('DSDA', 56, 594);
+  const dw = x.measureText('DSDA').width;
+  x.fillStyle = '#d4af37';
+  x.font = '600 14px "Inter", "Segoe UI", sans-serif';
+  _spacedL(x, 'ARCADE', 58 + dw + 12, 592, 5);
+  x.fillStyle = _hexA(A, 0.85); x.fillRect(0, H - 3, W, 3);
   return cv;
 }
+
 async function shareScore() {
   if (phase !== 'finish') return;
   const text = shareText(finishTime);
@@ -1539,7 +1580,7 @@ async function shareScore() {
   if (navigator.share) {
     let files = null;
     try {
-      const cv = makeScoreCard(finishTime);
+      const cv = await makeScoreCard(fmtClock(finishTime), 'Fastest to the flag — think you can beat me?');
       const blob = await new Promise(res => cv.toBlob(res, 'image/png'));
       if (blob) {
         const f = [new File([blob], 'slipstream-time.png', { type: 'image/png' })];
@@ -1561,7 +1602,7 @@ async function shareScore() {
     }
   }
   try {
-    await navigator.clipboard.writeText(text);
+    await navigator.clipboard.writeText(text + ' ' + SHARE_URL);
     elShareMsg.textContent = 'Copied! Paste it anywhere ✓';
   } catch (e) {
     window.prompt('Copy your time share:', text);
@@ -2071,6 +2112,12 @@ window.__tl = {
     };
   },
   reset: startRace,
+  async shareCard(tMs){
+    const t = (tMs === undefined) ? finishTime : tMs;
+    try { return (await makeScoreCard(fmtClock(t), 'Fastest to the flag — think you can beat me?')).toDataURL('image/png'); }
+    catch(e){ return 'err:' + e; }
+  },
+  shareText: () => shareText(finishTime),
 };
 
 try {
