@@ -1,9 +1,17 @@
 {
-  "updated": 1794530000000,
-  "top": [],
+  "updated": 1794452216774,
+  "top": [
+    {
+      "n": "TST",
+      "s": 615,
+      "d": 1794452216774
+    }
+  ],
   "stats": {
-    "saves": 0,
-    "players": 0,
-    "initials": []
+    "saves": 1,
+    "players": 1,
+    "initials": [
+      "TST"
+    ]
   }
 }
