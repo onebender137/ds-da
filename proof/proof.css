@@ -1255,3 +1255,10 @@ html.dark ::-webkit-scrollbar-thumb:hover {
     transition: background 0.2s, border-color 0.2s;
 }
 .btn-secondary:hover { border-color: var(--gold); color: var(--gold); }
+
+/* --- wallet backup confirm --- */
+.wallet-confirm { display: flex; gap: 10px; align-items: flex-start; margin-top: 16px; font-size: 0.85rem; line-height: 1.45; color: var(--text); cursor: pointer; }
+.wallet-confirm input { margin-top: 3px; accent-color: var(--gold); flex-shrink: 0; }
+#walletDoneBtn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+.modal.shake { animation: walletShake .4s; }
+@keyframes walletShake { 20%,60% { transform: translateX(-6px); } 40%,80% { transform: translateX(6px); } }
