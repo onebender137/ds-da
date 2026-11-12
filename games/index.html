@@ -134,7 +134,7 @@
     <script>
       // Live play counters — totals aggregated from each game's leaderboard
       (function () {
-        var boards = ['dropblock/leaderboard.json', 'shatterblock/leaderboard.json', 'popper/leaderboard.json', 'slipstream/leaderboard.json', 'stunts/leaderboard.json', 'blockcrush/leaderboard.json', 'plumber-bob/leaderboard.json', 'dragon-slalom/leaderboard.json'];
+        var boards = ['dropblock/leaderboard.json', 'shatterblock/leaderboard.json', 'popper/leaderboard.json', 'slipstream/leaderboard.json', 'stunts/leaderboard.json', 'blockcrush/leaderboard.json', 'plumber-bob/leaderboard.json', 'dragon-slalom/leaderboard.json', 'tappycat/leaderboard.json'];
         Promise.all(boards.map(function (url) {
           return fetch(url, { cache: 'no-store' }).then(function (r) { return r.json(); }).catch(function () { return null; });
         })).then(function (results) {
@@ -220,19 +220,25 @@
           board: 'dragon-slalom/leaderboard.json', dark: false, accent: 0x2dd4bf
         },
         {
+          id: 'tappycat', name: 'TappyCat', tag: 'Flap Runner · Cucumber Combos',
+          desc: 'Chase the mocking bird through a neon night city. Flap, land on cucumbers, chain combos, dodge the flying superdog and pounce the bird for +10. Jazz included.',
+          shot: 'tappycat/screenshot.png', url: 'tappycat/',
+          board: 'tappycat/leaderboard.json', dark: false, accent: 0xff2e88
+        },
+        {
           id: 'soon', name: 'Coming Soon', tag: 'Next game in development',
           desc: 'A new cabinet is being built in the DSDA workshop. The screen stays dark until it\u2019s ready.',
           shot: null, url: null, board: null, dark: true, accent: 0x64748b
         }
       ];
 
-      // infinite row: repeating 9-game pattern (8 live + Coming Soon).
-      // NUM_CABS spans two full cycles + the centre (p = -9..+9) so every game
+      // infinite row: repeating 10-game pattern (9 live + Coming Soon).
+      // NUM_CABS spans two full cycles + the centre (p = -10..+10) so every game
       // appears on BOTH sides of the centre — without this the right edge ends
-      // at Plumber Bob and Dragon Slalom / Coming Soon only exist on the left.
-      const NUM_CABS = 19;
+      // at TappyCat and Coming Soon only exists on the left.
+      const NUM_CABS = 21;
       const SPACING = 2.3;
-      const CYCLE_W = SPACING * 9;          // 20.7 — wrap distance (9-game cycle)
+      const CYCLE_W = SPACING * 10;         // 23.0 — wrap distance (10-game cycle)
       const CAM_DIST = 5.9;
       const DRIFT = 0.22;                   // units/sec auto-scroll
 
@@ -625,7 +631,7 @@
       function buildCabinets() {
         for (let i = 0; i < NUM_CABS; i++) {
           const x = (i - (NUM_CABS - 1) / 2) * SPACING;
-          const game = GAMES[(((i - (NUM_CABS - 1) / 2) % 9) + 9) % 9];
+          const game = GAMES[(((i - (NUM_CABS - 1) / 2) % 10) + 10) % 10];
           cabinets.push(makeCabinet(game, x));
         }
       }
