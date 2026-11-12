@@ -1237,6 +1237,7 @@ function shareText(s) {
 let __shot = null;
 (function(){ const im = new Image(); im.onload = () => { __shot = im; }; im.src = 'screenshot.png'; })();
 function _hexA(c, a){ return 'rgba(' + (c >> 16 & 255) + ',' + (c >> 8 & 255) + ',' + (c & 255) + ',' + a + ')'; }
+function _hex(c) { return '#' + c.toString(16).padStart(6, '0'); }
 function _rr(x, px, py, w, h, r) {
   if (x.roundRect) { x.beginPath(); x.roundRect(px, py, w, h, r); return; }
   x.beginPath();
