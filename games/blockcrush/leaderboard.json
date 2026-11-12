@@ -1,9 +1,17 @@
 {
-  "updated": 0,
-  "top": [],
+  "updated": 1794442946312,
+  "top": [
+    {
+      "n": "AKH",
+      "s": 12900,
+      "d": 1794442946312
+    }
+  ],
   "stats": {
-    "saves": 0,
-    "players": 0,
-    "initials": []
+    "saves": 1,
+    "players": 1,
+    "initials": [
+      "AKH"
+    ]
   }
 }
