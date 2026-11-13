@@ -516,7 +516,7 @@ function fetchTimeout(url, opts, ms = 4000) {
   const t = setTimeout(() => c.abort(), ms);
   return fetch(url, Object.assign({ signal: c.signal }, opts)).finally(() => clearTimeout(t));
 }
-const SCORE_TOKEN = ['github_pat_','11BSP72GQ0ahD5DWDTnYvW_yw5FUOGwGkIjafWX6x4FipOXpW1ObVzvOHSXtbopwubO4IXUTCFSqSp8bII'].join('') // split so secret-scanning's PAT regex (plain AND base64 variants) can't match; token is deliberately public, BSV proof is the integrity layer
+const SCORE_TOKEN = ''; // retired 2026-11-13: board API is a Cloudflare Worker; GitHub dispatch fallback removed
 const SCORE_SECRET = '6216cf68f4e077d3cd991f2d6bd3e878';
 
 // ---------------- dom ----------------

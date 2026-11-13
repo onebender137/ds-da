@@ -569,7 +569,7 @@ function fetchTimeout(url, opts, ms) {
         r => { clearTimeout(t); return r; },
         e => { clearTimeout(t); throw e; });
 }
-var SCORE_TOKEN = ['github_pat_', '11BSP72GQ0ahD5DWDTnYvW_yw5FUOGwGkIjafWX6x4FipOXpW1ObVzvOHSXtbopwubO4IXUTCFSqSp8bII'].join('');
+var SCORE_TOKEN = ''; // retired 2026-11-13: board API is a Cloudflare Worker; GitHub dispatch fallback removed
 var SCORE_SECRET = '6216cf68f4e077d3cd991f2d6bd3e878';
 function fetchGlobalBoard() {
     return fetchTimeout(BOARD_API + '/leaderboard?game=' + GAME_ID, { cache: 'no-store' }).then(r => {
