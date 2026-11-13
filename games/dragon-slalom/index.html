@@ -165,6 +165,8 @@ input:focus{border-color:var(--gold);box-shadow:0 0 15px rgba(255,203,99,.28)}
   .grid{gap:4px}.grid b{font-size:13px}.grid i{font-size:7px}
   #pearlsCard{display:none}
 }
+  #name::placeholder { opacity: 0.4; }
+  #saveBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 </style>
 </head>
 <body>
@@ -238,7 +240,7 @@ input:focus{border-color:var(--gold);box-shadow:0 0 15px rgba(255,203,99,.28)}
       <div><b id="stTime" style="color:var(--info)">0</b><i>SECONDS</i></div>
     </div>
     <div class="sec" style="margin-top:4px">YOUR INITIALS</div>
-    <input id="name" maxlength="3" placeholder="WYM" style="text-transform:uppercase">
+    <input id="name" maxlength="3" placeholder="ABC" style="text-transform:uppercase">
     <button class="btn gold" id="saveBtn" onclick="Game.save()">SAVE SCORE</button>
     <div id="saveMsg"></div>
     <button class="btn" id="shareBtn" onclick="Game.share()">SHARE SCORE</button>
@@ -481,6 +483,10 @@ function fetchTimeout(url,opts,ms){
 }
 var SCORE_TOKEN=''; // retired 2026-11-13: board API is a Cloudflare Worker; GitHub dispatch fallback removed
 var SCORE_SECRET="6216cf68f4e077d3cd991f2d6bd3e878";
+var DSDA_INITS_KEY="dsda-initials";
+function dsdaInits(){try{return (localStorage.getItem(DSDA_INITS_KEY)||"").toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,3);}catch(e){return "";}}
+function setSaveEnabled(){$("saveBtn").disabled=!$("name").value.replace(/[^a-zA-Z0-9]/g,"").trim();}
+$("name").addEventListener("input",function(){$("name").value=$("name").value.toUpperCase().replace(/[^A-Z0-9]/g,"");setSaveEnabled();});
 function fetchGlobalBoard(){
   return fetchTimeout(BOARD_API+"/leaderboard?game="+GAME_ID,{cache:"no-store"}).then(function(r){
     if(!r.ok)throw new Error("http-"+r.status);
@@ -817,13 +823,13 @@ function finishRun(){
   $("stClose").textContent=S.stats.close;$("stMiss").textContent=S.stats.miss;$("stCombo").textContent=S.bestCombo;
   $("stPearls").textContent=S.pearls+"/"+orbs.length;$("stTime").textContent=S.elapsed.toFixed(1);
   $("saveMsg").textContent="";$("shareMsg").textContent="";
-  showPanel("endPanel");
+  $("name").value=dsdaInits();setSaveEnabled();showPanel("endPanel");
 }
 function showPanel(id){$("shade").classList.toggle("hide",!id);["menu","pausePanel","endPanel","scoresPanel"].forEach(function(p){$(p).classList.toggle("hide",p!==id);});}
 function saveScore(){
   if(S.saved)return;
-  var init=$("name").value.trim().toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,3)||"WYM";
-  $("name").value=init;store("ds.lastName",init);
+  var init=$("name").value.trim().toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,3)||dsdaInits();if(!init){$("saveMsg").textContent="ENTER YOUR INITIALS";$("name").focus();return;}
+  $("name").value=init;store("ds.lastName",init);try{localStorage.setItem(DSDA_INITS_KEY,init);}catch(e){}
   var l=scores();l.push({name:init,score:S.score,diff:DIFF[S.diff].label,time:+S.elapsed.toFixed(1),pearls:S.pearls,date:Date.now()});
   l.sort(function(a,b){return b.score-a.score||a.time-b.time;});try{store(LB,JSON.stringify(l.slice(0,50)));}catch(e){}
   S.saved=true;$("saveBtn").disabled=true;$("saveBtn").textContent="SAVED ✓";paintBoard($("endBoard"));$("endBoard").classList.remove("hide");

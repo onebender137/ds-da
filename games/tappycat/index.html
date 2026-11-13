@@ -387,6 +387,8 @@
         caret-color: var(--pink);
     }
     #name-input:focus { box-shadow: 0 0 18px rgba(0,240,255,0.7); }
+    #name-input::placeholder { color: var(--cyan); opacity: 0.4; }
+    #save-score-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
     .msg-line {
         font-family: 'Press Start 2P', monospace;
@@ -453,7 +455,7 @@
             <div id="final-best">BEST 0</div>
             <div id="initials-entry" class="hidden">
                 <div class="entry-label">ENTER YOUR INITIALS</div>
-                <input type="text" id="name-input" maxlength="3" placeholder="AAA" autocomplete="off" spellcheck="false">
+                <input type="text" id="name-input" maxlength="3" placeholder="ABC" autocomplete="off" spellcheck="false">
                 <button class="btn secondary" id="save-score-btn">SAVE</button>
             </div>
             <div id="save-msg" class="msg-line"></div>
@@ -536,6 +538,9 @@ const finalBestEl    = document.getElementById('final-best');
 const newRecordEl    = document.getElementById('new-record');
 const initialsEntry  = document.getElementById('initials-entry');
 const nameInput      = document.getElementById('name-input');
+const DSDA_INITS_KEY = 'dsda-initials';
+const dsdaInits = () => { try { return (localStorage.getItem(DSDA_INITS_KEY) || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3); } catch (e) { return ''; } };
+function setSaveEnabled() { document.getElementById('save-score-btn').disabled = !nameInput.value.trim(); }
 const leaderboardList = document.getElementById('leaderboard-list');
 const startLeaderboard = document.getElementById('start-leaderboard');
 const mockBubble     = document.getElementById('mock-bubble');
@@ -829,6 +834,7 @@ function init() {
     shareBtn.addEventListener('click', shareScore);
     nameInput.addEventListener('input', () => {
         nameInput.value = nameInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        setSaveEnabled();
     });
     nameInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') saveScore();
@@ -1908,7 +1914,8 @@ function gameOver(reason) {
     const lb = getLeaderboard();
     const qualifies = score > 0 && (lb.length < 10 || score > lb[lb.length - 1].score);
     initialsEntry.classList.toggle('hidden', !qualifies);
-    nameInput.value = '';
+    nameInput.value = dsdaInits();
+    setSaveEnabled();
     saveMsgEl.innerText = '';
     shareMsgEl.innerText = '';
 
@@ -1917,6 +1924,7 @@ function gameOver(reason) {
         gameoverScreen.classList.remove('hidden');
         renderLeaderboard(leaderboardList, 10);
         loadGlobalBoard();
+        if (qualifies) nameInput.focus();
     }, 900);
 }
 
@@ -2198,8 +2206,9 @@ function getLeaderboard() {
 }
 
 function saveScore() {
-    let name = (nameInput.value || 'AAA').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3);
-    if (name.length === 0) name = 'AAA';
+    let name = (nameInput.value || dsdaInits()).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3);
+    if (!name) { saveMsgEl.innerText = 'ENTER YOUR INITIALS'; nameInput.focus(); return; }
+    try { localStorage.setItem(DSDA_INITS_KEY, name); } catch (e) {}
     while (name.length < 3) name += 'A';
 
     const lb = getLeaderboard();

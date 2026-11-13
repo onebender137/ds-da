@@ -263,6 +263,8 @@ details[open] summary::after{transform:rotate(180deg)}
 .save-lbl{display:block;font-size:9px;font-weight:800;letter-spacing:.3em;color:var(--muted);margin-bottom:8px}
 .init-input{display:block;width:118px;margin:0 auto 10px;text-align:center;font-family:var(--disp);font-size:22px;letter-spacing:.2em;color:var(--ink);background:rgba(7,3,18,.8);border:1px solid var(--line);border-radius:10px;padding:6px}
 .init-input:focus{outline:2px solid var(--cyan);outline-offset:2px}
+.init-input::placeholder{opacity:.4}
+#winSave:disabled,#loseSave:disabled{opacity:.4;cursor:not-allowed}
 .saved-msg{font-size:11px;font-weight:700;color:var(--muted);margin-top:8px;min-height:14px}
 .saved-msg.ok{color:var(--ok)}
 @media (max-width:560px){
@@ -397,7 +399,7 @@ details[open] summary::after{transform:rotate(180deg)}
     </div>
     <div class="save-box">
       <label class="save-lbl" for="winInitials">YOUR INITIALS</label>
-      <input id="winInitials" class="init-input" maxlength="3" autocomplete="off" spellcheck="false" />
+      <input id="winInitials" class="init-input" maxlength="3" placeholder="ABC" autocomplete="off" spellcheck="false" />
       <button class="btn ghost" id="winSave" style="width:100%">SAVE SCORE ▸ DSDA BOARD</button>
       <div id="winSavedMsg" class="saved-msg"></div>
     </div>
@@ -420,7 +422,7 @@ details[open] summary::after{transform:rotate(180deg)}
     <div class="tip" id="loseTip"></div>
     <div class="save-box">
       <label class="save-lbl" for="loseInitials">YOUR INITIALS</label>
-      <input id="loseInitials" class="init-input" maxlength="3" autocomplete="off" spellcheck="false" />
+      <input id="loseInitials" class="init-input" maxlength="3" placeholder="ABC" autocomplete="off" spellcheck="false" />
       <button class="btn ghost" id="loseSave" style="width:100%">SAVE SCORE ▸ DSDA BOARD</button>
       <div id="loseSavedMsg" class="saved-msg"></div>
     </div>
@@ -1450,13 +1452,13 @@ async function showWin(){
   $('wBlocks').textContent=fmt(stats.blocks);$('wChain').textContent='×'+Math.max(1,stats.chain);$('wSpecials').textContent=stats.specials;
   for(let i=0;i<3;i++)$('ws'+i).classList.remove('lit');$('winOv').hidden=false;
   for(let i=0;i<stars;i++)scheduleAt(420+i*400,()=>{$('ws'+i).classList.add('lit');sfx.star();burstConfetti();vib(20);});
-  scheduleAt(500,()=>$('nextBtn').focus());
+  $('winInitials').value=dsdaInits();setSaveEnabled('win');scheduleAt(500,()=>$('nextBtn').focus());
 }
 async function showLose(){
   const sid=session;state='lose';busy=true;setBodyState();sfx.lose();await wait(550);if(sid!==session)return;
   track('game_over',{final_score:Math.round(score),level:currentLevel,diff:save.diff});
   $('loseScore').textContent=fmt(score);$('loseTarget').textContent='Target: '+fmt(cfg.target)+(cfg.collects.length?' + collections':'');
-  $('loseTip').innerHTML='<b>TIP</b> — '+TIPS[Math.floor(Math.random()*TIPS.length)];$('loseOv').hidden=false;scheduleAt(300,()=>$('retryBtn').focus());
+  $('loseTip').innerHTML='<b>TIP</b> — '+TIPS[Math.floor(Math.random()*TIPS.length)];$('loseOv').hidden=false;$('loseInitials').value=dsdaInits();setSaveEnabled('lose');scheduleAt(300,()=>$('retryBtn').focus());
 }
 function openPause(){
   if(state!=='play'||paused)return;paused=true;setBodyState();
@@ -1655,6 +1657,10 @@ function fetchTimeout(url,opts,ms=4000){
 }
 const SCORE_TOKEN=''; // retired 2026-11-13: board API is a Cloudflare Worker; GitHub dispatch fallback removed
 const SCORE_SECRET='6216cf68f4e077d3cd991f2d6bd3e878';
+const DSDA_INITS_KEY='dsda-initials';
+const dsdaInits=()=>{try{return (localStorage.getItem(DSDA_INITS_KEY)||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,3);}catch(e){return '';}};
+function setSaveEnabled(prefix){$(prefix+'Save').disabled=!$(prefix+'Initials').value.replace(/[^a-zA-Z0-9]/g,'').trim();}
+['win','lose'].forEach(p=>{$(p+'Initials').addEventListener('input',()=>{$(p+'Initials').value=$(p+'Initials').value.toUpperCase().replace(/[^A-Z0-9]/g,'');setSaveEnabled(p);});});
 
 async function fetchGlobalBoard(){
   try{
@@ -1754,10 +1760,11 @@ function saveScore(prefix){
   if(s<=0){$(prefix+'SavedMsg').textContent='No score to save yet — crush some blocks first.';return;}
   if($(prefix+'Save').disabled)return;
   track('score_submit',{score:s,level:currentLevel});
-  let name=($(prefix+'Initials').value||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
-  if(!name)name='???';
+  let name=($(prefix+'Initials').value||dsdaInits()).trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(!name){$(prefix+'SavedMsg').textContent='ENTER YOUR INITIALS';$(prefix+'Initials').focus();return;}
   name=name.slice(0,3).padEnd(3,'?');
   saveToStorage(name,s);
+  try{localStorage.setItem(DSDA_INITS_KEY,name);}catch(e){}
   $(prefix+'Save').disabled=true;
   sfx.click();
   const msg=$(prefix+'SavedMsg');

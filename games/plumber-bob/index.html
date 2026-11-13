@@ -50,6 +50,8 @@
     position: fixed; inset: 0; pointer-events: none; z-index: 5;
     background: radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(8,12,24,0.38) 100%);
   }
+  #initials::placeholder { color: rgba(148,163,184,0.5); opacity: 0.5; }
+  #saveBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 </style>
 </head>
 <body class="bg-slate-950 text-white select-none overflow-hidden">
@@ -132,7 +134,7 @@
     <div id="finalScore" class="text-6xl font-black text-amber-300 mt-2 tabular-nums">0</div>
     <div class="mt-5">
       <label class="text-[10px] uppercase tracking-widest text-slate-400">Your initials</label>
-      <input id="initials" maxlength="3" value="BOB" class="mt-1 w-24 text-center text-xl font-black tracking-[0.4em] bg-slate-800 border border-white/15 rounded-lg py-2 focus:outline-none focus:border-amber-300 uppercase" style="text-indent:0.4em"/>
+      <input id="initials" maxlength="3" placeholder="ABC" class="mt-1 w-24 text-center text-xl font-black tracking-[0.4em] bg-slate-800 border border-white/15 rounded-lg py-2 focus:outline-none focus:border-amber-300 uppercase" style="text-indent:0.4em"/>
     </div>
     <div class="mt-4">
       <button id="saveBtn" class="w-full bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold tracking-widest py-3 rounded-lg text-sm transition-colors">SAVE SCORE</button>
@@ -210,6 +212,10 @@ function fetchTimeout(url, opts, ms = 4000) {
 }
 const SCORE_TOKEN = ''; // retired 2026-11-13: board API is a Cloudflare Worker; GitHub dispatch fallback removed
 const SCORE_SECRET = '6216cf68f4e077d3cd991f2d6bd3e878';
+const DSDA_INITS_KEY = 'dsda-initials';
+const dsdaInits = () => { try { return (localStorage.getItem(DSDA_INITS_KEY) || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3); } catch (e) { return ''; } };
+function setSaveEnabled() { $('saveBtn').disabled = !$('initials').value.replace(/[^a-zA-Z0-9]/g, '').trim(); }
+$('initials').addEventListener('input', () => { $('initials').value = $('initials').value.toUpperCase().replace(/[^A-Z0-9]/g, ''); setSaveEnabled(); });
 
 // ======================= audio (all synthesized, gesture-gated) =======================
 const Sfx = {
@@ -1598,7 +1604,7 @@ function gameOver() {
   $('finalScore').textContent = score;
   renderBoard($('overBoard'), loadScores().slice(0, 10));
   $('hud').classList.add('hidden');
-  $('over').classList.remove('hidden');
+  $('initials').value = dsdaInits(); setSaveEnabled(); $('over').classList.remove('hidden');
   if (document.pointerLockElement && document.exitPointerLock) document.exitPointerLock();
   sfx.over(best);
   playShout(); // the excited "PLUMBER BOB!!!" call
@@ -1606,8 +1612,10 @@ function gameOver() {
 }
 function commitScore() {
   if (scoreSaved) return;
-  const n = ($('initials').value || 'BOB').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3) || 'BOB';
+  const n = ($('initials').value || dsdaInits()).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3);
+  if (!n) { $('savedMsg').textContent = 'ENTER YOUR INITIALS'; $('initials').focus(); return; }
   saveScore(n, score);
+  try { localStorage.setItem(DSDA_INITS_KEY, n); } catch (e) {}
   $('initials').value = n;
   renderBoard($('overBoard'), loadScores().slice(0, 10));
   scoreSaved = true;

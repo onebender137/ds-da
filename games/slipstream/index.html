@@ -168,6 +168,7 @@
   .card input { font: inherit; font-size: 22px; letter-spacing: 8px; text-align: center;
     background: rgba(0,0,0,0.32); border: 1px solid var(--border); border-radius: 10px;
     padding: 10px; color: var(--text); text-transform: uppercase; }
+  .card input::placeholder { color: var(--muted); opacity: 0.4; }
   .card button { font: inherit; font-size: 14px; font-weight: 700; letter-spacing: 2px;
     padding: 12px; border-radius: 11px; border: 1px solid var(--border); background: rgba(255,255,255,0.04);
     color: var(--text); cursor: pointer; transition: all .15s; }
@@ -258,7 +259,7 @@
     <p class="final">Your time <b id="finalTime">0.00s</b></p>
     <p class="final" id="finalRank">—</p>
     <label for="initials">YOUR INITIALS</label>
-    <input id="initials" maxlength="3" autocomplete="off" spellcheck="false" />
+    <input id="initials" maxlength="3" placeholder="ABC" autocomplete="off" spellcheck="false" />
     <button id="saveBtn">Save Time</button>
     <div id="savedMsg"></div>
     <button id="shareBtn">Share Time</button>
@@ -350,6 +351,10 @@ const elTime = $('time'), elSpeed = $('speed'), elBest = $('best'), elDistFill =
 const elFx = $('fx'), elHudTop = $('hudTop'), elOverlay = $('overlay');
 const elFinalTime = $('finalTime'), elFinalRank = $('finalRank');
 const elInitials = $('initials'), elSave = $('saveBtn'), elSavedMsg = $('savedMsg');
+const DSDA_INITS_KEY = 'dsda-initials';
+const dsdaInits = () => { try { return (localStorage.getItem(DSDA_INITS_KEY) || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3); } catch (e) { return ''; } };
+function setSaveEnabled() { elSave.disabled = !elInitials.value.replace(/[^a-zA-Z0-9]/g, '').trim(); }
+elInitials.addEventListener('input', () => { elInitials.value = elInitials.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); setSaveEnabled(); });
 const elShare = $('shareBtn'), elShareMsg = $('shareMsg');
 const elTopList = $('topList'), elPlayAgain = $('playAgain'), elNewHigh = $('newHigh');
 const elMenu = $('menu'), elScores = $('scores');
@@ -1392,8 +1397,8 @@ function showFinish() {
   const isRecord = finishTime > 0 && finishTime <= (top.length ? (POINTS_MAX - top[0].s) : Infinity);
   elNewHigh.classList.toggle('hidden', !isRecord);
   elFinalRank.textContent = 'best on this device: ' + (bestTime / 1000).toFixed(2) + 's';
-  elInitials.value = '';
-  elSave.disabled = false;
+  elInitials.value = dsdaInits();
+  setSaveEnabled();
   elSavedMsg.textContent = '';
   elShareMsg.textContent = '';
   renderTopList(elTopList, top.slice(0, 10));
@@ -1656,8 +1661,10 @@ function saveScore() {
   if (phase !== 'finish' || elSave.disabled) return;
   track('score_submit', { time_ms: Math.round(finishTime) });
   let name = elInitials.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
-  if (!name) name = '???';
+  if (!name) name = dsdaInits();
+  if (!name) { elSavedMsg.textContent = 'ENTER YOUR INITIALS'; elInitials.focus(); return; }
   name = name.slice(0, 3).padEnd(3, '?');
+  try { localStorage.setItem(DSDA_INITS_KEY, name); } catch (e) {}
   const top = saveToStorage(name, finishTime);
   renderTopList(elTopList, top);
   renderTopList(elHudTop, top);
