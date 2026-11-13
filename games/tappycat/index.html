@@ -409,6 +409,18 @@
         #name-input { width: 150px; font-size: 22px; letter-spacing: 14px; }
         .hint { font-size: 12px; max-width: 280px; }
     }
+
+/* --- mobile: keep tall overlay panels reachable (2026-11-13) --- */
+.screen {
+  align-items: flex-start;
+  justify-content: flex-start;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+.screen > .panel { margin: auto; }
+@media (max-width: 520px) {
+  #gameover-screen .lb-list > li:nth-child(n+6) { display: none; }
+}
 </style>
 </head>
 <body>

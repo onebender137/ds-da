@@ -209,6 +209,16 @@
     .go-board{ max-height:140px; }
     #goAgain{ padding:11px 24px; font-size:14px; }
   }
+
+/* --- mobile: keep tall overlay panels reachable (2026-11-13) --- */
+#gameover {
+  justify-content: flex-start;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+#gameover > :first-child { margin-top: auto; }
+#gameover > :last-child { margin-bottom: auto; }
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

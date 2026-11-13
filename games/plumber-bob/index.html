@@ -52,6 +52,17 @@
   }
   #initials::placeholder { color: rgba(148,163,184,0.5); opacity: 0.5; }
   #saveBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* --- mobile: keep tall overlay panels reachable (2026-11-13) --- */
+#over, #scoresOv, #menu {
+  align-items: flex-start;
+  justify-content: flex-start;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  padding: 16px 0;
+}
+#over > div, #scoresOv > div, #menu > div { margin: auto; }
 </style>
 </head>
 <body class="bg-slate-950 text-white select-none overflow-hidden">

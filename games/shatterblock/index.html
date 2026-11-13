@@ -203,6 +203,20 @@
     .card { padding: 20px 22px; }
     .menu-powers { display: none; }
   }
+
+/* --- mobile: keep tall overlay panels reachable (2026-11-13) --- */
+#overlay, #scores {
+  align-items: flex-start;
+  justify-content: flex-start;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  padding: 16px 0;
+}
+#overlay > *, #scores > * { margin: auto; }
+@media (max-width: 520px) {
+  #overlay .tops > li:nth-child(n+6) { display: none; }
+}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

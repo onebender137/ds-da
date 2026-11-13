@@ -274,6 +274,17 @@ details[open] summary::after{transform:rotate(180deg)}
   .mini-stats{gap:5px}
 }
 @media (prefers-reduced-motion:reduce){.logo,#veil .logo,.btn.primary,#grain,#feverBadge{animation:none}}
+
+/* --- mobile: keep tall overlay panels reachable (2026-11-13) --- */
+.ov {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+.ov > .card { margin: auto; }
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
