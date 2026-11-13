@@ -1520,7 +1520,9 @@ function bindInput(){
   });
   canvas.addEventListener('pointerup',e=>{if(press&&e.pointerId===press.id){const c=press.c;press=null;if(state==='play'&&!paused&&!busy)handleTap(c);}});
   canvas.addEventListener('pointercancel',()=>{press=null;});
+  function typingInInput(){const el=document.activeElement;return el&&(el.tagName==='INPUT'||el.tagName==='TEXTAREA'||el.isContentEditable);}
   window.addEventListener('keydown',e=>{
+    if(typingInInput())return;
     if(e.key==='Escape'&&state==='play')paused?closePause():openPause();
     else if(e.key==='m'||e.key==='M'){initAudio();setSound(!soundOn);}
     else if((e.key==='h'||e.key==='H')&&state==='play'&&!busy&&!paused){clearHint();setHint();}

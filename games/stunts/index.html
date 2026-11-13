@@ -2460,12 +2460,18 @@ function onKey(code, down){
   if (down && code === 'Escape'){ toMenu(); }
 }
 function e_prevent(){ if (window.__lastEv) window.__lastEv.preventDefault(); }
+function typingInInput() {
+  const el = document.activeElement;
+  return el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
+}
 window.addEventListener('keydown', e => {
+  if (typingInInput()) return;
   window.__lastEv = e; AU.init();
   if (e.code === 'Space'){ S.spaceHeld = true; e.preventDefault(); return; }   // always process Space (not gated by e.repeat)
   if (!e.repeat) onKey(e.code, true);
 });
 window.addEventListener('keyup', e => {
+  if (typingInInput()) return;
   window.__lastEv = e;
   if (e.code === 'Space'){ S.spaceHeld = false; return; }
   onKey(e.code, false);
