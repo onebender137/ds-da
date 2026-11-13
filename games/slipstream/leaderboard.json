@@ -1,4 +1,5 @@
 {
+  "updated": 1794505845775,
   "top": [
     {
       "n": "CJR",
@@ -53,13 +54,12 @@
   ],
   "stats": {
     "saves": 25,
-    "players": 4,
     "initials": [
       "MP",
       "CJR",
       "137",
       "D"
-    ]
-  },
-  "updated": 1794505845775
+    ],
+    "players": 4
+  }
 }

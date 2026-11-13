@@ -54,11 +54,11 @@
   ],
   "stats": {
     "saves": 13,
-    "players": 3,
     "initials": [
       "CJR",
       "AKH",
       "MP"
-    ]
+    ],
+    "players": 3
   }
 }
