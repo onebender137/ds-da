@@ -2801,7 +2801,7 @@ function saveToStorage(name, s, diff) {
 
 // ---------------- share score ----------------
 // ---------------- share score (DSDA house card) ----------------
-const SHARE_CARD = { name: 'MACHINE ELVES', tag: 'DMT Fairyland', id: 'popper', accent: 0xb78bff };
+const SHARE_CARD = { name: 'MACHINE ELVES', tag: 'DMT Fairyland', id: 'popper', accent: 0x00e5ff };
 function shareText(s) {
   return 'I popped ' + s + ' in Machine Elves — think you can beat me? \ud83c\udfae';
 }
@@ -2897,7 +2897,7 @@ async function shareScore() {
       const cv = await makeScoreCard(String(score), 'Think you can beat me?');
       const blob = await new Promise(res => cv.toBlob(res, 'image/png'));
       if (blob) {
-        const f = [new File([blob], 'popper-score.png', { type: 'image/png' })];
+        const f = [new File([blob], 'machine-elves-score.png', { type: 'image/png' })];
         if (!navigator.canShare || navigator.canShare(Object.assign({ files: f }, payload))) files = f;
       }
     } catch (e) { files = null; }
