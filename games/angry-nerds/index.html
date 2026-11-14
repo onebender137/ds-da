@@ -119,7 +119,7 @@ h2.big.win{color:var(--green)}h2.big.lose{color:var(--danger)}
 .tally .line span:last-child{color:var(--orange2);font-family:'Luckiest Guy',cursive;letter-spacing:1px}
 .tally .line.total{border-color:var(--orange2);font-size:clamp(15px,3vw,19px)}
 .tally .line.total span:last-child{color:var(--green)}
-#loseQuote{font-weight:800;font-style:italic;text-align:center;color:var(--cyan);font-size:clamp(13px,2.8vw,16px);max-width:380px}
+#loseQuote,#loseQuote2{font-weight:800;font-style:italic;text-align:center;color:var(--cyan);font-size:clamp(13px,2.8vw,16px);max-width:380px}
 .shortcuts{font-size:12px;font-weight:700;opacity:.75;text-align:center;line-height:1.7}
 .shortcuts kbd{background:var(--ink);border-radius:6px;padding:2px 7px;border:1px solid #4a3a6e;font-family:inherit}
 #toast{position:fixed;top:calc(72px + env(safe-area-inset-top));left:50%;transform:translateX(-50%) translateY(-16px);z-index:40;background:linear-gradient(90deg,var(--violet),var(--magenta));border:3px solid var(--ink);border-radius:999px;padding:9px 20px;font-weight:900;font-size:clamp(12px,2.4vw,15px);box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;white-space:nowrap;max-width:92vw;text-overflow:ellipsis;overflow:hidden}
@@ -187,7 +187,7 @@ h2.big.win{color:var(--green)}h2.big.lose{color:var(--danger)}
   .tally .line.total{font-size:clamp(12px,3.4vh,15px)}
   #newRecord,#runRecord{font-size:clamp(10px,2.8vh,13px);padding:3px 12px 1px}
   #winExtras{font-size:clamp(9px,2.4vh,11px)}
-  #loseQuote{font-size:clamp(11px,3vh,14px)}
+  #loseQuote,#loseQuote2{font-size:clamp(11px,3vh,14px)}
   .shortcuts{font-size:10px;line-height:1.5}
   #levelGrid{max-height:46vh;gap:8px;grid-template-columns:repeat(auto-fill,minmax(102px,1fr))}
   .lvcard{min-height:80px;padding:7px 6px;gap:3px}
@@ -252,6 +252,7 @@ h2.big.win{color:var(--green)}h2.big.lose{color:var(--danger)}
 <div id="winScr" class="scr hidden"><div class="card"><h2 class="big win" id="winTitle">LEVEL CLEARED!</h2><div id="newRecord" class="hidden">🏅 NEW PERSONAL BEST</div><div id="winstars"></div><div class="tally"><div class="line"><span>😵 Bullies bashed</span><span id="tBullies">0</span></div><div class="line"><span>💥 Hardware wrecked</span><span id="tWreck">0</span></div><div class="line"><span>🤓 Unused nerd bonus</span><span id="tBonus">0</span></div><div class="line"><span>🔥 Best combo</span><span id="tCombo">×1</span></div><div class="line total"><span>TOTAL</span><span id="tTotal">0</span></div></div><div id="winExtras"></div><div class="btnrow"><button id="winRetryBtn" class="btn ghost"><svg viewBox="0 0 24 24"><path d="M12 5V1L6.5 6.5 12 12V7a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8z"/></svg>RETRY</button><button id="winLevelsBtn" class="btn alt"><svg viewBox="0 0 24 24"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg>MENU</button><button id="winNextBtn" class="btn green">NEXT<svg viewBox="0 0 24 24"><path d="M4 11h12.2l-5.6-5.6L12 4l8 8-8 8-1.4-1.4 5.6-5.6H4z"/></svg></button></div></div></div>
 <div id="loseScr" class="scr hidden"><div class="card"><h2 class="big lose" id="loseTitle">STUFFED IN A LOCKER!</h2><div id="loseQuote">"The bullies are still laughing at your RAM."</div><div class="btnrow"><button id="loseRetryBtn" class="btn" style="font-size:clamp(18px,3.6vw,24px)"><svg viewBox="0 0 24 24"><path d="M12 5V1L6.5 6.5 12 12V7a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8z"/></svg>TRY AGAIN</button><button id="loseLevelsBtn" class="btn alt"><svg viewBox="0 0 24 24"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg>MENU</button></div></div></div>
 <div id="runScr" class="scr hidden"><div class="card"><h2 class="big lose">RUN OVER</h2><div id="runRecord" class="hidden">🏅 NEW PERSONAL BEST</div><div class="tally"><div class="line"><span>🌊 Reached wave</span><span id="runWave">0</span></div><div class="line"><span>🔥 Best combo</span><span id="runCombo">×1</span></div><div class="line"><span>🏆 Your best</span><span id="runBest">0</span></div><div class="line total"><span>RUN SCORE</span><span id="runScore">0</span></div></div><div class="namerow"><input id="runName" maxlength="3" placeholder="AAA" autocomplete="off" spellcheck="false" inputmode="text" aria-label="Your three-letter initials"><button id="runSaveBtn" class="btn green">POST SCORE</button></div><div id="runStatus" class="substatus"></div><div class="btnrow"><button id="runRetryBtn" class="btn"><svg viewBox="0 0 24 24"><path d="M12 5V1L6.5 6.5 12 12V7a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8z"/></svg>RUN AGAIN</button><button id="runBoardBtn" class="btn alt">🏆 BOARD</button><button id="runMenuBtn" class="btn ghost">MENU</button></div></div></div>
+<div id="glScr" class="scr hidden"><div class="card"><h2 class="big lose">GRAPHICS STALLED</h2><div id="loseQuote2">Your phone took the graphics back — usually low memory.<br>Your stars and best scores are safe.</div><div class="btnrow"><button id="glReloadBtn" class="btn green" style="font-size:clamp(18px,3.6vw,24px)"><svg viewBox="0 0 24 24"><path d="M12 5V1L6.5 6.5 12 12V7a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8z"/></svg>RELOAD</button></div></div></div>
 <div id="boardScr" class="scr hidden"><div class="card" style="width:min(520px,94vw)"><h2 class="big">🏆 GLOBAL BOARD</h2><div class="boardsub">ENDLESS MODE · TOP 10 · <span id="myBest">0</span> is your best</div><div id="boardList" class="boardlist"><div class="bempty">Loading…</div></div><div id="boardNote" class="substatus"></div><div class="namerow"><input id="boardInits" maxlength="3" placeholder="AAA" autocomplete="off" spellcheck="false" aria-label="Your three-letter initials"><button id="boardSaveBtn" class="btn ghost">SAVE</button><button id="postBestBtn" class="btn green hidden">POST MY BEST</button></div><button id="boardBackBtn" class="btn ghost"><svg viewBox="0 0 24 24"><path d="M20 11H7.8l5.6-5.6L12 4l-8 8 8 8 1.4-1.4L7.8 13H20z"/></svg>BACK</button></div></div>
 <div id="pauseScr" class="scr hidden"><div class="card"><h2 class="big">PAUSED FOR SNACKS</h2><div class="btnrow"><button id="resumeBtn" class="btn green"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>RESUME</button><button id="pauseRestartBtn" class="btn"><svg viewBox="0 0 24 24"><path d="M12 5V1L6.5 6.5 12 12V7a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8z"/></svg>RESTART</button><button id="pauseLevelsBtn" class="btn alt"><svg viewBox="0 0 24 24"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg>LEVELS</button></div><div class="shortcuts"><kbd>R</kbd> restart · <kbd>P</kbd> pause · <kbd>M</kbd> mute · <kbd>Space</kbd> ability · <kbd>←→</kbd> pan · <kbd>+ −</kbd> zoom<br>Drag empty space to look around · wheel / pinch to zoom</div></div></div>
 <div id="toast"></div>
@@ -809,7 +810,16 @@ const BASS=[110,0,110,0,131,0,98,0,110,0,110,0,147,0,131,98];
 const MEL=[440,0,523,587,0,659,0,587,523,0,440,0,392,440,0,0,440,0,523,587,0,659,0,784,659,0,587,523,0,440,392,0];
 function musicTick(){
   if(!AU.ready||AU.ctx.state!=='running')return;const ctx=AU.ctx;
-  while(AU.nextNote<ctx.currentTime+.18){
+  /* This runs on a 90ms setInterval, which Chrome throttles to roughly once a
+     MINUTE in a backgrounded tab — while the AudioContext clock keeps running.
+     Unbounded, the loop below then tries to synthesise every missed note in one
+     go: a minute away is ~250 iterations and ~1000 oscillators scheduled in the
+     past, which all fire immediately. That stalls the main thread and floods the
+     audio thread — it presents as the game freezing when you come back to it.
+     So: skip the gap rather than replay it, and cap the catch-up regardless. */
+  if(AU.nextNote<ctx.currentTime-.5)AU.nextNote=ctx.currentTime+.05;
+  let guard=0;
+  while(AU.nextNote<ctx.currentTime+.18&&++guard<=8){
     const t=AU.nextNote,st=AU.musicStep,b=BASS[st%16];
     if(b){const o=ctx.createOscillator(),g=ctx.createGain();o.type='triangle';o.frequency.value=b;g.gain.setValueAtTime(.16,t);g.gain.exponentialRampToValueAtTime(.001,t+.22);o.connect(g).connect(AU.mus);o.start(t);o.stop(t+.25);}
     const m=MEL[st%32];
@@ -1204,7 +1214,7 @@ function endRun(){
 }
 
 /* ============================== SCREENS / UI ============================== */
-const SCREENS=['titleScr','levelScr','winScr','loseScr','pauseScr','runScr','boardScr'];
+const SCREENS=['titleScr','levelScr','winScr','loseScr','pauseScr','runScr','boardScr','glScr'];
 function showScreen(id){
   for(const s of SCREENS)$(s).classList.toggle('hidden',s!==id);
   duckMusic(!!id&&id!=='pauseScr');
@@ -1288,19 +1298,50 @@ $('boardSaveBtn').addEventListener('click',()=>{
   el.addEventListener('input',()=>{el.value=cleanInits(el.value);});
   el.addEventListener('keydown',e=>{if(e.key==='Enter')$(btn).click();});
 });
+$('glReloadBtn').addEventListener('click',()=>location.reload());
 $('postBestBtn').addEventListener('click',async()=>{
   S.click();const n=setInits($('boardInits').value);
   if(!n){$('boardNote').textContent='Enter your initials first.';return;}
   $('boardNote').textContent='Posting…';
   await submitScore('endless',save.endlessBest||0,{});
-  $('boardNote').textContent=$('runStatus').textContent;
-  openBoard();
+  /* Keep the result on screen. openBoard() rewrites #boardNote, so refresh the
+     list first and put the status back afterwards — otherwise the reply is wiped
+     the instant it arrives and the button looks like it did nothing. */
+  const msg=$('runStatus').textContent;
+  await openBoard();
+  $('boardNote').textContent=msg;
 });
 $('boardBackBtn').addEventListener('click',()=>{S.click();gotoTitle();});
 $('muteBtn').addEventListener('click',()=>{initAudio();resumeAudio();setMuted(!save.muted);if(!save.muted)S.click();});
 $('scoutBtn').addEventListener('click',()=>{S.click();if(state==='aim'||state==='loading'){scoutView=!scoutView;$('scoutBtn').classList.toggle('on',scoutView);if(scoutView)structView();else battleView();}});
 function setPaused(p){if(state==='title')return;paused=p;showScreen(p?'pauseScr':null);if(AU.ready){if(p)AU.ctx.suspend();else AU.ctx.resume();}}
-document.addEventListener('visibilitychange',()=>{if(document.hidden&&(state==='aim'||state==='flight'||state==='drag'||state==='loading'||state==='intro'))setPaused(true);});
+/* Hiding the tab used to pause only during play. On every menu — title, win,
+   lose, levels, board, run-over — the AudioContext kept running while the music
+   scheduler was throttled, which is exactly the gap musicTick now has to guard
+   against. Stop the clock on the way out instead, whatever screen we're on. */
+document.addEventListener('visibilitychange',()=>{
+  const playing=state==='aim'||state==='flight'||state==='drag'||state==='loading'||state==='intro';
+  if(document.hidden){
+    if(playing)setPaused(true);
+    else if(AU.ready&&AU.ctx.state==='running')AU.ctx.suspend();
+  }else if(!paused&&AU.ready&&AU.ctx.state==='suspended')AU.ctx.resume();
+});
+/* A lost WebGL context (memory pressure, GPU driver reset, backgrounding on a
+   tight-RAM device) leaves three.js rendering nothing. Without this the canvas
+   just freezes on its last frame forever with no explanation. */
+let ctxLost=false,ctxTimer=0;
+canvas.addEventListener('webglcontextlost',e=>{
+  e.preventDefault();          /* required, or the context can never be restored */
+  ctxLost=true;paused=true;
+  toast('⚠️ Graphics dropped out — trying to restore…');
+  clearTimeout(ctxTimer);
+  ctxTimer=setTimeout(()=>{if(ctxLost)showScreen('glScr');},5000);
+},false);
+canvas.addEventListener('webglcontextrestored',()=>{
+  ctxLost=false;clearTimeout(ctxTimer);
+  if(!document.getElementById('glScr').classList.contains('hidden'))showScreen(null);
+  paused=false;onResize();toast('✅ Graphics restored');
+},false);
 
 /* ============================== INPUT ============================== */
 const raycaster=new THREE.Raycaster(),_ndc=new THREE.Vector2(),planeZ0=new THREE.Plane(new THREE.Vector3(0,0,1),0);
