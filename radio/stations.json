@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "network": "DSDA Radio",
+  "updated": "2026-11-14",
+  "note": "Cross-game radio manifest. Single source of truth — games load this + radio.js and never change when new stations/tracks are added. Tracks stream from their source URLs (no bundling). 4 stations: Polkahole (default) + the 3 Machine Elves originals. Originals are root-relative (served from /games/popper/original/) so any game page can reach them.",
+  "stations": [
+    {
+      "id": "polkahole",
+      "name": "Polkahole",
+      "tagline": "Oompah oompah from the hole",
+      "accent": "#ffcc00",
+      "source": "https://polkahole.ca",
+      "note": "Single-track repeat until a wider station selection is picked. radio.js wraps a 1-track station, so this loops on its own.",
+      "tracks": [
+        { "title": "Boots on the Floorboards",    "url": "https://polkahole.ca/songs/Boots_on_the_Floorboards.mp3" }
+      ]
+    },
+    {
+      "id": "fairyland",
+      "name": "Fairyland",
+      "tagline": "Original 8-bit — bright bouncy menu loop",
+      "accent": "#00e5ff",
+      "source": "ds-da.ca/games/popper/original",
+      "note": "Machine Elves original chiptune #1 (rendered from the in-game MusicSys). 1-track station, loops on its own.",
+      "tracks": [
+        { "title": "Fairyland",        "url": "/games/popper/original/fairyland.mp3" }
+      ]
+    },
+    {
+      "id": "sparkle-rush",
+      "name": "Sparkle Rush",
+      "tagline": "Original 8-bit — driving action anthem",
+      "accent": "#ff2d95",
+      "source": "ds-da.ca/games/popper/original",
+      "note": "Machine Elves original chiptune #2 (rendered from the in-game MusicSys). 1-track station, loops on its own.",
+      "tracks": [
+        { "title": "Sparkle Rush",     "url": "/games/popper/original/sparkle-rush.mp3" }
+      ]
+    },
+    {
+      "id": "twilight-garden",
+      "name": "Twilight Garden",
+      "tagline": "Original 8-bit — dreamy interlude",
+      "accent": "#b78bff",
+      "source": "ds-da.ca/games/popper/original",
+      "note": "Machine Elves original chiptune #3 (rendered from the in-game MusicSys). 1-track station, loops on its own.",
+      "tracks": [
+        { "title": "Twilight Garden",  "url": "/games/popper/original/twilight-garden.mp3" }
+      ]
+    }
+  ]
+}
