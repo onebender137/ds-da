@@ -1,0 +1,3687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>Machine Elves — DMT Fairyland</title>
+<!-- link-share card (iMessage/Telegram/X) -->
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://ds-da.ca/games/popper/machine-elves.html" />
+<meta property="og:title" content="Play Machine Elves at ds-da.ca" />
+<meta property="og:description" content="Bubble pop in the fairyland — aim, charge, and burst sparkles to clear the garden. Match three, drop the orphans, and don't let the blossoms reach the roots. The classic bubble shooter, our take." />
+<meta property="og:image" content="https://ds-da.ca/games/popper/log.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Play Machine Elves at ds-da.ca" />
+<meta name="twitter:description" content="Bubble pop in the fairyland — aim, charge, and burst sparkles to clear the garden." />
+<meta name="twitter:image" content="https://ds-da.ca/games/popper/log.png" />
+<meta name="description" content="Bubble pop in the fairyland — aim, charge, and burst sparkles to clear the garden. The classic bubble shooter, our take. Play free in your browser." />
+<link rel="canonical" href="https://ds-da.ca/games/popper/machine-elves.html" />
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "MACHINE ELVES",
+  "description": "Bubble pop in the fairyland — aim, charge, and burst sparkles to clear the garden. The classic bubble shooter, our take. Play free in your browser.",
+  "url": "https://ds-da.ca/games/popper/machine-elves.html",
+  "image": "https://ds-da.ca/games/popper/log.png",
+  "genre": "Puzzle",
+  "playUrl": "https://ds-da.ca/games/popper/machine-elves.html",
+  "applicationCategory": "Game",
+  "operatingSystem": "Web browser",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "CAD", "availability": "https://schema.org/InStock" }
+}
+</script>
+<!-- GA4: track this game page + custom in-game events (see track()) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-M9D0GNYMWJ"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-M9D0GNYMWJ', { page_title: 'Machine Elves', page_path: '/games/popper/' });
+</script>
+<style>
+  :root {
+    --bg: #05070f;
+    --panel: rgba(13, 17, 34, 0.78);
+    --border: rgba(0, 229, 255, 0.24);
+    --accent: #00e5ff;
+    --accent2: #ff2d95;
+    --text: #e8f4ff;
+    --muted: #7d94ab;
+    --danger: #ff3366;
+    --gold: #ffd24d;
+    --display: "Bungee", "Impact", "Arial Black", sans-serif;
+    --body: "Rubik", "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text);
+    overscroll-behavior: none; user-select: none; -webkit-user-select: none;
+    font-family: var(--body); -webkit-tap-highlight-color: transparent; }
+  #scene { position: fixed; inset: 0; display: block; touch-action: none; }
+  .panel { position: fixed; background: var(--panel); border: 1px solid var(--border);
+    border-radius: 14px; padding: 14px 16px; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.05); }
+  /* top: 64px, NOT 16px — the DSDA radio pill owns the 16px corner and was sitting right
+     across the title text */
+  #titleBox { top: 64px; left: 16px; z-index: 5; border-left: 3px solid var(--accent);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.05),
+      -6px 0 18px -6px rgba(0,229,255,0.5); }
+  #titleBox h1 { font-family: var(--display); font-size: 19px; letter-spacing: 1.5px; font-weight: 400; line-height: 1;
+    background: linear-gradient(180deg, #ffffff 0%, #00e5ff 55%, #ff2d95 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 1px 0 #0a1026) drop-shadow(0 0 10px rgba(0,229,255,0.6)); }
+  #titleBox h1 span { color: transparent; }
+  #titleBox p { font-size: 9px; color: var(--accent); letter-spacing: 3px; margin-top: 5px; font-weight: 700;
+    opacity: .85; }
+  #hud { top: 16px; right: 16px; width: 236px; z-index: 5; }
+  .stat { display: flex; justify-content: space-between; align-items: baseline; padding: 5px 0;
+    border-bottom: 1px solid rgba(0,229,255,0.12); }
+  .stat span { font-size: 10px; letter-spacing: 2px; color: var(--muted); font-weight: 600; }
+  .stat b { display: inline-block; font-family: var(--display); font-size: 20px; font-weight: 400; font-variant-numeric: tabular-nums; letter-spacing: 0.5px; }
+  .stat b.pop { animation: statPop .22s ease-out; }
+  @keyframes statPop { 0% { transform: scale(1.35); color: #fff; } 100% { transform: scale(1); } }
+  #nextRow { align-items: center; }
+  #nextDot { width: 22px; height: 22px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #fff 0%, var(--nc, #00e5ff) 55%, rgba(0,0,0,0.35) 100%);
+    box-shadow: 0 0 10px var(--nc, #00e5ff); }
+  #dropDots { display: flex; gap: 4px; }
+  #dropDots i { width: 9px; height: 9px; border-radius: 50%; background: rgba(0,229,255,0.22); }
+  #dropDots i.on { background: var(--gold); box-shadow: 0 0 8px var(--gold); }
+  h3.sub { font-size: 10px; letter-spacing: 2px; color: var(--muted); margin: 12px 0 6px; font-weight: 600; }
+  ol.tops { list-style: none; }
+  ol.tops li { display: flex; justify-content: space-between; font-size: 12px; padding: 3px 4px;
+    border-bottom: 1px dashed rgba(0,229,255,0.1); font-variant-numeric: tabular-nums; border-radius: 4px; }
+  ol.tops li:nth-child(1) .rank { color: var(--gold); }
+  ol.tops li:nth-child(2) .rank { color: #cfd6e6; }
+  ol.tops li:nth-child(3) .rank { color: #d9955a; }
+  ol.tops li.me { background: rgba(0,229,255,0.12); outline: 1px solid rgba(0,229,255,0.35); }
+  ol.tops li .rank { color: var(--muted); width: 20px; font-weight: 700; }
+  ol.tops li .name { letter-spacing: 2px; font-weight: 700; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  ol.tops li .tier { font-size: 8px; letter-spacing: .5px; padding: 2px 6px; border-radius: 8px;
+    text-transform: uppercase; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+  ol.tops li.tier-phenomenal { background: rgba(255,210,77,0.12); outline: 1px solid rgba(255,210,77,0.45); }
+  ol.tops li.tier-phenomenal .tier { color: #12080a; background: linear-gradient(135deg, #ffd24d, #ff2d95); }
+  ol.tops li.tier-apprentice .tier { color: #00e5ff; background: rgba(0,229,255,0.14); }
+  ol.tops li.tier-initiate .tier { color: var(--muted); background: rgba(255,255,255,0.05); }
+  .keys { margin-top: 12px; font-size: 11px; color: var(--muted); line-height: 1.8; }
+  .keys kbd { font: inherit; font-size: 10px; background: rgba(0,229,255,0.12); border: 1px solid rgba(0,229,255,0.25);
+    border-radius: 4px; padding: 0 5px; color: var(--text); }
+  button { font: inherit; cursor: pointer; touch-action: manipulation; }
+  #soundBtn { position: fixed; bottom: 56px; left: 16px; z-index: 5; background: var(--panel);
+    border: 1px solid var(--border); color: var(--text); border-radius: 10px; padding: 8px 12px;
+    font-size: 12px; backdrop-filter: blur(10px); }
+  #musicBox { display: none; /* DSDA Radio (radio.js) is now the music feature; procedural chiptune kept as offline fallback in code */ position: fixed; bottom: 16px; left: 16px; z-index: 5;
+    gap: 4px; background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 6px 10px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  #musicBox button { background: none; border: none; color: var(--muted); font-size: 13px;
+    padding: 2px 5px; line-height: 1; }
+  #musicBox button:hover { color: var(--text); }
+  /* DSDA Radio network widget (above the music box) — compact (2026-11-14) */
+  #radioBox.dsda-radio { position: fixed; top: 16px; left: 16px; z-index: 16; width: 148px;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 11px;
+    padding: 7px 9px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    display: flex; flex-direction: column; gap: 5px; box-shadow: 0 5px 18px rgba(0,0,0,0.32); }
+  #radioBox .radio-head { display: flex; align-items: center; gap: 6px; }
+  #radioBox .radio-live { width: 7px; height: 7px; border-radius: 50%; background: var(--radio-accent, #ff4d6d);
+    box-shadow: 0 0 7px var(--radio-accent, #ff4d6d); animation: radioPulse 1.6s ease-in-out infinite; }
+  #radioBox .radio-title { font-size: 9px; letter-spacing: 1.5px; font-weight: 700; color: var(--muted); }
+  @keyframes radioPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+  #radioBox .radio-dial { display: flex; flex-wrap: wrap; gap: 4px; }
+  #radioBox .radio-stn { flex: 1 1 auto; background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+    border-radius: 7px; color: var(--muted); font-size: 9px; font-weight: 600; letter-spacing: 0.5px;
+    padding: 3px 7px; cursor: pointer; transition: all 0.15s; }
+  #radioBox .radio-stn:hover { color: var(--text); border-color: var(--radio-accent, var(--border)); }
+  #radioBox .radio-stn.on { color: #0a0a14; background: var(--radio-accent, #ff4d6d); border-color: var(--radio-accent, #ff4d6d);
+    box-shadow: 0 0 10px color-mix(in srgb, var(--radio-accent, #ff4d6d) 60%, transparent); }
+  #radioBox .radio-now { display: flex; flex-direction: column; gap: 1px; min-height: 22px; }
+  #radioBox .radio-np-stn { font-size: 8px; letter-spacing: 1.5px; font-weight: 700; color: var(--radio-accent, var(--muted)); }
+  #radioBox .radio-np-trk { font-size: 11px; font-weight: 600; color: var(--text); white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; }
+  #radioBox .radio-ctl { display: flex; gap: 4px; }
+  #radioBox .radio-ctl button { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+    border-radius: 7px; color: var(--text); font-size: 11px; padding: 3px 0; cursor: pointer; line-height: 1; }
+  #radioBox .radio-ctl button:hover { background: rgba(255,255,255,0.12); border-color: var(--radio-accent, var(--border)); }
+  #musicName { font-size: 11px; letter-spacing: 1px; min-width: 128px; text-align: center;
+    white-space: nowrap; color: var(--text); font-weight: 500; }
+  #pauseBtn { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 5;
+    background: var(--panel); border: 1px solid var(--border); color: var(--muted); border-radius: 10px;
+    padding: 7px 12px; font-size: 11px; letter-spacing: 2px; font-weight: 600; backdrop-filter: blur(10px); display: none; }
+  body:not(.menu-mode) #pauseBtn { display: block; }
+  #pauseBtn:hover { color: var(--text); border-color: var(--accent); }
+  #pause { position: fixed; inset: 0; z-index: 19; display: flex; align-items: center;
+    justify-content: center; background: rgba(5, 8, 16, 0.72); backdrop-filter: blur(6px); }
+  #pause.hidden { display: none; }
+
+  /* ---- banner (scale-in + float-up, no JS timers on the animation) ---- */
+  #banner { position: fixed; top: 38%; left: 0; right: 0; z-index: 12; text-align: center;
+    pointer-events: none; opacity: 0; }
+  #banner.show { animation: bannerIn 1.9s cubic-bezier(.2,1.2,.3,1) forwards; }
+  @keyframes bannerIn {
+    0%   { opacity: 0; transform: scale(0.5) rotate(-4deg); }
+    12%  { opacity: 1; transform: scale(1.12) rotate(1.5deg); }
+    24%  { transform: scale(1) rotate(0deg); }
+    72%  { opacity: 1; transform: scale(1) translateY(0); }
+    100% { opacity: 0; transform: scale(1.06) translateY(-26px); }
+  }
+  #banner h2 { font-family: var(--display); font-size: clamp(30px, 6vw, 60px); letter-spacing: 4px; font-weight: 400;
+    background: linear-gradient(180deg, #ffffff 0%, #00e5ff 50%, #ff2d95 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 4px 24px rgba(0,229,255,0.5)); }
+  #banner p { font-size: 14px; letter-spacing: 4px; color: var(--gold); margin-top: 6px; font-weight: 600;
+    text-shadow: 0 0 14px rgba(255,210,77,0.5); }
+
+  /* ---- cheap post-process: vignette + danger tint, no render passes ---- */
+  #vignette { position: fixed; inset: 0; z-index: 3; pointer-events: none;
+    background: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 50%, rgba(3,5,12,0.62) 100%);
+    transition: box-shadow .35s; }
+  #vignette.danger { box-shadow: inset 0 0 120px rgba(255,51,102,0.55); animation: dangerPulse .9s ease-in-out infinite; }
+  @keyframes dangerPulse { 0%,100% { box-shadow: inset 0 0 90px rgba(255,51,102,0.35); } 50% { box-shadow: inset 0 0 160px rgba(255,51,102,0.7); } }
+  #overlay { position: fixed; inset: 0; z-index: 20; display: flex; align-items: center;
+    justify-content: center; background: rgba(5, 8, 16, 0.82); backdrop-filter: blur(6px); }
+  #overlay.hidden { display: none; }
+  .card { width: min(92vw, 430px); background: var(--panel); border: 1px solid var(--border);
+    border-radius: 18px; padding: 28px 30px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06);
+    animation: cardIn .32s cubic-bezier(.2,1.2,.3,1); }
+  @keyframes cardIn { from { opacity: 0; transform: translateY(18px) scale(0.96); } to { opacity: 1; transform: none; } }
+  .card h2 { font-size: 30px; letter-spacing: 6px; color: var(--danger); margin-bottom: 6px; }
+  /* ---- game-over / next-game card: same extruded treatment as the title screen ---- */
+  #overlay .card { border-color: rgba(0,229,255,0.4); position: relative;
+    box-shadow: 0 24px 70px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.08),
+      0 0 60px -12px rgba(0,229,255,0.45);
+    animation: cardSlam .46s cubic-bezier(.18,1.4,.3,1); }
+  @keyframes cardSlam {
+    0%   { opacity: 0; transform: translateY(26px) scale(0.88); }
+    58%  { opacity: 1; transform: translateY(0) scale(1.025); }
+    100% { opacity: 1; transform: none; }
+  }
+  /* accent rail across the top edge (inset past the 18px radius so it can't overhang
+     the rounded corners — avoids needing overflow:hidden, which would risk clipping) */
+  #overlay .card::before { content: ''; position: absolute; top: 0; left: 20px; right: 20px; height: 3px;
+    border-radius: 0 0 3px 3px;
+    background: linear-gradient(90deg, transparent, #00e5ff 22%, #7a4fd9 50%, #ff2d95 78%, transparent);
+    box-shadow: 0 0 16px rgba(0,229,255,0.7); }
+  #overlay .card h2 { font-family: var(--display); font-size: clamp(34px, 6.4vw, 54px); letter-spacing: 5px;
+    background: linear-gradient(180deg, #ffffff 0%, #d4faff 18%, #00e5ff 48%, #b23bd0 78%, #ff2d95 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    /* trimmed from a 6-deep filter chain: same reason as the title letters */
+    filter: drop-shadow(0 3px 0 #0a1026) drop-shadow(0 0 16px rgba(0,229,255,0.7));
+    animation: overTitleIn .5s cubic-bezier(.2,1.35,.32,1) .1s backwards; }
+  @keyframes overTitleIn {
+    0%   { opacity: 0; scale: 1.7; }
+    60%  { opacity: 1; scale: 0.96; }
+    100% { opacity: 1; scale: 1; }
+  }
+  #overlay .card .final { color: var(--muted); }
+  #overlay .card .final b { color: #00e5ff; text-shadow: 0 0 14px rgba(0,229,255,0.55); }
+  /* the big number earns a count-up pop */
+  #overlay .card .final b#finalScore { font-family: var(--display); font-size: 30px; font-weight: 400;
+    letter-spacing: 1px; display: inline-block;
+    animation: scorePop .42s cubic-bezier(.2,1.5,.3,1) .26s backwards; }
+  @keyframes scorePop { 0% { opacity: 0; scale: 0.4; } 70% { opacity: 1; scale: 1.18; } 100% { scale: 1; } }
+  /* staggered rise for the card's rows, same language as the menu buttons */
+  #overlay .card > *:not(h2) { animation: btnRise .4s cubic-bezier(.2,1.1,.3,1) backwards; }
+  #overlay .card > *:nth-child(2) { animation-delay: .20s; }
+  #overlay .card > *:nth-child(3) { animation-delay: .26s; }
+  #overlay .card > *:nth-child(4) { animation-delay: .31s; }
+  #overlay .card > *:nth-child(5) { animation-delay: .36s; }
+  #overlay .card > *:nth-child(6) { animation-delay: .40s; }
+  #overlay .card > *:nth-child(7) { animation-delay: .44s; }
+  #overlay .card > *:nth-child(n+8) { animation-delay: .48s; }
+  .card .final { font-size: 15px; color: var(--muted); margin-bottom: 4px; }
+  .card .final b { color: var(--text); font-size: 20px; }
+  /* NOTE: needs #overlay .card in front of it — the stagger rule above is (1,1,1) and
+     would otherwise out-specify a bare #newHigh (1,0,0) and kill the pulse. */
+  #overlay .card #newHigh { color: #2a1a04; font-size: 11px; letter-spacing: 3px; font-weight: 800;
+    display: inline-block; margin: 2px auto 10px; padding: 5px 14px; border-radius: 999px;
+    background: linear-gradient(135deg, #ffd24d 0%, #ffe9a3 45%, #ff2d95 100%);
+    box-shadow: 0 0 22px rgba(255,210,77,0.6), inset 0 1px 0 rgba(255,255,255,0.5);
+    animation: highBadge 1.5s ease-in-out infinite; }
+  @keyframes highBadge {
+    0%, 100% { box-shadow: 0 0 20px rgba(255,210,77,0.5), inset 0 1px 0 rgba(255,255,255,0.5); scale: 1; }
+    50%      { box-shadow: 0 0 34px rgba(255,210,77,0.95), inset 0 1px 0 rgba(255,255,255,0.6); scale: 1.04; }
+  }
+  #newHigh.hidden { display: none; }
+  .card label { display: block; font-size: 11px; letter-spacing: 2px; color: var(--muted);
+    margin: 16px 0 6px; text-align: left; }
+  #initials { width: 100%; font: inherit; font-size: 26px; font-weight: 800; letter-spacing: 10px;
+    text-align: center; text-transform: uppercase; color: var(--text); background: rgba(5,8,16,0.92);
+    border: 1px solid var(--border); border-radius: 10px; padding: 8px 4px; outline: none; }
+  #initials:focus { border-color: var(--accent); }
+  #initials::placeholder { color: var(--muted); opacity: 0.4; }
+  #saveBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .card button { width: 100%; margin-top: 10px; padding: 11px; border-radius: 10px;
+    border: 1px solid var(--border); background: rgba(10,20,40,0.5); color: var(--text);
+    font-size: 14px; letter-spacing: 1px; font-weight: 700; }
+  .card button:hover { background: rgba(14,30,55,0.6); }
+  .card button.primary { background: linear-gradient(135deg, #00b8d9 0%, #7a4fd9 55%, #ff2d95 100%); border: none; font-size: 15px;
+    position: relative; overflow: hidden;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 6px 22px rgba(255,45,149,0.32); }
+  .card button.primary::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(105deg, transparent 38%, rgba(255,255,255,0.34) 50%, transparent 62%);
+    transform: translateX(-130%); animation: sheen 4.2s ease-in-out 1.2s infinite; }
+  .card button.primary:hover { filter: brightness(1.15);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), 0 8px 30px rgba(255,45,149,0.45); }
+  .card button:disabled { opacity: 0.5; cursor: default; }
+  #savedMsg { color: #39ff88; font-size: 12px; margin-top: 6px; min-height: 16px; }
+  #shareMsg { color: var(--gold); font-size: 12px; margin-top: 6px; min-height: 16px; }
+  /* instructions modal — scrollable, left-aligned */
+  #help { position: fixed; inset: 0; z-index: 21; display: flex; align-items: center;
+    justify-content: center; background: rgba(5, 8, 16, 0.82); backdrop-filter: blur(6px); }
+  #help.hidden { display: none; }
+  .help-card { width: min(92vw, 520px); max-height: 86vh; overflow-y: auto; text-align: left; }
+  .help-card h2 { text-align: center; }
+  .help-body { margin: 8px 0 6px; }
+  .help-sec { margin-bottom: 14px; }
+  .help-sec p { font-size: 12px; line-height: 1.7; color: var(--text); }
+  .help-sec p b { color: var(--accent); }
+  .help-sec .sub { text-align: left; }
+  .help-card::-webkit-scrollbar { width: 8px; }
+  .help-card::-webkit-scrollbar-track { background: rgba(0,229,255,0.05); }
+  .help-card::-webkit-scrollbar-thumb { background: rgba(0,229,255,0.3); border-radius: 4px; }
+  .help-card { scrollbar-width: thin; scrollbar-color: rgba(0,229,255,0.3) rgba(0,229,255,0.05); }
+  #booterr { position: fixed; left: 12px; bottom: 12px; z-index: 50; max-width: 70vw;
+    max-height: 40vh; overflow: auto; background: #0a1420; color: #7fffe0; border: 1px solid var(--danger);
+    border-radius: 10px; padding: 10px 12px; font: 11px/1.5 ui-monospace, monospace; white-space: pre-wrap; }
+  #booterr.hidden { display: none; }
+
+  /* ---- main menu ---- */
+  #menu { position: fixed; inset: 0; z-index: 15; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 14px;
+    background: radial-gradient(ellipse at 50% 38%, rgba(10,16,30,0.12) 0%, rgba(5,8,16,0.72) 82%);
+    backdrop-filter: blur(1px); -webkit-backdrop-filter: blur(1px);
+    animation: menuIn .5s cubic-bezier(.2,1.1,.3,1); }
+  @keyframes menuIn { from { opacity: 0; } to { opacity: 1; } }
+  #menu.hidden { display: none; }
+  body.menu-mode #titleBox, body.menu-mode #hud { display: none; }
+  .menu-title { font-family: var(--display); font-size: clamp(46px, 9.5vw, 112px); font-weight: 400; letter-spacing: 6px;
+    display: flex; user-select: none; line-height: 1.02; flex-wrap: wrap; justify-content: center;
+    align-items: center; gap: 0.18em; padding: 0 12px; position: relative; }
+  /* stage bloom behind the letters so the title sits on something instead of floating in the void */
+  .menu-title::before { content: ''; position: absolute; left: 50%; top: 50%; z-index: -1;
+    transform: translate(-50%, -50%); width: 124%; height: 190%; pointer-events: none;
+    background: radial-gradient(ellipse at 50% 50%,
+      rgba(0,229,255,0.20) 0%, rgba(122,79,217,0.14) 36%, rgba(255,45,149,0.09) 58%, transparent 76%);
+    animation: stageBreathe 5.4s ease-in-out infinite; }
+  @keyframes stageBreathe {
+    0%, 100% { opacity: 0.75; transform: translate(-50%, -50%) scale(1); }
+    50%      { opacity: 1;    transform: translate(-50%, -50%) scale(1.07); }
+  }
+  /* each word is an unbreakable unit -> mobile wraps cleanly as MACHINE / ELVES */
+  .menu-title .word { display: inline-flex; white-space: nowrap; }
+  /* chunky extruded block letters, two layers, NO css filters:
+     - the span's own glyph is solid dark ink and carries the extrusion + neon bloom as
+       text-shadow (painted with the text, cheap, stable while animating)
+     - ::after redraws the same letter (data-l) exactly on top with the gradient face.
+     v1 did this with a 7-deep drop-shadow filter chain per animated letter over WebGL +
+     backdrop-filter — that re-rasterized every frame and tore/flickered on phones. */
+  .menu-title .lt { display: inline-block; position: relative; color: #0a1026;
+    text-shadow:
+      0 1px 0 #0a1026, 0 2px 0 #0b1a30, 0 3px 0 #0b1a30, 0 4px 0 #08182a,
+      0 7px 6px rgba(0,0,0,0.55),
+      0 0 18px rgba(0,229,255,0.7), 0 0 44px rgba(255,45,149,0.45);
+    animation: ltSlam .62s cubic-bezier(.2,1.35,.32,1) backwards, ltfloat 2.8s ease-in-out infinite; }
+  .menu-title .lt::after { content: attr(data-l); position: absolute; left: 0; top: 0;
+    text-shadow: none;
+    background: linear-gradient(180deg, #ffffff 0%, #d4faff 18%, #00e5ff 48%, #b23bd0 78%, #ff2d95 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    -webkit-text-fill-color: transparent; }
+  /* letters float AND get pushed by the cursor (--lt-x/--lt-y set from JS) */
+  @keyframes ltfloat {
+    0%, 100% { transform: translate(var(--lt-x, 0px), var(--lt-y, 0px)) rotate(0deg); }
+    50% { transform: translate(var(--lt-x, 0px), calc(var(--lt-y, 0px) - 13px)) rotate(-3deg); }
+  }
+  /* entrance slam. uses the independent `scale` property, NOT transform — ltfloat owns
+     transform, so the two animations can run together without clobbering each other. */
+  @keyframes ltSlam {
+    0%   { opacity: 0; scale: 2.3; }
+    55%  { opacity: 1; scale: 0.93; }
+    76%  { scale: 1.07; }
+    100% { opacity: 1; scale: 1; }
+  }
+  .menu-tag { font-size: 12px; letter-spacing: 6px; color: #eafcff; text-align: center; margin-top: 16px;
+    font-weight: 700; padding: 7px 18px; border-radius: 999px;
+    border: 1px solid rgba(0,229,255,0.4); background: rgba(0,229,255,0.07);
+    text-shadow: 0 0 12px rgba(0,229,255,0.7), 0 2px 8px rgba(0,0,0,0.6);
+    box-shadow: inset 0 0 18px rgba(0,229,255,0.12), 0 0 22px rgba(0,229,255,0.18);
+    animation: tagIn .5s ease-out .62s backwards, tagGlow 3.6s ease-in-out 1.1s infinite; }
+  @keyframes tagIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  @keyframes tagGlow {
+    0%, 100% { box-shadow: inset 0 0 18px rgba(0,229,255,0.12), 0 0 22px rgba(0,229,255,0.18); }
+    50%      { box-shadow: inset 0 0 24px rgba(0,229,255,0.22), 0 0 34px rgba(0,229,255,0.34); }
+  }
+  .menu-btns { display: flex; flex-direction: column; gap: 11px; margin-top: 46px; width: min(86vw, 372px); }
+  /* staggered rise so the whole title screen lands as one move instead of appearing flat.
+     finite + backwards: once it ends, transform goes back to the :hover rules. */
+  .menu-btns > * { animation: btnRise .42s cubic-bezier(.2,1.1,.3,1) backwards; }
+  .menu-btns > *:nth-child(1) { animation-delay: .74s; }
+  .menu-btns > *:nth-child(2) { animation-delay: .82s; }
+  .menu-btns > *:nth-child(3) { animation-delay: .90s; }
+  .menu-btns > *:nth-child(4) { animation-delay: .98s; }
+  .menu-btns > *:nth-child(5) { animation-delay: 1.06s; }
+  @keyframes btnRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  /* difficulty selector: two compact radio-style buttons above START */
+  .diff-sel { display: flex; gap: 6px; margin-bottom: 2px; }
+  .diff-btn { flex: 1; font-family: var(--mono); font-size: 10.5px; letter-spacing: 2.5px; padding: 8px 6px;
+    background: rgba(18,25,45,0.72); border: 1px solid var(--border); color: var(--muted);
+    border-radius: 8px; cursor: pointer; transition: all .16s ease; font-weight: 600; }
+  .diff-btn:hover { border-color: var(--accent); color: var(--fg); transform: translateY(-1px); }
+  .diff-btn.sel { background: linear-gradient(160deg, rgba(0,229,255,0.18), rgba(255,45,149,0.16));
+    border-color: var(--accent); color: var(--accent); box-shadow: 0 0 16px rgba(0,229,255,0.3); }
+  .mbtn { font: inherit; font-size: 14px; font-weight: 700; letter-spacing: 2.5px; padding: 12px 18px;
+    border-radius: 10px; border: 1px solid var(--border); background: var(--panel); color: var(--text);
+    cursor: pointer; transition: all .16s cubic-bezier(.2,.9,.3,1.2); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), 0 4px 14px rgba(0,0,0,0.35); }
+  .mbtn:hover, .mbtn.sel { border-color: var(--accent); background: rgba(0,40,60,0.45);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 0 26px rgba(0,229,255,0.3);
+    transform: translateY(-1px) scale(1.015); }
+  .mbtn:active { transform: translateY(0) scale(0.985); transition-duration: .06s; }
+  .mbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .mbtn.primary { background: linear-gradient(135deg, #00b8d9 0%, #7a4fd9 55%, #ff2d95 100%); border: none; font-size: 15px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 6px 22px rgba(255,45,149,0.3);
+    position: relative; overflow: hidden; }
+  /* light sweeps across START every few seconds — draws the eye without a loud animation */
+  .mbtn.primary::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(105deg, transparent 38%, rgba(255,255,255,0.38) 50%, transparent 62%);
+    transform: translateX(-130%); animation: sheen 4.2s ease-in-out 1.6s infinite; }
+  @keyframes sheen { 0% { transform: translateX(-130%); } 26%, 100% { transform: translateX(130%); } }
+  .mbtn.primary:hover, .mbtn.primary.sel { filter: brightness(1.12);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.28), 0 8px 30px rgba(255,45,149,0.42); }
+  .menu-hint { font-size: 11px; color: var(--muted); letter-spacing: 1px; margin-top: 12px; text-align: center; }
+  .menu-legend { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; justify-content: center; max-width: 540px; }
+  .ml { font-size: 10px; letter-spacing: 1px; padding: 7px 10px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--panel); color: var(--muted);
+    display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 128px; }
+  .ml .ml-top { display: flex; align-items: center; gap: 5px; font-weight: 700; color: var(--text); }
+  .ml b { font-size: 12px; }
+  .ml .ml-desc { font-size: 9px; letter-spacing: .4px; color: var(--muted); opacity: .85; text-align: center; line-height: 1.25; }
+
+  /* ---- high scores screen ---- */
+  #scores { position: fixed; inset: 0; z-index: 18; display: flex; align-items: center;
+    justify-content: center; background: rgba(5, 8, 16, 0.85); backdrop-filter: blur(6px); }
+  #scores.hidden { display: none; }
+  .scores-diff { text-align: center; font-family: var(--mono); font-size: 11px; letter-spacing: 3px;
+    color: var(--accent); margin: -4px 0 14px; font-weight: 700; text-transform: uppercase;
+    text-shadow: 0 0 12px rgba(0,229,255,0.4); }
+  .global-note { font-size: 10px; color: var(--muted); letter-spacing: .5px; margin: 4px 0 2px; min-height: 13px; }
+
+  /* ---- two-section board: INITIATES | MASTERS ---- */
+  .scores-card { width: min(94vw, 610px); }
+  .board-cols { display: flex; gap: 14px; text-align: left; margin-bottom: 4px; }
+  .board-col { flex: 1 1 0; min-width: 0; border-radius: 12px; padding: 12px 13px 10px;
+    border: 1px solid var(--border); background: rgba(8,12,24,0.5); }
+  .board-col.col-initiate { border-color: rgba(0,229,255,0.3);
+    box-shadow: inset 0 0 26px rgba(0,229,255,0.07); }
+  .board-col.col-master { border-color: rgba(255,45,149,0.34);
+    box-shadow: inset 0 0 26px rgba(255,45,149,0.08); }
+  .board-head { font-family: var(--display); font-size: 17px; font-weight: 400; letter-spacing: 2.5px;
+    text-align: center; line-height: 1.1; }
+  .col-initiate .board-head { color: var(--accent); text-shadow: 0 0 14px rgba(0,229,255,0.55); }
+  .col-master .board-head { color: #ff6ab0; text-shadow: 0 0 14px rgba(255,45,149,0.6); }
+  .board-sub { font-size: 8.5px; letter-spacing: 1.2px; color: var(--muted); text-align: center;
+    margin: 3px 0 8px; text-transform: uppercase; font-weight: 600; }
+  .board-tier { font-size: 8.5px; letter-spacing: 2px; color: var(--muted); font-weight: 700;
+    margin: 9px 0 4px; text-transform: uppercase; }
+  .board-col ol.tops li { font-size: 11px; padding: 2px 3px; gap: 5px; }
+  .board-col ol.tops li .rank { width: 16px; }
+  .board-col ol.tops li .name { letter-spacing: 1.5px; }
+  /* the columns are ~270px — "Most Phenomenal Elve" would crush the name field, so only
+     #1 keeps its badge here. the rest still carry the tier in their title tooltip. */
+  .board-col ol.tops li .tier { display: none; }
+  .board-col ol.tops li.tier-phenomenal .tier { display: inline-block; font-size: 7px; padding: 1px 5px; }
+  /* phones: stack the two sections instead of squeezing them */
+  @media (max-width: 560px) {
+    .board-cols { flex-direction: column; gap: 11px; }
+    .board-col ol.tops li { font-size: 12px; }
+  }
+
+  /* ---- mobile (phone) ---- */
+  @media (max-width: 768px) {
+    #titleBox { display: none; }
+    #hud { top: max(10px, env(safe-area-inset-top)); right: 10px; width: auto;
+      padding: 8px 12px; display: flex; flex-direction: row; align-items: center; gap: 14px; }
+    #hud .stat { border-bottom: none; padding: 0; gap: 6px; flex-direction: column; align-items: center; }
+    #hud .stat span { font-size: 7px; letter-spacing: 1px; }
+    #hud .stat b { font-size: 15px; }
+    #hud .sub, #hud .tops, #hud .keys { display: none; }
+    #soundBtn { bottom: calc(54px + env(safe-area-inset-bottom)); left: 10px; padding: 6px 10px; }
+    #musicBox { bottom: calc(10px + env(safe-area-inset-bottom)); left: 10px; }
+    .card { padding: 20px 22px; }
+    .menu-legend { display: none; }
+  }
+
+/* --- mobile: keep tall overlay panels reachable (2026-11-13) --- */
+#overlay, #scores {
+  align-items: flex-start;
+  justify-content: flex-start;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  padding: 16px 0;
+}
+#overlay > *, #scores > * { margin: auto; }
+@media (max-width: 520px) {
+  #overlay .tops > li:nth-child(n+6) { display: none; }
+}
+
+/* ── LOADING SCREEN ─────────────────────────────────────────────
+   Full-screen overlay shown instantly on page load (before three.js
+   boots) to mask the ~1s gap between DOM render and first frame.
+   A CSS machine elf bobs while the scene builds. Fades out on the
+   first rendered frame (once display fonts are ready). */
+#loader { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 26px;
+  background: radial-gradient(ellipse at 50% 42%, #0b1024 0%, #05070f 78%);
+  transition: opacity .55s ease; }
+#loader.hidden { opacity: 0; pointer-events: none; }
+.loader-elf { display: flex; flex-direction: column; align-items: center;
+  animation: lefloat 2.4s ease-in-out infinite;
+  filter: drop-shadow(0 10px 26px rgba(0,229,255,0.4)); }
+@keyframes lefloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-16px); } }
+.le-hat { width: 0; height: 0; border-left: 27px solid transparent; border-right: 27px solid transparent;
+  border-bottom: 46px solid #5a6b88; position: relative; }
+.le-hat::after { content: ''; position: absolute; left: -27px; bottom: 0; width: 54px; height: 6px;
+  background: #00e5ff; box-shadow: 0 0 12px #00e5ff; }
+.le-head { width: 48px; height: 44px; background: #6b7c99; border-radius: 50% 50% 46% 46%;
+  position: relative; margin-top: -3px; z-index: 2; }
+.le-visor { position: absolute; left: 50%; top: 18px; transform: translateX(-50%);
+  width: 32px; height: 8px; border-radius: 4px; background: #00e5ff;
+  box-shadow: 0 0 14px #00e5ff, 0 0 26px rgba(0,229,255,0.6);
+  animation: lepulse 1.6s ease-in-out infinite; }
+@keyframes lepulse { 0%,100% { opacity: 1; box-shadow: 0 0 14px #00e5ff, 0 0 26px rgba(0,229,255,0.6); }
+  50% { opacity: 0.55; box-shadow: 0 0 8px #00e5ff; } }
+.le-body { width: 46px; height: 50px; background: #5a6b88; border-radius: 13px;
+  position: relative; margin-top: -5px; z-index: 1; }
+.le-core { position: absolute; left: 50%; top: 20px; transform: translateX(-50%);
+  width: 13px; height: 13px; border-radius: 50%; background: #00e5ff;
+  box-shadow: 0 0 14px #00e5ff, 0 0 24px rgba(0,229,255,0.5);
+  animation: lepulse 1.6s ease-in-out infinite; }
+.le-beard { width: 0; height: 0; border-left: 19px solid transparent; border-right: 19px solid transparent;
+  border-top: 32px solid #f4f6ff; margin-top: -3px; }
+.loader-title { font-size: clamp(26px, 5vw, 46px); font-weight: 800; letter-spacing: 5px;
+  background: linear-gradient(180deg, #fff 0%, #bfefff 45%, #4fd8f2 100%);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.loader-status { font-size: 12px; letter-spacing: 5px; color: #8899bb; }
+.loader-gauge { width: min(280px, 62vw); height: 6px; border-radius: 4px;
+  background: rgba(255,255,255,0.08); overflow: hidden;
+  box-shadow: inset 0 0 6px rgba(0,0,0,0.5); }
+.loader-gauge-fill { height: 100%; width: 0%; border-radius: 4px;
+  background: linear-gradient(90deg, #00e5ff, #4fd8f2);
+  box-shadow: 0 0 12px rgba(0,229,255,0.7); transition: width .12s linear; }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Rubik:wght@400;500;700&family=Playfair+Display:wght@600;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body class="menu-mode">
+<!-- LOADING SCREEN: shown instantly, fades out on first rendered frame (see hideLoader/kickLoader) -->
+<div id="loader" aria-hidden="true">
+  <div class="loader-elf">
+    <div class="le-hat"></div>
+    <div class="le-head"><div class="le-visor"></div></div>
+    <div class="le-body"><div class="le-core"></div></div>
+    <div class="le-beard"></div>
+  </div>
+  <div class="loader-title">MACHINE ELVES</div>
+  <div class="loader-gauge"><div class="loader-gauge-fill" id="gaugeFill"></div></div>
+  <div class="loader-status">LOADING <span id="gaugePct">0%</span></div>
+</div>
+<div id="vignette"></div>
+<div id="titleBox" class="panel">
+  <h1>MACHINE <span>ELVES</span></h1>
+  <p>DMT FAIRYLAND</p>
+</div>
+<div id="hud" class="panel">
+  <div class="stat"><span>SCORE</span><b id="score">0</b></div>
+  <div class="stat"><span>LEVEL</span><b id="level">1</b></div>
+  <div class="stat" id="nextRow"><span>NEXT</span><b id="nextDot"></b></div>
+  <div class="stat"><span>CHARGES</span><b id="dropDots"><i></i><i></i><i></i></b></div>
+  <h3 class="sub">TOP ELVES</h3>
+  <ol id="hudTop" class="tops"></ol>
+  <div class="keys" id="hudKeys">
+    <kbd>←</kbd> <kbd>→</kbd> &nbsp;aim<br>
+    hold <kbd>SPACE</kbd> &nbsp;charge · release to fire<br>
+    <kbd>P</kbd> pause<br>
+    4+ SPARK · 5+ MASTER · 10+ PHENOMENAL ✦
+  </div>
+</div>
+<button id="pauseBtn">❚❚ &nbsp;PAUSE</button>
+<button id="soundBtn">🔊 sound on</button>
+<div id="musicBox">
+  <button id="musicPrev" title="Previous track">⏮</button>
+  <div id="musicName">1. Fairyland</div>
+  <button id="musicNext" title="Next track (M)">⏭</button>
+  <button id="musicToggle" title="Music on/off">🎵</button>
+</div>
+<div id="radioBox"></div>
+<div id="banner"><h2 id="bannerTitle"></h2><p id="bannerSub"></p></div>
+<div id="menu">
+  <h1 class="menu-title" aria-label="MACHINE ELVES">
+    <span class="word"><span class="lt" data-l="M" style="animation-delay:0.000s">M</span><span class="lt" data-l="A" style="animation-delay:0.045s">A</span><span class="lt" data-l="C" style="animation-delay:0.090s">C</span><span class="lt" data-l="H" style="animation-delay:0.135s">H</span><span class="lt" data-l="I" style="animation-delay:0.180s">I</span><span class="lt" data-l="N" style="animation-delay:0.225s">N</span><span class="lt" data-l="E" style="animation-delay:0.270s">E</span></span><span class="word"><span class="lt" data-l="E" style="animation-delay:0.360s">E</span><span class="lt" data-l="L" style="animation-delay:0.405s">L</span><span class="lt" data-l="V" style="animation-delay:0.450s">V</span><span class="lt" data-l="E" style="animation-delay:0.495s">E</span><span class="lt" data-l="S" style="animation-delay:0.540s">S</span></span>
+  </h1>
+  <p class="menu-tag">DMT FAIRYLAND — DSDA GAMES</p>
+  <div class="menu-btns">
+    <div class="diff-sel" role="radiogroup" aria-label="Difficulty">
+      <button id="diffInitiate" class="diff-btn sel" role="radio" aria-checked="true">INITIATE</button>
+      <button id="diffMaster" class="diff-btn" role="radio" aria-checked="false">MASTER</button>
+    </div>
+    <button id="menuStart" class="mbtn primary">START GAME</button>
+    <button id="menuScores" class="mbtn">TOP ELVES</button>
+    <button id="menuHelp" class="mbtn">INSTRUCTIONS</button>
+    <button id="menuSite" class="mbtn">BACK TO DSDA ARCADE</button>
+  </div>
+  <div class="menu-legend" id="menuLegend"></div>
+  <p class="menu-hint" id="menuHint">← → aim · hold SPACE to charge, release to fire · 4+ in one = SPARK, 5+ = MASTER, 10+ = PHENOMENAL</p>
+</div>
+<div id="scores" class="hidden">
+  <div class="card scores-card">
+    <h2 style="color: var(--accent);">TOP ELVES</h2>
+    <p id="scoresDiff" class="scores-diff">BOTH PATHS — DS-DA.CA</p>
+    <div class="board-cols">
+      <section class="board-col col-initiate">
+        <h3 class="board-head">INITIATES</h3>
+        <p class="board-sub">prediction line on</p>
+        <h4 class="board-tier">GLOBAL</h4>
+        <ol id="globalTop" class="tops"></ol>
+        <p id="globalNote" class="global-note"></p>
+        <h4 class="board-tier">THIS DEVICE</h4>
+        <ol id="localTop" class="tops"></ol>
+      </section>
+      <section class="board-col col-master">
+        <h3 class="board-head">MASTERS</h3>
+        <p class="board-sub">no line · no bank shots</p>
+        <h4 class="board-tier">GLOBAL</h4>
+        <ol id="globalTopM" class="tops"></ol>
+        <p id="globalNoteM" class="global-note"></p>
+        <h4 class="board-tier">THIS DEVICE</h4>
+        <ol id="localTopM" class="tops"></ol>
+      </section>
+    </div>
+    <button id="scoresBack" class="primary">Back to Menu</button>
+  </div>
+</div>
+
+<div id="help" class="hidden">
+  <div class="card help-card">
+    <h2 style="color: var(--accent);">INSTRUCTIONS</h2>
+    <div class="help-body">
+      <div class="help-sec">
+        <h3 class="sub">HOW TO PLAY</h3>
+        <p>Charge a shot and fire it into the fairyland lattice. Link <b>3+ same-color blossoms</b> to pop them. Popped blossoms above drop down — chain the drops for bigger combos.</p>
+      </div>
+      <div class="help-sec">
+        <h3 class="sub">CONTROLS</h3>
+        <p><b>AIM</b> — ← → keys, or swipe to steer the wand.<br>
+        <b>CHARGE</b> — hold SPACE (or hold touch) to power the shot, release to fire.</p>
+      </div>
+      <div class="help-sec">
+        <h3 class="sub">COMBOS</h3>
+        <p>4+ <b>SPARK</b> · 5+ <b>MASTER</b> · 10+ <b>PHENOMENAL</b>.<br>
+        <b>DOUBLE PUNCH</b> — when a big pop drops a cascade of blossoms (5+), you score a bonus and hear the callout: 5 / 10 / 15 / 20 ball.</p>
+      </div>
+      <div class="help-sec">
+        <h3 class="sub">TOP ELVES</h3>
+        <p>Two boards, kept apart: <b>INITIATES</b> (prediction line on) and <b>MASTERS</b> (no line, no bank shots). You rank on the one you played.<br>
+        Within a board — #1 <b>Most Phenomenal Elve</b> · #2–5 <b>Apprentice Elves</b> · #6+ <b>rank and file</b>.</p>
+      </div>
+      <div class="help-sec">
+        <h3 class="sub">DSDA RADIO</h3>
+        <p>The top-left radio streams the DSDA network. Tap the pill to open it, pick a station, and use the slider for volume. It auto-folds after 2s.</p>
+      </div>
+    </div>
+    <button id="helpBack" class="primary">Back to Menu</button>
+  </div>
+</div>
+<div id="pause" class="hidden">
+  <div class="card">
+    <h2 style="color: var(--accent);">PAUSED</h2>
+    <p class="final">Press <b>P</b> or <b>Esc</b> to resume</p>
+    <button id="pauseResume" class="primary">Resume</button>
+    <button id="pauseMenu">Main Menu</button>
+  </div>
+</div>
+<div id="overlay" class="hidden">
+  <div class="card">
+    <h2>GAME OVER</h2>
+    <div id="newHigh" class="hidden">★ NEW HIGH SCORE ★</div>
+    <p class="final">Final score <b id="finalScore">0</b></p>
+    <p class="final" id="finalLevel">reached level 1</p>
+    <label for="initials">YOUR INITIALS</label>
+    <input id="initials" maxlength="3" placeholder="ABC" autocomplete="off" spellcheck="false" />
+    <button id="saveBtn">Save Score</button>
+    <div id="savedMsg"></div>
+    <button id="shareBtn">Share Score</button>
+    <div id="shareMsg"></div>
+    <h3 class="sub">TOP ELVES</h3>
+    <ol id="topList" class="tops"></ol>
+    <button id="playAgain" class="primary">Play Again</button>
+    <button id="toMenu">Main Menu</button>
+  </div>
+</div>
+<div id="booterr" class="hidden"></div>
+<noscript><p style="position:fixed;top:40%;width:100%;text-align:center">JavaScript is required.</p></noscript>
+<script>
+// surface top-level module failures (import errors etc.) into __bootErr
+window.addEventListener('error', e => {
+  if (!window.__bootErr) window.__bootErr = 'page: ' + (e.message || String(e));
+});
+</script>
+
+<script type="importmap">
+{ "imports": { "three": "./three.module.js" } }
+</script>
+
+<script type="module">
+// three.js is vendored next to the game (self-contained, offline-capable, instant boot)
+import * as THREE from './three.module.js';
+// post-processing (bloom) — vendored jsm modules, resolved via the import map above
+import { EffectComposer } from './jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from './jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from './jsm/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from './jsm/postprocessing/OutputPass.js';
+'use strict';
+// Disable the bfcache (back/forward cache) so the mobile browser back button
+// always navigates to the arcade instead of restoring this page frozen in its
+// game-over/menu state (the "weird overlay"). When the page IS restored from
+// the bfcache, force a fresh reload so it shows a clean menu.
+(function () {
+  const KEY = 'dsda-bfcache:' + location.pathname;
+  window.addEventListener('pagehide', (e) => { if (e.persisted) sessionStorage.setItem(KEY, '1'); });
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted && sessionStorage.getItem(KEY)) {
+      sessionStorage.removeItem(KEY);
+      location.reload();
+    }
+  });
+})();
+
+// ---------------- field geometry (orthographic, 2D plane) ----------------
+const C = 11;                     // columns (all rows)
+const BUBBLE_R = 0.34;            // bubble radius (smaller = more room + longer rounds)
+const COL_W = 0.68;               // horizontal pitch (scaled 0.85x)
+const ROW_H = 0.589;              // vertical pitch (hex, COL_W * sin60)
+const XOFF = -0.17;               // center the staggered field on x=0
+const TOP_Y = 12.4;               // y of the topmost row (raised for more starting room)
+const CEILING_Y = TOP_Y + 0.35;
+const WALL_X = 4.46;              // bubble-center limit
+const DANGER_Y = 3.0;             // a bubble below this = game over
+const SHOOTER_X = 0, SHOOTER_Y = 1.8;
+const WAND_LEN = 0.95;
+const START_ROWS = 6;
+const SHOTS_PER_PUSH = 3;         // shots per row-descent
+const AIM_MIN = Math.PI / 12, AIM_MAX = 11 * Math.PI / 12; // 15°..165°
+const CHARGE_TIME = 0.7;          // seconds to full power
+const MIN_FIRE = 0.12;
+const FULL_POWER = 0.95;
+const SHOT_BASE = 8, SHOT_MAX = 13;
+
+// fairyland pastel bubble palette
+// [2] was mint 0x39ff88: only ~40deg of hue from the cyan and just as bright, so once
+// emissive + bloom pushed both toward white they read as the same pale aqua. Now a
+// deeper emerald — separated by hue AND brightness — with a lower self-glow (below).
+const COLORS = [0x00e5ff, 0xff2d95, 0x14c43c, 0xb026ff, 0xffc300, 0x2979ff];
+// per-color emissive strength (default 0.42); the emerald stays low so it can't bloom pastel
+const COLOR_GLOW = [0.42, 0.42, 0.22, 0.42, 0.42, 0.42];
+
+// ---------------- levels ----------------
+function levelColors(n) { return Math.min(5 + (n >= 3 ? 1 : 0), 6); }
+function levelRows(n) { return Math.min(START_ROWS + Math.floor((n - 1) / 3), 10); }
+
+// ---------------- scoring / leaderboard ----------------
+const SCORE_KEY = 'popper_scores.v1';
+const GAME_ID = 'popper';
+// ---------------- GA4 analytics (optional; never breaks the game) ----------------
+function track(event, params) {
+  try {
+    if (typeof gtag === 'function') {
+      gtag('event', event, Object.assign({ game: GAME_ID }, params || {}));
+    }
+  } catch (e) { /* analytics must never interrupt gameplay */ }
+}
+const SHARE_URL = 'https://ds-da.ca/games/popper/machine-elves.html';
+const SCORE_DISPATCH_URL = 'https://api.github.com/repos/onebender137/ds-da/actions/workflows/score-webhook.yml/dispatches';
+const BOARD_API = 'https://api.ds-da.ca/api/board'; // fast path (instant); GitHub dispatch = fallback
+function fetchTimeout(url, opts, ms = 4000) {
+  const c = new AbortController();
+  const t = setTimeout(() => c.abort(), ms);
+  return fetch(url, Object.assign({ signal: c.signal }, opts)).finally(() => clearTimeout(t));
+}
+const SCORE_TOKEN = ''; // retired 2026-11-13: board API is a Cloudflare Worker; GitHub dispatch fallback removed
+const SCORE_SECRET = '6216cf68f4e077d3cd991f2d6bd3e878';
+
+// ---------------- dom ----------------
+const $ = id => document.getElementById(id);
+const elScore = $('score'), elLevel = $('level'), elNextDot = $('nextDot');
+const elDropDots = $('dropDots');
+const elHudTop = $('hudTop'), elOverlay = $('overlay');
+const elFinal = $('finalScore'), elFinalLevel = $('finalLevel');
+const elInitials = $('initials'), elSave = $('saveBtn'), elSavedMsg = $('savedMsg');
+const DSDA_INITS_KEY = 'dsda-initials';
+const dsdaInits = () => { try { return (localStorage.getItem(DSDA_INITS_KEY) || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3); } catch (e) { return ''; } };
+function setSaveEnabled() { elSave.disabled = !elInitials.value.replace(/[^a-zA-Z0-9]/g, '').trim(); }
+elInitials.addEventListener('input', () => { elInitials.value = elInitials.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); setSaveEnabled(); });
+const elShare = $('shareBtn'), elShareMsg = $('shareMsg');
+const elTopList = $('topList'), elPlayAgain = $('playAgain'), elNewHigh = $('newHigh');
+const elMenu = $('menu'), elScores = $('scores'), elHelp = $('help');
+const elGlobalTop = $('globalTop'), elLocalTop = $('localTop'), elGlobalNote = $('globalNote');
+// the MASTERS half of the two-section board (INITIATES uses the three above)
+const elGlobalTopM = $('globalTopM'), elLocalTopM = $('localTopM'), elGlobalNoteM = $('globalNoteM');
+const elScoresBack = $('scoresBack'), elHelpBack = $('helpBack'), elToMenu = $('toMenu');
+const elSound = $('soundBtn'), elBootErr = $('booterr');
+const elMusicName = $('musicName'), elMusicPrev = $('musicPrev');
+const elMusicNext = $('musicNext'), elMusicToggle = $('musicToggle');
+const elBanner = $('banner'), elBannerTitle = $('bannerTitle'), elBannerSub = $('bannerSub');
+
+// ---------------- three.js globals ----------------
+let renderer, scene, camera, clock;
+let composer = null, bloomPass = null;   // bloom post-processing (null = plain render fallback)
+let sceneEl = null;
+let webglOK = true;
+let rafId = 0;
+let inputFrozen = false;
+let _halfW = 6, _halfH = 7;
+
+// ---------------- audio engine: ONE context, master bus -> compressor ----------------
+// (was two separate AudioContexts straight into destination — clipped on big pops,
+//  and iOS caps how many contexts a page may hold)
+const AudioEngine = {
+  ctx: null, master: null, sfxBus: null, musBus: null, noiseBuf: null, failed: false,
+  ensure() {
+    if (this.failed) return null;
+    if (!this.ctx) {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const comp = ctx.createDynamicsCompressor();
+        comp.threshold.value = -14; comp.knee.value = 18; comp.ratio.value = 5;
+        comp.attack.value = 0.004; comp.release.value = 0.16;
+        const master = ctx.createGain(); master.gain.value = 0.9;
+        const sfxBus = ctx.createGain(); sfxBus.gain.value = 1;
+        const musBus = ctx.createGain(); musBus.gain.value = 0.75;
+        sfxBus.connect(master); musBus.connect(master); master.connect(comp); comp.connect(ctx.destination);
+        const len = Math.floor(ctx.sampleRate * 0.25);
+        const nb = ctx.createBuffer(1, len, ctx.sampleRate);
+        const d = nb.getChannelData(0);
+        for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+        Object.assign(this, { ctx, master, sfxBus, musBus, noiseBuf: nb });
+        // voice buffers may have fetched before the context existed — decode now
+        if (typeof voices !== 'undefined') voices.onContextReady();
+      } catch (e) { this.failed = true; return null; }
+    }
+    if (this.ctx.state === 'suspended') this.ctx.resume().catch(() => {});
+    return this.ctx;
+  },
+  // duck the music under a big moment, then recover
+  duck(amt, dur) {
+    if (!this.musBus) return;
+    const t = this.ctx.currentTime, g = this.musBus.gain;
+    g.cancelScheduledValues(t);
+    g.setValueAtTime(g.value, t);
+    g.linearRampToValueAtTime(0.75 * (1 - amt), t + 0.03);
+    g.linearRampToValueAtTime(0.75, t + dur);
+  },
+};
+
+// ---------------- synthesized SFX (fairyland) ----------------
+const sfx = {
+  on: true,
+  get ctx() { return AudioEngine.ctx; },
+  get out() { return AudioEngine.sfxBus; },
+  ensure() { AudioEngine.ensure(); },
+  tone(f, dur, type, vol, delay, slideTo, filt) {
+    if (!this.on || !this.ctx) return;
+    dur = dur || 0.08; type = type || 'square'; vol = vol || 0.1; delay = delay || 0;
+    const t0 = this.ctx.currentTime + delay;
+    const o = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(Math.max(30, f), t0);
+    if (slideTo) o.frequency.exponentialRampToValueAtTime(Math.max(30, slideTo), t0 + dur);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol, t0 + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g);
+    if (filt) { const f2 = this.ctx.createBiquadFilter(); f2.type = 'lowpass'; f2.frequency.value = filt; g.connect(f2); f2.connect(this.out); }
+    else g.connect(this.out);
+    o.start(t0); o.stop(t0 + dur + 0.03);
+  },
+  noise(dur, vol, hp, lp, delay) {
+    if (!this.on || !this.ctx) return;
+    const t0 = this.ctx.currentTime + (delay || 0);
+    const src = this.ctx.createBufferSource(); src.buffer = AudioEngine.noiseBuf;
+    const h = this.ctx.createBiquadFilter(); h.type = 'highpass'; h.frequency.value = hp || 200;
+    const l = this.ctx.createBiquadFilter(); l.type = 'lowpass'; l.frequency.value = lp || 6000;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(vol, t0);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    src.connect(h); h.connect(l); l.connect(g); g.connect(this.out);
+    src.start(t0); src.stop(t0 + dur + 0.02);
+  },
+  shot(p) {
+    // whoosh up + a soft pluck at release; pitch tracks power
+    this.noise(0.08, 0.05 + 0.06 * p, 900, 7000);
+    this.tone(280 + p * 240, 0.1, 'sine', 0.16, 0, 640 + p * 320);
+  },
+  bounce() { this.tone(180, 0.05, 'sine', 0.09, 0, 140); this.noise(0.03, 0.03, 600, 3000); },
+  stick() { this.tone(220, 0.07, 'triangle', 0.12, 0, 160); this.noise(0.05, 0.05, 300, 2200); },
+  pop(n) {
+    // rising sparkle arpeggio, length scales with pop size + shimmer
+    const base = [523, 659, 784, 1047, 1319, 1568];
+    const k = Math.min(base.length, Math.max(3, n));
+    for (let i = 0; i < k; i++) this.tone(base[i], 0.1, 'square', 0.075, i * 0.035, 0, 6000);
+    this.noise(0.16, 0.05 + 0.015 * k, 1500, 9500);
+    if (n >= 3) AudioEngine.duck(0.3, 0.5);
+  },
+  fall() { this.tone(420, 0.12, 'triangle', 0.06, 0, 180); },
+  burst() {
+    // combo burst (Master Spark): bright shimmering cascade
+    [1047, 1319, 1568, 2093, 2637].forEach((f, i) => this.tone(f, 0.14, 'triangle', 0.06, i * 0.03));
+    [1568, 2093, 2637].forEach((f, i) => this.tone(f, 0.24, 'sine', 0.045, 0.16 + i * 0.02));
+    this.noise(0.3, 0.06, 2000, 11000, 0.1);
+    AudioEngine.duck(0.45, 0.8);
+  },
+  phenom() {
+    // phenomenal spark (10+): huge triumphant cascade
+    [784, 988, 1175, 1568, 1976, 2349, 3136, 4186].forEach((f, i) => this.tone(f, 0.16, 'triangle', 0.065, i * 0.035));
+    [1568, 2349, 3136, 4186].forEach((f, i) => this.tone(f, 0.28, 'sine', 0.05, 0.24 + i * 0.025));
+    this.noise(0.45, 0.08, 2500, 12000, 0.2);
+    AudioEngine.duck(0.6, 1.2);
+  },
+  charge() { this.tone(180, 0.05, 'sine', 0.04); },
+  ready() { [784, 1047, 1319].forEach((f, i) => this.tone(f, 0.08, 'square', 0.055, i * 0.03, 0, 5000)); this.noise(0.1, 0.04, 2500, 9000, 0.06); },
+  clear() {
+    [523, 659, 784, 1047, 1319, 1568, 2093].forEach((f, i) => this.tone(f, 0.15, 'square', 0.085, i * 0.08, 0, 6000));
+    this.noise(0.5, 0.06, 2000, 11000, 0.3);
+    AudioEngine.duck(0.4, 1.0);
+  },
+  punch() {
+    // DOUBLE PUNCH: heavy low thud + rising shimmer (the cascade impact)
+    this.tone(120, 0.16, 'sine', 0.22, 0, 55);
+    this.tone(240, 0.1, 'triangle', 0.1, 0.02, 120);
+    [880, 1175, 1568, 2093].forEach((f, i) => this.tone(f, 0.12, 'square', 0.05, 0.08 + i * 0.03, 0, 6000));
+    this.noise(0.25, 0.05, 1500, 9000, 0.05);
+    AudioEngine.duck(0.5, 0.9);
+  },
+  danger() { this.tone(72, 0.11, 'sine', 0.24, 0, 52); this.tone(72, 0.09, 'sine', 0.16, 0.17, 52); },
+  menuNav() { this.tone(900, 0.04, 'square', 0.03, 0, 1200, 3000); },
+  menuOk() { this.tone(660, 0.07, 'square', 0.055, 0, 0, 4000); this.tone(990, 0.1, 'square', 0.055, 0.06, 0, 4000); },
+  pause() { this.tone(440, 0.08, 'triangle', 0.09, 0, 330); },
+  resume() { this.tone(330, 0.08, 'triangle', 0.09, 0, 440); },
+  newHigh() {
+    [523, 659, 784, 1047, 784, 1047, 1319].forEach((f, i) => this.tone(f, 0.14, 'square', 0.06, 0.5 + i * 0.09, 0, 5000));
+    this.noise(0.5, 0.05, 3000, 12000, 0.95);
+  },
+  over() {
+    AudioEngine.duck(0.7, 2.5);
+    [523, 440, 392, 330, 262].forEach((f, i) => this.tone(f, 0.2, 'sawtooth', 0.08, i * 0.16, f * 0.9, 2500));
+    this.tone(98, 0.9, 'sine', 0.2, 0.75, 40);
+  },
+};
+
+// ---------------- Danny's voice calls (Kokoro bm_lewis, British) ----------------
+// Voiced rank notifications, played alongside the on-screen banner. Files live in
+// voices/ next to index.html. Raw bytes are fetched once at load; decoded to
+// AudioBuffers on first use (decodeAudioData needs a live AudioContext, which
+// only exists after the first user gesture). If a buffer isn't ready on the very
+// first pop, the synthesized SFX still plays — the voice catches up from then on.
+const voices = {
+  files: {
+    popper: 'voices/popper.ogg',
+    master: 'voices/master.ogg',
+    phenomenal: 'voices/phenomenal.ogg',
+    garden: 'voices/garden.ogg',
+    fall5: 'voices/fall5.ogg',
+    fall10: 'voices/fall10.ogg',
+    fall15: 'voices/fall15.ogg',
+    fall20: 'voices/fall20.ogg',
+  },
+  raw: {}, buf: {}, _fetched: false, _pending: [],
+  fetchAll() {
+    if (this._fetched) return;
+    this._fetched = true;
+    for (const k in this.files) {
+      fetch(this.files[k])
+        .then(r => { if (!r.ok) throw new Error(k + ' http ' + r.status); return r.arrayBuffer(); })
+        .then(ab => { this.raw[k] = ab; this._maybeDecode(k); })
+        .catch(() => { /* voice is a bonus — never break the game over it */ });
+    }
+  },
+  _maybeDecode(k) {
+    if (!AudioEngine.ctx) { this._pending.push(k); return; }
+    this._decode(k);
+  },
+  _decode(k) {
+    const ctx = AudioEngine.ctx;
+    if (!ctx || !this.raw[k] || this.buf[k]) return;
+    // decodeAudioData detaches the ArrayBuffer — hand it a copy
+    ctx.decodeAudioData(this.raw[k].slice(0))
+      .then(b => { this.buf[k] = b; })
+      .catch(() => {});
+  },
+  onContextReady() {
+    if (this._pending.length) {
+      const p = this._pending.slice(); this._pending = [];
+      p.forEach(k => this._decode(k));
+    }
+  },
+  play(k) {
+    if (!sfx.on || !AudioEngine.ctx) return;
+    this.fetchAll();
+    this._decode(k);
+    const b = this.buf[k];
+    if (!b) return;
+    const src = AudioEngine.ctx.createBufferSource();
+    src.buffer = b;
+    const g = AudioEngine.ctx.createGain();
+    g.gain.value = 0.95;
+    src.connect(g); g.connect(AudioEngine.sfxBus);
+    src.start();
+    // let the line breathe: duck the music for its length
+    AudioEngine.duck(0.7, b.duration + 0.4);
+  },
+};
+voices.fetchAll(); // start the download as soon as the script parses
+
+// ---------------- 8-bit chiptune music (3 tracks) ----------------
+const N2F = m => 440 * Math.pow(2, (m - 69) / 12);
+// Track 1: "Fairyland" — bright, bouncy C-major menu loop
+const FL_MELODY = [
+  76,79,81,79, 76,79,81,84, 83,81,79,76, 74,76,79,76,
+  72,74,76,79, 76,74,72,74, 71,72,74,76, 72,0,76,0,
+];
+const FL_BASS = [
+  48,0,55,0, 55,0,55,0, 52,0,59,0, 50,0,50,0,
+  45,0,52,0, 52,0,52,0, 43,0,50,0, 48,0,48,0,
+];
+// Track 2: "Sparkle Rush" — driving A-minor action anthem
+const SR_MELODY = [
+  69,69,72,74, 76,76,79,79, 76,74,72,69, 67,69,72,74,
+  76,76,79,81, 79,76,74,76, 72,74,76,74, 69,0,72,0,
+];
+const SR_BASS = [
+  45,0,45,0, 52,0,52,0, 45,0,45,0, 52,0,52,0,
+  41,0,41,0, 48,0,48,0, 43,0,43,0, 45,0,45,0,
+];
+// Track 3: "Twilight Garden" — dreamy D-minor interlude
+const TG_MELODY = [
+  62,0,65,0, 69,0,72,0, 74,0,72,0, 69,0,65,0,
+  62,0,65,0, 67,0,69,0, 72,0,69,0, 65,0,0,0,
+  62,0,65,0, 69,0,72,0, 76,0,74,0, 72,0,69,0,
+  67,0,65,0, 62,0,0,0, 65,0,67,0, 62,0,0,0,
+];
+const TG_BASS = [
+  38,0,0,0, 45,0,0,0, 38,0,0,0, 45,0,0,0,
+  41,0,0,0, 48,0,0,0, 36,0,0,0, 43,0,0,0,
+  38,0,0,0, 45,0,0,0, 38,0,0,0, 45,0,0,0,
+  36,0,0,0, 43,0,0,0, 41,0,0,0, 38,0,0,0,
+];
+const TRACKS = [
+  {
+    name: 'Fairyland', bpm: 126, swing: 0.10, melody: FL_MELODY, bass: FL_BASS,
+    kick: s => s % 4 === 0,
+    clap: s => s % 8 === 4,
+    hat: s => (s % 2 === 1 ? 0.08 : (s % 4 === 2 ? 0.13 : 0)),
+  },
+  {
+    name: 'Sparkle Rush', bpm: 152, swing: 0.08, melody: SR_MELODY, bass: SR_BASS,
+    kick: s => s % 4 === 0,
+    clap: s => s % 16 === 4 || s % 16 === 12,
+    hat: s => (s % 2 === 0 ? (s % 4 === 2 ? 0.14 : 0.07) : 0),
+  },
+  {
+    name: 'Twilight Garden', bpm: 92, swing: 0.14, melody: TG_MELODY, bass: TG_BASS,
+    kick: s => s % 8 === 0,
+    clap: s => s % 16 === 8,
+    hat: s => (s % 4 === 2 ? 0.09 : 0),
+  },
+];
+const MusicSys = {
+  get ctx() { return AudioEngine.ctx; },
+  get noiseBuf() { return AudioEngine.noiseBuf; },
+  get out() { return AudioEngine.musBus; },
+  on: false, playing: false,   // OFF by default 2026-11-14: the 3 originals are now DSDA Radio stations (were bleeding under the radio)
+  track: 0,
+  step: 0, nextTime: 0, timer: null,
+  get cur() { return TRACKS[this.track]; },
+  get stepDur() { return 60 / this.cur.bpm / 4; },
+  ensure() { AudioEngine.ensure(); },
+  tryStart() {
+    if (!this.on || this.playing) return;
+    this.ensure();
+    if (!this.ctx) return;
+    this.playing = true;
+    this.step = 0;
+    this.nextTime = this.ctx.currentTime + 0.1;
+    this.timer = setInterval(() => this.schedule(), 30);
+  },
+  stop() {
+    this.playing = false;
+    if (this.timer) { clearInterval(this.timer); this.timer = null; }
+  },
+  setTrack(i) {
+    this.track = (i + TRACKS.length) % TRACKS.length;
+    if (this.ctx && this.playing) {
+      this.step = 0;
+      this.nextTime = this.ctx.currentTime + 0.12;
+    }
+    updateMusicUI();
+  },
+  next() { this.setTrack(this.track + 1); },
+  prev() { this.setTrack(this.track - 1); },
+  schedule() {
+    const len = this.cur.melody.length;
+    while (this.nextTime < this.ctx.currentTime + 0.18) {
+      const s = this.step;
+      const t = this.nextTime + (s % 2 === 1 ? this.cur.swing * this.stepDur : 0);
+      this.playStep(s, t);
+      this.nextTime += this.stepDur;
+      this.step = (s + 1) % len;
+    }
+  },
+  playStep(s, t) {
+    const tr = this.cur;
+    if (tr.kick(s)) this.kick(t);
+    if (tr.clap(s)) this.clap(t);
+    const hv = tr.hat(s);
+    if (hv) this.hat(t, hv);
+    const b = tr.bass[s];
+    if (b) this.bassNote(b, t);
+    const m = tr.melody[s];
+    if (m) this.leadNote(m, t);
+  },
+  kick(t) {
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(150, t);
+    o.frequency.exponentialRampToValueAtTime(42, t + 0.11);
+    g.gain.setValueAtTime(0.5, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
+    o.connect(g); g.connect(this.out);
+    o.start(t); o.stop(t + 0.16);
+  },
+  clap(t) {
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.noiseBuf;
+    const f = this.ctx.createBiquadFilter();
+    f.type = 'bandpass'; f.frequency.value = 1800; f.Q.value = 0.9;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.2, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+    src.connect(f); f.connect(g); g.connect(this.out);
+    src.start(t); src.stop(t + 0.12);
+  },
+  hat(t, vol) {
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.noiseBuf;
+    const f = this.ctx.createBiquadFilter();
+    f.type = 'highpass'; f.frequency.value = 7000;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.035);
+    src.connect(f); f.connect(g); g.connect(this.out);
+    src.start(t); src.stop(t + 0.05);
+  },
+  bassNote(midi, t) {
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = 'triangle';
+    o.frequency.value = N2F(midi);
+    g.gain.setValueAtTime(0.3, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.17);
+    o.connect(g); g.connect(this.out);
+    o.start(t); o.stop(t + 0.19);
+  },
+  leadNote(midi, t) {
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = 'square';
+    o.frequency.value = N2F(midi);
+    g.gain.setValueAtTime(0.11, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.13);
+    o.connect(g); g.connect(this.out);
+    o.start(t); o.stop(t + 0.15);
+  },
+};
+
+// ---------------- game state ----------------
+// phase: menu | play | clearing | over
+let phase = 'menu';
+let score = 0, level = 1;
+let difficulty = 'initiate';        // 'initiate' (prediction line on) | 'master' (line off)
+let radioWasPlaying = false;      // remember the radio's play state across a pause
+let grid = [];                    // grid[r][c] = {color, mesh, row, col} | null
+let bubbleList = [];              // flat {x,y} for collision + trace
+let activeBubbles = [];           // in-flight shots {x,y,vx,vy,mesh,color,power}
+let lastStuckPos = null;          // where the last fired bubble landed
+let fallingBubbles = [];          // {mesh, x, y, vy, vx, spin}
+let particles = [];
+let aim = Math.PI / 2;            // aim angle from +x (up = PI/2)
+let power = 0, charging = false;
+let shotsThisPush = 0, pendingPush = false;
+let currentColor = 0, nextColor = 1;
+let menuSel = 0;
+const menuButtons = [];
+let bannerTimer = 0, menuTime = 0;
+let fireflies = null;
+let wand = null, wandTip = null, tipOrb = null;
+let gnome = null, gnomeLever = null, gnomeArmL = null, gnomeHat = null, gnomeBody = null;
+let gnomeFireT = 0, gnomeCeleT = 0, gnomeCeleMag = 0;   // gnome animation timers
+let fairy = null, fairyTrail = [];
+let fairyTX = 0, fairyTY = 4, fairyPopT = 0, fairyPopX = 0, fairyPopY = 0;  // Tinkerbell state
+let trailPoints = [];             // aim-guide line positions
+let chargeGlow = null;
+// ---------------- screen shake + danger state (pure feedback, no physics) ----------------
+let shakeAmp = 0, shakeT = 0;
+function shake(amp) { shakeAmp = Math.max(shakeAmp, amp); shakeT = 0; }
+let dangerOn = false, dangerT = 0;
+function setDanger(on) {
+  if (on === dangerOn) return;
+  dangerOn = on; dangerT = 0;
+  $('vignette').classList.toggle('danger', on);
+}
+// lowest bubble within 1.6 units of the danger line = "danger" (game over is binary at DANGER_Y)
+function dangerProximity() {
+  if (phase !== 'play') return false;
+  let low = Infinity;
+  for (const b of bubbleList) if (b.y < low) low = b.y;
+  return low < DANGER_Y + 1.6;
+}
+
+// ---------------- grid math ----------------
+// rowShift flips every time a row is pushed in at the top, so existing rows keep
+// their left/right stagger. (Without it the whole field jumps half a cell on every
+// push and the neighbor links no longer match what's on screen.)
+let rowShift = 0;
+const isOddRow = r => ((r + rowShift) & 1) === 1;
+const worldX = (r, c) => (c - (C - 1) / 2) * COL_W + (isOddRow(r) ? 0.5 : 0) * COL_W + XOFF;
+const worldY = r => TOP_Y - r * ROW_H;
+// safe lookup: rows below the current bottom simply read as empty
+const cellAt = (r, c) => (r >= 0 && c >= 0 && c < C && grid[r] && grid[r][c]) || null;
+function ensureRow(r) { while (grid.length <= r) grid.push(new Array(C).fill(null)); }
+// 6 hex neighbors. NOT capped at the bottom row, so a bubble can stick below the cluster.
+function neighbors(r, c) {
+  const odd = isOddRow(r);
+  const d = odd
+    ? [[-1, 0], [-1, 1], [0, -1], [0, 1], [1, 0], [1, 1]]
+    : [[-1, -1], [-1, 0], [0, -1], [0, 1], [1, -1], [1, 0]];
+  const out = [];
+  for (const [dr, dc] of d) { const rr = r + dr, cc = c + dc; if (rr >= 0 && cc >= 0 && cc < C) out.push([rr, cc]); }
+  return out;
+}
+function rebuildList() {
+  // drop empty rows off the bottom so the grid only spans what's really there
+  while (grid.length > 0 && grid[grid.length - 1].every(x => !x)) grid.pop();
+  bubbleList = [];
+  for (let r = 0; r < grid.length; r++) for (let c = 0; c < C; c++) {
+    if (grid[r] && grid[r][c]) bubbleList.push({ x: worldX(r, c), y: worldY(r), row: r, col: c });
+  }
+}
+function bubbleCount() { return bubbleList.length; }
+
+// ---------------- bubble assets ----------------
+const bubbleGeo = new THREE.SphereGeometry(BUBBLE_R, 22, 16);
+const bubbleMats = COLORS.map((col, i) => new THREE.MeshPhysicalMaterial({
+  color: col, roughness: 0.14, metalness: 0.05, clearcoat: 1, clearcoatRoughness: 0.08,
+  emissive: new THREE.Color(col).multiplyScalar(COLOR_GLOW[i]),
+}));
+const bubbleGlowMats = COLORS.map(col => new THREE.SpriteMaterial({
+  map: radialTex(col), transparent: true, opacity: 0.42, depthWrite: false, blending: THREE.AdditiveBlending,
+}));
+// shared glossy specular highlight (top-left white dot, the "candy" look)
+const specMat = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 32;
+  const x = c.getContext('2d');
+  const grad = x.createRadialGradient(16, 16, 1, 16, 16, 15);
+  grad.addColorStop(0, 'rgba(255,255,255,0.95)');
+  grad.addColorStop(0.4, 'rgba(255,255,255,0.35)');
+  grad.addColorStop(1, 'rgba(255,255,255,0)');
+  x.fillStyle = grad; x.fillRect(0, 0, 32, 32);
+  return new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false });
+})();
+function radialTex(color) {
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const x = c.getContext('2d');
+  const col = new THREE.Color(color);
+  const r = Math.round(col.r * 255), g = Math.round(col.g * 255), b = Math.round(col.b * 255);
+  // ring glow: dim at the very center (covered by the bubble), bright just outside it, fading out
+  const grad = x.createRadialGradient(32, 32, 4, 32, 32, 32);
+  grad.addColorStop(0, `rgba(${r},${g},${b},0.12)`);
+  grad.addColorStop(0.5, `rgba(${r},${g},${b},0.8)`);
+  grad.addColorStop(0.8, `rgba(${r},${g},${b},0.28)`);
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  x.fillStyle = grad; x.fillRect(0, 0, 64, 64);
+  const t = new THREE.CanvasTexture(c);
+  return t;
+}
+// a glossy bubble = sphere + a soft halo behind + a specular highlight on top
+function makeBubble(color) {
+  const g = new THREE.Group();
+  const m = new THREE.Mesh(bubbleGeo, bubbleMats[color]);
+  m.castShadow = true;
+  g.add(m);
+  const halo = new THREE.Sprite(bubbleGlowMats[color]);
+  halo.scale.set(1.5, 1.5, 1);
+  halo.position.z = -0.05;
+  g.add(halo);
+  const spec = new THREE.Sprite(specMat);
+  spec.scale.set(0.34, 0.34, 1);
+  spec.position.set(-0.1, 0.12, 0.24);
+  g.add(spec);
+  return g;
+}
+
+// ---------------- particles (sparkle bursts) ----------------
+const partGeo = new THREE.OctahedronGeometry(0.08);
+const partMats = COLORS.map(col => new THREE.MeshBasicMaterial({
+  color: col, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false,
+}));
+const partMatWhite = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+// expanding shockwave ring (pop feedback)
+const ringTex = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const x = c.getContext('2d');
+  x.strokeStyle = 'rgba(255,255,255,0.9)'; x.lineWidth = 5;
+  x.beginPath(); x.arc(32, 32, 24, 0, Math.PI * 2); x.stroke();
+  const t = new THREE.CanvasTexture(c);
+  return t;
+})();
+function spawnRing(pos, color, size, dur) {
+  const mat = new THREE.SpriteMaterial({ map: ringTex, color, transparent: true, opacity: 0.85, depthWrite: false, blending: THREE.AdditiveBlending });
+  const m = new THREE.Sprite(mat);
+  m.position.set(pos.x, pos.y, 0.05);
+  m.scale.set(size * 0.4, size * 0.4, 1);
+  particles.push({ m, ring: true, vx: 0, vy: 0, life: dur || 0.35, max: dur || 0.35, spin: 0, ringFrom: size * 0.4, ringTo: size });
+  scene.add(m);
+}
+function spawnBurst(pos, color, n, spread, ring) {
+  n = n || 10; spread = spread || 4;
+  if (ring) spawnRing(pos, color, 1.1 + 0.08 * n, 0.32 + 0.02 * n);
+  for (let i = 0; i < n; i++) {
+    if (particles.length > 320) return;
+    const m = new THREE.Mesh(partGeo, (i % 5 === 0) ? partMatWhite : partMats[color]);
+    m.position.set(pos.x, pos.y, 0);
+    const a = Math.random() * Math.PI * 2, sp = (0.4 + Math.random() * 0.6) * spread;
+    particles.push({ m, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 0.55, max: 0.55, spin: (Math.random() - 0.5) * 10 });
+    scene.add(m);
+  }
+}
+function updateParticles(dt) {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.life -= dt;
+    if (p.life <= 0) { scene.remove(p.m); if (p.ring) p.m.material.dispose(); particles.splice(i, 1); continue; }
+    const k = 1 - p.life / p.max;
+    if (p.ring) {
+      const s = p.ringFrom + (p.ringTo - p.ringFrom) * k;
+      p.m.scale.set(s, s, 1);
+      p.m.material.opacity = 0.85 * (1 - k);
+      continue;
+    }
+    p.vy -= 3 * dt;
+    p.m.position.x += p.vx * dt;
+    p.m.position.y += p.vy * dt;
+    p.m.rotation.z += p.spin * dt;
+    p.m.scale.setScalar(p.life / p.max);
+  }
+}
+
+// ---------------- scene construction (fairyland) ----------------
+// solid bright-disc moon texture (bright center -> soft falloff), distinct from the ring-glow radialTex
+function moonTex() {
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const x = c.getContext('2d');
+  const grad = x.createRadialGradient(32, 32, 2, 32, 32, 32);
+  grad.addColorStop(0, 'rgba(242,253,255,1)');      // bright core
+  grad.addColorStop(0.6, 'rgba(226,246,255,0.98)'); // solid disc body
+  grad.addColorStop(0.72, 'rgba(192,236,252,0.85)'); // defined rim
+  grad.addColorStop(0.82, 'rgba(150,216,246,0.35)'); // soft falloff
+  grad.addColorStop(1, 'rgba(120,200,240,0)');        // fade out
+  x.fillStyle = grad; x.fillRect(0, 0, 64, 64);
+  return new THREE.CanvasTexture(c);
+}
+// soft petal texture for drifting blossoms (rounded blob, faint center)
+function petalTex(color) {
+  const c = document.createElement('canvas'); c.width = c.height = 32;
+  const x = c.getContext('2d');
+  const col = new THREE.Color(color);
+  const r = Math.round(col.r * 255), g = Math.round(col.g * 255), b = Math.round(col.b * 255);
+  const grad = x.createRadialGradient(16, 16, 1, 16, 16, 16);
+  grad.addColorStop(0, `rgba(${Math.min(255, r + 90)},${Math.min(255, g + 90)},${Math.min(255, b + 90)},0.9)`);
+  grad.addColorStop(0.55, `rgba(${r},${g},${b},0.5)`);
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  x.fillStyle = grad;
+  x.beginPath(); x.ellipse(16, 16, 14, 10, 0.6, 0, Math.PI * 2); x.fill();
+  const t = new THREE.CanvasTexture(c);
+  return t;
+}
+function buildBackground() {
+  // twilight fairyland sky: deep indigo -> violet -> teal horizon, with stars
+  const skyCv = document.createElement('canvas'); skyCv.width = 128; skyCv.height = 256;
+  const sx = skyCv.getContext('2d');
+  const sg = sx.createLinearGradient(0, 0, 0, 256);
+  sg.addColorStop(0, '#030409');
+  sg.addColorStop(0.35, '#060913');
+  sg.addColorStop(0.62, '#0b0e20');
+  sg.addColorStop(0.85, '#101430');
+  sg.addColorStop(1, '#141838');
+  sx.fillStyle = sg; sx.fillRect(0, 0, 128, 256);
+  // stars (sparse, round, varied brightness)
+  for (let i = 0; i < 90; i++) {
+    const a = 0.15 + Math.random() * 0.6;
+    sx.fillStyle = `rgba(220,232,255,${a.toFixed(2)})`;
+    const rad = 0.4 + Math.random() * 0.7;
+    sx.beginPath();
+    sx.arc(Math.random() * 128, Math.random() * 170, rad, 0, Math.PI * 2);
+    sx.fill();
+  }
+  // soft teal horizon glow
+  const hg = sx.createLinearGradient(0, 160, 0, 256);
+  hg.addColorStop(0, 'rgba(64,220,220,0)');
+  hg.addColorStop(1, 'rgba(64,220,220,0.10)');
+  sx.fillStyle = hg; sx.fillRect(0, 160, 128, 96);
+  const skyTex = new THREE.CanvasTexture(skyCv);
+  const sky = new THREE.Mesh(new THREE.PlaneGeometry(80, 40),
+    new THREE.MeshBasicMaterial({ map: skyTex, depthWrite: false }));
+  sky.position.set(0, 6.5, -8);
+  scene.add(sky);
+  // moon: bright disc + soft halo — left-mid open sky (below the title panel,
+  // left of the cluster, above the hills). The top strip is crowded with UI, so
+  // a low-hanging moon over the ridge reads best and stays visible at all sizes.
+  const moon = new THREE.Sprite(new THREE.SpriteMaterial({ map: moonTex(), transparent: true, opacity: 0.32, depthWrite: false, blending: THREE.AdditiveBlending }));
+  moon.position.set(-5.6, 9.6, -6);
+  moon.scale.set(3.0, 3.0, 1);
+  scene.add(moon);
+  const moonHalo = new THREE.Sprite(new THREE.SpriteMaterial({ map: radialTex(0x7fd8f0), transparent: true, opacity: 0.09, depthWrite: false, blending: THREE.AdditiveBlending }));
+  moonHalo.position.set(-5.6, 9.6, -6.2);
+  moonHalo.scale.set(7, 7, 1);
+  scene.add(moonHalo);
+  // fairyland ridges — three depth layers with mist bands between them
+  const hillHump = (cx, r, y, color, z) => {
+    const m = new THREE.Mesh(new THREE.CircleGeometry(r, 40, 0, Math.PI),
+      new THREE.MeshBasicMaterial({ color, depthWrite: false }));
+    m.position.set(cx, y, z);
+    scene.add(m);
+  };
+  const mist = (y, z, op, h) => {
+    const m = new THREE.Sprite(new THREE.SpriteMaterial({ map: radialTex(0x8fa8d8), transparent: true, opacity: op, depthWrite: false, blending: THREE.AdditiveBlending }));
+    m.position.set(0, y, z);
+    m.scale.set(22, h, 1);
+    scene.add(m);
+  };
+  // far layer (darkest, tallest)
+  hillHump(-9, 6.0, -0.5, 0x0a0f1f, -5.5);
+  hillHump(1, 6.5, -0.5, 0x0a0f1f, -5.5);
+  hillHump(9, 5.5, -0.5, 0x0a0f1f, -5.5);
+  mist(-1.2, -4.9, 0.10, 2.6);
+  // mid layer
+  hillHump(-6, 4.8, -0.5, 0x101731, -4.8);
+  hillHump(6, 5.4, -0.5, 0x101731, -4.8);
+  mist(-2.0, -3.9, 0.08, 2.2);
+  // near layer (shortest, just above the danger line)
+  hillHump(-4, 3.4, -0.5, 0x161e3e, -3.8);
+  hillHump(5, 3.8, -0.5, 0x161e3e, -3.8);
+  hillHump(-0.5, 3.0, -0.5, 0x161e3e, -3.8);
+}
+// DMT aurora — soft vertical light curtains drifting across the sky (the "hopes & dreams" glow)
+let aurora = null;
+function buildAurora() {
+  const aurTex = (r, g, b) => {
+    const c = document.createElement('canvas'); c.width = 64; c.height = 128;
+    const x = c.getContext('2d');
+    const grad = x.createLinearGradient(0, 0, 0, 128);
+    grad.addColorStop(0, `rgba(${r},${g},${b},0)`);
+    grad.addColorStop(0.3, `rgba(${r},${g},${b},0.55)`);
+    grad.addColorStop(0.5, `rgba(${r},${g},${b},0.95)`);
+    grad.addColorStop(0.7, `rgba(${r},${g},${b},0.55)`);
+    grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+    x.fillStyle = grad; x.fillRect(0, 0, 64, 128);
+    return new THREE.CanvasTexture(c);
+  };
+  aurora = [];
+  const curtains = [
+    { r: 80, g: 255, b: 160, x: -6.5, y: 9.5, w: 3.4, h: 9.0, sp: 0.15, ph: 0 },
+    { r: 0,  g: 220, b: 255, x: 0.0,  y: 10.5, w: 4.0, h: 10.0, sp: 0.12, ph: 2.1 },
+    { r: 180, g: 100, b: 255, x: 6.5,  y: 9.0,  w: 3.4, h: 8.5, sp: 0.18, ph: 4.2 },
+  ];
+  for (const cu of curtains) {
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: aurTex(cu.r, cu.g, cu.b), transparent: true, opacity: 0.82, depthWrite: false, blending: THREE.AdditiveBlending }));
+    s.position.set(cu.x, cu.y, -7.5);
+    s.scale.set(cu.w, cu.h, 1);
+    scene.add(s);
+    aurora.push({ s, sp: cu.sp, ph: cu.ph });
+  }
+}
+function updateAurora(dt) {
+  if (!aurora) return;
+  const t = menuTime;
+  for (const a of aurora) {
+    a.s.material.opacity = 0.38 * (0.6 + 0.4 * Math.sin(t * a.sp * 4 + a.ph));
+    a.s.position.x += Math.sin(t * a.sp + a.ph) * 0.0015;
+  }
+}
+// floating DMT crystals — small glowing octahedra drifting in the background
+let crystals = null;
+function buildCrystals() {
+  crystals = [];
+  const cols = [0x00e5ff, 0xff2d95, 0xffd24d, 0x9d5cff, 0x5cffb0];
+  for (let i = 0; i < 8; i++) {
+    const c = cols[i % cols.length];
+    const m = new THREE.Mesh(new THREE.OctahedronGeometry(0.16 + Math.random() * 0.16),
+      new THREE.MeshStandardMaterial({ color: c, roughness: 0.2, metalness: 0.4, emissive: c, emissiveIntensity: 1.3 }));
+    m.position.set((Math.random() - 0.5) * 20, 3 + Math.random() * 9, -6.5 - Math.random() * 2);
+    scene.add(m);
+    crystals.push({ m, rs: (Math.random() - 0.5) * 0.6, rf: 0.3 + Math.random() * 0.5, ph: Math.random() * Math.PI * 2, fy: 0.15 + Math.random() * 0.35 });
+  }
+}
+function updateCrystals(dt) {
+  if (!crystals) return;
+  const t = menuTime;
+  for (const c of crystals) {
+    c.m.rotation.x += c.rs * dt;
+    c.m.rotation.y += c.rs * 0.7 * dt;
+    c.m.position.y += Math.sin(t * c.rf + c.ph) * c.fy * dt;
+  }
+}
+// drifting blossom petals — slow fall + sway, wrap at top
+let petals = null;
+function buildPetals() {
+  const n = 22;
+  const mat = new THREE.SpriteMaterial({ map: petalTex(0xff9ad5), transparent: true, opacity: 0.34, depthWrite: false, blending: THREE.AdditiveBlending });
+  const mat2 = new THREE.SpriteMaterial({ map: petalTex(0x9ad8ff), transparent: true, opacity: 0.26, depthWrite: false, blending: THREE.AdditiveBlending });
+  const mat3 = new THREE.SpriteMaterial({ map: petalTex(0xc8b4ff), transparent: true, opacity: 0.26, depthWrite: false, blending: THREE.AdditiveBlending });
+  petals = [];
+  for (let i = 0; i < n; i++) {
+    const s = new THREE.Sprite([mat, mat2, mat3][i % 3]);
+    s.position.set((Math.random() - 0.5) * 14, Math.random() * 15 - 1, -2 - Math.random() * 2);
+    const sc = 0.18 + Math.random() * 0.22;
+    s.scale.set(sc, sc, 1);
+    scene.add(s);
+    petals.push({ s, vy: 0.25 + Math.random() * 0.4, sway: Math.random() * Math.PI * 2, swayAmp: 0.25 + Math.random() * 0.4, swaySpd: 0.4 + Math.random() * 0.6 });
+  }
+}
+function updatePetals(dt) {
+  if (!petals) return;
+  for (const p of petals) {
+    p.sway += p.swaySpd * dt;
+    p.s.position.y -= p.vy * dt;
+    p.s.position.x += Math.sin(p.sway) * p.swayAmp * dt;
+    if (p.s.position.y < -2) { p.s.position.y = 15; p.s.position.x = (Math.random() - 0.5) * 14; }
+  }
+}
+function buildFireflies() {
+  const n = 84;
+  const pos = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) {
+    pos[i * 3] = (Math.random() - 0.5) * 13;
+    pos[i * 3 + 1] = Math.random() * 13;
+    pos[i * 3 + 2] = -1.5 - Math.random() * 3;
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  // soft round glow (was square points)
+  fireflies = new THREE.Points(g, new THREE.PointsMaterial({
+    color: 0x9fffe8, size: 0.34, sizeAttenuation: true, transparent: true, opacity: 0.85,
+    map: radialTex(0x9fffe8), depthWrite: false, blending: THREE.AdditiveBlending,
+  }));
+  scene.add(fireflies);
+}
+let wandSparkles = null, wandRot = null;
+function buildWand() {
+  wand = new THREE.Group();
+  wand.position.set(SHOOTER_X, SHOOTER_Y, 0);
+  // two-tier emitter dais (does NOT rotate with aim — stays planted)
+  const dais = new THREE.Mesh(new THREE.CylinderGeometry(0.58, 0.74, 0.5, 20),
+    new THREE.MeshStandardMaterial({ color: 0x101a34, roughness: 0.35, metalness: 0.4, emissive: 0x00404f, emissiveIntensity: 0.7 }));
+  dais.position.y = -0.5;
+  dais.castShadow = true;
+  wand.add(dais);
+  const daisTop = new THREE.Mesh(new THREE.CylinderGeometry(0.44, 0.58, 0.2, 20),
+    new THREE.MeshStandardMaterial({ color: 0x18244a, roughness: 0.3, metalness: 0.5, emissive: 0x0a5a70, emissiveIntensity: 0.9 }));
+  daisTop.position.y = -0.22;
+  daisTop.castShadow = true;
+  wand.add(daisTop);
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.58, 0.05, 10, 24),
+    new THREE.MeshStandardMaterial({ color: 0x00e5ff, roughness: 0.3, metalness: 0.7, emissive: 0x00e5ff, emissiveIntensity: 1.1 }));
+  rim.rotation.x = Math.PI / 2;
+  rim.position.y = -0.34;
+  wand.add(rim);
+  const rim2 = new THREE.Mesh(new THREE.TorusGeometry(0.44, 0.035, 10, 20),
+    new THREE.MeshStandardMaterial({ color: 0xff2d95, roughness: 0.3, metalness: 0.7, emissive: 0xff2d95, emissiveIntensity: 0.9 }));
+  rim2.rotation.x = Math.PI / 2;
+  rim2.position.y = -0.14;
+  wand.add(rim2);
+  // machine circuitry: a ring of glowing "data node" dots + a central energy well
+  const nodeMat = new THREE.MeshStandardMaterial({ color: 0x00e5ff, roughness: 0.3, metalness: 0.5, emissive: 0x00e5ff, emissiveIntensity: 1.6 });
+  for (let i = 0; i < 10; i++) {
+    const a = i * (Math.PI * 2 / 10);
+    const node = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 8), nodeMat);
+    node.position.set(Math.cos(a) * 0.50, -0.115, Math.sin(a) * 0.50);
+    wand.add(node);
+  }
+  const energyWell = new THREE.Mesh(new THREE.CylinderGeometry(0.30, 0.30, 0.03, 24),
+    new THREE.MeshStandardMaterial({ color: 0x0a2a3a, roughness: 0.2, metalness: 0.6, emissive: 0x00c8e8, emissiveIntensity: 1.2 }));
+  energyWell.position.y = -0.10;
+  wand.add(energyWell);
+  // bright cyan energy ring at the dais top edge (the "charged" halo)
+  const energyRing = new THREE.Mesh(new THREE.TorusGeometry(0.44, 0.045, 12, 28),
+    new THREE.MeshStandardMaterial({ color: 0x00e5ff, roughness: 0.25, metalness: 0.7, emissive: 0x00e5ff, emissiveIntensity: 1.8 }));
+  energyRing.rotation.x = Math.PI / 2;
+  energyRing.position.y = -0.115;
+  wand.add(energyRing);
+  // rotating part: rod + tip (aims with the shot)
+  wandRot = new THREE.Group();
+  const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.075, WAND_LEN, 12),
+    new THREE.MeshStandardMaterial({ color: 0x24405e, roughness: 0.22, metalness: 0.6, emissive: 0x00a8c8, emissiveIntensity: 0.8 }));
+  rod.rotation.z = Math.PI / 2;
+  rod.position.x = WAND_LEN / 2;
+  rod.castShadow = true;
+  wandRot.add(rod);
+  // mid-rod accent ring
+  const rodRing = new THREE.Mesh(new THREE.TorusGeometry(0.085, 0.022, 8, 16),
+    new THREE.MeshStandardMaterial({ color: 0xffd24d, roughness: 0.3, metalness: 0.6, emissive: 0xffd24d, emissiveIntensity: 0.8 }));
+  rodRing.rotation.y = Math.PI / 2;
+  rodRing.position.x = WAND_LEN * 0.62;
+  wandRot.add(rodRing);
+  // glowing tip orb (shows the loaded bubble color) — dimmed 2026-11-14 (was too bright vs the darker scene)
+  tipOrb = new THREE.Mesh(new THREE.SphereGeometry(0.32, 20, 14), bubbleMats[0].clone());
+  tipOrb.material.emissiveIntensity = 0.3;   // low glow so the ball's COLOR reads clearly (was 1.3, then 0.7)
+  tipOrb.position.x = WAND_LEN;
+  wandRot.add(tipOrb);
+  // orbiting sparkles around the tip (pure decoration) — dimmed
+  const spMat = new THREE.SpriteMaterial({ map: radialTex(0xfff2b0), transparent: true, opacity: 0.5, depthWrite: false, blending: THREE.AdditiveBlending });
+  wandSparkles = new THREE.Group();
+  wandSparkles.position.x = WAND_LEN;
+  for (let i = 0; i < 3; i++) {
+    const s = new THREE.Sprite(spMat);
+    s.scale.set(0.1, 0.1, 1);
+    const a = i * (Math.PI * 2 / 3);
+    s.position.set(Math.cos(a) * 0.44, Math.sin(a) * 0.44, 0.12);
+    wandSparkles.add(s);
+  }
+  wandRot.add(wandSparkles);
+  // charge glow (scales/brightens with power)
+  chargeGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: radialTex(0xffffff), transparent: true, opacity: 0.0, depthWrite: false, blending: THREE.AdditiveBlending }));
+  chargeGlow.position.x = WAND_LEN;
+  wandRot.add(chargeGlow);
+  wand.add(wandRot);
+  scene.add(wand);
+  updateWandTip();
+}
+
+// ---------------- the launcher gnome (pulls the wand lever) ----------------
+// A little three.js-primitive gnome stands left of the dais and works a lever.
+// He's pure feedback/character — no physics. Parts are exposed (gnomeArmL,
+// gnomeHat, gnomeBody, gnomeLever) so updateGnome() can animate the lever-pull,
+// the fire-snap hop, and pop celebrations.
+function buildGnome() {
+  const g = new THREE.Group();
+  g.position.set(-1.14, 0.92, 0.25);   // left of the dais, planted on the same ground
+  g.rotation.y = 0.32;                 // angled slightly toward the launcher/camera
+  g.scale.setScalar(1.5);              // big enough to read as a character, not a cone
+
+  // machine-elf palette: brighter gunmetal body (reads against dark ground), cyan energy, gold magic, white beard
+  // "totally light body" — pale/light machine-elf (soft, reads against the dark scene without glowing)
+  // toned-down machine-elf: muted dark-slate body, low glow (the light body read too bright)
+  const steel = 0x52607a, steelDark = 0x33405a, steelLight = 0x5e6c88;
+  const cyan = 0x00e5ff, cyanDim = 0x00a8c8;
+  const gold = 0xffd24d, white = 0xffffff;
+  // metalness 0.3 (was 0.55 default) + rougher surface: the colored point lights were
+  // coming back as hot specular that crossed the bloom threshold and lit his whole body
+  const mat = (c, r = 0.6, m = 0.3, e = 0x000000, ei = 0) =>
+    new THREE.MeshStandardMaterial({ color: c, roughness: r, metalness: m, emissive: e, emissiveIntensity: ei });
+  const glow = (c, ei = 1.3) => mat(c, 0.45, 0.2, c, ei);   // emissive energy part
+
+  // tunic (tapered) — gunmetal with a faint self-glow + chest core + circuit traces
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.22, 0.44, 16), mat(steel, 0.5, 0.4, 0x14202e, 0.08));
+  body.position.y = 0.33; body.castShadow = true;
+  g.add(body);
+  const core = new THREE.Mesh(new THREE.SphereGeometry(0.056, 14, 10), glow(cyan, 0.18));
+  core.position.set(0, 0.40, 0.155); g.add(core);
+  for (const [yy, rr] of [[0.30, 0.176], [0.235, 0.197]]) {
+    const trace = new THREE.Mesh(new THREE.TorusGeometry(rr, 0.009, 6, 26), glow(cyanDim, 0.12));
+    trace.rotation.x = Math.PI / 2; trace.position.y = yy; g.add(trace);
+  }
+  // machine belt + gold buckle
+  const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.185, 0.195, 0.06, 16), mat(steelDark, 0.4, 0.7));
+  belt.position.y = 0.26; g.add(belt);
+  const buckle = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.05, 0.03), glow(gold, 0.08));
+  buckle.position.set(0, 0.26, 0.185); g.add(buckle);
+
+  // head — machine metal with a glowing cyan VISOR (the machine-elf signature)
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.135, 18, 14), mat(steelLight, 0.4, 0.65));
+  head.position.y = 0.62; head.castShadow = true;
+  g.add(head);
+  const visor = new THREE.Mesh(new THREE.BoxGeometry(0.175, 0.036, 0.05), glow(cyan, 0.2));
+  visor.position.set(0, 0.655, 0.10); g.add(visor);
+  const nose = new THREE.Mesh(new THREE.ConeGeometry(0.034, 0.06, 10), mat(steel, 0.4, 0.6));
+  nose.rotation.x = Math.PI / 2; nose.position.set(0, 0.598, 0.13); g.add(nose);
+
+  // beard — crisp bright white, larger (the elf in the machine elf); minimal glow so bloom doesn't wash it out
+  const beard = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.40, 16), mat(0xdfe6f0, 0.6, 0.05, 0x141c2c, 0.1));
+  beard.rotation.x = Math.PI;
+  beard.position.y = 0.40; beard.castShadow = true;
+  g.add(beard);
+  const mustache = new THREE.Mesh(new THREE.TorusGeometry(0.065, 0.024, 8, 14, Math.PI), mat(0xdfe6f0, 0.6, 0.05, 0x141c2c, 0.1));
+  mustache.rotation.set(Math.PI / 2, 0, Math.PI);
+  mustache.position.set(0, 0.565, 0.12); g.add(mustache);
+
+  // hat — machine metal, tilted, circuit band + glowing ANTENNA (machine-elf signature)
+  const hat = new THREE.Group();
+  const hatCone = new THREE.Mesh(new THREE.ConeGeometry(0.165, 0.36, 16), mat(steel, 0.5, 0.6));
+  hatCone.position.y = 0.18; hatCone.castShadow = true;
+  hat.add(hatCone);
+  const hatBand = new THREE.Mesh(new THREE.TorusGeometry(0.098, 0.012, 6, 22), glow(cyan, 0.15));
+  hatBand.rotation.x = Math.PI / 2; hatBand.position.y = 0.12; hat.add(hatBand);
+  const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.185, 0.185, 0.045, 18), mat(steelDark, 0.4, 0.7));
+  brim.position.y = 0.0; hat.add(brim);
+  const antRod = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.017, 0.17, 8), mat(steelLight, 0.3, 0.8));
+  antRod.position.set(0.05, 0.42, 0); antRod.rotation.z = -0.32; hat.add(antRod);
+  const antTip = new THREE.Mesh(new THREE.SphereGeometry(0.032, 10, 8), glow(cyan, 0.22));
+  antTip.position.set(0.098, 0.50, 0); hat.add(antTip);
+  hat.position.y = 0.70;
+  hat.rotation.z = -0.14;
+  g.add(hat);
+
+  // feet — machine boots
+  for (const sx of [-0.09, 0.09]) {
+    const foot = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.09, 0.16), mat(steelDark, 0.4, 0.7));
+    foot.position.set(sx, 0.05, 0.03);
+    g.add(foot);
+  }
+
+  // right arm (hip) — machine arm + glowing shoulder joint
+  const armR = new THREE.Group();
+  armR.position.set(-0.15, 0.50, 0);
+  const uaR = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.038, 0.26, 10), mat(steel, 0.5, 0.6));
+  uaR.position.y = -0.13; armR.add(uaR);
+  const shR = new THREE.Mesh(new THREE.SphereGeometry(0.056, 10, 8), mat(steelLight, 0.4, 0.7));
+  shR.position.y = 0.0; armR.add(shR);
+  const handR = new THREE.Mesh(new THREE.SphereGeometry(0.048, 10, 8), mat(steelDark, 0.4, 0.7));
+  handR.position.y = -0.28; armR.add(handR);
+  armR.rotation.z = 0.5;
+  g.add(armR);
+
+  // left arm (the LEVER arm) — machine arm
+  const armL = new THREE.Group();
+  armL.position.set(0.15, 0.50, 0);
+  const uaL = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.038, 0.28, 10), mat(steel, 0.5, 0.6));
+  uaL.position.y = -0.14; armL.add(uaL);
+  const shL = new THREE.Mesh(new THREE.SphereGeometry(0.056, 10, 8), mat(steelLight, 0.4, 0.7));
+  shL.position.y = 0.0; armL.add(shL);
+  const handL = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8), mat(steelDark, 0.4, 0.7));
+  handL.position.y = -0.30; armL.add(handL);
+  armL.rotation.set(-0.55, 0, -1.05);
+  g.add(armL);
+
+  // one-pass shine clamp: most parts above pass explicit metalness (head 0.65, boots
+  // 0.7, …), and under the colored point lights that specular crossed the bloom
+  // threshold — the neon-glowworm look. Clamp every non-accent part; the small accents
+  // (visor, antenna tip, core, hat band — ei > 0.12) keep their energy.
+  g.traverse(o => {
+    if (o.isMesh && o.material && (o.material.emissiveIntensity || 0) <= 0.12) {
+      o.material.metalness = Math.min(o.material.metalness, 0.3);
+      o.material.roughness = Math.max(o.material.roughness, 0.55);
+    }
+  });
+  scene.add(g);
+  gnome = g; gnomeBody = body; gnomeHat = hat; gnomeArmL = armL;
+
+  // ---- the lever he works (machine switch — brighter + more visible) ----
+  const lv = new THREE.Group();
+  lv.position.set(-0.48, 0.92, 0.34);
+  lv.scale.setScalar(1.5);
+  const post = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.055, 0.36, 12), mat(steelLight, 0.35, 0.5, cyanDim, 0.18));
+  post.position.y = 0.18; post.castShadow = true; lv.add(post);
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.13, 0.06, 16), mat(steelDark, 0.4, 0.5, cyanDim, 0.15));
+  base.position.y = 0.03; lv.add(base);
+  const baseRing = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.013, 8, 22), glow(cyan, 0.18));
+  baseRing.rotation.x = Math.PI / 2; baseRing.position.y = 0.06; lv.add(baseRing);
+  // handle pivots at the post top
+  const handle = new THREE.Group();
+  handle.position.y = 0.36;
+  const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.036, 0.32, 10), mat(steelLight, 0.3, 0.75));
+  stick.position.y = 0.16; handle.add(stick);
+  const knob = new THREE.Mesh(new THREE.SphereGeometry(0.115, 18, 14), glow(0xff5470, 0.14));
+  knob.position.y = 0.34; handle.add(knob);
+  const knobRing = new THREE.Mesh(new THREE.TorusGeometry(0.115, 0.018, 8, 22), glow(gold, 0.12));
+  knobRing.rotation.x = Math.PI / 2; knobRing.position.y = 0.34; handle.add(knobRing);
+  handle.rotation.z = 0.2;           // resting lean (toward the gnome, -x)
+  lv.add(handle);
+  scene.add(lv);
+  gnomeLever = handle;
+}
+
+// animate the gnome: idle bob, charge lever-pull, fire snap-hop, pop celebration
+function updateGnome(dt) {
+  if (!gnome) return;
+  const t = menuTime;
+  // timers
+  if (gnomeFireT > 0) gnomeFireT -= dt;
+  if (gnomeCeleT > 0) gnomeCeleT -= dt;
+
+  const chargingNow = (charging && phase === 'play');
+  // --- lever: pull back toward the gnome with charge, flick forward on fire ---
+  if (gnomeLever) {
+    let lean = 0.2 + (chargingNow ? power * 0.45 : 0);   // +z = toward gnome (-x); capped so knob stays clear of his body
+    if (gnomeFireT > 0) {
+      const k = gnomeFireT / 0.3;      // 1 -> 0 over the snap
+      lean = 0.65 * k - (1 - k) * 0.4;  // pulled back, then flicks forward (+x)
+    }
+    gnomeLever.rotation.z += (lean - gnomeLever.rotation.z) * Math.min(1, dt * 14);
+  }
+  // --- body bob + lean (lean back hard while straining on the lever) ---
+  let bobY = 0, leanX = 0, leanZ = 0, hop = 0, spin = 0;
+  const idle = Math.sin(t * 2.1) * 0.012;
+  bobY = idle;
+  if (chargingNow) { leanZ = power * 0.28; bobY -= power * 0.03; }   // brace back toward the lever
+  if (gnomeFireT > 0) {
+    const k = gnomeFireT / 0.3;
+    hop = Math.sin(k * Math.PI) * 0.14;        // little hop on the snap
+    leanZ = -0.14 * k;                          // recoil forward on release
+  }
+  if (gnomeCeleT > 0) {
+    const k = gnomeCeleT / 0.7;                // 1 -> 0
+    const b = Math.abs(Math.sin((1 - k) * Math.PI * (2 + gnomeCeleMag)));
+    hop = b * (0.10 + 0.06 * gnomeCeleMag);
+    spin = Math.sin((1 - k) * Math.PI * 2) * 0.12 * (1 + gnomeCeleMag);
+  }
+  gnome.position.y = 0.92 + bobY + hop;
+  gnomeBody.rotation.x = leanX;
+  gnome.rotation.z = leanZ * 0.5;              // subtle whole-body brace
+  gnome.rotation.y = 0.32 + spin;
+  // --- hat: sways with motion, bounces on celebrate ---
+  if (gnomeHat) {
+    const sway = Math.sin(t * 1.7) * 0.05;
+    const bump = (gnomeCeleT > 0 ? Math.abs(Math.sin((gnomeCeleT / 0.7) * Math.PI * 3)) * 0.3 * (1 + gnomeCeleMag) : 0)
+               + (gnomeFireT > 0 ? 0.2 : 0);
+    gnomeHat.rotation.z = -0.14 + sway - bump;
+    gnomeHat.position.y = 0.70 + (gnomeCeleT > 0 ? Math.abs(Math.sin((gnomeCeleT / 0.7) * Math.PI * 3)) * 0.05 : 0);
+  }
+  // --- lever arm follows the lever (hand tracks the knob) ---
+  if (gnomeArmL) {
+    let targetZ = -1.05, targetX = -0.55;
+    if (chargingNow) { targetZ = -1.05 + power * 0.95; targetX = -0.55 - power * 0.30; }  // haul the knob toward himself
+    if (gnomeFireT > 0) { const k = gnomeFireT / 0.3; targetZ = -1.05 + 1.35 * k; targetX = -0.55 - 0.45 * k; }
+    gnomeArmL.rotation.z += (targetZ - gnomeArmL.rotation.z) * Math.min(1, dt * 12);
+    gnomeArmL.rotation.x += (targetX - gnomeArmL.rotation.x) * Math.min(1, dt * 12);
+  }
+}
+function gnomeFire() { gnomeFireT = 0.3; }
+
+// ---------------- the menu elf (hovers in front of the title, waiting for a choice) ----------------
+// A little machine elf drifts around the air in front of the MACHINE ELVES title while
+// the menu is up. He tracks the cursor with his visor, hops when a menu button is
+// hovered, and leaves a sparkle trail. Menu-only: hidden during play. No physics —
+// pure character, same style as the launcher gnome.
+let menuElf = null, menuElfHead = null, menuElfHat = null, menuElfVisor = null;
+let menuElfBase = { x: 0, y: 10.2 };
+let menuElfTX = 0, menuElfTY = 10.2, menuElfWanderT = 0;
+let menuElfHopT = 0, menuElfHopMag = 1, menuElfBlinkT = 0, menuElfBlinkNext = 2.5;
+let menuElfTrail = [], menuElfTrailAcc = 0, menuElfTrailIdx = 0;
+let menuPointer = { px: 0, py: 0, active: false };
+const ELF_ANCHOR = { x: 0, y: 10.2, z: 3.2 };   // in front of the title, above the buttons
+
+function buildMenuElf() {
+  const g = new THREE.Group();
+  g.position.set(ELF_ANCHOR.x, ELF_ANCHOR.y, ELF_ANCHOR.z);
+  g.scale.setScalar(1.5);
+
+  // same machine-elf palette as the launcher gnome
+  // same machine-elf palette as the launcher gnome ("totally light body")
+  // toned-down machine-elf: muted dark-slate body, low glow (the light body read too bright)
+  const steel = 0x52607a, steelDark = 0x33405a, steelLight = 0x6e7f9c;
+  const cyan = 0x00e5ff, cyanDim = 0x00a8c8;
+  const gold = 0xffd24d, white = 0xffffff;
+  const mat = (c, r = 0.5, m = 0.55, e = 0x000000, ei = 0) =>
+    new THREE.MeshStandardMaterial({ color: c, roughness: r, metalness: m, emissive: e, emissiveIntensity: ei });
+  const glow = (c, ei = 1.3) => mat(c, 0.3, 0.25, c, ei);
+
+  // tunic — gunmetal + cyan chest core + circuit traces + belt
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.22, 0.44, 16), mat(steel, 0.5, 0.4, 0x14202e, 0.08));
+  body.position.y = 0.33; g.add(body);
+  const core = new THREE.Mesh(new THREE.SphereGeometry(0.056, 14, 10), glow(cyan, 0.18));
+  core.position.set(0, 0.40, 0.155); g.add(core);
+  for (const [yy, rr] of [[0.30, 0.176], [0.235, 0.197]]) {
+    const trace = new THREE.Mesh(new THREE.TorusGeometry(rr, 0.009, 6, 26), glow(cyanDim, 0.12));
+    trace.rotation.x = Math.PI / 2; trace.position.y = yy; g.add(trace);
+  }
+  const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.185, 0.195, 0.06, 16), mat(steelDark, 0.4, 0.7));
+  belt.position.y = 0.26; g.add(belt);
+  const buckle = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.05, 0.03), glow(gold, 0.08));
+  buckle.position.set(0, 0.26, 0.185); g.add(buckle);
+
+  // head group (animated for cursor tracking): skull + visor + nose + beard + mustache + hat
+  const head = new THREE.Group();
+  head.position.y = 0.62;
+  const skull = new THREE.Mesh(new THREE.SphereGeometry(0.135, 18, 14), mat(steelLight, 0.4, 0.65));
+  head.add(skull);
+  const visor = new THREE.Mesh(new THREE.BoxGeometry(0.175, 0.036, 0.05), glow(cyan, 0.2));
+  visor.position.set(0, 0.035, 0.10); head.add(visor);
+  const nose = new THREE.Mesh(new THREE.ConeGeometry(0.034, 0.06, 10), mat(steel, 0.4, 0.6));
+  nose.rotation.x = Math.PI / 2; nose.position.set(0, -0.022, 0.13); head.add(nose);
+  const beard = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.40, 16), mat(0xdfe6f0, 0.6, 0.05, 0x141c2c, 0.1));
+  beard.rotation.x = Math.PI; beard.position.y = -0.22; head.add(beard);
+  const mustache = new THREE.Mesh(new THREE.TorusGeometry(0.065, 0.024, 8, 14, Math.PI), mat(0xdfe6f0, 0.6, 0.05, 0x141c2c, 0.1));
+  mustache.rotation.set(Math.PI / 2, 0, Math.PI); mustache.position.set(0, -0.055, 0.12); head.add(mustache);
+  const hat = new THREE.Group();
+  const hatCone = new THREE.Mesh(new THREE.ConeGeometry(0.165, 0.36, 16), mat(steel, 0.5, 0.6));
+  hatCone.position.y = 0.18; hat.add(hatCone);
+  const hatBand = new THREE.Mesh(new THREE.TorusGeometry(0.098, 0.012, 6, 22), glow(cyan, 0.15));
+  hatBand.rotation.x = Math.PI / 2; hatBand.position.y = 0.12; hat.add(hatBand);
+  const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.185, 0.185, 0.045, 18), mat(steelDark, 0.4, 0.7));
+  hat.add(brim);
+  const antRod = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.017, 0.17, 8), mat(steelLight, 0.3, 0.8));
+  antRod.position.set(0.05, 0.42, 0); antRod.rotation.z = -0.32; hat.add(antRod);
+  const antTip = new THREE.Mesh(new THREE.SphereGeometry(0.032, 10, 8), glow(cyan, 0.22));
+  antTip.position.set(0.098, 0.50, 0); hat.add(antTip);
+  hat.position.y = 0.08;
+  hat.rotation.z = -0.14;
+  head.add(hat);
+  g.add(head);
+
+  // boots — dangling (he's hovering, not standing)
+  for (const sx of [-0.09, 0.09]) {
+    const foot = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.09, 0.16), mat(steelDark, 0.4, 0.7));
+    foot.position.set(sx, 0.05, 0.03); g.add(foot);
+  }
+  // arms at his sides
+  for (const [sx, rot] of [[-0.15, 0.4], [0.15, -0.4]]) {
+    const arm = new THREE.Group();
+    arm.position.set(sx, 0.50, 0);
+    const ua = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.038, 0.26, 10), mat(steel, 0.5, 0.6));
+    ua.position.y = -0.13; arm.add(ua);
+    const sh = new THREE.Mesh(new THREE.SphereGeometry(0.056, 10, 8), mat(steelLight, 0.4, 0.7));
+    arm.add(sh);
+    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.048, 10, 8), mat(steelDark, 0.4, 0.7));
+    hand.position.y = -0.28; arm.add(hand);
+    arm.rotation.z = rot;
+    g.add(arm);
+  }
+
+  scene.add(g);
+  menuElf = g; menuElfHead = head; menuElfHat = hat; menuElfVisor = visor.material;
+
+  // sparkle trail — small glow sprites in a round-robin pool
+  for (let i = 0; i < 26; i++) {
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: radialTex(0x00e5ff), transparent: true, depthWrite: false }));
+    s.scale.setScalar(0.05 + Math.random() * 0.06);
+    s.position.set(ELF_ANCHOR.x, ELF_ANCHOR.y, ELF_ANCHOR.z);
+    s.material.opacity = 0;
+    s.visible = false;
+    scene.add(s);
+    menuElfTrail.push({ s, life: 0, max: 1, vx: 0, vy: 0, vz: 0 });
+  }
+}
+
+// CSS pixels -> world x/y (orthographic camera, so x/y are exact for the pixel)
+function screenToWorldXY(px, py) {
+  const r = renderer.domElement.getBoundingClientRect();
+  const nx = ((px - r.left) / r.width) * 2 - 1;
+  const ny = -(((py - r.top) / r.height) * 2 - 1);
+  return new THREE.Vector3(nx, ny, 0.5).unproject(camera);
+}
+
+// react to a menu button hover: drift toward it, look at it, small hop
+function menuElfReact(px, py, mag) {
+  if (!menuElf) return;
+  const w = screenToWorldXY(px, py);
+  menuElfTX = THREE.MathUtils.clamp(w.x, ELF_ANCHOR.x - 3.8, ELF_ANCHOR.x + 3.8);
+  menuElfTY = THREE.MathUtils.clamp(w.y, ELF_ANCHOR.y - 2.3, ELF_ANCHOR.y + 2.3);
+  menuElfWanderT = 1.4;                    // linger near the hovered button a moment
+  menuElfHopT = 0.35; menuElfHopMag = mag || 1;
+}
+
+function updateMenuElf(dt) {
+  if (!menuElf) return;
+  const inMenu = phase === 'menu' && !elMenu.classList.contains('hidden');
+  menuElf.visible = inMenu;
+  if (!inMenu) { for (const p of menuElfTrail) { p.life = 0; p.s.visible = false; } return; }
+  const t = menuTime;
+
+  // --- fly around the title: quick, wide, lively (he's perched on the title) ---
+  menuElfWanderT -= dt;
+  if (menuElfWanderT <= 0) {
+    menuElfWanderT = 1.4 + Math.random() * 2.2;
+    menuElfTX = ELF_ANCHOR.x + (Math.random() * 2 - 1) * 3.8;
+    menuElfTY = ELF_ANCHOR.y + (Math.random() * 2 - 1) * 2.3;
+  }
+  const dx = menuElfTX - menuElfBase.x;
+  const dy = menuElfTY - menuElfBase.y;
+  const dist = Math.hypot(dx, dy);
+  const glide = Math.min(1, dt * 2.8);
+  menuElfBase.x += dx * glide;
+  menuElfBase.y += dy * glide;
+
+  // --- floaty bob + hop ---
+  let hop = 0;
+  if (menuElfHopT > 0) {
+    menuElfHopT -= dt;
+    const k = Math.max(0, menuElfHopT / 0.35);
+    hop = Math.sin((1 - k) * Math.PI) * 0.26 * (0.4 + 0.6 * menuElfHopMag);
+  }
+  const bob = Math.sin(t * 2.3) * 0.09;
+  menuElf.position.set(menuElfBase.x, menuElfBase.y + bob + hop, ELF_ANCHOR.z);
+
+  // --- face: lean toward travel direction, ease back to camera-facing when idle ---
+  const face = dist > 0.06 ? THREE.MathUtils.clamp(dx * 0.35, -0.6, 0.6) : 0;
+  menuElf.rotation.y += (face - menuElf.rotation.y) * Math.min(1, dt * 4);
+  menuElf.rotation.z = Math.sin(t * 1.9) * 0.04 + (dist > 0.06 ? THREE.MathUtils.clamp(dx * 0.08, -0.12, 0.12) : 0);
+
+  // --- head: track the cursor ---
+  let hx = 0, hy = 0;
+  if (menuPointer.active) {
+    const w = screenToWorldXY(menuPointer.px, menuPointer.py);
+    hx = THREE.MathUtils.clamp(Math.atan2(w.x - menuElfBase.x, 2.5), -0.75, 0.75);
+    hy = THREE.MathUtils.clamp((menuElfBase.y - w.y) * 0.18, -0.4, 0.4);
+  }
+  menuElfHead.rotation.y += (hx - menuElfHead.rotation.y) * Math.min(1, dt * 6);
+  menuElfHead.rotation.x += (hy - menuElfHead.rotation.x) * Math.min(1, dt * 6);
+
+  // --- visor: pulse + occasional blink ---
+  let vi = 2.4 + Math.sin(t * 3.1) * 0.35;
+  menuElfBlinkNext -= dt;
+  if (menuElfBlinkNext <= 0) { menuElfBlinkT = 0.14; menuElfBlinkNext = 2.2 + Math.random() * 3.5; }
+  if (menuElfBlinkT > 0) { menuElfBlinkT -= dt; vi = 0.4; }
+  menuElfVisor.emissiveIntensity = vi;
+
+  // --- hat sways, bumps on hop ---
+  menuElfHat.rotation.z = -0.14 + Math.sin(t * 1.7) * 0.07 + hop * 0.6;
+
+  // --- sparkle trail ---
+  menuElfTrailAcc += dt;
+  while (menuElfTrailAcc > 0.07) {
+    menuElfTrailAcc -= 0.07;
+    const p = menuElfTrail[menuElfTrailIdx]; menuElfTrailIdx = (menuElfTrailIdx + 1) % menuElfTrail.length;
+    p.s.position.set(menuElfBase.x + (Math.random() - 0.5) * 0.5, menuElfBase.y + bob - 0.1 + (Math.random() - 0.5) * 0.4, ELF_ANCHOR.z + (Math.random() - 0.5) * 0.3);
+    p.vx = (Math.random() - 0.5) * 0.5; p.vy = -0.4 - Math.random() * 0.5; p.vz = (Math.random() - 0.5) * 0.3;
+    p.max = p.life = 0.5 + Math.random() * 0.4;
+  }
+  for (const p of menuElfTrail) {
+    if (p.life > 0) {
+      p.life -= dt;
+      p.s.position.x += p.vx * dt; p.s.position.y += p.vy * dt; p.s.position.z += p.vz * dt;
+      p.s.material.opacity = Math.max(0, p.life / p.max) * 0.7;
+      p.s.visible = p.life > 0;
+    } else if (p.s.visible) { p.s.visible = false; p.s.material.opacity = 0; }
+  }
+}
+function gnomeCelebrate(matched) {
+  gnomeCeleMag = matched >= 10 ? 2 : matched >= 5 ? 1 : 0.4;
+  gnomeCeleT = 0.7;
+}
+
+// ---------------- Tinkerbell: the fairy who scouts your aim & pops matches ----------------
+// A tiny golden-green glow that magically drifts around the aim reticle (where you're
+// shooting), then dashes to a match's centroid and flashes a golden burst as the balls
+// pop. Pure character — no physics. She follows with organic lag + orbit + wobble so
+// she never snaps; she circles and glides.
+// He used to be a radial-gradient blob on AdditiveBlending — i.e. pure bloom with no
+// figure inside it, which is why you couldn't tell what he was. Dimming a blob just gives
+// a dimmer blob, so he's now DRAWN: a little machine elf in the same language as the
+// launcher gnome and the menu elf (steel body, cyan visor, white beard, pointed hat with
+// an antenna). NormalBlending so the dark steel actually reads, dark outlines so he holds
+// up against the bright fairyland, and only the visor/core/antenna tip left bright enough
+// to catch the bloom pass. The soft halo is now a SEPARATE, much dimmer sprite behind him.
+function fairyTex() {
+  const S = 128;
+  const c = document.createElement('canvas'); c.width = c.height = S;
+  const g = c.getContext('2d');
+  const steel = '#5b6a85', steelDark = '#333f58', steelLight = '#7c8da9';
+  const cyan = '#00e5ff', ink = 'rgba(6,10,22,0.92)', bone = '#e4ebf5';
+  const line = (w) => { g.strokeStyle = ink; g.lineWidth = w; g.stroke(); };
+
+  // --- wings behind him (faint, so they don't become the whole silhouette) ---
+  g.globalAlpha = 0.34;
+  for (const sx of [-1, 1]) {
+    g.beginPath();
+    g.ellipse(64 + sx * 21, 66, 9, 19, sx * 0.45, 0, Math.PI * 2);
+    g.fillStyle = '#9fe9ff'; g.fill();
+  }
+  g.globalAlpha = 1;
+
+  // --- dangling boots (he hovers, not stands) ---
+  for (const bx of [53, 65]) {
+    g.beginPath(); g.roundRect(bx, 106, 11, 12, 3);
+    g.fillStyle = steelDark; g.fill(); line(2);
+  }
+  // --- arms at his sides ---
+  for (const sx of [-1, 1]) {
+    g.beginPath();
+    g.moveTo(64 + sx * 15, 72); g.lineTo(64 + sx * 23, 94);
+    g.strokeStyle = steel; g.lineWidth = 7; g.lineCap = 'round'; g.stroke();
+    g.strokeStyle = ink; g.lineWidth = 9.5; g.globalAlpha = 0.35; g.stroke(); g.globalAlpha = 1;
+    g.strokeStyle = steel; g.lineWidth = 7; g.stroke();
+    g.beginPath(); g.arc(64 + sx * 23, 95, 4.5, 0, Math.PI * 2);
+    g.fillStyle = steelDark; g.fill(); line(1.8);
+  }
+  // --- tunic ---
+  g.beginPath();
+  g.moveTo(50, 68); g.lineTo(78, 68); g.lineTo(83, 106); g.lineTo(45, 106); g.closePath();
+  g.fillStyle = steel; g.fill(); line(2.5);
+  // belt + buckle
+  g.beginPath(); g.rect(46, 97, 36, 7);
+  g.fillStyle = steelDark; g.fill(); line(1.8);
+  g.beginPath(); g.rect(60, 97, 8, 7); g.fillStyle = '#ffd24d'; g.fill();
+  // chest core (one of the three bright bits)
+  g.beginPath(); g.arc(64, 80, 4.5, 0, Math.PI * 2);
+  g.fillStyle = cyan; g.fill();
+
+  // --- beard, under the head, over the tunic ---
+  g.beginPath();
+  g.moveTo(51, 58); g.lineTo(77, 58); g.lineTo(70, 90); g.lineTo(64, 95); g.lineTo(58, 90); g.closePath();
+  g.fillStyle = bone; g.fill(); line(2.2);
+
+  // --- head ---
+  g.beginPath(); g.arc(64, 51, 15, 0, Math.PI * 2);
+  g.fillStyle = steelLight; g.fill(); line(2.5);
+  // visor: the machine-elf signature, and the brightest thing on him
+  g.beginPath(); g.roundRect(49, 46, 30, 8, 3);
+  g.fillStyle = cyan; g.fill();
+  g.strokeStyle = 'rgba(6,10,22,0.6)'; g.lineWidth = 1.5; g.stroke();
+  // nose + mustache
+  g.beginPath(); g.moveTo(64, 55); g.lineTo(60, 61); g.lineTo(68, 61); g.closePath();
+  g.fillStyle = steel; g.fill(); line(1.5);
+
+  // --- hat: cone + brim + cyan band + antenna ---
+  g.beginPath(); g.moveTo(58, 6); g.lineTo(82, 38); g.lineTo(44, 38); g.closePath();
+  g.fillStyle = steel; g.fill(); line(2.5);
+  g.beginPath(); g.rect(46, 30, 34, 5); g.fillStyle = cyan; g.globalAlpha = 0.85; g.fill(); g.globalAlpha = 1;
+  g.beginPath(); g.roundRect(41, 36, 46, 7, 3);
+  g.fillStyle = steelDark; g.fill(); line(2.2);
+  g.beginPath(); g.moveTo(72, 14); g.lineTo(84, 3);
+  g.strokeStyle = steelLight; g.lineWidth = 3; g.stroke();
+  g.beginPath(); g.arc(85, 2.5, 4, 0, Math.PI * 2);
+  g.fillStyle = cyan; g.fill();
+
+  return new THREE.CanvasTexture(c);
+}
+// the soft halo + the sparkle trail: a plain radial glow, kept well away from the figure art
+function fairyGlowTex() {
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const g = c.getContext('2d');
+  const grad = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  grad.addColorStop(0, 'rgba(255,248,210,0.85)');
+  grad.addColorStop(0.3, 'rgba(190,245,170,0.42)');
+  grad.addColorStop(0.65, 'rgba(130,220,120,0.14)');
+  grad.addColorStop(1, 'rgba(110,200,100,0)');
+  g.fillStyle = grad; g.fillRect(0, 0, 64, 64);
+  return new THREE.CanvasTexture(c);
+}
+let fairyGlow = null;
+function buildFairy() {
+  const gtex = fairyGlowTex();
+  // halo first and BEHIND him: additive, but at a third of the old strength, and it no
+  // longer has to double as the character.
+  fairyGlow = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: gtex, color: 0xcfffa8, transparent: true, opacity: 0.3,
+    depthWrite: false, blending: THREE.AdditiveBlending }));
+  fairyGlow.scale.set(0.78, 0.78, 1);
+  fairyGlow.position.set(SHOOTER_X, SHOOTER_Y + 0.7, 0.29);
+  fairyGlow.renderOrder = 0;
+  scene.add(fairyGlow);
+
+  // the elf himself: normal blending, near-opaque, so the steel and beard read as shapes
+  fairy = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: fairyTex(), color: 0xffffff, transparent: true, opacity: 1,
+    depthWrite: false, blending: THREE.NormalBlending }));
+  fairy.scale.set(0.62, 0.62, 1);
+  fairy.position.set(SHOOTER_X, SHOOTER_Y + 0.7, 0.3);
+  fairy.renderOrder = 1;
+  fairyTX = fairy.position.x; fairyTY = fairy.position.y;
+  scene.add(fairy);
+
+  for (let i = 0; i < 14; i++) {
+    const tr = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: gtex, color: 0xd8ff8a, transparent: true, opacity: 0,
+      depthWrite: false, blending: THREE.AdditiveBlending }));
+    tr.scale.set(0.15, 0.15, 1);
+    tr.position.set(fairy.position.x, fairy.position.y, 0.28);
+    tr.renderOrder = 0;
+    scene.add(tr);
+    fairyTrail.push(tr);
+  }
+}
+function fairyPop(x, y, matched) {
+  fairyPopX = x; fairyPopY = y;
+  fairyPopT = 0.45;
+  // the fairy "pops" them: golden burst + ring at the match centroid
+  spawnBurst({ x, y }, 4, 10 + Math.min(14, matched), 4.5, true);
+}
+function updateFairy(dt) {
+  if (!fairy) return;
+  const t = menuTime;
+  // --- target: the aim reticle (where you're shooting); else hover near the launcher ---
+  let tx, ty;
+  if (phase === 'play' && reticle && reticle.visible) { tx = reticle.position.x; ty = reticle.position.y; }
+  else { tx = SHOOTER_X + Math.sin(t * 0.7) * 0.7; ty = SHOOTER_Y + 0.9 + Math.cos(t * 0.9) * 0.35; }
+  const popping = fairyPopT > 0;
+  if (popping) { fairyPopT -= dt; tx = fairyPopX; ty = fairyPopY; }
+  // --- organic follow: smooth lag (glide, never snap) ---
+  const follow = 1 - Math.pow(0.0016, dt);
+  fairyTX += (tx - fairyTX) * follow;
+  fairyTY += (ty - fairyTY) * follow;
+  // --- magical drift: orbit around the target + high-freq wobble ---
+  const orbitR = (popping ? 0.1 : 0.34) + 0.08 * Math.sin(t * 0.5);
+  const orbitA = t * 1.7;
+  const ox = Math.cos(orbitA) * orbitR;
+  const oy = Math.sin(orbitA * 1.31) * orbitR * 0.8;
+  const wx = Math.sin(t * 7.3) * 0.05 + Math.sin(t * 11.7) * 0.03;
+  const wy = Math.cos(t * 6.9) * 0.05 + Math.sin(t * 9.3) * 0.03;
+  fairy.position.set(fairyTX + ox + wx, fairyTY + oy + wy, 0.3);
+  // --- he's a drawn character now, so he stays solid: gentle bob in scale, no opacity
+  // flicker (that was the old blob's shimmer). The HALO does the magic instead. ---
+  const flash = popping ? (fairyPopT / 0.45) : 0;
+  const flick = 0.96 + 0.04 * Math.sin(t * 6.0);
+  const s = 0.62 * flick * (1 + flash * 0.5);
+  fairy.scale.set(s, s, 1);
+  fairy.material.opacity = 0.97;
+  // wings flutter: quick tiny roll
+  fairy.material.rotation = Math.sin(t * 9.0) * 0.06;
+  if (fairyGlow) {
+    fairyGlow.position.set(fairy.position.x, fairy.position.y, 0.29);
+    const gs = 0.78 * (0.9 + 0.1 * Math.sin(t * 10.0)) * (1 + flash * 1.6);
+    fairyGlow.scale.set(gs, gs, 1);
+    fairyGlow.material.opacity = 0.26 + 0.06 * Math.sin(t * 8.0) + flash * 0.5;
+  }
+  // --- trail: each spark lags behind the last, fading out ---
+  let px = fairy.position.x, py = fairy.position.y;
+  for (let i = 0; i < fairyTrail.length; i++) {
+    const tr = fairyTrail[i];
+    const lag = 1 - Math.pow(0.004, dt);
+    tr.position.x += (px - tr.position.x) * lag;
+    tr.position.y += (py - tr.position.y) * lag;
+    px = tr.position.x; py = tr.position.y;
+    const k = 1 - i / fairyTrail.length;
+    tr.material.opacity = k * (0.5 + flash * 0.5);
+    const ts = 0.18 * k * (1 + flash * 0.6);
+    tr.scale.set(ts, ts, 1);
+  }
+}
+function wandTipWorld() {
+  return { x: SHOOTER_X + WAND_LEN * Math.cos(aim), y: SHOOTER_Y + WAND_LEN * Math.sin(aim) };
+}
+function updateWandTip() {
+  wandRot.rotation.z = aim;
+  if (tipOrb) tipOrb.material = bubbleMats[currentColor].clone();
+  // charge glow grows + brightens with power (pulses at full)
+  if (chargeGlow) {
+    const full = power >= FULL_POWER;
+    const pulse = full ? 0.12 * Math.sin(performance.now() / 70) : 0;
+    const s = 0.5 + power * 1.4 + pulse;
+    chargeGlow.scale.set(s, s, 1);
+    chargeGlow.material.opacity = 0.05 + power * 0.22 + (full ? 0.05 : 0);   // dim so the ball's color reads (was 0.12 + power*0.42)
+    chargeGlow.material.color.set(full ? 0xfff2b0 : 0x00e5ff);
+  }
+}
+
+// ---------------- aim-guide (dotted trajectory + target reticle) ----------------
+const guideGeo = new THREE.BufferGeometry();
+const guideMat = new THREE.LineBasicMaterial({ color: 0x7fffe0, transparent: true, opacity: 0.5 });
+let guideLine = null, reticle = null;
+function makeReticle() {
+  reticle = new THREE.Sprite(new THREE.SpriteMaterial({ map: ringTex, color: 0x7fffe0, transparent: true, opacity: 0.8, depthWrite: false, blending: THREE.AdditiveBlending }));
+  reticle.position.z = 0.1;
+  reticle.visible = false;
+  scene.add(reticle);
+}
+function tracePath(fromX, fromY, speed) {
+  let x = fromX, y = fromY;
+  // Use the same velocity magnitude as the sim so step sizes match exactly.
+  let vx = Math.cos(aim) * speed, vy = Math.sin(aim) * speed;
+  // Step in "seconds" matching the sim's dt/16 substep at 60fps (0.016/16).
+  const step = 0.001, pts = [];
+  const maxSteps = Math.ceil(85 / (speed * step)) + 20;
+  let bounces = 0;
+  for (let i = 0; i < maxSteps; i++) {
+    x += vx * step; y += vy * step;
+    if (x < -WALL_X || x > WALL_X) {
+      if (difficulty === 'master') { pts.push(x, y); return pts; }  // no bank shots: stop at the wall
+      if (x < -WALL_X) { x = -WALL_X; vx = Math.abs(vx); bounces++; }
+      else { x = WALL_X; vx = -Math.abs(vx); bounces++; }
+    }
+    // Cap at 1 wall bounce — double-banks look aggressive and are rare in play
+    if (bounces > 1) { pts.push(x, y); return pts; }
+    if (y > CEILING_Y) {
+      // Snap to the grid cell the ball will actually land in
+      const cell = findStickCell(x, y);
+      if (cell) { x = worldX(cell.r, cell.c); y = worldY(cell.r); }
+      pts.push(x, y); return pts;
+    }
+    let hit = false;
+    for (const b of bubbleList) {
+      const dx = x - b.x, dy = y - b.y;
+      if (dx * dx + dy * dy < (2 * BUBBLE_R) * (2 * BUBBLE_R)) { hit = true; break; }
+    }
+    if (hit) {
+      // Snap to the grid cell the ball will actually land in
+      const cell = findStickCell(x, y);
+      if (cell) { x = worldX(cell.r, cell.c); y = worldY(cell.r); }
+      pts.push(x, y); return pts;
+    }
+    if (i % 4 === 0) pts.push(x, y);
+  }
+  pts.push(x, y);
+  return pts;
+}
+function updateGuide() {
+  if (!guideLine) return;
+  const inPlay = (phase === 'play');
+  // MASTER: the trajectory LINE is removed, but the reticle stays (dim) so the
+  // Tinkerbell fairy can still scout the landing spot — the fairy, just not the line.
+  const showLine = (inPlay && difficulty !== 'master');
+  guideLine.visible = showLine;
+  if (!inPlay) { if (reticle) reticle.visible = false; return; }
+  const tip = wandTipWorld();
+  const p = Math.max(MIN_FIRE, power);
+  const speed = SHOT_BASE + p * (SHOT_MAX - SHOT_BASE);
+  const pts = tracePath(tip.x, tip.y, speed);
+  if (showLine) {
+    guideGeo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 2));
+    guideMat.color.set(power >= FULL_POWER ? 0x9fffe0 : 0x6fffe0);
+    guideMat.opacity = 0.55 + power * 0.45;
+  }
+  // reticle: ALWAYS on in play (the fairy follows it) — even in Master
+  if (reticle) {
+    reticle.visible = true;
+    reticle.position.set(pts[pts.length - 2], pts[pts.length - 1], 0.1);
+    const pulse = 0.62 + 0.14 * Math.sin(performance.now() / 160);
+    reticle.scale.set(pulse, pulse, 1);
+    reticle.material.color.set(power >= FULL_POWER ? 0x9fffe0 : 0x7fffe0);
+    // dim the ring in Master (the fairy is the indicator, not the ring)
+    reticle.material.opacity = (difficulty === 'master' ? 0.22 : 0.5 + power * 0.4);
+  }
+}
+
+// ---------------- board build ----------------
+function newBoard(rows, colors) {
+  clearFieldObjects();
+  rowShift = 0;
+  grid = [];
+  for (let r = 0; r < rows; r++) {
+    const row = [];
+    for (let c = 0; c < C; c++) {
+      // solid ceiling on row 0; lower rows nearly full so the bottom edge stays ragged
+      const density = (r === 0) ? 1.0 : 0.96;
+      if (Math.random() < density) {
+        const color = (Math.random() * colors) | 0;
+        const mesh = makeBubble(color);
+        mesh.position.set(worldX(r, c), worldY(r), 0);
+        scene.add(mesh);
+        row.push({ color, mesh, row: r, col: c });
+      } else row.push(null);
+    }
+    grid.push(row);
+  }
+  // strip anything that spawned unattached to the ceiling (it would just hang in mid-air)
+  const keep = ceilingConnected();
+  for (let r = 0; r < grid.length; r++) for (let c = 0; c < C; c++) {
+    if (grid[r][c] && !keep.has(r + ',' + c)) { scene.remove(grid[r][c].mesh); grid[r][c] = null; }
+  }
+  rebuildList();
+}
+function clearFieldObjects() {
+  for (let r = 0; r < grid.length; r++) for (let c = 0; c < C; c++) {
+    if (grid[r] && grid[r][c]) scene.remove(grid[r][c].mesh);
+  }
+  for (const b of activeBubbles) scene.remove(b.mesh);
+  for (const b of fallingBubbles) scene.remove(b.mesh);
+  for (const p of particles) scene.remove(p.m);
+  grid = []; activeBubbles = []; fallingBubbles = []; particles = [];
+  bubbleList = [];
+}
+
+// ---------------- match / pop / fall ----------------
+function floodFill(r, c, color) {
+  const seen = new Set();
+  const stack = [[r, c]];
+  const out = [];
+  while (stack.length) {
+    const [cr, cc] = stack.pop();
+    const key = cr + ',' + cc;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const cell = grid[cr] && grid[cr][cc];
+    if (!cell || cell.color !== color) continue;
+    out.push([cr, cc]);
+    for (const [nr, nc] of neighbors(cr, cc)) stack.push([nr, nc]);
+  }
+  return out;
+}
+function ceilingConnected() {
+  const seen = new Set();
+  const stack = [];
+  for (let c = 0; c < C; c++) if (grid[0] && grid[0][c]) { stack.push([0, c]); seen.add(0 + ',' + c); }
+  while (stack.length) {
+    const [cr, cc] = stack.pop();
+    for (const [nr, nc] of neighbors(cr, cc)) {
+      const key = nr + ',' + nc;
+      if (seen.has(key) || !(grid[nr] && grid[nr][nc])) continue;
+      seen.add(key);
+      stack.push([nr, nc]);
+    }
+  }
+  return seen;
+}
+function popBubble(r, c, silent) {
+  const cell = grid[r] && grid[r][c];
+  if (!cell) return 0;
+  const pos = { x: worldX(r, c), y: worldY(r) };
+  spawnBurst(pos, cell.color, 8, 3.2, true);
+  scene.remove(cell.mesh);
+  grid[r][c] = null;
+  score += 10;
+  return 1;
+}
+function fallBubble(r, c) {
+  const cell = grid[r] && grid[r][c];
+  if (!cell) return 0;
+  const b = { mesh: cell.mesh, x: worldX(r, c), y: worldY(r), vy: -2 - Math.random() * 2, vx: (Math.random() - 0.5) * 2, spin: (Math.random() - 0.5) * 6 };
+  fallingBubbles.push(b);
+  grid[r][c] = null;
+  score += 2;
+  sfx.fall();
+  return 1;
+}
+// anything no longer chained to the top row falls off
+function dropOrphans() {
+  const keep = ceilingConnected();
+  let n = 0;
+  for (let r = 0; r < grid.length; r++) for (let c = 0; c < C; c++) {
+    if (grid[r][c] && !keep.has(r + ',' + c)) n += fallBubble(r, c);
+  }
+  return n;
+}
+function resolveMatch(r, c) {
+  const cell = grid[r] && grid[r][c];
+  if (!cell) return { matched: 0, fell: 0 };
+  const comp = floodFill(r, c, cell.color);
+  if (comp.length < 3) return { matched: 0, fell: 0 };
+  // centroid for the fairy's pop
+  let cx = 0, cy = 0;
+  for (const [cr, cc] of comp) { cx += worldX(cr, cc); cy += worldY(cr); }
+  cx /= comp.length; cy /= comp.length;
+  let matched = 0;
+  for (const [cr, cc] of comp) matched += popBubble(cr, cc);
+  sfx.pop(matched);
+  const fell = dropOrphans();
+  return { matched, fell, cx, cy };
+}
+
+// ---------------- shooting ----------------
+// nearest EMPTY cell to where the shot ended up, as long as it touches the cluster
+// (or is on the top row). Checks every row plus one row below the bottom, so a shot
+// that hits the underside of the cluster sticks underneath instead of jumping up.
+function findStickCell(x, y) {
+  let best = null, bestD = Infinity;
+  for (let r = 0; r <= grid.length; r++) {
+    for (let c = 0; c < C; c++) {
+      if (cellAt(r, c)) continue;
+      let anchored = (r === 0);
+      if (!anchored) for (const [nr, nc] of neighbors(r, c)) if (cellAt(nr, nc)) { anchored = true; break; }
+      if (!anchored) continue;
+      const dx = worldX(r, c) - x, dy = worldY(r) - y;
+      const d = dx * dx + dy * dy;
+      if (d < bestD) { bestD = d; best = { r, c }; }
+    }
+  }
+  return best || { r: 0, c: (C >> 1) };
+}
+function fire() {
+  if (phase !== 'play') return;
+  gnomeFire();
+  const p = Math.max(MIN_FIRE, power);
+  const tip = wandTipWorld();
+  const speed = SHOT_BASE + p * (SHOT_MAX - SHOT_BASE);
+  const mesh = makeBubble(currentColor);
+  mesh.position.set(tip.x, tip.y, 0);
+  scene.add(mesh);
+  activeBubbles.push({ x: tip.x, y: tip.y, vx: Math.cos(aim) * speed, vy: Math.sin(aim) * speed, mesh, color: currentColor, power: p });
+  sfx.shot(p);
+  shotsThisPush++;
+  if (shotsThisPush >= SHOTS_PER_PUSH) { shotsThisPush = 0; pendingPush = true; }
+  // load next color
+  currentColor = nextColor;
+  nextColor = (Math.random() * levelColors(level)) | 0;
+  charging = false; power = 0;
+  updateWandTip();
+  updateHud();
+}
+function stickBubble(b) {
+  const cell = findStickCell(b.x, b.y);
+  ensureRow(cell.r);
+  grid[cell.r][cell.c] = { color: b.color, mesh: b.mesh, row: cell.r, col: cell.c };
+  b.mesh.position.set(worldX(cell.r, cell.c), worldY(cell.r), 0);
+  lastStuckPos = { x: worldX(cell.r, cell.c), y: worldY(cell.r), r: cell.r, c: cell.c };
+  sfx.stick();
+  shake(0.05 + 0.05 * b.power);
+  const res = resolveMatch(cell.r, cell.c);
+  // combo celebration: 4 = POPPER, 5+ = MASTER POPPER, 10+ = PHENOMENAL POPPER
+  if (res.matched >= 10) {
+    score += 500;
+    sfx.phenom();
+    voices.play('phenomenal');
+    shake(0.42);
+    showBanner('PHENOMENAL SPARK ✦✦✦', '+' + 500 + ' · ' + res.matched + ' in one!');
+  } else if (res.matched >= 5) {
+    score += 150;
+    sfx.burst();
+    voices.play('master');
+    shake(0.24);
+    showBanner('MASTER SPARK ✦✦', '+' + 150 + ' · ' + res.matched + ' in one!');
+  } else if (res.matched >= 4) {
+    score += 50;
+    sfx.pop(res.matched);
+    voices.play('popper');
+    shake(0.14);
+    showBanner('SPARK ✦', '+' + 50 + ' · ' + res.matched + ' in one!');
+  } else if (res.matched >= 3) {
+    shake(0.1 + 0.02 * res.matched);
+  }
+  if (res.matched >= 4) gnomeCelebrate(res.matched);
+  if (res.matched >= 3) fairyPop(res.cx, res.cy, res.matched);  // she pops every match
+  // DOUBLE PUNCH: the pop triggered a cascade of 5+ balls falling off — a second
+  // reward. Delayed ~1.5s so it lands after the pop banner is readable. The vocal
+  // remarks the fall count (5/10/15/20 ball); bonus scales with how many fell.
+  if (res.fell >= 5) {
+    const dpBucket = res.fell >= 20 ? 20 : res.fell >= 15 ? 15 : res.fell >= 10 ? 10 : 5;
+    const dpFell = res.fell;
+    setTimeout(() => {
+      if (phase !== 'play') return;
+      score += dpFell * 15;
+      sfx.punch();
+      voices.play('fall' + dpBucket);
+      showBanner('DOUBLE PUNCH ✦✦', dpFell + ' fell!');
+      shake(0.16);
+      updateHud();
+    }, 1500);
+  }
+  if (pendingPush) { pendingPush = false; pushDown(); dropOrphans(); }
+  rebuildList();
+  if (bubbleCount() === 0) { levelClear(); return; }
+  if (anyBelowDanger()) { gameOver(); return; }
+  updateHud();
+}
+function updateActiveBubbles(dt) {
+  for (let i = activeBubbles.length - 1; i >= 0; i--) {
+    const b = activeBubbles[i];
+    const SUB = 16, step = dt / SUB;
+    let stuck = false, lost = false;
+    for (let sub = 0; sub < SUB && !stuck && !lost; sub++) {
+      b.x += b.vx * step; b.y += b.vy * step;
+      if (b.x < -WALL_X || b.x > WALL_X) {
+        if (difficulty === 'master') { lost = true; break; }  // no bank shots: the ball is lost at the wall
+        if (b.x < -WALL_X) { b.x = -WALL_X; b.vx = Math.abs(b.vx); sfx.bounce(); }
+        else { b.x = WALL_X; b.vx = -Math.abs(b.vx); sfx.bounce(); }
+      }
+      if (b.y > CEILING_Y) { stuck = true; break; }
+      for (const g of bubbleList) {
+        const dx = b.x - g.x, dy = b.y - g.y;
+        if (dx * dx + dy * dy < (2 * BUBBLE_R) * (2 * BUBBLE_R)) { stuck = true; break; }
+      }
+    }
+    b.mesh.position.set(b.x, b.y, 0);
+    if (lost) {
+      activeBubbles.splice(i, 1);
+      b.mesh.visible = false;   // ball lost at the wall (Master: no bank shots)
+      continue;
+    }
+    if (stuck) {
+      activeBubbles.splice(i, 1);
+      stickBubble(b);
+    }
+  }
+}
+function pushDown() {
+  // add a new row at the top; every existing row shifts down one index
+  const colors = levelColors(level);
+  const row = [];
+  for (let c = 0; c < C; c++) {
+    if (Math.random() < 0.9) {
+      const color = (Math.random() * colors) | 0;
+      const mesh = makeBubble(color);
+      scene.add(mesh);
+      row.push({ color, mesh, row: 0, col: c });
+    } else row.push(null);
+  }
+  rowShift ^= 1;            // keep existing rows' stagger intact
+  grid.unshift(row);
+  // reindex + reposition (new row at top y, others one row lower)
+  for (let r = 0; r < grid.length; r++) for (let c = 0; c < C; c++) {
+    if (grid[r] && grid[r][c]) {
+      grid[r][c].row = r;
+      grid[r][c].mesh.position.set(worldX(r, c), worldY(r), 0);
+    }
+  }
+  sfx.bounce();
+}
+function anyBelowDanger() {
+  for (const b of bubbleList) if (b.y < DANGER_Y) return true;
+  return false;
+}
+
+// ---------------- level flow ----------------
+function levelBonus(n) { return 300 + 150 * n; }
+function startLevel(n) {
+  level = n;
+  newBoard(levelRows(n), levelColors(n));
+  currentColor = (Math.random() * levelColors(n)) | 0;
+  nextColor = (Math.random() * levelColors(n)) | 0;
+  shotsThisPush = 0; pendingPush = false;
+  aim = Math.PI / 2; power = 0; charging = false;
+  phase = 'play';
+  updateWandTip();
+  updateHud();
+}
+function levelClear() {
+  track('level_complete', { level });
+  const bonus = levelBonus(level);
+  score += bonus;
+  sfx.clear();
+  voices.play('garden');
+  shake(0.5);
+  // confetti fountain across the field
+  for (let i = 0; i < 7; i++) {
+    spawnBurst({ x: (Math.random() - 0.5) * 7, y: 3 + Math.random() * 8 }, i % 6, 10, 5, true);
+  }
+  showBanner('GRID CLEARED ✦', '+' + bonus + ' · next level');
+  phase = 'clearing';
+  clearTimer = 2.0;
+  setDanger(false);
+  updateHud();
+}
+let clearTimer = 0;
+function gameOver() {
+  track('game_over', { final_score: score, level_reached: level });
+  phase = 'over';
+  sfx.over();
+  // the match is over: stop the radio so the menu is quiet again
+  if (typeof DSDARadio !== 'undefined') { try { DSDARadio.pause(); } catch (e) {} }
+  shake(0.55);
+  setDanger(false);
+  elFinal.textContent = score;
+  elFinalLevel.textContent = 'reached level ' + level;
+  elInitials.value = dsdaInits();
+  setSaveEnabled();
+  elSavedMsg.textContent = '';
+  elShareMsg.textContent = '';
+  const top = loadScores();
+  elNewHigh.classList.toggle('hidden', !(score > 0 && score >= (top[0] ? top[0].s : 0)));
+  renderTopList(elTopList, top.slice(0, 10));
+  const mine = top.findIndex(e => e.n === dsdaInits());
+  if (mine >= 0 && elTopList.children[mine]) elTopList.children[mine].classList.add('me');
+  elOverlay.classList.remove('hidden');
+  elInitials.focus();
+}
+function resetGame() {
+  score = 0;
+  startLevel(1);
+  hideBanner();
+}
+
+// ---------------- menu & high scores ----------------
+function setMenuSel(i) {
+  menuSel = (i + menuButtons.length) % menuButtons.length;
+  menuButtons.forEach((b, k) => b.classList.toggle('sel', k === menuSel));
+}
+function activateMenu() {
+  if (!menuButtons.length) return;
+  sfx.ensure();
+  sfx.menuOk();
+  const id = menuButtons[menuSel].id;
+  if (id === 'menuStart') startGameFromMenu();
+  else if (id === 'menuScores') showScores();
+  else if (id === 'menuHelp') showHelp();
+  else if (id === 'menuSite') window.location.href = 'https://ds-da.ca/games/';
+}
+function showHelp() {
+  elHelp.classList.remove('hidden');
+  elScores.classList.add('hidden');
+}
+// DSDA Radio: every NEW GAME tunes to a random station AND a random track on it (the
+// START / Play Again click is a real user gesture, so autoplay is allowed). The match
+// ending stops it again — see gameOver().
+function startRadioForMatch() {
+  if (typeof DSDARadio === 'undefined') return;
+  try {
+    const stations = (DSDARadio.manifest && DSDARadio.manifest.stations) || [];
+    if (!stations.length) return;
+    const si = Math.floor(Math.random() * stations.length);
+    const ti = Math.floor(Math.random() * Math.max(1, stations[si].tracks.length));
+    DSDARadio.setStation(si, ti);   // auto-plays
+  } catch (e) {}
+}
+function startGameFromMenu() {
+  track('game_start');
+  elMenu.classList.add('hidden');
+  elScores.classList.add('hidden');
+  elHelp.classList.add('hidden');
+  document.body.classList.remove('menu-mode');
+  resetGame();
+  startRadioForMatch();
+}
+function backToMenu() {
+  elOverlay.classList.add('hidden');
+  elScores.classList.add('hidden');
+  elHelp.classList.add('hidden');
+  $('pause').classList.add('hidden');
+  document.body.classList.add('menu-mode');
+  clearFieldObjects();
+  phase = 'menu';
+  hideBanner();
+  setDanger(false);
+  setMenuSel(0);
+  elMenu.classList.remove('hidden');
+  // the menu is quiet: quitting out mid-match (pause -> Main Menu) ends the radio the
+  // same way a finished match does, and clears the pause bookmark so a stale
+  // "was playing" can't resurrect it on a later resume.
+  radioWasPlaying = false;
+  if (typeof DSDARadio !== 'undefined') { try { DSDARadio.pause(); } catch (e) {} }
+}
+function togglePause() {
+  if (phase === 'paused') {
+    phase = 'play';
+    $('pause').classList.add('hidden');
+    sfx.resume();
+    clock.getDelta();
+    // resume the radio if it was playing before the pause
+    if (radioWasPlaying && typeof DSDARadio !== 'undefined') { try { DSDARadio.play(); } catch (e) {} }
+  } else if (phase === 'play') {
+    phase = 'paused';
+    charging = false; power = 0;
+    $('pause').classList.remove('hidden');
+    sfx.pause();
+    AudioEngine.duck(0.6, 0.2);
+    // pause the radio too (remember its state so we can resume it)
+    radioWasPlaying = (typeof DSDARadio !== 'undefined') && DSDARadio.playing;
+    if (radioWasPlaying) { try { DSDARadio.pause(); } catch (e) {} }
+  }
+}
+
+// one Worker board by its raw game id -> {top, updated} | null (null = unreachable)
+async function fetchBoardRaw(gid) {
+  try {
+    const r = await fetchTimeout(BOARD_API + '/leaderboard?game=' + gid, { cache: 'no-store' });
+    if (r.ok) {
+      const j = await r.json();
+      if (j && Array.isArray(j.top)) return { top: j.top, updated: j.updated || null };
+    }
+  } catch (e) {}
+  return null;
+}
+async function fetchGlobalBoard(diff) {
+  const d = diff || difficulty;
+  if (d === 'initiate') {
+    // Every score posted before the Initiate/Master split (2026-11-14) lives on the
+    // Worker under plain 'popper'. Those runs were all line-on = Initiate rules, so the
+    // INITIATES board is the new key MERGED with the legacy one. Without this the board
+    // comes back empty from a perfectly healthy API — the "blank leaderboards" bug.
+    const [cur, legacy] = await Promise.all([fetchBoardRaw(GAME_ID + '_initiate'), fetchBoardRaw(GAME_ID)]);
+    if (cur || legacy) {
+      const top = [...(cur ? cur.top : []), ...(legacy ? legacy.top : [])]
+        .sort((a, b) => b.s - a.s);
+      const updated = Math.max((cur && cur.updated) || 0, (legacy && legacy.updated) || 0) || null;
+      if (top.length) return { top, updated };
+      // both reachable but empty -> fall through to the static copy below
+    }
+  } else {
+    const g = await fetchBoardRaw(GAME_ID + '_' + d);
+    if (g) return g;
+  }
+  // static leaderboard.json predates difficulties — it's the legacy (initiate-era) board
+  // and has no split, so it may only stand in for INITIATES. Serving it as MASTERS too
+  // would paint the same list under both headings.
+  if (d === 'master') return null;
+  try {
+    const r = await fetch('leaderboard.json?nocache=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) return null;
+    const j = await r.json();
+    if (Array.isArray(j)) return { top: j, updated: null };
+    if (j && Array.isArray(j.top)) return { top: j.top, updated: j.updated || null };
+    return null;
+  } catch (e) { return null; }
+}
+setInterval(async () => {
+  // scores screen open -> refresh BOTH sections. in-game -> only the HUD's own
+  // difficulty. menu up with nothing showing -> skip the request entirely.
+  if (!elScores.classList.contains('hidden')) {
+    renderBothBoards();
+  } else if (elMenu.classList.contains('hidden')) {
+    const g = await fetchGlobalBoard();
+    if (g && g.top.length) renderTopList(elHudTop, g.top.slice(0, 10));
+  }
+}, 30000);
+// paint one half of the two-section board from a fetched result
+function paintBoardCol(olEl, noteEl, g) {
+  if (g && g.top.length) {
+    renderTopList(olEl, g.top.slice(0, 8));
+    noteEl.textContent = 'DSDA board · ' + new Date(g.updated || Date.now()).toLocaleDateString();
+  } else if (g) {
+    renderTopList(olEl, []);
+    noteEl.textContent = 'No scores yet — be the first!';
+  } else {
+    renderTopList(olEl, []);
+    noteEl.textContent = 'Board offline (device scores only)';
+  }
+}
+// Both sections, every time: the scores screen shows INITIATES and MASTERS side by side,
+// so it no longer depends on which difficulty is selected on the menu.
+async function renderBothBoards() {
+  renderTopList(elLocalTop,  loadScores('initiate').slice(0, 5));
+  renderTopList(elLocalTopM, loadScores('master').slice(0, 5));
+  elGlobalNote.textContent = 'Loading…';
+  elGlobalNoteM.textContent = 'Loading…';
+  // one round trip each, in parallel
+  const [gi, gm] = await Promise.all([
+    fetchGlobalBoard('initiate'),
+    fetchGlobalBoard('master'),
+  ]);
+  paintBoardCol(elGlobalTop,  elGlobalNote,  gi);
+  paintBoardCol(elGlobalTopM, elGlobalNoteM, gm);
+}
+async function showScores() {
+  elScores.classList.remove('hidden');
+  const _sdEl = $('scoresDiff');
+  if (_sdEl) _sdEl.textContent = 'BOTH PATHS — DS-DA.CA';
+  await renderBothBoards();
+}
+
+// ---------------- scoring (localStorage, per-difficulty) ----------------
+function scoreKey(diff) { return SCORE_KEY + '.' + (diff || difficulty); }
+function loadScores(diff) {
+  try {
+    const a = JSON.parse(localStorage.getItem(scoreKey(diff)));
+    return Array.isArray(a) ? a : [];
+  } catch (e) { return []; }
+}
+function saveToStorage(name, s, diff) {
+  const key = scoreKey(diff);
+  const arr = loadScores(diff);
+  arr.push({ n: name, s: s, d: Date.now() });
+  arr.sort((a, b) => b.s - a.s);
+  const top = arr.slice(0, 10);
+  try { localStorage.setItem(key, JSON.stringify(top)); } catch (e) {}
+  return top;
+}
+
+// ---------------- share score ----------------
+// ---------------- share score (DSDA house card) ----------------
+const SHARE_CARD = { name: 'MACHINE ELVES', tag: 'DMT Fairyland', id: 'popper', accent: 0xb78bff };
+function shareText(s) {
+  return 'I popped ' + s + ' in Machine Elves — think you can beat me? \ud83c\udfae';
+}
+let __shot = null;
+(function(){ const im = new Image(); im.onload = () => { __shot = im; }; im.src = 'screenshot.png'; })();
+function _hexA(c, a){ return 'rgba(' + (c >> 16 & 255) + ',' + (c >> 8 & 255) + ',' + (c & 255) + ',' + a + ')'; }
+function _hex(c) { return '#' + c.toString(16).padStart(6, '0'); }
+function _rr(x, px, py, w, h, r) {
+  if (x.roundRect) { x.beginPath(); x.roundRect(px, py, w, h, r); return; }
+  x.beginPath();
+  x.moveTo(px + r, py);
+  x.arcTo(px + w, py, px + w, py + h, r);
+  x.arcTo(px + w, py + h, px + w, py + h - r, r);
+  x.arcTo(px + w, py + h, px, py + h, r);
+  x.arcTo(px, py + h, px, py + h - r, r);
+  x.arcTo(px, py + r, px, py, r);
+  x.arcTo(px, py, px + r, py, r);
+  x.closePath();
+}
+function _spacedL(x, text, px, y, sp) {
+  if ('letterSpacing' in x) { x.letterSpacing = sp + 'px'; x.fillText(text, px, y); x.letterSpacing = '0px'; return; }
+  for (const ch of text) { x.fillText(ch, px, y); px += x.measureText(ch).width + sp; }
+}
+async function makeScoreCard(scoreLine, subLine) {
+  const W = 1200, H = 630;
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const x = cv.getContext('2d');
+  try { if (document.fonts && document.fonts.load) await document.fonts.load('600 62px "Playfair Display"'); } catch (e) {}
+  const A = SHARE_CARD.accent;
+  x.fillStyle = '#070b14'; x.fillRect(0, 0, W, H);
+  const g1 = x.createRadialGradient(220, 60, 40, 220, 60, 620);
+  g1.addColorStop(0, _hexA(A, 0.30)); g1.addColorStop(1, 'rgba(0,0,0,0)');
+  x.fillStyle = g1; x.fillRect(0, 0, W, H);
+  x.strokeStyle = 'rgba(255,255,255,0.035)'; x.lineWidth = 1;
+  for (let gx = 30; gx < W; gx += 60) { x.beginPath(); x.moveTo(gx, 0); x.lineTo(gx, H); x.stroke(); }
+  for (let gy = 30; gy < H; gy += 60) { x.beginPath(); x.moveTo(0, gy); x.lineTo(W, gy); x.stroke(); }
+  const vg = x.createRadialGradient(W / 2, H / 2, 240, W / 2, H / 2, 760);
+  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.55)');
+  x.fillStyle = vg; x.fillRect(0, 0, W, H);
+  x.fillStyle = 'rgba(212,175,55,0.9)'; x.fillRect(0, 0, W, 3);
+  // screenshot inset, right side
+  const sw = 540, sh = 304, sx = W - 56 - sw, sy = (H - sh) / 2 - 14;
+  x.save();
+  x.shadowColor = _hexA(A, 0.45); x.shadowBlur = 42;
+  _rr(x, sx, sy, sw, sh, 14);
+  x.fillStyle = '#0b1220'; x.fill();
+  x.restore();
+  if (__shot) { x.save(); _rr(x, sx, sy, sw, sh, 14); x.clip(); x.drawImage(__shot, sx, sy, sw, sh); x.restore(); }
+  x.strokeStyle = 'rgba(212,175,55,0.55)'; x.lineWidth = 2; _rr(x, sx, sy, sw, sh, 14); x.stroke();
+  // title + tag
+  x.textAlign = 'left'; x.textBaseline = 'alphabetic';
+  x.fillStyle = '#f7f4ec';
+  x.font = '600 62px "Playfair Display", Georgia, serif';
+  x.fillText(SHARE_CARD.name, 56, 116);
+  x.fillStyle = _hexA(A, 0.95);
+  x.font = '600 19px "Inter", "Segoe UI", system-ui, sans-serif';
+  _spacedL(x, SHARE_CARD.tag.toUpperCase(), 58, 148, 7);
+  // score (auto-shrink to fit the left zone)
+  const sl = String(scoreLine);
+  let spx = 140;
+  x.font = '800 ' + spx + 'px "Segoe UI", system-ui, -apple-system, sans-serif';
+  while (spx > 56 && x.measureText(sl).width > 520) { spx -= 6; x.font = '800 ' + spx + 'px "Segoe UI", system-ui, -apple-system, sans-serif'; }
+  x.shadowColor = _hexA(A, 0.55); x.shadowBlur = 46;
+  x.fillStyle = '#ffffff';
+  x.fillText(sl, 50, 396);
+  x.shadowBlur = 0;
+  x.fillStyle = 'rgba(222,230,248,0.92)';
+  x.font = '500 29px "Segoe UI", system-ui, sans-serif';
+  x.fillText(subLine, 56, 448);
+  x.fillStyle = '#ffd166';
+  x.font = '600 26px "Segoe UI", system-ui, sans-serif';
+  x.fillText('ds-da.ca/games/' + SHARE_CARD.id, 56, 490);
+  // DSDA lockup
+  x.fillStyle = '#f7f4ec';
+  x.font = '600 30px "Playfair Display", Georgia, serif';
+  x.fillText('DSDA', 56, 594);
+  const dw = x.measureText('DSDA').width;
+  x.fillStyle = '#d4af37';
+  x.font = '600 14px "Inter", "Segoe UI", sans-serif';
+  _spacedL(x, 'ARCADE', 58 + dw + 12, 592, 5);
+  x.fillStyle = _hexA(A, 0.85); x.fillRect(0, H - 3, W, 3);
+  return cv;
+}
+
+async function shareScore() {
+  if (phase !== 'over') return;
+  const text = shareText(score);
+  const payload = { title: 'Machine Elves — High Scorer', text, url: SHARE_URL };
+  if (navigator.share) {
+    let files = null;
+    try {
+      const cv = await makeScoreCard(String(score), 'Think you can beat me?');
+      const blob = await new Promise(res => cv.toBlob(res, 'image/png'));
+      if (blob) {
+        const f = [new File([blob], 'popper-score.png', { type: 'image/png' })];
+        if (!navigator.canShare || navigator.canShare(Object.assign({ files: f }, payload))) files = f;
+      }
+    } catch (e) { files = null; }
+    try {
+      if (files) payload.files = files;
+      await navigator.share(payload);
+      elShareMsg.textContent = 'Shared! Go flex it ✓';
+      return;
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;
+      if (files) {
+        delete payload.files;
+        try {
+          await navigator.share(payload);
+          elShareMsg.textContent = 'Shared! Go flex it ✓';
+          return;
+        } catch (e2) { if (e2 && e2.name === 'AbortError') return; }
+      }
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(text + ' ' + SHARE_URL);
+    elShareMsg.textContent = 'Copied! Paste it anywhere ✓';
+  } catch (e) {
+    window.prompt('Copy your score share:', text);
+  }
+}
+function elfTier(i) {
+  // Leaderboard tiers: #1 = Most Phenomenal Elve, #2-5 = Apprentice Elves, rest = Initiates.
+  return i === 0 ? 'phenomenal' : i < 5 ? 'apprentice' : 'initiate';
+}
+function tierLabel(t) {
+  return t === 'phenomenal' ? 'Most Phenomenal Elve' : t === 'apprentice' ? 'Apprentice Elf' : 'Initiate';
+}
+function renderTopList(el, top) {
+  el.innerHTML = '';
+  if (!top.length) {
+    const li = document.createElement('li');
+    li.innerHTML = '<span class="rank">—</span><span class="name">No elves yet</span><span>0</span>';
+    el.appendChild(li);
+    return;
+  }
+  top.forEach((e, i) => {
+    const li = document.createElement('li');
+    const t = elfTier(i);
+    li.className = 'tier-' + t;
+    li.title = tierLabel(t);
+    const r = document.createElement('span'); r.className = 'rank'; r.textContent = i + 1;
+    const n = document.createElement('span'); n.className = 'name'; n.textContent = e.n;
+    const tier = document.createElement('span'); tier.className = 'tier'; tier.textContent = tierLabel(t);
+    const sc = document.createElement('span'); sc.className = 'score'; sc.textContent = e.s;
+    li.append(r, n, tier, sc);
+    el.appendChild(li);
+  });
+}
+async function submitGlobal(name, s, diff) {
+  const gid = GAME_ID + '_' + (diff || difficulty);
+  try {
+    const r = await fetchTimeout(BOARD_API + '/score', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ initials: name, score: s, secret: SCORE_SECRET, game: gid }),
+    }, 5000);
+    if (r.ok) return 'ok';
+  } catch (e) { /* fall through to GitHub */ }
+  if (!SCORE_TOKEN || SCORE_TOKEN.indexOf('PASTE_') === 0) return 'no-token';
+  try {
+    const r = await fetch(SCORE_DISPATCH_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + SCORE_TOKEN,
+        'X-GitHub-Api-Version': '2022-11-28',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ref: 'main',
+        inputs: { initials: name, score: String(s), secret: SCORE_SECRET, game: gid },
+      }),
+    });
+    return r.ok ? 'ok' : 'http-' + r.status;
+  } catch (e) { return 'err'; }
+}
+function saveScore() {
+  if (phase !== 'over' || elSave.disabled) return;
+  track('score_submit', { score });
+  let name = elInitials.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (!name) name = dsdaInits();
+  if (!name) { elSavedMsg.textContent = 'ENTER YOUR INITIALS'; elInitials.focus(); return; }
+  name = name.slice(0, 3).padEnd(3, '?');
+  try { localStorage.setItem(DSDA_INITS_KEY, name); } catch (e) {}
+  const top = saveToStorage(name, score);
+  renderTopList(elTopList, top);
+  renderTopList(elHudTop, top);
+  const mine = top.findIndex(e => e.n === name);
+  if (mine >= 0 && elTopList.children[mine]) elTopList.children[mine].classList.add('me');
+  elSave.disabled = true;
+  elSavedMsg.textContent = 'Saved locally · submitting to global board…';
+  if (mine === 0 && score > 0) sfx.newHigh(); else sfx.pop(4);
+  submitGlobal(name, score).then(res => {
+    if (res === 'ok') elSavedMsg.textContent = 'Saved! On the global board ✓';
+    else elSavedMsg.textContent = 'Saved locally · global board: ' + res;
+  });
+}
+function playAgain() {
+  elOverlay.classList.add('hidden');
+  elPlayAgain.blur();
+  resetGame();
+  // Play Again IS a new game — it gets a fresh random station/track too. Without this,
+  // only menu starts had radio and every rematch was silent.
+  startRadioForMatch();
+}
+
+// ---------------- HUD ----------------
+let lastHudScore = 0;
+function updateHud() {
+  if (score !== lastHudScore) {
+    elScore.textContent = score;
+    elScore.classList.remove('pop'); void elScore.offsetWidth; elScore.classList.add('pop');
+    lastHudScore = score;
+  }
+  elLevel.textContent = level;
+  elNextDot.style.setProperty('--nc', _hex(COLORS[nextColor]));
+  elNextDot.style.background = 'radial-gradient(circle at 35% 30%, #fff 0%, ' + _hex(COLORS[nextColor]) + ' 55%, rgba(0,0,0,0.35) 100%)';
+  elNextDot.style.boxShadow = '0 0 10px ' + _hex(COLORS[nextColor]);
+  const dots = elDropDots.querySelectorAll('i');
+  const left = SHOTS_PER_PUSH - shotsThisPush;
+  dots.forEach((d, i) => d.classList.toggle('on', i < left));
+}
+function showBanner(title, sub) {
+  elBannerTitle.textContent = title;
+  elBannerSub.textContent = sub || '';
+  elBanner.classList.add('show');
+  bannerTimer = 1.9;
+}
+function hideBanner() { elBanner.classList.remove('show'); }
+
+// ---------------- input ----------------
+function onKey(e) {
+  if (inputFrozen) return;
+  if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'Space', 'KeyA', 'KeyD', 'KeyW', 'Enter'].includes(e.code)) e.preventDefault();
+  sfx.ensure();
+  MusicSys.tryStart();
+  const ae = document.activeElement;
+  if (ae && ae.tagName === 'BUTTON') ae.blur();
+  if (!elScores.classList.contains('hidden')) {
+    if (e.code === 'Escape' || e.code === 'Enter' || e.code === 'Space') { e.preventDefault(); backToMenu(); }
+    return;
+  }
+  if (phase === 'menu' && !elMenu.classList.contains('hidden')) {
+    if (e.code === 'ArrowUp') { setMenuSel(menuSel - 1); sfx.menuNav(); return; }
+    if (e.code === 'ArrowDown') { setMenuSel(menuSel + 1); sfx.menuNav(); return; }
+    if (e.code === 'Enter' || e.code === 'Space') { e.preventDefault(); activateMenu(); return; }
+    return;
+  }
+  if (phase !== 'play') return;
+  if ((e.code === 'KeyP' || e.code === 'Escape') && !e.repeat) { togglePause(); return; }
+  if (e.code === 'ArrowLeft' || e.code === 'KeyA') { aim = Math.min(AIM_MAX, aim + 0.04); updateWandTip(); }
+  else if (e.code === 'ArrowRight' || e.code === 'KeyD') { aim = Math.max(AIM_MIN, aim - 0.04); updateWandTip(); }
+  else if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW' || e.code === 'Enter') {
+    if (!e.repeat && !charging) { charging = true; power = 0; sfx.charge(); }
+  }
+  if (e.code === 'KeyM' && !e.repeat) MusicSys.next();
+}
+function onKeyUp(e) {
+  if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW' || e.code === 'Enter') {
+    if (charging) { fire(); }
+  }
+}
+function onWindowBlur() {
+  charging = false;
+  tId = null;
+}
+
+// ---------------- pointer / touch input ----------------
+// desktop + mobile: press = charge + aim at finger, drag = aim, release = fire
+const IS_TOUCH = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+const buzz = ms => { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} };
+let tId = null, tDownT = 0, tMoved = false, tStartX = 0, tStartAim = Math.PI / 2;
+const TOUCH_AIM_SENS = 2.0;  // mobile drag sensitivity (higher = more dramatic; 2.0 = half-screen swipe spans full aim range)
+function screenToWorld(clientX, clientY) {
+  const r = sceneEl.getBoundingClientRect();
+  const nx = ((clientX - r.left) / r.width) * 2 - 1;
+  const ny = ((clientY - r.top) / r.height) * 2 - 1;
+  return { x: nx * _halfW, y: 6.5 + ny * _halfH };
+}
+function aimFromWorld(w) {
+  const dx = w.x - SHOOTER_X, dy = w.y - SHOOTER_Y;
+  let a = Math.atan2(dy, dx);
+  return Math.max(AIM_MIN, Math.min(AIM_MAX, a));
+}
+function touchStart(e) {
+  if (inputFrozen || tId !== null || !e.isPrimary) return;
+  if (phase !== 'play') return;
+  tId = e.pointerId;
+  tDownT = performance.now();
+  tMoved = false;
+  tStartX = e.clientX;
+  tStartAim = aim;  // relative drag: start from the current aim (no jump on touch)
+  sfx.ensure();
+  MusicSys.tryStart();
+  charging = true; power = 0;
+  updateWandTip();
+  buzz(6);
+}
+function touchMove(e) {
+  if (inputFrozen || e.pointerId !== tId) return;
+  const dragX = e.clientX - tStartX;
+  const screenW = sceneEl.getBoundingClientRect().width;
+  // relative drag: horizontal swipe steers the wand; right swipe -> lower angle (right), left swipe -> higher angle (left)
+  const aimDelta = -(dragX / screenW) * (AIM_MAX - AIM_MIN) * TOUCH_AIM_SENS;
+  const na = Math.max(AIM_MIN, Math.min(AIM_MAX, tStartAim + aimDelta));
+  if (Math.abs(na - aim) > 0.01) tMoved = true;
+  aim = na;
+  updateWandTip();
+}
+function touchEnd(e) {
+  if (e.pointerId !== tId) return;
+  tId = null;
+  if (charging && phase === 'play') { fire(); }
+  charging = false; power = 0;
+  updateWandTip();
+}
+function toggleSound() {
+  sfx.on = !sfx.on;
+  elSound.textContent = sfx.on ? '🔊 sound on' : '🔇 sound off';
+  if (sfx.on) { sfx.ensure(); sfx.shot(0.3); }
+}
+function toggleMusic() {
+  MusicSys.on = !MusicSys.on;
+  elMusicToggle.textContent = MusicSys.on ? '🎵' : '🔇';
+  if (MusicSys.on) MusicSys.tryStart();
+  else MusicSys.stop();
+}
+function updateMusicUI() {
+  elMusicName.textContent = (MusicSys.track + 1) + '. ' + MusicSys.cur.name;
+}
+
+// ---------------- main loop ----------------
+function update(dt) {
+  updateParticles(dt);
+  updatePetals(dt);
+  menuTime += dt;
+  updateAurora(dt);
+  updateCrystals(dt);
+  if (fireflies) {
+    fireflies.rotation.z += dt * 0.02;
+    fireflies.material.opacity = 0.55 + 0.2 * Math.sin(menuTime * 1.3);
+  }
+  // wand sparkles orbit the tip
+  if (wandSparkles) wandSparkles.rotation.z += dt * 2.2;
+  updateGnome(dt);
+  updateMenuElf(dt);
+  updateFairy(dt);
+  if (bannerTimer > 0) {
+    bannerTimer -= dt;
+    if (bannerTimer <= 0 && phase !== 'clearing') hideBanner();
+  }
+  // charge
+  if (charging && phase === 'play') {
+    const was = power;
+    power = Math.min(1, power + dt / CHARGE_TIME);
+    if (was < FULL_POWER && power >= FULL_POWER) sfx.ready();
+    updateWandTip();
+  }
+  // danger proximity (vignette + pulse SFX)
+  setDanger(dangerProximity());
+  if (dangerOn) { dangerT += dt; if (dangerT > 0.95) { dangerT = 0; sfx.danger(); } }
+  // falling bubbles
+  for (let i = fallingBubbles.length - 1; i >= 0; i--) {
+    const b = fallingBubbles[i];
+    b.vy -= 14 * dt;
+    b.x += b.vx * dt; b.y += b.vy * dt;
+    b.mesh.position.set(b.x, b.y, 0);
+    b.mesh.rotation.z += b.spin * dt;
+    if (b.y < -1.5) { scene.remove(b.mesh); fallingBubbles.splice(i, 1); }
+  }
+  if (phase === 'play') {
+    updateActiveBubbles(dt);
+  }
+  if (phase === 'clearing') {
+    clearTimer -= dt;
+    if (clearTimer <= 0) {
+      hideBanner();
+      startLevel(level + 1);
+    }
+  }
+  updateGuide();
+}
+// ── Loading screen: stays up a minimum of 3s while the gauge fills 0→100%,
+//    then hides once the first frame is rendered AND display fonts are ready.
+//    The gauge fills to 95% over the 3s window and completes to 100% when
+//    ready (so a slow load holds at 95% instead of sitting at a fake 100%).
+//    Safety timeout guarantees it never sticks if something goes wrong.
+const LOADER_MIN_MS = 3000;
+let __loaderReady = false, __loaderStart = 0, __loaderPct = 0;
+const __gaugeFill = document.getElementById('gaugeFill');
+const __gaugePct = document.getElementById('gaugePct');
+function hideLoader() {
+  if (window.__loaderHidden) return;
+  window.__loaderHidden = true;
+  if (__gaugeFill) __gaugeFill.style.width = '100%';
+  if (__gaugePct) __gaugePct.textContent = '100%';
+  const L = document.getElementById('loader');
+  if (L) L.classList.add('hidden');
+}
+function loaderTick() {
+  if (window.__loaderHidden) return;
+  const elapsed = performance.now() - __loaderStart;
+  const target = __loaderReady ? 100 : 95;
+  const linear = Math.min(elapsed / LOADER_MIN_MS, 1) * target;
+  __loaderPct = Math.max(__loaderPct, linear);
+  if (__gaugeFill) __gaugeFill.style.width = __loaderPct + '%';
+  if (__gaugePct) __gaugePct.textContent = Math.floor(__loaderPct) + '%';
+  if (__loaderReady && __loaderPct >= 100) { hideLoader(); return; }
+  requestAnimationFrame(loaderTick);
+}
+function kickLoader() {
+  // called on the first rendered frame — mark ready once fonts are ready too
+  if (window.__loaderHidden) return;
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => { __loaderReady = true; }).catch(() => { __loaderReady = true; });
+  } else {
+    __loaderReady = true;
+  }
+}
+__loaderStart = performance.now();
+requestAnimationFrame(loaderTick);
+setTimeout(hideLoader, 8000); // global safety: hide even if animate never runs
+
+function animate() {
+  rafId = requestAnimationFrame(animate);
+  const dt = Math.min(clock.getDelta(), 0.05);
+  if (phase !== 'paused') update(dt);
+  if (renderer) {
+    // decaying camera shake (visual only)
+    if (shakeAmp > 0.001) {
+      shakeT += dt;
+      const d = Math.exp(-shakeT * 9) * shakeAmp;
+      camera.position.x = camBaseX + Math.sin(shakeT * 97) * d;
+      camera.position.y = camBaseY + Math.cos(shakeT * 83) * d * 0.7;
+      if (d < 0.002) { shakeAmp = 0; camera.position.x = camBaseX; camera.position.y = camBaseY; }
+    } else if (camera.position.x !== camBaseX || camera.position.y !== camBaseY) {
+      camera.position.x = camBaseX; camera.position.y = camBaseY;
+    }
+    renderScene();
+    kickLoader(); // hide the loading screen on the first rendered frame
+  }
+}
+let camBaseX = 0, camBaseY = 6.5;
+function fitCamera() {
+  const w = window.innerWidth, h = window.innerHeight;
+  const aspect = w / h;
+  const halfH = Math.max(7, 6.5 / aspect);
+  const halfW = halfH * aspect;
+  camera.left = -halfW; camera.right = halfW;
+  camera.top = halfH; camera.bottom = -halfH;
+  camera.near = 0.1; camera.far = 100;
+  camera.position.set(0, 6.5, 10);
+  camera.lookAt(0, 6.5, 0);
+  camera.updateProjectionMatrix();
+  _halfW = halfW; _halfH = halfH;
+  camBaseX = 0; camBaseY = 6.5;
+  if (renderer) { renderer.setSize(w, h); if (composer) composer.setSize(w, h); }
+  else if (sceneEl) { sceneEl.width = w; sceneEl.height = h; }
+}
+
+// ---------------- boot ----------------
+// render with bloom composer when available, else plain renderer (fallback)
+function renderScene() {
+  if (!renderer) return;
+  // On the game-over screen, drop the bloom pass (the most expensive effect)
+  // so the overlay stays crisp and the frame rate high.
+  if (composer && phase !== 'over') { composer.render(); }
+  else { renderer.render(scene, camera); }
+}
+function boot() {
+  try {
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.12;
+    renderer.domElement.id = 'scene';
+    sceneEl = renderer.domElement;
+  } catch (e) {
+    webglOK = false;
+    renderer = null;
+    const c = document.createElement('canvas');
+    c.id = 'scene';
+    c.width = window.innerWidth; c.height = window.innerHeight;
+    c.style.cssText = 'position:fixed;inset:0;display:block;touch-action:none;background:#1a1430';
+    const ctx = c.getContext && c.getContext('2d');
+    if (ctx) {
+      ctx.fillStyle = '#a99ccf'; ctx.font = '16px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('3D graphics unavailable on this device — running in 2D mode', window.innerWidth / 2, 40);
+    }
+    sceneEl = c;
+    hideLoader(); // 2D fallback: renderer is null so kickLoader() never fires
+  }
+  document.body.appendChild(sceneEl);
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x05070f);
+  scene.fog = new THREE.Fog(0x05070f, 18, 42);
+
+  camera = new THREE.OrthographicCamera(-6, 6, 7, -7, 0.1, 100);
+  fitCamera();
+
+  // bloom post-processing: makes the emissive machine-elf elements (visor, core,
+  // antenna, energy ring, lever, dais nodes, bubbles) glow. Must run after
+  // scene+camera exist (RenderPass holds refs to them). try/catch → plain-render fallback.
+  if (renderer) {
+    try {
+      composer = new EffectComposer(renderer);
+      composer.addPass(new RenderPass(scene, camera));
+      bloomPass = new UnrealBloomPass(
+        new THREE.Vector2(window.innerWidth, window.innerHeight),
+        0.72,   // strength
+        0.42,   // radius
+        0.80    // threshold (only bright emissive pixels bloom)
+      );
+      composer.addPass(bloomPass);
+      composer.addPass(new OutputPass());
+    } catch (e) {
+      composer = null; bloomPass = null;
+    }
+  }
+
+  scene.add(new THREE.HemisphereLight(0x4455aa, 0x0a0c14, 0.55));
+  scene.add(new THREE.AmbientLight(0x404a70, 0.5));
+  const dir = new THREE.DirectionalLight(0xffffff, 1.7);
+  dir.position.set(4, 14, 10);
+  dir.castShadow = true;
+  dir.shadow.mapSize.set(1024, 1024);
+  dir.shadow.camera.left = -8; dir.shadow.camera.right = 8;
+  dir.shadow.camera.top = 16; dir.shadow.camera.bottom = -2;
+  dir.shadow.camera.near = 1; dir.shadow.camera.far = 40;
+  scene.add(dir);
+  const p1 = new THREE.PointLight(0x00e5ff, 50, 0, 2); p1.position.set(-8, 8, 6); scene.add(p1);
+  const p2 = new THREE.PointLight(0xff2d95, 45, 0, 2); p2.position.set(8, 12, 5); scene.add(p2);
+  const p3 = new THREE.PointLight(0xffd24d, 22, 0, 2); p3.position.set(0, 3, 4); scene.add(p3);
+  // cyan halo on the LAUNCHER. It used to sit at (-0.9, 1.7, 1.9) @ 20 — which is right
+  // on top of the GNOME (-1.14, 0.92, 0.25), ~1.8 units out: with decay 2 that's ~6x
+  // full-strength cyan on his metal body, everything over the bloom threshold, total
+  // glowworm. Moved over the dais (x=0) and cut to 8 so it lights the machine, not him.
+  const p4 = new THREE.PointLight(0x00e5ff, 8, 0, 2); p4.position.set(-0.1, 1.6, 1.7); scene.add(p4);
+
+  buildBackground();
+  buildAurora();
+  buildCrystals();
+  buildFireflies();
+  buildPetals();
+  buildWand();
+  buildGnome();
+  buildFairy();
+  buildMenuElf();
+
+  // aim guide line + target reticle
+  guideLine = new THREE.Line(guideGeo, guideMat);
+  guideLine.frustumCulled = false;
+  scene.add(guideLine);
+  makeReticle();
+
+  window.addEventListener('resize', fitCamera);
+  window.addEventListener('keydown', onKey);
+  window.addEventListener('keyup', onKeyUp);
+  window.addEventListener('blur', onWindowBlur);
+  window.addEventListener('pointerdown', () => { window.focus(); sfx.ensure(); MusicSys.tryStart(); });
+  window.focus();
+
+  sceneEl.addEventListener('pointerdown', touchStart);
+  sceneEl.addEventListener('pointermove', touchMove);
+  sceneEl.addEventListener('pointerup', e => touchEnd(e));
+  sceneEl.addEventListener('pointercancel', e => touchEnd(e));
+  if (IS_TOUCH) {
+    $('hudKeys').innerHTML = 'swipe &nbsp;aim<br>hold &nbsp;charge · release to fire<br>4+ SPARK · 5+ MASTER · 10+ PHENOMENAL ✦';
+    $('menuHint').textContent = 'swipe to aim · hold to charge, release to fire · 4+ in one = SPARK, 5+ = MASTER, 10+ = PHENOMENAL';
+  }
+
+  elSave.addEventListener('click', saveScore);
+  elShare.addEventListener('click', shareScore);
+  elPlayAgain.addEventListener('click', playAgain);
+  $('pauseBtn').addEventListener('click', e => { togglePause(); e.currentTarget.blur(); });
+  $('pauseResume').addEventListener('click', e => { togglePause(); e.currentTarget.blur(); });
+  $('pauseMenu').addEventListener('click', e => { backToMenu(); e.currentTarget.blur(); });
+  elInitials.addEventListener('keydown', e => {
+    if (e.key === 'Enter') saveScore();
+    e.stopPropagation();
+  });
+  elSound.addEventListener('click', e => { toggleSound(); e.currentTarget.blur(); });
+  elMusicPrev.addEventListener('click', e => { MusicSys.prev(); e.currentTarget.blur(); });
+  elMusicNext.addEventListener('click', e => { MusicSys.next(); e.currentTarget.blur(); });
+  elMusicToggle.addEventListener('click', e => { toggleMusic(); e.currentTarget.blur(); });
+  elScoresBack.addEventListener('click', e => { backToMenu(); e.currentTarget.blur(); });
+  elHelpBack.addEventListener('click', e => { backToMenu(); e.currentTarget.blur(); });
+  elToMenu.addEventListener('click', e => { backToMenu(); e.currentTarget.blur(); });
+
+  menuButtons.push($('menuStart'), $('menuScores'), $('menuHelp'), $('menuSite'));
+  menuButtons.forEach((b, k) => {
+    b.addEventListener('mouseenter', () => {
+      setMenuSel(k);
+      const r = b.getBoundingClientRect();
+      menuElfReact(r.left + r.width / 2, r.top + r.height / 2, 1);
+    });
+    b.addEventListener('click', e => { setMenuSel(k); activateMenu(); e.currentTarget.blur(); });
+  });
+
+  // difficulty selector: INITIATE (prediction line on) / MASTER (line off)
+  const diffInit = $('diffInitiate'), diffMaster = $('diffMaster');
+  function setDifficulty(d) {
+    difficulty = d;
+    diffInit.classList.toggle('sel', d === 'initiate');
+    diffMaster.classList.toggle('sel', d === 'master');
+    diffInit.setAttribute('aria-checked', String(d === 'initiate'));
+    diffMaster.setAttribute('aria-checked', String(d === 'master'));
+    try { localStorage.setItem('popper_difficulty', d); } catch (e) {}
+  }
+  diffInit.addEventListener('click', () => { setDifficulty('initiate'); diffInit.blur(); });
+  diffMaster.addEventListener('click', () => { setDifficulty('master'); diffMaster.blur(); });
+  try { const _sd = localStorage.getItem('popper_difficulty'); if (_sd === 'master' || _sd === 'initiate') setDifficulty(_sd); } catch (e) {}
+
+  // menu interactivity: the title letters ripple away from the cursor, and the
+  // elf's visor tracks it (menuPointer feeds updateMenuElf)
+  const ltEls = [...document.querySelectorAll('.menu-title .lt')];
+  window.addEventListener('pointermove', e => {
+    menuPointer.px = e.clientX; menuPointer.py = e.clientY; menuPointer.active = true;
+    if (phase !== 'menu' || elMenu.classList.contains('hidden')) return;
+    for (const el of ltEls) {
+      const r = el.getBoundingClientRect();
+      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      const ddx = cx - e.clientX, ddy = cy - e.clientY;
+      const d = Math.hypot(ddx, ddy);
+      if (d < 160 && d > 0.001) {
+        const f = (1 - d / 160) * 14;
+        el.style.setProperty('--lt-x', (ddx / d * f).toFixed(1) + 'px');
+        el.style.setProperty('--lt-y', (ddy / d * f).toFixed(1) + 'px');
+      } else {
+        el.style.setProperty('--lt-x', '0px');
+        el.style.setProperty('--lt-y', '0px');
+      }
+    }
+  });
+
+  // menu legend
+  const ml = $('menuLegend');
+  const legend = [
+    { t: 'AIM', d: '← → keys, or swipe to steer the wand' },
+    { t: 'CHARGE', d: 'hold SPACE (or hold touch) to power the shot' },
+    { t: 'COMBO', d: '4+ SPARK · 5+ MASTER · 10+ PHENOMENAL ✦' },
+    { t: 'MATCH 3+', d: 'link 3+ same-color blossoms to pop them' },
+  ];
+  for (const it of legend) {
+    const d = document.createElement('span');
+    d.className = 'ml';
+    d.innerHTML = '<span class="ml-top"><b>✦</b> ' + it.t + '</span><span class="ml-desc">' + it.d + '</span>';
+    ml.appendChild(d);
+  }
+
+  renderTopList(elHudTop, loadScores().slice(0, 10));
+  updateMusicUI();
+  updateHud();
+  setMenuSel(0);
+  phase = 'menu';
+  clock = new THREE.Clock();
+  animate();
+}
+
+// ---------------- debug / harness API ----------------
+window.__tl = {
+  pause() { cancelAnimationFrame(rafId); },
+  resume() { clock.getDelta(); animate(); },
+  rawFrame() { cancelAnimationFrame(rafId); renderScene(); return 'ok'; },
+  fairyPos() { return fairy ? [fairy.position.x, fairy.position.y] : null; },
+  reticlePos() { return reticle ? [reticle.position.x, reticle.position.y, reticle.visible, reticle.material.opacity] : null; },
+  lineVisible() { return guideLine ? guideLine.visible : null; },
+  freezeInput() { inputFrozen = true; },
+  unfreezeInput() { inputFrozen = false; },
+  frame(dt) { update(Math.min(dt, 0.05)); renderScene(); return 'ok'; },
+  music() {
+    let test = 'no-ctx';
+    if (MusicSys.ctx) {
+      try {
+        const saved = MusicSys.track;
+        const names = [];
+        for (let t = 0; t < TRACKS.length; t++) {
+          MusicSys.track = t;
+          const tr = MusicSys.cur;
+          for (let s = 0; s < tr.melody.length; s++) MusicSys.playStep(s, MusicSys.ctx.currentTime + 0.01 + s * 0.001);
+          names.push(tr.name + ':' + tr.melody.length + '+' + tr.bass.length);
+        }
+        MusicSys.track = saved;
+        MusicSys.nextTime = Math.max(0.01, MusicSys.ctx.currentTime - 2);
+        MusicSys.schedule();
+        test = 'ok|' + names.join(' ');
+      } catch (e) { test = String(e); }
+    }
+    return {
+      on: MusicSys.on, playing: MusicSys.playing, step: MusicSys.step,
+      track: MusicSys.track, name: MusicSys.cur.name,
+      ctx: MusicSys.ctx ? MusicSys.ctx.state : null, test,
+    };
+  },
+  inputState() {
+    return { charging, power: +power.toFixed(3), aim: +aim.toFixed(3), frozen: inputFrozen, touchActive: tId !== null };
+  },
+  start() { if (phase === 'menu') startGameFromMenu(); },
+  getPhase() { return phase; },
+  elf() { return menuElf ? { pos: menuElf.position.toArray(), visible: menuElf.visible, trail: menuElfTrail.filter(p => p.life > 0).length } : null; },
+  elfBodyColor() {
+    if (!menuElf) return null;
+    const body = menuElf.children[0];
+    if (!body || !body.material) return null;
+    const c = body.material.color;
+    return { hex: '#' + ((c.r*255|0)<<16 | (c.g*255|0)<<8 | (c.b*255|0)).toString(16).padStart(6,'0'), emissive: body.material.emissiveIntensity };
+  },
+  getScore() { return score; },
+  getBannerText() { const b = document.querySelector('#banner h2'); return b ? b.textContent : ''; },
+  toMenu() { backToMenu(); },
+  testTiers(n) {
+    const el = document.createElement('ol'); el.className = 'tops';
+    const data = []; for (let i=1;i<=n;i++) data.push({n:'ELF'+i, s: 1000-i*100});
+    renderTopList(el, data);
+    return [...el.children].map(li => ({
+      rank: li.querySelector('.rank').textContent,
+      tier: li.className,
+      label: li.querySelector('.tier') ? li.querySelector('.tier').textContent : ''
+    }));
+  },
+  menuSel() { return menuSel; },
+  setAim(a) { aim = Math.max(AIM_MIN, Math.min(AIM_MAX, a)); updateWandTip(); return 'ok'; },
+  getAim() { return aim; },
+  getPrediction() {
+    if (!guideLine) return null;
+    const pos = guideLine.geometry.attributes.position;
+    if (!pos || pos.count < 2) return null;
+    const i = (pos.count - 1) * 2;
+    return { x: pos.array[i], y: pos.array[i+1], pts: pos.count };
+  },
+  getTopmost() {
+    let best = null, bestY = -999;
+    for (let r = 0; r < grid.length; r++) for (let c = 0; c < C; c++) {
+      if (grid[r] && grid[r][c]) {
+        const y = worldY(r);
+        if (y > bestY) { bestY = y; best = { x: worldX(r,c), y, r, c }; }
+      }
+    }
+    return best;
+  },
+  getLastStuck() { return lastStuckPos; },
+  getActiveCount() { return activeBubbles.length; },
+  getActivePos() { return activeBubbles.length ? { x: activeBubbles[0].x, y: activeBubbles[0].y } : null; },
+  getActiveVel() { return activeBubbles.length ? { vx: activeBubbles[0].vx, vy: activeBubbles[0].vy } : null; },
+  setPower(p) { power = Math.max(0, Math.min(1, p)); updateWandTip(); return 'ok'; },
+  setColor(c) { currentColor = c; nextColor = c; updateWandTip(); return 'ok'; },
+  fire(angle, p) {
+    if (angle !== undefined) { aim = Math.max(AIM_MIN, Math.min(AIM_MAX, angle)); updateWandTip(); }
+    if (p !== undefined) power = Math.max(0, Math.min(1, p));
+    fire();
+    return 'fired';
+  },
+  seedBoard(rows, colors) { startLevel(1); level = 1; lastStuckPos = null; newBoard(rows || START_ROWS, colors || 5); currentColor = 0; nextColor = 1; updateWandTip(); updateHud(); return 'seeded ' + bubbleCount(); },
+  setCell(r, c, color) {
+    while (grid.length <= r) grid.push(new Array(C).fill(null));
+    const row = grid[r];
+    while (row.length < C) row.push(null);
+    if (row[c]) { scene.remove(row[c].mesh); row[c] = null; }
+    const mesh = makeBubble(color);
+    mesh.position.set(worldX(r, c), worldY(r), 0);
+    scene.add(mesh);
+    row[c] = { color, mesh, row: r, col: c };
+    rebuildList();
+    return 'ok';
+  },
+  clearAll() { clearFieldObjects(); rebuildList(); return 'cleared'; },
+  matchAt(r, c) { const res = resolveMatch(r, c); rebuildList(); if (bubbleCount() === 0) levelClear(); else if (anyBelowDanger()) gameOver(); return 'matched ' + res.matched + ' fell ' + res.fell; },
+  checkDanger() { return anyBelowDanger(); },
+  popAt(r, c) { let n = 0; if (grid[r] && grid[r][c]) { n = popBubble(r, c); rebuildList(); } return 'popped ' + n; },
+  pushDown() { pushDown(); rebuildList(); return 'pushed'; },
+  listDump() { return bubbleList.map(g => ({ x: +g.x.toFixed(2), y: +g.y.toFixed(2), row: g.row, col: g.col })); },
+  activeDump() { return activeBubbles.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2) })); },
+  gridDump() {
+    return grid.map(row => row.map(cell => cell ? cell.color : -1));
+  },
+  setLevel(n) { startLevel(n); return 'level ' + n; },
+  setScore(n) { score = n; updateHud(); return 'ok'; },
+  gameOver() { phase = 'over'; gameOver(); return 'ok'; },
+  state() {
+    return {
+      phase, score, level,
+      rows: grid.length, bubbles: bubbleCount(),
+      active: activeBubbles.length, falling: fallingBubbles.length,
+      power: +power.toFixed(3), aim: +aim.toFixed(3), charging,
+      shotsThisPush, currentColor, nextColor,
+      fps: 0,
+    };
+  },
+  async shareCard(s) {
+    try { return (await makeScoreCard(String(s === undefined ? score : s), 'Think you can beat me?')).toDataURL('image/png'); }
+    catch (e) { return 'err:' + e; }
+  },
+  shareText: () => shareText(score),
+  reset: resetGame,
+  gamePause: togglePause,
+  shake: (a) => shake(a),
+  danger: () => dangerOn,
+  gridProbe: () => grid.map(row => row ? row.map(c => c ? c.color : -1) : null),
+  debugMatch: (r, c) => {
+    if (!grid[r] || !grid[r][c]) return { ok: false };
+    const before = score;
+    const res = resolveMatch(r, c);
+    if (pendingPush) { pendingPush = false; pushDown(); dropOrphans(); }
+    rebuildList();
+    updateHud();
+    return { ok: true, matched: res.matched, fell: res.fell, scoreDelta: score - before };
+  },
+  debugSprites: () => {
+    const f = [];
+    scene.traverse(o => { if (o.isSprite) f.push({ x: +o.position.x.toFixed(2), y: +o.position.y.toFixed(2), z: +o.position.z.toFixed(2), s: +o.scale.x.toFixed(2), o: o.material.opacity, vis: o.visible }); });
+    return f;
+  },
+  debugVoices: () => {
+    const st = {};
+    for (const k in voices.files) st[k] = { raw: !!voices.raw[k], buf: !!voices.buf[k], dur: voices.buf[k] ? +voices.buf[k].duration.toFixed(2) : 0 };
+    return { ctx: !!AudioEngine.ctx, on: sfx.on, pending: voices._pending.length, st };
+  },
+  playVoice: (k) => { voices.play(k); return { played: !!voices.buf[k] }; },
+  debugGnome: () => {
+    const wp = new THREE.Vector3();
+    let knobPos = null;
+    if (gnomeLever) {
+      // knob is the last child of the handle
+      const knob = gnomeLever.children[gnomeLever.children.length - 1];
+      if (knob) { knob.getWorldPosition(wp); knobPos = [ +wp.x.toFixed(3), +wp.y.toFixed(3), +wp.z.toFixed(3) ]; }
+    }
+    return {
+      exists: !!gnome,
+      pos: gnome ? [gnome.position.x, +gnome.position.y.toFixed(3), gnome.position.z] : null,
+      leverZ: gnomeLever ? +gnomeLever.rotation.z.toFixed(3) : null,
+      knobWorld: knobPos,
+      armL: gnomeArmL ? [ +gnomeArmL.rotation.x.toFixed(3), +gnomeArmL.rotation.z.toFixed(3) ] : null,
+      fireT: +gnomeFireT.toFixed(3), celeT: +gnomeCeleT.toFixed(3),
+      charging, power: +power.toFixed(3), phase,
+    };
+  },
+  gnomeTest: (mode) => {
+    if (mode === 'fire') gnomeFire();
+    else if (mode === 'cele') gnomeCelebrate(10);
+    else if (mode === 'idle') { gnomeFireT = 0; gnomeCeleT = 0; }
+    return 'ok:' + mode;
+  },
+  debugFairy: () => {
+    return {
+      exists: !!fairy,
+      pos: fairy ? [ +fairy.position.x.toFixed(3), +fairy.position.y.toFixed(3), fairy.position.z ] : null,
+      target: [ +fairyTX.toFixed(3), +fairyTY.toFixed(3) ],
+      popT: +fairyPopT.toFixed(3), popPos: [ +fairyPopX.toFixed(3), +fairyPopY.toFixed(3) ],
+      trail: fairyTrail.length, scale: fairy ? +fairy.scale.x.toFixed(3) : null,
+      phase,
+    };
+  },
+  fairyTest: (mode) => {
+    if (mode === 'pop') fairyPop(0, 8, 6);
+    else if (mode === 'idle') fairyPopT = 0;
+    return 'ok:' + mode;
+  },
+};
+
+try {
+  boot();
+} catch (err) {
+  window.__bootErr = (err && err.stack) || String(err);
+  elBootErr.classList.remove('hidden');
+  elBootErr.textContent = window.__bootErr;
+  hideLoader(); // reveal the boot error (loader sits above it at z-100)
+}
+</script>
+<script src="../../radio/radio.js"></script>
+<script>
+  // DSDA Radio network — streams Polkahole (+ future stations) as in-game radio.
+  // Manifest is shared across all ds-da games (../../radio/stations.json).
+  DSDARadio.init({ mount: 'radioBox', manifest: '../../radio/stations.json' });
+</script>
+</body>
+</html>
