@@ -358,6 +358,11 @@ function fetchTimeout(url,opts,ms){
 }
 async function submitScore(board,sc,meta){
   if(!sc||sc<=0){setStatus('Nothing to post — score something first. 🤓');return;}
+  /* endRun() posts automatically, and then the player can press POST SCORE on the
+     same screen — which put the identical run on the board twice, seconds apart.
+     save.posted is the high-water mark of what actually reached the Worker, so a
+     failed post still retries while a successful one never double-files. */
+  if(sc<=(save.posted||0)){setStatus('Already on the board ✅');return;}
   const initials=getInits();
   if(!initials){pendingSubmit={board,sc,meta};setStatus('Enter your initials to post this score.');return;}
   pendingSubmit=null;setStatus('Posting…');
@@ -1350,13 +1355,27 @@ const pointers=new Map();let panMode=false,tapCandidate=null,pinchD=0;
 function ptrWorld(cx,cy,out){_ndc.set((cx/innerWidth)*2-1,-(cy/innerHeight)*2+1);raycaster.setFromCamera(_ndc,camera);return raycaster.ray.intersectPlane(planeZ0,out);}
 function screenDist(wpos,cx,cy){_pv.copy(wpos).project(camera);const sx=(_pv.x*.5+.5)*innerWidth,sy=(-_pv.y*.5+.5)*innerHeight;return Math.hypot(sx-cx,sy-cy);}
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
+/* Put the sling back and return to aim. Every path that ends a drag without
+   launching goes through here, so none of them can leave state stuck on 'drag'. */
+function abortDrag(){
+  dragging=false;canvas.classList.remove('aiming');duckMusic(false);hideTraj();
+  if(state==='drag'){state='aim';if(cur)cur.mesh.position.copy(ANCHOR);updateHint();}
+}
 canvas.addEventListener('pointerdown',e=>{
   initAudio();resumeAudio();if(paused)return;
   /* setPointerCapture throws if the pointer is already gone (fast taps, some mobile
      browsers, synthetic events). Unguarded it aborts the handler and the tap is lost. */
   try{canvas.setPointerCapture(e.pointerId);}catch(err){}
   pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY,t:performance.now()});
-  if(pointers.size===2){const p=[...pointers.values()];pinchD=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);dragging=false;panMode=false;hideTraj();return;}
+  if(pointers.size===2){
+    const p=[...pointers.values()];pinchD=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);
+    /* A second finger landing mid-drag used to clear `dragging` but leave state
+       on 'drag'. pointerEnd only releases when BOTH are set, so the release never
+       ran: the nerd stayed frozen drawn back and no new drag could start, because
+       that path needs state==='aim'. Unrecoverable without a reload. */
+    abortDrag();
+    panMode=false;hideTraj();return;
+  }
   introTimer=-1;
   if(state==='aim'&&cur&&screenDist(cur.mesh.position,e.clientX,e.clientY)<(isTouch?84:64)){
     dragging=true;state='drag';canvas.classList.add('aiming');dragPos.copy(cur.mesh.position);duckMusic(true);$('hintPill').classList.add('hidden');return;
@@ -1395,7 +1414,7 @@ function pointerEnd(e){
 canvas.addEventListener('pointerup',pointerEnd);
 canvas.addEventListener('pointercancel',e=>{
   pointers.delete(e.pointerId);pinchD=0;panMode=false;tapCandidate=null;
-  if(dragging&&state==='drag'){dragging=false;canvas.classList.remove('aiming');duckMusic(false);hideTraj();state='aim';if(cur)cur.mesh.position.copy(ANCHOR);updateHint();}
+  abortDrag();
 });
 canvas.addEventListener('wheel',e=>{e.preventDefault();if(paused)return;camGoal.dist=THREE.MathUtils.clamp(camGoal.dist*(1+e.deltaY*.0012),minD,maxD);},{passive:false});
 addEventListener('keydown',e=>{
@@ -1437,6 +1456,11 @@ function update(dt){
     if(loadTimer>0){loadTimer-=dt;if(loadTimer<=0)loadNextNerd();}
     if(winTimer>0){winTimer-=dt;if(winTimer<=0)finishWin();}
     if(comboT>0){comboT-=dt;if(comboT<=0)dropCombo();}
+    /* Catch-all: the sling should never be held back with no finger on the glass.
+       Covers any input path that fails to deliver a release — a pointerup
+       swallowed by an overlay, lost capture, a browser gesture stealing the
+       touch — not just the two-finger case above. */
+    if(state==='drag'&&pointers.size===0)abortDrag();
     if(loseTimer>0){loseTimer-=dt;if(loseTimer<=0&&bullies.length>0)showLose();else if(bullies.length===0)loseTimer=-1;}
     if(fuseTimer>0){fuseTimer-=dt;if(Math.floor(fuseTimer*8)!==Math.floor((fuseTimer+dt)*8))S.fuse();if(cur&&cur.mesh.userData.led)cur.mesh.userData.led.material.emissiveIntensity=2+Math.sin(t*40)*2;if(fuseTimer<=0&&cur&&cur.body){abilityUsed=true;const p=new THREE.Vector3(cur.body.position.x,cur.body.position.y,0);explodeAt(p);poofCur(false);endShot(true);}}
   }
