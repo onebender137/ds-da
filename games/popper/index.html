@@ -1610,12 +1610,14 @@ function buildGnome() {
   // machine-elf palette: brighter gunmetal body (reads against dark ground), cyan energy, gold magic, white beard
   // "totally light body" — pale/light machine-elf (soft, reads against the dark scene without glowing)
   // toned-down machine-elf: muted dark-slate body, low glow (the light body read too bright)
-  const steel = 0x52607a, steelDark = 0x33405a, steelLight = 0x6e7f9c;
+  const steel = 0x52607a, steelDark = 0x33405a, steelLight = 0x5e6c88;
   const cyan = 0x00e5ff, cyanDim = 0x00a8c8;
   const gold = 0xffd24d, white = 0xffffff;
-  const mat = (c, r = 0.5, m = 0.55, e = 0x000000, ei = 0) =>
+  // metalness 0.3 (was 0.55 default) + rougher surface: the colored point lights were
+  // coming back as hot specular that crossed the bloom threshold and lit his whole body
+  const mat = (c, r = 0.6, m = 0.3, e = 0x000000, ei = 0) =>
     new THREE.MeshStandardMaterial({ color: c, roughness: r, metalness: m, emissive: e, emissiveIntensity: ei });
-  const glow = (c, ei = 1.3) => mat(c, 0.3, 0.25, c, ei);   // emissive energy part
+  const glow = (c, ei = 1.3) => mat(c, 0.45, 0.2, c, ei);   // emissive energy part
 
   // tunic (tapered) — gunmetal with a faint self-glow + chest core + circuit traces
   const body = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.22, 0.44, 16), mat(steel, 0.5, 0.4, 0x14202e, 0.08));
@@ -1699,6 +1701,16 @@ function buildGnome() {
   armL.rotation.set(-0.55, 0, -1.05);
   g.add(armL);
 
+  // one-pass shine clamp: most parts above pass explicit metalness (head 0.65, boots
+  // 0.7, …), and under the colored point lights that specular crossed the bloom
+  // threshold — the neon-glowworm look. Clamp every non-accent part; the small accents
+  // (visor, antenna tip, core, hat band — ei > 0.12) keep their energy.
+  g.traverse(o => {
+    if (o.isMesh && o.material && (o.material.emissiveIntensity || 0) <= 0.12) {
+      o.material.metalness = Math.min(o.material.metalness, 0.3);
+      o.material.roughness = Math.max(o.material.roughness, 0.55);
+    }
+  });
   scene.add(g);
   gnome = g; gnomeBody = body; gnomeHat = hat; gnomeArmL = armL;
 
@@ -3302,7 +3314,11 @@ function boot() {
   const p1 = new THREE.PointLight(0x00e5ff, 50, 0, 2); p1.position.set(-8, 8, 6); scene.add(p1);
   const p2 = new THREE.PointLight(0xff2d95, 45, 0, 2); p2.position.set(8, 12, 5); scene.add(p2);
   const p3 = new THREE.PointLight(0xffd24d, 22, 0, 2); p3.position.set(0, 3, 4); scene.add(p3);
-  const p4 = new THREE.PointLight(0x00e5ff, 20, 0, 2); p4.position.set(-0.9, 1.7, 1.9); scene.add(p4); // cyan halo on the machine-elf launcher
+  // cyan halo on the LAUNCHER. It used to sit at (-0.9, 1.7, 1.9) @ 20 — which is right
+  // on top of the GNOME (-1.14, 0.92, 0.25), ~1.8 units out: with decay 2 that's ~6x
+  // full-strength cyan on his metal body, everything over the bloom threshold, total
+  // glowworm. Moved over the dais (x=0) and cut to 8 so it lights the machine, not him.
+  const p4 = new THREE.PointLight(0x00e5ff, 8, 0, 2); p4.position.set(-0.1, 1.6, 1.7); scene.add(p4);
 
   buildBackground();
   buildAurora();
