@@ -78,6 +78,11 @@ h2.big.win{color:var(--green)}h2.big.lose{color:var(--danger)}
 .btn.green{background:linear-gradient(180deg,var(--green),var(--success))}
 .btnrow{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
 #titleScr{background:rgba(20,12,38,.35)}
+/* back-to-arcade lives on the title screen itself — the footer it used to
+   ride in gets display:none on phone landscape, so it can't live there */
+.arcade-back{position:absolute;top:calc(12px + env(safe-area-inset-top));left:14px;z-index:5}
+.arcade-back a{color:var(--cyan);text-decoration:none;font-weight:900;font-size:clamp(11px,1.6vw,13px);letter-spacing:1px;background:rgba(26,20,38,.8);border:3px solid var(--ink);border-radius:999px;padding:6px 14px;box-shadow:var(--shadow);display:inline-block;transition:transform .12s ease,color .12s ease}
+.arcade-back a:hover{color:#fff;transform:scale(1.05)}
 #logo{display:flex;flex-direction:column;align-items:center;line-height:.92;margin-bottom:4px}
 #logo .row{display:flex}
 #logo span{font-family:'Luckiest Guy',cursive;font-size:clamp(44px,11vw,96px);text-shadow:4px 4px 0 var(--ink),-2px -2px 0 var(--ink),2px -2px 0 var(--ink),-2px 2px 0 var(--ink);animation:wobble 2.6s ease-in-out infinite;display:inline-block}
@@ -234,6 +239,7 @@ h2.big.win{color:var(--green)}h2.big.lose{color:var(--danger)}
   <button id="scoutBtn" class="iconbtn" aria-label="Toggle tower close-up" title="Tower close-up / full battlefield"><svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.7 7.6 1 12c1.7 4.4 6 7.5 11 7.5s9.3-3.1 11-7.5c-1.7-4.4-6-7.5-11-7.5zm0 12.5a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-8a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg></button>
 </div>
 <div id="titleScr" class="scr hidden">
+  <div class="arcade-back"><a href="/games">← BACK TO ARCADE</a></div>
   <svg id="mascot" viewBox="0 0 120 120"><circle cx="60" cy="66" r="42" fill="#ffd9b0" stroke="#1a1426" stroke-width="4"/><path d="M18 60a42 42 0 0 1 84 0l-6 4H24z" fill="#ff4757" stroke="#1a1426" stroke-width="4"/><rect x="14" y="58" width="92" height="9" rx="4" fill="#d63447" stroke="#1a1426" stroke-width="3"/><circle cx="44" cy="74" r="13" fill="#fff" stroke="#1a1426" stroke-width="4"/><circle cx="78" cy="74" r="13" fill="#fff" stroke="#1a1426" stroke-width="4"/><rect x="55" y="71" width="12" height="5" fill="#1a1426"/><circle cx="47" cy="76" r="4.5" fill="#1a1426"/><circle cx="75" cy="76" r="4.5" fill="#1a1426"/><path d="M30 62l24 7M92 62l-24 7" stroke="#1a1426" stroke-width="6" stroke-linecap="round"/><path d="M48 98q12-8 24 0" stroke="#1a1426" stroke-width="5" fill="none" stroke-linecap="round"/></svg>
   <div id="logo"><div class="row"><span style="--rot:-5deg;color:#ff7a3d;animation-delay:0s">A</span><span style="--rot:4deg;color:#29e0ff;animation-delay:.1s">N</span><span style="--rot:-3deg;color:#ff3da6;animation-delay:.2s">G</span><span style="--rot:5deg;color:#7dff4f;animation-delay:.3s">R</span><span style="--rot:-4deg;color:#ffb02e;animation-delay:.4s">Y</span></div><div class="row"><span style="--rot:3deg;color:#29e0ff;animation-delay:.15s">N</span><span style="--rot:-5deg;color:#ffb02e;animation-delay:.25s">E</span><span style="--rot:4deg;color:#ff4757;animation-delay:.35s">R</span><span style="--rot:-3deg;color:#7dff4f;animation-delay:.45s">D</span><span style="--rot:5deg;color:#ff3da6;animation-delay:.55s">S</span></div></div>
   <div id="tagline">SMASH THE BULLIES · SAVE THE COMPUTER LAB</div>
