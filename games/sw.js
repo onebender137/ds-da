@@ -50,7 +50,7 @@ self.addEventListener('fetch', (e) => {
 
   const isNav = req.mode === 'navigation';
   const isJson = url.pathname.endsWith('.json');
-  const isStatic = /\.(js|css|png|webmanifest|ico|svg|woff2?)$/i.test(url.pathname);
+  const isStatic = /\.(js|css|png|webmanifest|ico|svg|woff2?|ogg|mp3)$/i.test(url.pathname);
 
   if (isNav || isJson) {
     // network-first with cache fallback (fresh code + live board when online)
