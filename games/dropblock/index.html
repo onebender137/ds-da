@@ -81,6 +81,8 @@
   .stat b { display: inline-block; font-family: var(--display); font-size: 20px; font-weight: 400; font-variant-numeric: tabular-nums; letter-spacing: 0.5px; }
   .stat b.pop { animation: statPop .22s ease-out; }
   @keyframes statPop { 0% { transform: scale(1.35); color: #fff; } 100% { transform: scale(1); } }
+  .dot { width: 16px; height: 16px; border-radius: 50%; display: inline-block; vertical-align: middle;
+    background: #334; box-shadow: 0 0 10px 2px rgba(255,255,255,0.08); transition: background .15s, box-shadow .15s; }
   #combo { font-size: 13px; color: var(--accent2); transition: transform .12s; }
   #combo.hot { transform: scale(1.2); color: var(--gold); text-shadow: 0 0 14px rgba(255,210,77,0.6); }
   h3.sub { font-size: 10px; letter-spacing: 2px; color: var(--muted); margin: 12px 0 6px; font-weight: 600; }
@@ -228,6 +230,7 @@
     #hud .stat { border-bottom: none; padding: 0; gap: 5px; }
     #hud .stat span { font-size: 8px; letter-spacing: 1px; }
     #hud .stat b { font-size: 15px; }
+    #hud .dot { width: 18px; height: 18px; }
     #hud .sub, #hud .tops, #hud .keys { display: none; }
     #pauseBtn { top: max(10px, env(safe-area-inset-top)); left: 10px; transform: none; padding: 7px 10px; }
     #soundBtn { bottom: calc(54px + env(safe-area-inset-bottom)); left: 10px; padding: 6px 10px; }
@@ -263,6 +266,7 @@
   <div class="stat"><span>SCORE</span><b id="score">0</b></div>
   <div class="stat"><span>LEVEL</span><b id="level">1</b></div>
   <div class="stat"><span>CHAIN</span><b id="combo">—</b></div>
+  <div class="stat"><span>NEXT</span><b id="nextDot" class="dot"></b></div>
   <h3 class="sub">TOP 10</h3>
   <ol id="hudTop" class="tops"></ol>
   <div class="keys" id="hudKeys">
@@ -294,7 +298,7 @@
     <h4>HOW TO PLAY</h4>
     <div class="row"><b>GOAL</b><span>Line up <b style="color:var(--text);min-width:0">3+</b> of the same candy — rows, columns, <i>or diagonals</i>.</span></div>
     <div class="row"><b>CHAINS</b><span>Clears that cause more clears multiply your score. ×2, ×3, ×4…</span></div>
-    <div class="row"><b>GUIDE</b><span>The glowing beam shows where your candy lands.</span></div>
+    <div class="row"><b>GUIDE</b><span>The glowing beam shows where your candy lands. <b style="color:var(--text);min-width:0">NEXT</b> shows the colour coming after it.</span></div>
     <div class="row"><b>DANGER</b><span>Stack hits the red line = game over. Watch the edges glow.</span></div>
     <div class="row" id="howtoKeys"><b>CONTROLS</b><span>← → move · ↓ soft drop · ↑ / SPACE hard drop · P pause</span></div>
   </div>
@@ -728,6 +732,7 @@ const impacts = [];   // squash/stretch tweens
 const fxList = [];    // rings + float text
 let dangerBar = null, backGlow = null, stars = null, nebulae = [];
 let guideBeam = null, guidePad = null;
+let nextColor = -1, previewMesh = null, previewLabel = null;
 
 // ---------------- candy assets (primitives, no external files) ----------------
 const geos = [
@@ -914,6 +919,42 @@ function updateGuide(t) {
   guidePad.scale.set(pulse * 1.3, pulse * 1.3, 1);
 }
 
+// ---------------- next-piece preview ----------------
+function buildPreview() {
+  // a small pedestal to the upper-right of the board; the mesh is swapped per colour
+  const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64;
+  const g = cv.getContext('2d');
+  g.font = '700 34px Rubik, "Segoe UI", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillStyle = 'rgba(139,150,201,0.95)'; g.fillText('NEXT', 128, 32);
+  const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
+  previewLabel = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false }));
+  previewLabel.scale.set(1.6, 0.4, 1);
+  previewLabel.visible = false;
+  scene.add(previewLabel);
+}
+function previewPos() {
+  // right of the board on landscape; above the board's right rim on portrait
+  return new THREE.Vector3(COLS / 2 + 1.9, ROWS - 0.2, 0.4);
+}
+function updatePreview() {
+  if (previewMesh) { scene.remove(previewMesh); previewMesh = null; }
+  const show = nextColor >= 0 && phase !== 'menu' && phase !== 'over';
+  const dot = $('nextDot');
+  if (!show) { previewLabel.visible = false; dot.style.background = '#334'; dot.style.boxShadow = 'none'; return; }
+  const hex = '#' + COLORS[nextColor].c.toString(16).padStart(6, '0');
+  dot.style.background = hex; dot.style.boxShadow = '0 0 12px 3px ' + hex + '66';
+  // portrait: the board fills the width, so the HUD dot carries it; 3D preview is landscape-only
+  if (camera.aspect < 0.8) { previewLabel.visible = false; return; }
+  previewLabel.visible = true;
+  previewMesh = makeCandy(nextColor);
+  previewMesh.castShadow = false;
+  previewMesh.scale.setScalar(0.62);
+  const pp = previewPos();
+  previewMesh.position.copy(pp);
+  previewLabel.position.set(pp.x, pp.y + 0.85, pp.z);
+  scene.add(previewMesh);
+}
+
 // ---------------- board & scene construction ----------------
 function buildBoard() {
   const g = new THREE.Group();
@@ -1012,13 +1053,16 @@ function restRowFor(col) {
 function spawnPiece() {
   const col = (Math.random() * COLS) | 0;
   if (grid[ROWS - 1][col]) { gameOver(); return; }
-  const color = (Math.random() * COLORS.length) | 0;
+  if (nextColor < 0) nextColor = (Math.random() * COLORS.length) | 0;
+  const color = nextColor;
+  nextColor = (Math.random() * COLORS.length) | 0;
   const mesh = makeCandy(color);
   const y = ROWS * CELL + 1.4;
   mesh.position.set(xOf(col), y, 0);
   scene.add(mesh);
   falling = { color, col, y, mesh };
   phase = 'falling';
+  updatePreview();
 }
 
 function tryMove(dir) {
@@ -1184,6 +1228,7 @@ function gameOver() {
   renderTopList(elTopList, top.slice(0, 10));
   shake(0.35);
   setDanger(false);
+  updatePreview();
   elOverlay.classList.remove('hidden');
   elInitials.focus();
 }
@@ -1205,8 +1250,9 @@ function clearBoard() {
   fxList.length = 0; impacts.length = 0;
   clearList = [];
   grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
-  score = 0; combo = 0; level = 0; fallingSpeed = 2.3; softAcc = 0; maxChain = 0;
+  score = 0; combo = 0; level = 0; fallingSpeed = 2.3; softAcc = 0; maxChain = 0; nextColor = -1;
   setDanger(false);
+  updatePreview();
   updateHud();
 }
 
@@ -1742,6 +1788,7 @@ function update(dt) {
   updateFx(dt);
   updateImpacts(dt);
   updateGuide(menuTime);
+  if (previewMesh) { previewMesh.rotation.y += dt * 1.2; previewMesh.rotation.x = Math.sin(menuTime * 1.5) * 0.25; previewMesh.position.y = previewPos().y + Math.sin(menuTime * 2.2) * 0.08; }
   // danger: stack within 3 rows of the top
   if (phase !== 'menu' && phase !== 'over' && grid) {
     let hi = -1;
@@ -1829,6 +1876,7 @@ function onResize() {
   camBase.set(bx * k, 6 + by * k, bz * k);
   camera.position.copy(camBase);
   camera.updateProjectionMatrix();
+  if (previewLabel) updatePreview();
   renderer.setSize(w, h);
 }
 
@@ -1868,6 +1916,7 @@ function boot() {
   buildBoard();
   buildStars();
   buildGuide();
+  buildPreview();
   onResize();
 
   window.addEventListener('resize', onResize);
