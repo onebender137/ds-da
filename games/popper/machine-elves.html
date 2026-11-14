@@ -619,6 +619,18 @@
         <b>DOUBLE PUNCH</b> — when a big pop drops a cascade of blossoms (5+), you score a bonus and hear the callout: 5 / 10 / 15 / 20 ball.</p>
       </div>
       <div class="help-sec">
+        <h3 class="sub">DIFFICULTY — INITIATE vs MASTER</h3>
+        <p>Pick your path in the menu (it's saved, and each has its own leaderboard).</p>
+        <p><b>INITIATE</b> — the assisted path.<br>
+        · <b>Prediction line ON</b>: a guide line shows exactly where your shot will land.<br>
+        · <b>Bank shots allowed</b>: your ball can bounce off the left/right walls.<br>
+        The Tinkerbell fairy still scouts the landing spot.</p>
+        <p><b>MASTER</b> — the purist path.<br>
+        · <b>Prediction line OFF</b>: no guide line — only the fairy marks the landing spot.<br>
+        · <b>No bank shots</b>: if your ball hits a wall it's <b>lost</b> (no bounce) — you have to aim it straight into the lattice.<br>
+        Harder, and the scores are kept on a separate Masters board.</p>
+      </div>
+      <div class="help-sec">
         <h3 class="sub">TOP ELVES</h3>
         <p>Two boards, kept apart: <b>INITIATES</b> (prediction line on) and <b>MASTERS</b> (no line, no bank shots). You rank on the one you played.<br>
         Within a board — #1 <b>Most Phenomenal Elve</b> · #2–5 <b>Apprentice Elves</b> · #6+ <b>rank and file</b>.</p>
@@ -636,6 +648,7 @@
     <h2 style="color: var(--accent);">PAUSED</h2>
     <p class="final">Press <b>P</b> or <b>Esc</b> to resume</p>
     <button id="pauseResume" class="primary">Resume</button>
+    <button id="pauseHelp">Instructions</button>
     <button id="pauseMenu">Main Menu</button>
   </div>
 </div>
@@ -2629,9 +2642,14 @@ function activateMenu() {
   else if (id === 'menuHelp') showHelp();
   else if (id === 'menuSite') window.location.href = 'https://ds-da.ca/games/';
 }
-function showHelp() {
+let helpReturnTo = 'menu';   // where "Back" returns after the help (menu | pause)
+function showHelp(returnTo) {
+  helpReturnTo = (returnTo === 'pause') ? 'pause' : 'menu';
   elHelp.classList.remove('hidden');
   elScores.classList.add('hidden');
+  // if opened from the pause menu, hide the pause card while the help is up
+  if (helpReturnTo === 'pause') $('pause').classList.add('hidden');
+  elHelpBack.textContent = (helpReturnTo === 'pause') ? 'Back' : 'Back to Menu';
 }
 // DSDA Radio: every NEW GAME tunes to a random station AND a random track on it (the
 // START / Play Again click is a real user gesture, so autoplay is allowed). The match
@@ -3052,6 +3070,11 @@ function onKey(e) {
     if (e.code === 'Enter' || e.code === 'Space') { e.preventDefault(); activateMenu(); return; }
     return;
   }
+  // help opened from the pause menu: P/Esc closes it and returns to the pause card
+  if (!elHelp.classList.contains('hidden') && helpReturnTo === 'pause') {
+    if (e.code === 'Escape' || e.code === 'KeyP') { elHelp.classList.add('hidden'); $('pause').classList.remove('hidden'); return; }
+    return;
+  }
   if (phase !== 'play') return;
   if ((e.code === 'KeyP' || e.code === 'Escape') && !e.repeat) { togglePause(); return; }
   if (e.code === 'ArrowLeft' || e.code === 'KeyA') { aim = Math.min(AIM_MAX, aim + 0.04); updateWandTip(); }
@@ -3385,6 +3408,7 @@ function boot() {
   elPlayAgain.addEventListener('click', playAgain);
   $('pauseBtn').addEventListener('click', e => { togglePause(); e.currentTarget.blur(); });
   $('pauseResume').addEventListener('click', e => { togglePause(); e.currentTarget.blur(); });
+  $('pauseHelp').addEventListener('click', e => { showHelp('pause'); e.currentTarget.blur(); });
   $('pauseMenu').addEventListener('click', e => { backToMenu(); e.currentTarget.blur(); });
   elInitials.addEventListener('keydown', e => {
     if (e.key === 'Enter') saveScore();
@@ -3395,7 +3419,16 @@ function boot() {
   elMusicNext.addEventListener('click', e => { MusicSys.next(); e.currentTarget.blur(); });
   elMusicToggle.addEventListener('click', e => { toggleMusic(); e.currentTarget.blur(); });
   elScoresBack.addEventListener('click', e => { backToMenu(); e.currentTarget.blur(); });
-  elHelpBack.addEventListener('click', e => { backToMenu(); e.currentTarget.blur(); });
+  elHelpBack.addEventListener('click', e => {
+    if (helpReturnTo === 'pause') {
+      // return to the pause menu (the game is still paused, phase='paused')
+      elHelp.classList.add('hidden');
+      $('pause').classList.remove('hidden');
+    } else {
+      backToMenu();
+    }
+    e.currentTarget.blur();
+  });
   elToMenu.addEventListener('click', e => { backToMenu(); e.currentTarget.blur(); });
 
   menuButtons.push($('menuStart'), $('menuScores'), $('menuHelp'), $('menuSite'));
