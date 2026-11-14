@@ -155,6 +155,59 @@ h2.big.win{color:var(--green)}h2.big.lose{color:var(--danger)}
 .brow .bmeta{font-size:11px;opacity:.7;font-weight:800}
 .brow .bscore{font-family:'Luckiest Guy',cursive;color:var(--green);letter-spacing:1px}
 .bempty{text-align:center;font-weight:800;opacity:.7;padding:18px 10px;font-size:13px;line-height:1.6}
+/* ---- Phone landscape ----------------------------------------------------
+   The battlefield reads far better in landscape, but a phone on its side is
+   only ~390px tall and these cards were built for portrait. Two defences:
+   (1) every card scrolls, so no button is ever unreachable, and
+   (2) a short-landscape layout compacts things enough that you usually don't
+   need to scroll at all. touch-action is required here — body sets
+   touch-action:none for the canvas, which would otherwise swallow the swipe. */
+.card{overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch}
+.scr{touch-action:pan-y}
+/* keeps the card centred when it fits, scrollable from the top when it doesn't
+   (plain justify-content:center would make the overflowing top unreachable) */
+.scr::before,.scr::after{content:"";flex:0 0 auto;margin:auto}
+@media (orientation:landscape) and (max-height:520px){
+  .scr{padding:8px}
+  .card{padding:12px 16px;gap:7px;max-height:94vh;border-radius:18px}
+  h2.big{font-size:clamp(17px,5.2vh,26px)}
+  .btn{font-size:clamp(12px,3.4vh,17px);padding:8px 15px 6px;min-height:38px}
+  .btn svg{width:16px;height:16px}
+  .btnrow{gap:8px}
+  #winstars{height:42px;gap:6px}
+  #winstars .wstar{width:32px;height:32px}
+  #winstars .wstar:nth-child(2){width:42px;height:42px}
+  .tally{gap:3px;font-size:clamp(10px,3vh,13px);max-width:300px}
+  .tally .line{padding:3px 10px;border-radius:9px}
+  .tally .line.total{font-size:clamp(12px,3.4vh,15px)}
+  #newRecord,#runRecord{font-size:clamp(10px,2.8vh,13px);padding:3px 12px 1px}
+  #winExtras{font-size:clamp(9px,2.4vh,11px)}
+  #loseQuote{font-size:clamp(11px,3vh,14px)}
+  .shortcuts{font-size:10px;line-height:1.5}
+  #levelGrid{max-height:46vh;gap:8px;grid-template-columns:repeat(auto-fill,minmax(102px,1fr))}
+  .lvcard{min-height:80px;padding:7px 6px;gap:3px}
+  .lvcard .num{font-size:19px}
+  .lvcard .name{font-size:9.5px;min-height:21px}
+  .lvcard .stars svg{width:15px;height:15px}
+  .lvcard .best{font-size:9px}
+  .boardlist{max-height:38vh}
+  .brow{padding:5px 10px;font-size:12.5px}
+  .boardsub{font-size:9.5px}
+  .namerow input{font-size:20px;padding:5px 6px 3px;letter-spacing:4px}
+  .namerow .btn{font-size:12px}
+  /* title screen: the mascot and footer are the first things to go */
+  #mascot,.footer{display:none}
+  #logo span{font-size:clamp(26px,7.2vh,52px)}
+  /* the wobble shifts letters +/-6px, which collides at this size on the
+     stock .92 line-height — give the two rows room to move */
+  #logo{margin-bottom:0;line-height:1.12}
+  #tagline{font-size:clamp(9px,2.6vh,12px);padding:4px 12px}
+  .howto{gap:6px;margin-top:0}
+  .howto .step{width:clamp(76px,17vw,104px);padding:6px 8px;gap:2px}
+  .howto .step .em{font-size:clamp(15px,4vh,20px)}
+  .howto .step b{font-size:9px;line-height:1.2}
+  #totalStars{font-size:clamp(12px,3vh,16px)}
+}
 @media (max-width:640px){.iconbtn{width:44px;height:44px;border-radius:12px}.hud-center{margin-right:54px}#levelPill .lvname{display:none}.qnerd{width:32px;height:32px}}
 @media (prefers-reduced-motion:reduce){#grain,#logo span,#mascot{animation:none}#comboPill{animation:none}}
 </style>
