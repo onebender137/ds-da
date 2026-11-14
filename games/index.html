@@ -21,6 +21,8 @@
     <link rel="icon" type="image/x-icon" href="../favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
     <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#0a1628">
     <link rel="stylesheet" href="../style.css?v=2.0.4">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script>
@@ -80,7 +82,55 @@
       .arcade-stat b { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 700; color: #c9a227; line-height: 1; }
       .arcade-stat span { font-size: 0.76rem; letter-spacing: 2.5px; color: #94a3b8; text-transform: uppercase; }
       .arcade-div { width: 1px; height: 28px; background: rgba(201, 162, 39, 0.3); }
+      /* the record strip slides down while the install banner is open */
+      .arcade-stats { transition: opacity 0.45s ease, top 0.45s ease; }
+      body.banner-open .arcade-stats { top: 108px; }
       #zooming .arcade-stats { opacity: 0; }
+      /* install-the-arcade banner — above the record strip */
+      .install-banner {
+        position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+        z-index: 6; pointer-events: auto;
+        display: flex; align-items: center; gap: 14px;
+        width: min(600px, calc(100vw - 20px));
+        padding: 11px 38px 11px 15px;
+        background: linear-gradient(135deg, rgba(10, 22, 40, 0.9), rgba(10, 22, 40, 0.74));
+        border: 1px solid rgba(201, 162, 39, 0.38);
+        border-radius: 8px; backdrop-filter: blur(8px);
+        box-shadow: 0 6px 30px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(201, 162, 39, 0.16);
+        font-family: 'Inter', system-ui, sans-serif;
+        transition: opacity 0.45s ease, transform 0.45s ease;
+      }
+      .install-banner.hidden { opacity: 0; transform: translateX(-50%) translateY(-10px); pointer-events: none; }
+      #zooming .install-banner { opacity: 0; }
+      .install-icon { font-size: 1.55rem; line-height: 1; filter: drop-shadow(0 0 12px rgba(201, 162, 39, 0.5)); }
+      .install-body { text-align: left; min-width: 0; }
+      .install-title { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 700; letter-spacing: 0.4px; color: #fafaf8; }
+      .install-title .install-sub { font-family: 'Inter', system-ui, sans-serif; font-size: 0.66rem; font-weight: 400; letter-spacing: 0.3px; color: #94a3b8; margin-left: 8px; }
+      .install-steps { margin-top: 5px; font-size: 0.63rem; letter-spacing: 0.4px; color: #b9c2cf; line-height: 1.5; }
+      .install-steps b { color: #c9a227; font-weight: 600; }
+      .install-steps .install-sep { color: rgba(201, 162, 39, 0.45); margin: 0 8px; }
+      .install-btn {
+        margin-top: 7px; cursor: pointer;
+        font: 600 0.66rem 'Inter', sans-serif; letter-spacing: 2.5px; text-transform: uppercase;
+        color: #060d18; background: #c9a227; border: 1px solid #c9a227;
+        padding: 7px 20px; border-radius: 3px; transition: all 0.25s ease;
+      }
+      .install-btn:hover { box-shadow: 0 0 24px rgba(201, 162, 39, 0.45); }
+      .install-x {
+        position: absolute; top: 8px; right: 8px; cursor: pointer;
+        width: 24px; height: 24px; display: grid; place-items: center;
+        background: transparent; border: 1px solid transparent; border-radius: 50%;
+        color: #94a3b8; font-size: 0.68rem; transition: all 0.2s ease;
+      }
+      .install-x:hover { color: #fafaf8; border-color: rgba(201, 162, 39, 0.4); }
+      @media (max-width: 640px) {
+        .install-banner { gap: 10px; padding: 9px 34px 9px 11px; }
+        .install-icon { font-size: 1.25rem; }
+        .install-title { font-size: 0.86rem; }
+        .install-title .install-sub { display: block; margin-left: 0; margin-top: 1px; }
+        .install-steps { margin-top: 4px; }
+        body.banner-open .arcade-stats { top: 118px; }
+      }
       #arcadeBootErr {
         position: fixed; inset: auto 0 0 0; z-index: 50; display: none;
         background: #2a0a0a; color: #ffb4b4; font: 12px monospace; padding: 12px; white-space: pre-wrap;
@@ -96,13 +146,13 @@
       }
     </style>
 </head>
-<body>
+<body class="banner-open">
 
     <!-- 3D arcade hall (fixed, behind everything) -->
     <canvas id="scene"></canvas>
     <div id="cards"></div>
     <div id="arcadeBootErr"></div>
-    <div id="dragHint">◀&nbsp;&nbsp;drag to explore&nbsp;&nbsp;▶</div>
+    <div id="dragHint">◀&nbsp;&nbsp;scroll · drag to explore&nbsp;&nbsp;▶</div>
 
     <!-- HEADER (standard site topper) -->
     <header class="header">
@@ -121,8 +171,17 @@
         </div>
     </header>
 
-    <!-- HALL (one static viewport: record strip above, infinite cabinets below) -->
+    <!-- HALL (one static viewport: install banner above, record strip, infinite cabinets below) -->
     <section class="arcade-hall" aria-label="DSDA Arcade hall">
+        <div class="install-banner" id="installBanner" role="region" aria-label="Install the DSDA Arcade on your phone">
+            <div class="install-icon">📱</div>
+            <div class="install-body">
+                <div class="install-title">Take the Arcade with you<span class="install-sub">install it on your phone — no app store, no account</span></div>
+                <div class="install-steps" id="installSteps"><b>iPhone</b> · Safari → Share → Add to Home Screen<span class="install-sep">·</span><b>Android</b> · Chrome → ⋮ → Install app</div>
+                <button class="install-btn" id="installBtn" hidden>Install the Arcade</button>
+            </div>
+            <button class="install-x" id="installClose" aria-label="Dismiss install banner">✕</button>
+        </div>
         <div class="arcade-stats">
             <div class="arcade-stat"><b id="statGames">—</b><span>games played</span></div>
             <div class="arcade-div"></div>
@@ -149,6 +208,61 @@
           if (g) g.textContent = String(totalSaves);
           if (p) p.textContent = String(Object.keys(initials).length);
         });
+      })();
+    </script>
+
+    <script>
+      // ---------- PWA: install banner + service worker ----------
+      (function () {
+        var banner = document.getElementById('installBanner');
+        if (!banner) return;
+        var steps = document.getElementById('installSteps');
+        var btn = document.getElementById('installBtn');
+        var close = document.getElementById('installClose');
+        var titleEl = banner.querySelector('.install-title');
+        function setOpen(open) {
+          banner.classList.toggle('hidden', !open);
+          document.body.classList.toggle('banner-open', open);
+        }
+        function persistOff() {
+          try { localStorage.setItem('dsda-install-banner', 'off'); } catch (e) {}
+          setOpen(false);
+        }
+        if (localStorage.getItem('dsda-install-banner') === 'off') setOpen(false);
+        close.addEventListener('click', persistOff);
+        var deferred = null;
+        // Chrome (desktop + Android) offers the native install prompt:
+        // swap the how-to for a real Install button when it fires.
+        window.addEventListener('beforeinstallprompt', function (e) {
+          e.preventDefault();
+          deferred = e;
+          if (steps) steps.style.display = 'none';
+          if (btn) btn.hidden = false;
+        });
+        if (btn) btn.addEventListener('click', function () {
+          if (!deferred) return;
+          deferred.prompt();
+          deferred.userChoice.then(function (choice) {
+            if (choice.outcome === 'accepted') window.dispatchEvent(new CustomEvent('dsda-appinstall'));
+          });
+        });
+        function installed() {
+          deferred = null;
+          if (steps) steps.style.display = 'none';
+          if (btn) btn.hidden = true;
+          if (titleEl) {
+            titleEl.innerHTML = 'Installed — DSDA Arcade is on your home screen ✓<span class="install-sub">no browser bar, no friction — just tap and play</span>';
+          }
+          setTimeout(persistOff, 4200);
+        }
+        window.addEventListener('appinstalled', installed);
+        window.addEventListener('dsda-appinstall', installed);
+        // Service worker: installability + offline play (scope /games/)
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', function () {
+            navigator.serviceWorker.register('sw.js').catch(function () {});
+          });
+        }
       })();
     </script>
 
@@ -352,7 +466,10 @@
         window.addEventListener('pointermove', onPointerMove);
         window.addEventListener('pointerdown', onPointerDown);
         window.addEventListener('pointerup', onPointerUp);
-        canvas.addEventListener('wheel', onWheel, { passive: false });
+        // wheel on window too: the .arcade-hall overlay sits ABOVE the canvas in
+        // the stacking order, so a canvas-only listener never saw the wheel and
+        // the hall couldn't be scrolled with a mouse on desktop
+        window.addEventListener('wheel', onWheel, { passive: false });
         setTimeout(hideDragHint, 6000);  // fade the hint even if the user never interacts
 
         window.__arcade = {
@@ -807,6 +924,9 @@
       // desktop: mouse wheel / trackpad two-finger scroll pans the hall
       function onWheel(ev) {
         if (state.phase !== 'hall') return;
+        // don't hijack the wheel over interactive UI (header nav, buttons, banner)
+        var t = ev.target;
+        if (t && t.closest && t.closest('a, button, .theme-toggle, .header, .install-banner')) return;
         ev.preventDefault();
         const raw = Math.abs(ev.deltaX) > Math.abs(ev.deltaY) ? ev.deltaX : ev.deltaY;
         const delta = Math.max(-140, Math.min(140, raw));
