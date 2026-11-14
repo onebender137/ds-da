@@ -715,7 +715,12 @@ const FULL_POWER = 0.95;
 const SHOT_BASE = 8, SHOT_MAX = 13;
 
 // fairyland pastel bubble palette
-const COLORS = [0x00e5ff, 0xff2d95, 0x39ff88, 0xb026ff, 0xffc300, 0x2979ff];
+// [2] was mint 0x39ff88: only ~40deg of hue from the cyan and just as bright, so once
+// emissive + bloom pushed both toward white they read as the same pale aqua. Now a
+// deeper emerald — separated by hue AND brightness — with a lower self-glow (below).
+const COLORS = [0x00e5ff, 0xff2d95, 0x14c43c, 0xb026ff, 0xffc300, 0x2979ff];
+// per-color emissive strength (default 0.42); the emerald stays low so it can't bloom pastel
+const COLOR_GLOW = [0.42, 0.42, 0.22, 0.42, 0.42, 0.42];
 
 // ---------------- levels ----------------
 function levelColors(n) { return Math.min(5 + (n >= 3 ? 1 : 0), 6); }
@@ -1211,9 +1216,9 @@ function bubbleCount() { return bubbleList.length; }
 
 // ---------------- bubble assets ----------------
 const bubbleGeo = new THREE.SphereGeometry(BUBBLE_R, 22, 16);
-const bubbleMats = COLORS.map(col => new THREE.MeshPhysicalMaterial({
+const bubbleMats = COLORS.map((col, i) => new THREE.MeshPhysicalMaterial({
   color: col, roughness: 0.14, metalness: 0.05, clearcoat: 1, clearcoatRoughness: 0.08,
-  emissive: new THREE.Color(col).multiplyScalar(0.42),
+  emissive: new THREE.Color(col).multiplyScalar(COLOR_GLOW[i]),
 }));
 const bubbleGlowMats = COLORS.map(col => new THREE.SpriteMaterial({
   map: radialTex(col), transparent: true, opacity: 0.42, depthWrite: false, blending: THREE.AdditiveBlending,
