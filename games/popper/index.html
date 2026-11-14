@@ -61,10 +61,18 @@
   .panel { position: fixed; background: var(--panel); border: 1px solid var(--border);
     border-radius: 14px; padding: 14px 16px; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
     box-shadow: 0 8px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.05); }
-  #titleBox { top: 16px; left: 16px; z-index: 5; }
-  #titleBox h1 { font-family: var(--display); font-size: 18px; letter-spacing: 1px; font-weight: 400; line-height: 1; }
-  #titleBox h1 span { color: var(--accent); }
-  #titleBox p { font-size: 10px; color: var(--muted); letter-spacing: 2px; margin-top: 5px; font-weight: 500; }
+  /* top: 64px, NOT 16px — the DSDA radio pill owns the 16px corner and was sitting right
+     across the title text */
+  #titleBox { top: 64px; left: 16px; z-index: 5; border-left: 3px solid var(--accent);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.05),
+      -6px 0 18px -6px rgba(0,229,255,0.5); }
+  #titleBox h1 { font-family: var(--display); font-size: 19px; letter-spacing: 1.5px; font-weight: 400; line-height: 1;
+    background: linear-gradient(180deg, #ffffff 0%, #00e5ff 55%, #ff2d95 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 1px 0 #0a1026) drop-shadow(0 0 10px rgba(0,229,255,0.6)); }
+  #titleBox h1 span { color: transparent; }
+  #titleBox p { font-size: 9px; color: var(--accent); letter-spacing: 3px; margin-top: 5px; font-weight: 700;
+    opacity: .85; }
   #hud { top: 16px; right: 16px; width: 236px; z-index: 5; }
   .stat { display: flex; justify-content: space-between; align-items: baseline; padding: 5px 0;
     border-bottom: 1px solid rgba(0,229,255,0.12); }
@@ -176,17 +184,64 @@
     animation: cardIn .32s cubic-bezier(.2,1.2,.3,1); }
   @keyframes cardIn { from { opacity: 0; transform: translateY(18px) scale(0.96); } to { opacity: 1; transform: none; } }
   .card h2 { font-size: 30px; letter-spacing: 6px; color: var(--danger); margin-bottom: 6px; }
-  /* game-over card: gradient title + elf theme (the "new look") */
-  #overlay .card { border-color: rgba(0,229,255,0.28); }
-  #overlay .card h2 { font-family: var(--display); font-size: clamp(32px, 6vw, 50px); letter-spacing: 5px;
-    background: linear-gradient(180deg, #ffffff 0%, #00e5ff 48%, #ff2d95 100%);
+  /* ---- game-over / next-game card: same extruded treatment as the title screen ---- */
+  #overlay .card { border-color: rgba(0,229,255,0.4); position: relative;
+    box-shadow: 0 24px 70px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.08),
+      0 0 60px -12px rgba(0,229,255,0.45);
+    animation: cardSlam .46s cubic-bezier(.18,1.4,.3,1); }
+  @keyframes cardSlam {
+    0%   { opacity: 0; transform: translateY(26px) scale(0.88); }
+    58%  { opacity: 1; transform: translateY(0) scale(1.025); }
+    100% { opacity: 1; transform: none; }
+  }
+  /* accent rail across the top edge (inset past the 18px radius so it can't overhang
+     the rounded corners — avoids needing overflow:hidden, which would risk clipping) */
+  #overlay .card::before { content: ''; position: absolute; top: 0; left: 20px; right: 20px; height: 3px;
+    border-radius: 0 0 3px 3px;
+    background: linear-gradient(90deg, transparent, #00e5ff 22%, #7a4fd9 50%, #ff2d95 78%, transparent);
+    box-shadow: 0 0 16px rgba(0,229,255,0.7); }
+  #overlay .card h2 { font-family: var(--display); font-size: clamp(34px, 6.4vw, 54px); letter-spacing: 5px;
+    background: linear-gradient(180deg, #ffffff 0%, #d4faff 18%, #00e5ff 48%, #b23bd0 78%, #ff2d95 100%);
     -webkit-background-clip: text; background-clip: text; color: transparent;
-    filter: drop-shadow(0 3px 18px rgba(0,229,255,0.4)); }
+    filter:
+      drop-shadow(0 1px 0 #0a1026) drop-shadow(0 2px 0 #0a1026)
+      drop-shadow(0 3px 0 #0b1a30) drop-shadow(0 5px 3px rgba(0,0,0,0.6))
+      drop-shadow(0 0 16px rgba(0,229,255,0.8)) drop-shadow(0 0 44px rgba(255,45,149,0.45));
+    animation: overTitleIn .5s cubic-bezier(.2,1.35,.32,1) .1s backwards; }
+  @keyframes overTitleIn {
+    0%   { opacity: 0; scale: 1.7; }
+    60%  { opacity: 1; scale: 0.96; }
+    100% { opacity: 1; scale: 1; }
+  }
   #overlay .card .final { color: var(--muted); }
-  #overlay .card .final b { color: #00e5ff; }
+  #overlay .card .final b { color: #00e5ff; text-shadow: 0 0 14px rgba(0,229,255,0.55); }
+  /* the big number earns a count-up pop */
+  #overlay .card .final b#finalScore { font-family: var(--display); font-size: 30px; font-weight: 400;
+    letter-spacing: 1px; display: inline-block;
+    animation: scorePop .42s cubic-bezier(.2,1.5,.3,1) .26s backwards; }
+  @keyframes scorePop { 0% { opacity: 0; scale: 0.4; } 70% { opacity: 1; scale: 1.18; } 100% { scale: 1; } }
+  /* staggered rise for the card's rows, same language as the menu buttons */
+  #overlay .card > *:not(h2) { animation: btnRise .4s cubic-bezier(.2,1.1,.3,1) backwards; }
+  #overlay .card > *:nth-child(2) { animation-delay: .20s; }
+  #overlay .card > *:nth-child(3) { animation-delay: .26s; }
+  #overlay .card > *:nth-child(4) { animation-delay: .31s; }
+  #overlay .card > *:nth-child(5) { animation-delay: .36s; }
+  #overlay .card > *:nth-child(6) { animation-delay: .40s; }
+  #overlay .card > *:nth-child(7) { animation-delay: .44s; }
+  #overlay .card > *:nth-child(n+8) { animation-delay: .48s; }
   .card .final { font-size: 15px; color: var(--muted); margin-bottom: 4px; }
   .card .final b { color: var(--text); font-size: 20px; }
-  #newHigh { color: var(--gold); font-size: 12px; letter-spacing: 2px; margin-bottom: 6px; font-weight: 700; }
+  /* NOTE: needs #overlay .card in front of it — the stagger rule above is (1,1,1) and
+     would otherwise out-specify a bare #newHigh (1,0,0) and kill the pulse. */
+  #overlay .card #newHigh { color: #2a1a04; font-size: 11px; letter-spacing: 3px; font-weight: 800;
+    display: inline-block; margin: 2px auto 10px; padding: 5px 14px; border-radius: 999px;
+    background: linear-gradient(135deg, #ffd24d 0%, #ffe9a3 45%, #ff2d95 100%);
+    box-shadow: 0 0 22px rgba(255,210,77,0.6), inset 0 1px 0 rgba(255,255,255,0.5);
+    animation: highBadge 1.5s ease-in-out infinite; }
+  @keyframes highBadge {
+    0%, 100% { box-shadow: 0 0 20px rgba(255,210,77,0.5), inset 0 1px 0 rgba(255,255,255,0.5); scale: 1; }
+    50%      { box-shadow: 0 0 34px rgba(255,210,77,0.95), inset 0 1px 0 rgba(255,255,255,0.6); scale: 1.04; }
+  }
   #newHigh.hidden { display: none; }
   .card label { display: block; font-size: 11px; letter-spacing: 2px; color: var(--muted);
     margin: 16px 0 6px; text-align: left; }
@@ -200,8 +255,14 @@
     border: 1px solid var(--border); background: rgba(10,20,40,0.5); color: var(--text);
     font-size: 14px; letter-spacing: 1px; font-weight: 700; }
   .card button:hover { background: rgba(14,30,55,0.6); }
-  .card button.primary { background: linear-gradient(135deg, #00b8d9, #ff2d95); border: none; font-size: 15px; }
-  .card button.primary:hover { filter: brightness(1.15); }
+  .card button.primary { background: linear-gradient(135deg, #00b8d9 0%, #7a4fd9 55%, #ff2d95 100%); border: none; font-size: 15px;
+    position: relative; overflow: hidden;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 6px 22px rgba(255,45,149,0.32); }
+  .card button.primary::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(105deg, transparent 38%, rgba(255,255,255,0.34) 50%, transparent 62%);
+    transform: translateX(-130%); animation: sheen 4.2s ease-in-out 1.2s infinite; }
+  .card button.primary:hover { filter: brightness(1.15);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), 0 8px 30px rgba(255,45,149,0.45); }
   .card button:disabled { opacity: 0.5; cursor: default; }
   #savedMsg { color: #39ff88; font-size: 12px; margin-top: 6px; min-height: 16px; }
   #shareMsg { color: var(--gold); font-size: 12px; margin-top: 6px; min-height: 16px; }
@@ -236,22 +297,65 @@
   body.menu-mode #titleBox, body.menu-mode #hud { display: none; }
   .menu-title { font-family: var(--display); font-size: clamp(46px, 9.5vw, 112px); font-weight: 400; letter-spacing: 6px;
     display: flex; user-select: none; line-height: 1.02; flex-wrap: wrap; justify-content: center;
-    align-items: center; gap: 0.18em; padding: 0 12px; }
+    align-items: center; gap: 0.18em; padding: 0 12px; position: relative; }
+  /* stage bloom behind the letters so the title sits on something instead of floating in the void */
+  .menu-title::before { content: ''; position: absolute; left: 50%; top: 50%; z-index: -1;
+    transform: translate(-50%, -50%); width: 124%; height: 190%; pointer-events: none;
+    background: radial-gradient(ellipse at 50% 50%,
+      rgba(0,229,255,0.20) 0%, rgba(122,79,217,0.14) 36%, rgba(255,45,149,0.09) 58%, transparent 76%);
+    filter: blur(8px); animation: stageBreathe 5.4s ease-in-out infinite; }
+  @keyframes stageBreathe {
+    0%, 100% { opacity: 0.75; transform: translate(-50%, -50%) scale(1); }
+    50%      { opacity: 1;    transform: translate(-50%, -50%) scale(1.07); }
+  }
   /* each word is an unbreakable unit -> mobile wraps cleanly as MACHINE / ELVES */
   .menu-title .word { display: inline-flex; white-space: nowrap; }
+  /* chunky extruded block letters: tight dark drop-shadows stack into a solid 3D edge,
+     then two wide colored ones do the neon bloom. drop-shadow (not text-shadow) because
+     the glyph is gradient-clipped and therefore transparent to text-shadow. */
   .menu-title .lt { display: inline-block;
-    background: linear-gradient(180deg, #ffffff 0%, #00e5ff 46%, #ff2d95 100%);
+    background: linear-gradient(180deg, #ffffff 0%, #d4faff 18%, #00e5ff 48%, #b23bd0 78%, #ff2d95 100%);
     -webkit-background-clip: text; background-clip: text; color: transparent;
-    animation: ltfloat 2.8s ease-in-out infinite;
-    filter: drop-shadow(0 3px 14px rgba(0,229,255,0.65)) drop-shadow(0 0 34px rgba(255,45,149,0.42)); }
+    animation: ltSlam .62s cubic-bezier(.2,1.35,.32,1) backwards, ltfloat 2.8s ease-in-out infinite;
+    filter:
+      drop-shadow(0 1px 0 #0a1026) drop-shadow(0 2px 0 #0a1026)
+      drop-shadow(0 3px 0 #0b1a30) drop-shadow(0 4px 0 #08182a)
+      drop-shadow(0 7px 3px rgba(0,0,0,0.6))
+      drop-shadow(0 0 16px rgba(0,229,255,0.85)) drop-shadow(0 0 48px rgba(255,45,149,0.5)); }
   /* letters float AND get pushed by the cursor (--lt-x/--lt-y set from JS) */
   @keyframes ltfloat {
     0%, 100% { transform: translate(var(--lt-x, 0px), var(--lt-y, 0px)) rotate(0deg); }
     50% { transform: translate(var(--lt-x, 0px), calc(var(--lt-y, 0px) - 13px)) rotate(-3deg); }
   }
-  .menu-tag { font-size: 13px; letter-spacing: 7px; color: #ffffff; text-align: center; margin-top: 4px;
-    text-shadow: 0 0 14px rgba(255,255,255,0.55), 0 2px 8px rgba(0,0,0,0.5); font-weight: 600; }
-  .menu-btns { display: flex; flex-direction: column; gap: 11px; margin-top: 58px; width: min(86vw, 372px); }
+  /* entrance slam. uses the independent `scale` property, NOT transform — ltfloat owns
+     transform, so the two animations can run together without clobbering each other. */
+  @keyframes ltSlam {
+    0%   { opacity: 0; scale: 2.3; }
+    55%  { opacity: 1; scale: 0.93; }
+    76%  { scale: 1.07; }
+    100% { opacity: 1; scale: 1; }
+  }
+  .menu-tag { font-size: 12px; letter-spacing: 6px; color: #eafcff; text-align: center; margin-top: 16px;
+    font-weight: 700; padding: 7px 18px; border-radius: 999px;
+    border: 1px solid rgba(0,229,255,0.4); background: rgba(0,229,255,0.07);
+    text-shadow: 0 0 12px rgba(0,229,255,0.7), 0 2px 8px rgba(0,0,0,0.6);
+    box-shadow: inset 0 0 18px rgba(0,229,255,0.12), 0 0 22px rgba(0,229,255,0.18);
+    animation: tagIn .5s ease-out .62s backwards, tagGlow 3.6s ease-in-out 1.1s infinite; }
+  @keyframes tagIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  @keyframes tagGlow {
+    0%, 100% { box-shadow: inset 0 0 18px rgba(0,229,255,0.12), 0 0 22px rgba(0,229,255,0.18); }
+    50%      { box-shadow: inset 0 0 24px rgba(0,229,255,0.22), 0 0 34px rgba(0,229,255,0.34); }
+  }
+  .menu-btns { display: flex; flex-direction: column; gap: 11px; margin-top: 46px; width: min(86vw, 372px); }
+  /* staggered rise so the whole title screen lands as one move instead of appearing flat.
+     finite + backwards: once it ends, transform goes back to the :hover rules. */
+  .menu-btns > * { animation: btnRise .42s cubic-bezier(.2,1.1,.3,1) backwards; }
+  .menu-btns > *:nth-child(1) { animation-delay: .74s; }
+  .menu-btns > *:nth-child(2) { animation-delay: .82s; }
+  .menu-btns > *:nth-child(3) { animation-delay: .90s; }
+  .menu-btns > *:nth-child(4) { animation-delay: .98s; }
+  .menu-btns > *:nth-child(5) { animation-delay: 1.06s; }
+  @keyframes btnRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
   /* difficulty selector: two compact radio-style buttons above START */
   .diff-sel { display: flex; gap: 6px; margin-bottom: 2px; }
   .diff-btn { flex: 1; font-family: var(--mono); font-size: 10.5px; letter-spacing: 2.5px; padding: 8px 6px;
@@ -270,7 +374,13 @@
   .mbtn:active { transform: translateY(0) scale(0.985); transition-duration: .06s; }
   .mbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .mbtn.primary { background: linear-gradient(135deg, #00b8d9 0%, #7a4fd9 55%, #ff2d95 100%); border: none; font-size: 15px;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 6px 22px rgba(255,45,149,0.3); }
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 6px 22px rgba(255,45,149,0.3);
+    position: relative; overflow: hidden; }
+  /* light sweeps across START every few seconds — draws the eye without a loud animation */
+  .mbtn.primary::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(105deg, transparent 38%, rgba(255,255,255,0.38) 50%, transparent 62%);
+    transform: translateX(-130%); animation: sheen 4.2s ease-in-out 1.6s infinite; }
+  @keyframes sheen { 0% { transform: translateX(-130%); } 26%, 100% { transform: translateX(130%); } }
   .mbtn.primary:hover, .mbtn.primary.sel { filter: brightness(1.12);
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.28), 0 8px 30px rgba(255,45,149,0.42); }
   .menu-hint { font-size: 11px; color: var(--muted); letter-spacing: 1px; margin-top: 12px; text-align: center; }
@@ -287,9 +397,39 @@
     justify-content: center; background: rgba(5, 8, 16, 0.85); backdrop-filter: blur(6px); }
   #scores.hidden { display: none; }
   .scores-diff { text-align: center; font-family: var(--mono); font-size: 11px; letter-spacing: 3px;
-    color: var(--accent); margin: -4px 0 10px; font-weight: 700; text-transform: uppercase;
+    color: var(--accent); margin: -4px 0 14px; font-weight: 700; text-transform: uppercase;
     text-shadow: 0 0 12px rgba(0,229,255,0.4); }
-  .global-note { font-size: 11px; color: var(--muted); letter-spacing: 1px; margin: 4px 0 2px; min-height: 14px; }
+  .global-note { font-size: 10px; color: var(--muted); letter-spacing: .5px; margin: 4px 0 2px; min-height: 13px; }
+
+  /* ---- two-section board: INITIATES | MASTERS ---- */
+  .scores-card { width: min(94vw, 610px); }
+  .board-cols { display: flex; gap: 14px; text-align: left; margin-bottom: 4px; }
+  .board-col { flex: 1 1 0; min-width: 0; border-radius: 12px; padding: 12px 13px 10px;
+    border: 1px solid var(--border); background: rgba(8,12,24,0.5); }
+  .board-col.col-initiate { border-color: rgba(0,229,255,0.3);
+    box-shadow: inset 0 0 26px rgba(0,229,255,0.07); }
+  .board-col.col-master { border-color: rgba(255,45,149,0.34);
+    box-shadow: inset 0 0 26px rgba(255,45,149,0.08); }
+  .board-head { font-family: var(--display); font-size: 17px; font-weight: 400; letter-spacing: 2.5px;
+    text-align: center; line-height: 1.1; }
+  .col-initiate .board-head { color: var(--accent); text-shadow: 0 0 14px rgba(0,229,255,0.55); }
+  .col-master .board-head { color: #ff6ab0; text-shadow: 0 0 14px rgba(255,45,149,0.6); }
+  .board-sub { font-size: 8.5px; letter-spacing: 1.2px; color: var(--muted); text-align: center;
+    margin: 3px 0 8px; text-transform: uppercase; font-weight: 600; }
+  .board-tier { font-size: 8.5px; letter-spacing: 2px; color: var(--muted); font-weight: 700;
+    margin: 9px 0 4px; text-transform: uppercase; }
+  .board-col ol.tops li { font-size: 11px; padding: 2px 3px; gap: 5px; }
+  .board-col ol.tops li .rank { width: 16px; }
+  .board-col ol.tops li .name { letter-spacing: 1.5px; }
+  /* the columns are ~270px — "Most Phenomenal Elve" would crush the name field, so only
+     #1 keeps its badge here. the rest still carry the tier in their title tooltip. */
+  .board-col ol.tops li .tier { display: none; }
+  .board-col ol.tops li.tier-phenomenal .tier { display: inline-block; font-size: 7px; padding: 1px 5px; }
+  /* phones: stack the two sections instead of squeezing them */
+  @media (max-width: 560px) {
+    .board-cols { flex-direction: column; gap: 11px; }
+    .board-col ol.tops li { font-size: 12px; }
+  }
 
   /* ---- mobile (phone) ---- */
   @media (max-width: 768px) {
@@ -422,7 +562,7 @@
       <button id="diffMaster" class="diff-btn" role="radio" aria-checked="false">MASTER</button>
     </div>
     <button id="menuStart" class="mbtn primary">START GAME</button>
-    <button id="menuScores" class="mbtn">MASTER ELVES</button>
+    <button id="menuScores" class="mbtn">TOP ELVES</button>
     <button id="menuHelp" class="mbtn">INSTRUCTIONS</button>
     <button id="menuSite" class="mbtn">BACK TO DSDA ARCADE</button>
   </div>
@@ -430,14 +570,29 @@
   <p class="menu-hint" id="menuHint">← → aim · hold SPACE to charge, release to fire · 4+ in one = SPARK, 5+ = MASTER, 10+ = PHENOMENAL</p>
 </div>
 <div id="scores" class="hidden">
-  <div class="card">
+  <div class="card scores-card">
     <h2 style="color: var(--accent);">TOP ELVES</h2>
-    <p id="scoresDiff" class="scores-diff">INITIATE</p>
-    <h3 class="sub">GLOBAL — DS-DA.CA</h3>
-    <ol id="globalTop" class="tops"></ol>
-    <p id="globalNote" class="global-note"></p>
-    <h3 class="sub">THIS DEVICE</h3>
-    <ol id="localTop" class="tops"></ol>
+    <p id="scoresDiff" class="scores-diff">BOTH PATHS — DS-DA.CA</p>
+    <div class="board-cols">
+      <section class="board-col col-initiate">
+        <h3 class="board-head">INITIATES</h3>
+        <p class="board-sub">prediction line on</p>
+        <h4 class="board-tier">GLOBAL</h4>
+        <ol id="globalTop" class="tops"></ol>
+        <p id="globalNote" class="global-note"></p>
+        <h4 class="board-tier">THIS DEVICE</h4>
+        <ol id="localTop" class="tops"></ol>
+      </section>
+      <section class="board-col col-master">
+        <h3 class="board-head">MASTERS</h3>
+        <p class="board-sub">no line · no bank shots</p>
+        <h4 class="board-tier">GLOBAL</h4>
+        <ol id="globalTopM" class="tops"></ol>
+        <p id="globalNoteM" class="global-note"></p>
+        <h4 class="board-tier">THIS DEVICE</h4>
+        <ol id="localTopM" class="tops"></ol>
+      </section>
+    </div>
     <button id="scoresBack" class="primary">Back to Menu</button>
   </div>
 </div>
@@ -462,7 +617,8 @@
       </div>
       <div class="help-sec">
         <h3 class="sub">TOP ELVES</h3>
-        <p>#1 <b>Most Phenomenal Elve</b> · #2–5 <b>Apprentice Elves</b> · #6+ <b>Initiates</b>.</p>
+        <p>Two boards, kept apart: <b>INITIATES</b> (prediction line on) and <b>MASTERS</b> (no line, no bank shots). You rank on the one you played.<br>
+        Within a board — #1 <b>Most Phenomenal Elve</b> · #2–5 <b>Apprentice Elves</b> · #6+ <b>rank and file</b>.</p>
       </div>
       <div class="help-sec">
         <h3 class="sub">DSDA RADIO</h3>
@@ -599,6 +755,8 @@ const elShare = $('shareBtn'), elShareMsg = $('shareMsg');
 const elTopList = $('topList'), elPlayAgain = $('playAgain'), elNewHigh = $('newHigh');
 const elMenu = $('menu'), elScores = $('scores'), elHelp = $('help');
 const elGlobalTop = $('globalTop'), elLocalTop = $('localTop'), elGlobalNote = $('globalNote');
+// the MASTERS half of the two-section board (INITIATES uses the three above)
+const elGlobalTopM = $('globalTopM'), elLocalTopM = $('localTopM'), elGlobalNoteM = $('globalNoteM');
 const elScoresBack = $('scoresBack'), elHelpBack = $('helpBack'), elToMenu = $('toMenu');
 const elSound = $('soundBtn'), elBootErr = $('booterr');
 const elMusicName = $('musicName'), elMusicPrev = $('musicPrev');
@@ -1833,30 +1991,128 @@ function gnomeCelebrate(matched) {
 // shooting), then dashes to a match's centroid and flashes a golden burst as the balls
 // pop. Pure character — no physics. She follows with organic lag + orbit + wobble so
 // she never snaps; she circles and glides.
+// He used to be a radial-gradient blob on AdditiveBlending — i.e. pure bloom with no
+// figure inside it, which is why you couldn't tell what he was. Dimming a blob just gives
+// a dimmer blob, so he's now DRAWN: a little machine elf in the same language as the
+// launcher gnome and the menu elf (steel body, cyan visor, white beard, pointed hat with
+// an antenna). NormalBlending so the dark steel actually reads, dark outlines so he holds
+// up against the bright fairyland, and only the visor/core/antenna tip left bright enough
+// to catch the bloom pass. The soft halo is now a SEPARATE, much dimmer sprite behind him.
 function fairyTex() {
+  const S = 128;
+  const c = document.createElement('canvas'); c.width = c.height = S;
+  const g = c.getContext('2d');
+  const steel = '#5b6a85', steelDark = '#333f58', steelLight = '#7c8da9';
+  const cyan = '#00e5ff', ink = 'rgba(6,10,22,0.92)', bone = '#e4ebf5';
+  const line = (w) => { g.strokeStyle = ink; g.lineWidth = w; g.stroke(); };
+
+  // --- wings behind him (faint, so they don't become the whole silhouette) ---
+  g.globalAlpha = 0.34;
+  for (const sx of [-1, 1]) {
+    g.beginPath();
+    g.ellipse(64 + sx * 21, 66, 9, 19, sx * 0.45, 0, Math.PI * 2);
+    g.fillStyle = '#9fe9ff'; g.fill();
+  }
+  g.globalAlpha = 1;
+
+  // --- dangling boots (he hovers, not stands) ---
+  for (const bx of [53, 65]) {
+    g.beginPath(); g.roundRect(bx, 106, 11, 12, 3);
+    g.fillStyle = steelDark; g.fill(); line(2);
+  }
+  // --- arms at his sides ---
+  for (const sx of [-1, 1]) {
+    g.beginPath();
+    g.moveTo(64 + sx * 15, 72); g.lineTo(64 + sx * 23, 94);
+    g.strokeStyle = steel; g.lineWidth = 7; g.lineCap = 'round'; g.stroke();
+    g.strokeStyle = ink; g.lineWidth = 9.5; g.globalAlpha = 0.35; g.stroke(); g.globalAlpha = 1;
+    g.strokeStyle = steel; g.lineWidth = 7; g.stroke();
+    g.beginPath(); g.arc(64 + sx * 23, 95, 4.5, 0, Math.PI * 2);
+    g.fillStyle = steelDark; g.fill(); line(1.8);
+  }
+  // --- tunic ---
+  g.beginPath();
+  g.moveTo(50, 68); g.lineTo(78, 68); g.lineTo(83, 106); g.lineTo(45, 106); g.closePath();
+  g.fillStyle = steel; g.fill(); line(2.5);
+  // belt + buckle
+  g.beginPath(); g.rect(46, 97, 36, 7);
+  g.fillStyle = steelDark; g.fill(); line(1.8);
+  g.beginPath(); g.rect(60, 97, 8, 7); g.fillStyle = '#ffd24d'; g.fill();
+  // chest core (one of the three bright bits)
+  g.beginPath(); g.arc(64, 80, 4.5, 0, Math.PI * 2);
+  g.fillStyle = cyan; g.fill();
+
+  // --- beard, under the head, over the tunic ---
+  g.beginPath();
+  g.moveTo(51, 58); g.lineTo(77, 58); g.lineTo(70, 90); g.lineTo(64, 95); g.lineTo(58, 90); g.closePath();
+  g.fillStyle = bone; g.fill(); line(2.2);
+
+  // --- head ---
+  g.beginPath(); g.arc(64, 51, 15, 0, Math.PI * 2);
+  g.fillStyle = steelLight; g.fill(); line(2.5);
+  // visor: the machine-elf signature, and the brightest thing on him
+  g.beginPath(); g.roundRect(49, 46, 30, 8, 3);
+  g.fillStyle = cyan; g.fill();
+  g.strokeStyle = 'rgba(6,10,22,0.6)'; g.lineWidth = 1.5; g.stroke();
+  // nose + mustache
+  g.beginPath(); g.moveTo(64, 55); g.lineTo(60, 61); g.lineTo(68, 61); g.closePath();
+  g.fillStyle = steel; g.fill(); line(1.5);
+
+  // --- hat: cone + brim + cyan band + antenna ---
+  g.beginPath(); g.moveTo(58, 6); g.lineTo(82, 38); g.lineTo(44, 38); g.closePath();
+  g.fillStyle = steel; g.fill(); line(2.5);
+  g.beginPath(); g.rect(46, 30, 34, 5); g.fillStyle = cyan; g.globalAlpha = 0.85; g.fill(); g.globalAlpha = 1;
+  g.beginPath(); g.roundRect(41, 36, 46, 7, 3);
+  g.fillStyle = steelDark; g.fill(); line(2.2);
+  g.beginPath(); g.moveTo(72, 14); g.lineTo(84, 3);
+  g.strokeStyle = steelLight; g.lineWidth = 3; g.stroke();
+  g.beginPath(); g.arc(85, 2.5, 4, 0, Math.PI * 2);
+  g.fillStyle = cyan; g.fill();
+
+  return new THREE.CanvasTexture(c);
+}
+// the soft halo + the sparkle trail: a plain radial glow, kept well away from the figure art
+function fairyGlowTex() {
   const c = document.createElement('canvas'); c.width = c.height = 64;
   const g = c.getContext('2d');
   const grad = g.createRadialGradient(32, 32, 0, 32, 32, 32);
-  grad.addColorStop(0, 'rgba(255,248,200,1)');     // bright gold core (not white)
-  grad.addColorStop(0.2, 'rgba(225,255,120,0.95)'); // gold-green
-  grad.addColorStop(0.5, 'rgba(150,235,110,0.5)');   // green halo
-  grad.addColorStop(0.8, 'rgba(110,210,95,0.18)');   // faint green
-  grad.addColorStop(1, 'rgba(100,200,90,0)');         // fade out
-  g.fillStyle = grad;
-  g.fillRect(0, 0, 64, 64);
+  grad.addColorStop(0, 'rgba(255,248,210,0.85)');
+  grad.addColorStop(0.3, 'rgba(190,245,170,0.42)');
+  grad.addColorStop(0.65, 'rgba(130,220,120,0.14)');
+  grad.addColorStop(1, 'rgba(110,200,100,0)');
+  g.fillStyle = grad; g.fillRect(0, 0, 64, 64);
   return new THREE.CanvasTexture(c);
 }
+let fairyGlow = null;
 function buildFairy() {
-  const ftex = fairyTex();
-  fairy = new THREE.Sprite(new THREE.SpriteMaterial({ map: ftex, color: 0xfff0a8, transparent: true, opacity: 0.95, depthWrite: false, blending: THREE.AdditiveBlending }));
-  fairy.scale.set(0.42, 0.42, 1);
+  const gtex = fairyGlowTex();
+  // halo first and BEHIND him: additive, but at a third of the old strength, and it no
+  // longer has to double as the character.
+  fairyGlow = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: gtex, color: 0xcfffa8, transparent: true, opacity: 0.3,
+    depthWrite: false, blending: THREE.AdditiveBlending }));
+  fairyGlow.scale.set(0.78, 0.78, 1);
+  fairyGlow.position.set(SHOOTER_X, SHOOTER_Y + 0.7, 0.29);
+  fairyGlow.renderOrder = 0;
+  scene.add(fairyGlow);
+
+  // the elf himself: normal blending, near-opaque, so the steel and beard read as shapes
+  fairy = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: fairyTex(), color: 0xffffff, transparent: true, opacity: 1,
+    depthWrite: false, blending: THREE.NormalBlending }));
+  fairy.scale.set(0.62, 0.62, 1);
   fairy.position.set(SHOOTER_X, SHOOTER_Y + 0.7, 0.3);
+  fairy.renderOrder = 1;
   fairyTX = fairy.position.x; fairyTY = fairy.position.y;
   scene.add(fairy);
+
   for (let i = 0; i < 14; i++) {
-    const tr = new THREE.Sprite(new THREE.SpriteMaterial({ map: ftex, color: 0xd8ff8a, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
-    tr.scale.set(0.18, 0.18, 1);
-    tr.position.set(fairy.position.x, fairy.position.y, 0.3);
+    const tr = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: gtex, color: 0xd8ff8a, transparent: true, opacity: 0,
+      depthWrite: false, blending: THREE.AdditiveBlending }));
+    tr.scale.set(0.15, 0.15, 1);
+    tr.position.set(fairy.position.x, fairy.position.y, 0.28);
+    tr.renderOrder = 0;
     scene.add(tr);
     fairyTrail.push(tr);
   }
@@ -1888,12 +2144,21 @@ function updateFairy(dt) {
   const wx = Math.sin(t * 7.3) * 0.05 + Math.sin(t * 11.7) * 0.03;
   const wy = Math.cos(t * 6.9) * 0.05 + Math.sin(t * 9.3) * 0.03;
   fairy.position.set(fairyTX + ox + wx, fairyTY + oy + wy, 0.3);
-  // --- shimmer: flicker scale + opacity; bright flash on the pop ---
+  // --- he's a drawn character now, so he stays solid: gentle bob in scale, no opacity
+  // flicker (that was the old blob's shimmer). The HALO does the magic instead. ---
   const flash = popping ? (fairyPopT / 0.45) : 0;
-  const flick = 0.85 + 0.13 * Math.sin(t * 12.0) + 0.07 * Math.sin(t * 19.0);
-  const s = 0.42 * flick * (1 + flash * 1.4);
+  const flick = 0.96 + 0.04 * Math.sin(t * 6.0);
+  const s = 0.62 * flick * (1 + flash * 0.5);
   fairy.scale.set(s, s, 1);
-  fairy.material.opacity = Math.min(1, 0.85 + 0.15 * Math.sin(t * 10.0) + flash * 0.15);
+  fairy.material.opacity = 0.97;
+  // wings flutter: quick tiny roll
+  fairy.material.rotation = Math.sin(t * 9.0) * 0.06;
+  if (fairyGlow) {
+    fairyGlow.position.set(fairy.position.x, fairy.position.y, 0.29);
+    const gs = 0.78 * (0.9 + 0.1 * Math.sin(t * 10.0)) * (1 + flash * 1.6);
+    fairyGlow.scale.set(gs, gs, 1);
+    fairyGlow.material.opacity = 0.26 + 0.06 * Math.sin(t * 8.0) + flash * 0.5;
+  }
   // --- trail: each spark lags behind the last, fading out ---
   let px = fairy.position.x, py = fairy.position.y;
   for (let i = 0; i < fairyTrail.length; i++) {
@@ -2348,6 +2613,19 @@ function showHelp() {
   elHelp.classList.remove('hidden');
   elScores.classList.add('hidden');
 }
+// DSDA Radio: every NEW GAME tunes to a random station AND a random track on it (the
+// START / Play Again click is a real user gesture, so autoplay is allowed). The match
+// ending stops it again — see gameOver().
+function startRadioForMatch() {
+  if (typeof DSDARadio === 'undefined') return;
+  try {
+    const stations = (DSDARadio.manifest && DSDARadio.manifest.stations) || [];
+    if (!stations.length) return;
+    const si = Math.floor(Math.random() * stations.length);
+    const ti = Math.floor(Math.random() * Math.max(1, stations[si].tracks.length));
+    DSDARadio.setStation(si, ti);   // auto-plays
+  } catch (e) {}
+}
 function startGameFromMenu() {
   track('game_start');
   elMenu.classList.add('hidden');
@@ -2355,14 +2633,7 @@ function startGameFromMenu() {
   elHelp.classList.add('hidden');
   document.body.classList.remove('menu-mode');
   resetGame();
-  // DSDA Radio: start a RANDOM station when the round begins (the START click is a
-  // real user gesture, so autoplay is allowed). setStation() auto-plays.
-  if (typeof DSDARadio !== 'undefined') {
-    try {
-      const n = (DSDARadio.manifest && DSDARadio.manifest.stations) ? DSDARadio.manifest.stations.length : 1;
-      DSDARadio.setStation(Math.floor(Math.random() * n));
-    } catch (e) {}
-  }
+  startRadioForMatch();
 }
 function backToMenu() {
   elOverlay.classList.add('hidden');
@@ -2376,6 +2647,11 @@ function backToMenu() {
   setDanger(false);
   setMenuSel(0);
   elMenu.classList.remove('hidden');
+  // the menu is quiet: quitting out mid-match (pause -> Main Menu) ends the radio the
+  // same way a finished match does, and clears the pause bookmark so a stale
+  // "was playing" can't resurrect it on a later resume.
+  radioWasPlaying = false;
+  if (typeof DSDARadio !== 'undefined') { try { DSDARadio.pause(); } catch (e) {} }
 }
 function togglePause() {
   if (phase === 'paused') {
@@ -2398,7 +2674,8 @@ function togglePause() {
 }
 
 async function fetchGlobalBoard(diff) {
-  const gid = GAME_ID + '_' + (diff || difficulty);
+  const d = diff || difficulty;
+  const gid = GAME_ID + '_' + d;
   try {
     const r = await fetchTimeout(BOARD_API + '/leaderboard?game=' + gid, { cache: 'no-store' });
     if (r.ok) {
@@ -2406,6 +2683,10 @@ async function fetchGlobalBoard(diff) {
       if (j && Array.isArray(j.top)) return { top: j.top, updated: j.updated || null };
     }
   } catch (e) { /* fall through to static */ }
+  // static leaderboard.json predates difficulties — it's the legacy (initiate-era) board
+  // and has no split, so it may only stand in for INITIATES. Serving it as MASTERS too
+  // would paint the same list under both headings.
+  if (d === 'master') return null;
   try {
     const r = await fetch('leaderboard.json?nocache=' + Date.now(), { cache: 'no-store' });
     if (!r.ok) return null;
@@ -2416,32 +2697,48 @@ async function fetchGlobalBoard(diff) {
   } catch (e) { return null; }
 }
 setInterval(async () => {
-  const g = await fetchGlobalBoard();
-  if (!g || !g.top.length) return;
+  // scores screen open -> refresh BOTH sections. in-game -> only the HUD's own
+  // difficulty. menu up with nothing showing -> skip the request entirely.
   if (!elScores.classList.contains('hidden')) {
-    renderTopList(elGlobalTop, g.top.slice(0, 10));
-    elGlobalNote.textContent = 'Verified by the DSDA board · ' + new Date(g.updated || Date.now()).toLocaleDateString();
+    renderBothBoards();
   } else if (elMenu.classList.contains('hidden')) {
-    renderTopList(elHudTop, g.top.slice(0, 10));
+    const g = await fetchGlobalBoard();
+    if (g && g.top.length) renderTopList(elHudTop, g.top.slice(0, 10));
   }
 }, 30000);
+// paint one half of the two-section board from a fetched result
+function paintBoardCol(olEl, noteEl, g) {
+  if (g && g.top.length) {
+    renderTopList(olEl, g.top.slice(0, 8));
+    noteEl.textContent = 'DSDA board · ' + new Date(g.updated || Date.now()).toLocaleDateString();
+  } else if (g) {
+    renderTopList(olEl, []);
+    noteEl.textContent = 'No scores yet — be the first!';
+  } else {
+    renderTopList(olEl, []);
+    noteEl.textContent = 'Board offline (device scores only)';
+  }
+}
+// Both sections, every time: the scores screen shows INITIATES and MASTERS side by side,
+// so it no longer depends on which difficulty is selected on the menu.
+async function renderBothBoards() {
+  renderTopList(elLocalTop,  loadScores('initiate').slice(0, 5));
+  renderTopList(elLocalTopM, loadScores('master').slice(0, 5));
+  elGlobalNote.textContent = 'Loading…';
+  elGlobalNoteM.textContent = 'Loading…';
+  // one round trip each, in parallel
+  const [gi, gm] = await Promise.all([
+    fetchGlobalBoard('initiate'),
+    fetchGlobalBoard('master'),
+  ]);
+  paintBoardCol(elGlobalTop,  elGlobalNote,  gi);
+  paintBoardCol(elGlobalTopM, elGlobalNoteM, gm);
+}
 async function showScores() {
   elScores.classList.remove('hidden');
   const _sdEl = $('scoresDiff');
-  if (_sdEl) _sdEl.textContent = (difficulty === 'master' ? 'MASTER' : 'INITIATE') + ' ELVES';
-  renderTopList(elLocalTop, loadScores(difficulty).slice(0, 10));
-  elGlobalNote.textContent = 'Loading global board…';
-  const g = await fetchGlobalBoard(difficulty);
-  if (g && g.top.length) {
-    renderTopList(elGlobalTop, g.top.slice(0, 10));
-    elGlobalNote.textContent = 'Verified by the DSDA board · ' + new Date(g.updated || Date.now()).toLocaleDateString();
-  } else if (g) {
-    renderTopList(elGlobalTop, []);
-    elGlobalNote.textContent = 'No global scores yet — be the first!';
-  } else {
-    renderTopList(elGlobalTop, []);
-    elGlobalNote.textContent = 'Global board offline (local copy only)';
-  }
+  if (_sdEl) _sdEl.textContent = 'BOTH PATHS — DS-DA.CA';
+  await renderBothBoards();
 }
 
 // ---------------- scoring (localStorage, per-difficulty) ----------------
@@ -2668,6 +2965,9 @@ function playAgain() {
   elOverlay.classList.add('hidden');
   elPlayAgain.blur();
   resetGame();
+  // Play Again IS a new game — it gets a fresh random station/track too. Without this,
+  // only menu starts had radio and every rematch was silent.
+  startRadioForMatch();
 }
 
 // ---------------- HUD ----------------

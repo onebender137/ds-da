@@ -242,10 +242,13 @@ const DSDARadio = {
     this.track = (this.track - 1 + st.tracks.length) % st.tracks.length;
     if (this.playing) this._loadAndPlay(); else this.render();
   },
-  setStation(i) {
+  setStation(i, trackIdx) {
     if (!this.manifest || !this.manifest.stations[i]) return;
     this.station = i;
-    this.track = 0;
+    // optional second arg: which track to land on (games use it to start mid-playlist,
+    // e.g. a random track per match). Omitted -> 0, exactly the old behavior.
+    const nTracks = this.manifest.stations[i].tracks.length;
+    this.track = (Number.isInteger(trackIdx) && trackIdx >= 0 && trackIdx < nTracks) ? trackIdx : 0;
     this._src = null;
     // Tuning to a station always starts playing it (real-radio behavior) —
     // the dial click is a user gesture so autoplay is allowed.
