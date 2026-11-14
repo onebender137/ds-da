@@ -1,2 +1,12 @@
-/games/dropblock/leaderboard.json
+# Leaderboards must never be served stale from the edge.
+#
+# The arcade hall (games/index.html) fetches every board to build the
+# "games played / players on the record" counters. It passes cache:'no-store',
+# which only governs the BROWSER cache — the edge can still hand back an old
+# copy, which shows up as counters that intermittently freeze or go backwards.
+# The games themselves bust it with a ?nocache= query string, so this rule is
+# mainly for the hall and for each cabinet's static read-fallback.
+#
+# Was previously pinned to dropblock alone; widened to cover every cabinet.
+/games/:game/leaderboard.json
   Cache-Control: no-cache, must-revalidate
