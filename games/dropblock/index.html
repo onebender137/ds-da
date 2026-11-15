@@ -1237,6 +1237,7 @@ function gameOver() {
   phase = 'over';
   if (falling) { scene.remove(falling.mesh); falling = null; }
   sfx.over();
+  if (DSDARadio) { radioWasPlaying = false; DSDARadio.pause(); }  // music stops on game over
   elFinal.textContent = score;
   elInitials.value = dsdaInits();
   setSaveEnabled();
@@ -1323,6 +1324,21 @@ function activateMenu() {
 
 let radioWasPlaying = false;  // was the DSDARadio playing before a pause/menu (so we can resume it)
 
+// Radio lifecycle: menu = silent, game start = random DropBlock station,
+// pause = music pauses, game over = music stops.
+function autoTuneRadio() {
+  if (!DSDARadio || !DSDARadio.manifest) return;
+  if (radioWasPlaying) { DSDARadio.play(); radioWasPlaying = false; return; }  // resume what was playing
+  if (DSDARadio.playing) return;  // user picked a station themselves — keep it
+  // Auto-start a random DropBlock station (skip Polkahole at index 0)
+  const stations = DSDARadio.manifest.stations;
+  const dbStations = stations.slice(1);
+  if (dbStations.length) {
+    const pick = dbStations[Math.floor(Math.random() * dbStations.length)];
+    DSDARadio.setStation(stations.indexOf(pick), Math.floor(Math.random() * pick.tracks.length));
+  }
+}
+
 function startGameFromMenu() {
   track('game_start');
   $('howto').classList.add('hidden');
@@ -1331,19 +1347,7 @@ function startGameFromMenu() {
   elScores.classList.add('hidden');
   document.body.classList.remove('menu-mode');
   resetGame();
-  if (radioWasPlaying && DSDARadio) {
-    DSDARadio.play();
-    radioWasPlaying = false;
-  } else if (DSDARadio && !DSDARadio.playing && DSDARadio.manifest) {
-    // Auto-start a random DropBlock station (skip Polkahole at index 0)
-    const stations = DSDARadio.manifest.stations;
-    const dbStations = stations.slice(1);
-    if (dbStations.length) {
-      const pick = dbStations[Math.floor(Math.random() * dbStations.length)];
-      const realIdx = stations.indexOf(pick);
-      DSDARadio.setStation(realIdx, Math.floor(Math.random() * pick.tracks.length));
-    }
-  }
+  autoTuneRadio();
 }
 
 function togglePause() {
@@ -1640,6 +1644,7 @@ function playAgain() {
   elOverlay.classList.add('hidden');
   elPlayAgain.blur();
   resetGame();
+  autoTuneRadio();  // fresh game = fresh random station
 }
 
 // ---------------- HUD ----------------
