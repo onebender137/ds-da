@@ -1189,6 +1189,19 @@ function spawnBurst(pos, matIdx, n) {
     scene.add(m);
   }
 }
+// plasma disintegration: bigger purple shards that float UP into the death bar
+function spawnPlasmaBurst(pos, n) {
+  n = n || 20;
+  for (let i = 0; i < n; i++) {
+    if (particles.length > 280) return;
+    const m = new THREE.Mesh(particleGeo, particleMats[4]);
+    m.position.copy(pos);
+    m.scale.setScalar(1.4 + Math.random() * 1.8);
+    const v = new THREE.Vector3((Math.random() - 0.5) * 5, (Math.random() * 0.6 + 0.25) * 8, (Math.random() - 0.5) * 4);
+    particles.push({ m, v, life: 0.75, max: 0.75 });
+    scene.add(m);
+  }
+}
 function updateParticles(dt) {
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i];
@@ -1335,10 +1348,10 @@ const plasmaWallFrag = `
     col = mix(col, cC, 0.5 + 0.5 * sin(v * 2.0 + t * 0.7));
     col *= 0.85 + 0.35 * sin(v * 3.0 + t);
     float hitAge = uTime - uHitTime;
-    if (hitAge < 0.6 && hitAge > 0.0) {
+    if (hitAge < 0.7 && hitAge > 0.0) {
       float d = distance(vUv, uHitUV);
-      float ring = sin(d * 28.0 - hitAge * 22.0) * 0.5 + 0.5;
-      col += vec3(0.6, 0.9, 1.0) * exp(-d * 5.0) * (1.0 - hitAge / 0.6) * ring * 2.2;
+      float ring = sin(d * 26.0 - hitAge * 20.0) * 0.5 + 0.5;
+      col += vec3(0.6, 0.95, 1.0) * exp(-d * 3.5) * (1.0 - hitAge / 0.7) * (0.7 + ring * 2.0) * 2.8;
     }
     gl_FragColor = vec4(col, 1.0);
   }
@@ -1357,10 +1370,10 @@ const plasmaBottomFrag = `
     col = mix(col, cC, 0.3 + 0.3 * sin(v * 2.0 + t * 0.8));
     col *= 0.7 + 0.3 * sin(v * 3.0 + t);
     float hitAge = uTime - uHitTime;
-    if (hitAge < 0.8 && hitAge > 0.0) {
+    if (hitAge < 0.9 && hitAge > 0.0) {
       float d = distance(vUv, uHitUV);
-      float ring = sin(d * 24.0 - hitAge * 16.0) * 0.5 + 0.5;
-      col += vec3(0.75, 0.35, 1.0) * exp(-d * 5.0) * (1.0 - hitAge / 0.8) * ring * 2.5;
+      float ring = sin(d * 22.0 - hitAge * 15.0) * 0.5 + 0.5;
+      col += vec3(0.8, 0.4, 1.0) * exp(-d * 3.2) * (1.0 - hitAge / 0.9) * (0.7 + ring * 2.2) * 3.2;
     }
     gl_FragColor = vec4(col, 1.0);
   }
@@ -2503,7 +2516,7 @@ function update(dt) {
         plasmaBottomMat.uniforms.uHitTime.value = plasmaTime;
         plasmaBottomMat.uniforms.uHitUV.value.set(b.x / PLAY_W + 0.5, 0.5);
         sfx.plasma();
-        spawnBurst(new THREE.Vector3(b.x, 0, 0), 4, 16);
+        spawnPlasmaBurst(new THREE.Vector3(b.x, 0, 0), 22);
         removeBall(i);
         if (balls.length === 0) { loseLife(); break; }
       }
