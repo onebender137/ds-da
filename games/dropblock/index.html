@@ -1774,59 +1774,79 @@ async function makeScoreCard(scoreLine, subLine) {
   cv.width = W; cv.height = H;
   const x = cv.getContext('2d');
   try { if (document.fonts && document.fonts.load) await document.fonts.load('600 62px "Playfair Display"'); } catch (e) {}
-  const A = SHARE_CARD.accent;
+  const CYAN = 0x22d3ee, MAG = 0xff3b5c, PURP = 0xc06bff, GOLD = 0xffd166;
+  // bg + dual radial glows (cyan top-left, magenta bottom-right)
   x.fillStyle = '#070b14'; x.fillRect(0, 0, W, H);
-  const g1 = x.createRadialGradient(220, 60, 40, 220, 60, 620);
-  g1.addColorStop(0, _hexA(A, 0.30)); g1.addColorStop(1, 'rgba(0,0,0,0)');
+  let g1 = x.createRadialGradient(180, 70, 40, 180, 70, 660);
+  g1.addColorStop(0, _hexA(CYAN, 0.22)); g1.addColorStop(1, 'rgba(0,0,0,0)');
   x.fillStyle = g1; x.fillRect(0, 0, W, H);
+  let g2 = x.createRadialGradient(W - 150, H - 50, 40, W - 150, H - 50, 660);
+  g2.addColorStop(0, _hexA(MAG, 0.20)); g2.addColorStop(1, 'rgba(0,0,0,0)');
+  x.fillStyle = g2; x.fillRect(0, 0, W, H);
+  // grid + vignette
   x.strokeStyle = 'rgba(255,255,255,0.035)'; x.lineWidth = 1;
   for (let gx = 30; gx < W; gx += 60) { x.beginPath(); x.moveTo(gx, 0); x.lineTo(gx, H); x.stroke(); }
   for (let gy = 30; gy < H; gy += 60) { x.beginPath(); x.moveTo(0, gy); x.lineTo(W, gy); x.stroke(); }
   const vg = x.createRadialGradient(W / 2, H / 2, 240, W / 2, H / 2, 760);
   vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.55)');
   x.fillStyle = vg; x.fillRect(0, 0, W, H);
-  x.fillStyle = 'rgba(212,175,55,0.9)'; x.fillRect(0, 0, W, 3);
-  // screenshot inset, right side
+  // animated-feel gradient border (cyan -> magenta -> purple) framing the whole card
+  const bg = x.createLinearGradient(0, 0, W, H);
+  bg.addColorStop(0, _hexA(CYAN, 0.9)); bg.addColorStop(0.5, _hexA(MAG, 0.9)); bg.addColorStop(1, _hexA(PURP, 0.9));
+  x.strokeStyle = bg; x.lineWidth = 4; _rr(x, 9, 9, W - 18, H - 18, 20); x.stroke();
+  // 4 glowing corner nodes
+  [[14, 14], [W - 14, 14], [14, H - 14], [W - 14, H - 14]].forEach(([nx, ny]) => {
+    const ng = x.createRadialGradient(nx, ny, 0, nx, ny, 17);
+    ng.addColorStop(0, 'rgba(255,255,255,0.95)'); ng.addColorStop(0.4, _hexA(CYAN, 0.85)); ng.addColorStop(1, 'rgba(34,211,238,0)');
+    x.fillStyle = ng; x.beginPath(); x.arc(nx, ny, 17, 0, Math.PI * 2); x.fill();
+  });
+  // screenshot inset, right side (gradient border + glow)
   const sw = 540, sh = 304, sx = W - 56 - sw, sy = (H - sh) / 2 - 14;
-  x.save();
-  x.shadowColor = _hexA(A, 0.45); x.shadowBlur = 42;
-  _rr(x, sx, sy, sw, sh, 14);
-  x.fillStyle = '#0b1220'; x.fill();
-  x.restore();
+  x.save(); x.shadowColor = _hexA(CYAN, 0.5); x.shadowBlur = 42;
+  _rr(x, sx, sy, sw, sh, 14); x.fillStyle = '#0b1220'; x.fill(); x.restore();
   if (__shot) { x.save(); _rr(x, sx, sy, sw, sh, 14); x.clip(); x.drawImage(__shot, sx, sy, sw, sh); x.restore(); }
-  x.strokeStyle = 'rgba(212,175,55,0.55)'; x.lineWidth = 2; _rr(x, sx, sy, sw, sh, 14); x.stroke();
+  const sbg = x.createLinearGradient(sx, sy, sx + sw, sy + sh);
+  sbg.addColorStop(0, _hexA(CYAN, 0.85)); sbg.addColorStop(1, _hexA(MAG, 0.85));
+  x.strokeStyle = sbg; x.lineWidth = 2; _rr(x, sx, sy, sw, sh, 14); x.stroke();
   // title + tag
   x.textAlign = 'left'; x.textBaseline = 'alphabetic';
+  x.shadowColor = _hexA(CYAN, 0.5); x.shadowBlur = 26;
   x.fillStyle = '#f7f4ec';
   x.font = '600 62px "Playfair Display", Georgia, serif';
-  x.fillText(SHARE_CARD.name, 56, 116);
-  x.fillStyle = _hexA(A, 0.95);
+  x.fillText(SHARE_CARD.name, 56, 112);
+  x.shadowBlur = 0;
+  x.fillStyle = _hexA(CYAN, 0.95);
   x.font = '600 19px "Inter", "Segoe UI", system-ui, sans-serif';
-  _spacedL(x, SHARE_CARD.tag.toUpperCase(), 58, 148, 7);
+  _spacedL(x, SHARE_CARD.tag.toUpperCase(), 58, 146, 7);
+  // BIG BLOCKERS hook (brand call-to-action)
+  x.shadowColor = _hexA(MAG, 0.65); x.shadowBlur = 20;
+  x.fillStyle = GOLD;
+  x.font = '700 31px "Segoe UI", system-ui, sans-serif';
+  x.fillText('COME BE A BIG BLOCKER', 56, 208);
+  x.shadowBlur = 0;
   // score (auto-shrink to fit the left zone)
   const sl = String(scoreLine);
   let spx = 140;
   x.font = '800 ' + spx + 'px "Segoe UI", system-ui, -apple-system, sans-serif';
   while (spx > 56 && x.measureText(sl).width > 520) { spx -= 6; x.font = '800 ' + spx + 'px "Segoe UI", system-ui, -apple-system, sans-serif'; }
-  x.shadowColor = _hexA(A, 0.55); x.shadowBlur = 46;
+  x.shadowColor = _hexA(CYAN, 0.55); x.shadowBlur = 46;
   x.fillStyle = '#ffffff';
-  x.fillText(sl, 50, 396);
+  x.fillText(sl, 50, 392);
   x.shadowBlur = 0;
   x.fillStyle = 'rgba(222,230,248,0.92)';
   x.font = '500 29px "Segoe UI", system-ui, sans-serif';
-  x.fillText(subLine, 56, 448);
-  x.fillStyle = '#ffd166';
+  x.fillText(subLine, 56, 444);
+  x.fillStyle = GOLD;
   x.font = '600 26px "Segoe UI", system-ui, sans-serif';
-  x.fillText('ds-da.ca/games/' + SHARE_CARD.id, 56, 490);
+  x.fillText('ds-da.ca/games/' + SHARE_CARD.id, 56, 486);
   // DSDA lockup
   x.fillStyle = '#f7f4ec';
   x.font = '600 30px "Playfair Display", Georgia, serif';
-  x.fillText('DSDA', 56, 594);
+  x.fillText('DSDA', 56, 592);
   const dw = x.measureText('DSDA').width;
   x.fillStyle = '#d4af37';
   x.font = '600 14px "Inter", "Segoe UI", sans-serif';
-  _spacedL(x, 'ARCADE', 58 + dw + 12, 592, 5);
-  x.fillStyle = _hexA(A, 0.85); x.fillRect(0, H - 3, W, 3);
+  _spacedL(x, 'ARCADE', 58 + dw + 12, 590, 5);
   return cv;
 }
 
