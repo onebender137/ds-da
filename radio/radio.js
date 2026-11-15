@@ -204,6 +204,9 @@ const DSDARadio = {
   async _loadAndPlay() {
     const c = this.cur;
     if (!c) return;
+    // Single-track stations loop seamlessly (browser-native loop = zero gap)
+    const st = this.manifest.stations[this.station];
+    this.audio.loop = (st.tracks.length === 1);
     if (this._src !== c.track.url) {
       this._src = c.track.url;
       this.audio.src = c.track.url;
