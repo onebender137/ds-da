@@ -231,6 +231,14 @@
   #booterr.hidden { display: none; }
   #pause .card h2 { color: var(--accent); text-shadow: 0 0 22px rgba(110,168,255,0.45); }
   #pause .card p { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  /* pause instructions panel */
+  #pauseHowto { width: 100%; margin: 12px 0; padding: 12px 14px; text-align: left;
+    background: rgba(8, 10, 22, 0.85); border: 1px solid var(--border); border-radius: 12px;
+    font-size: 12px; line-height: 1.7; color: var(--text); animation: cardIn .25s ease-out; }
+  #pauseHowto.hidden { display: none; }
+  #pauseHowto h4 { font-family: var(--display); font-size: 12px; font-weight: 400; letter-spacing: 1px; color: var(--accent); margin-bottom: 8px; }
+  #pauseHowto .row { display: flex; gap: 10px; align-items: baseline; margin-bottom: 4px; }
+  #pauseHowto .row b { color: var(--gold); min-width: 92px; font-weight: 700; letter-spacing: 1px; font-size: 11px; }
 
   /* ---- game over card: polished eye-candy ---- */
   #overlay .card {
@@ -575,7 +583,17 @@
   <div class="card">
     <h2>PAUSED</h2>
     <p id="pauseHint">Press P or Esc to resume</p>
+    <div id="pauseHowto" class="hidden">
+      <h4>HOW TO PLAY</h4>
+      <div class="row"><b>GOAL</b><span>Smash every brick. Grey bricks are armour — they don't need to go.</span></div>
+      <div class="row"><b>ANGLES</b><span>Where the ball hits the paddle sets the bounce — edges send it wide.</span></div>
+      <div class="row"><b>COMBO</b><span>Bricks broken without touching the paddle chain into a combo.</span></div>
+      <div class="row"><b>POWER-UPS</b><span>Catch the falling shapes. Not all of them are your friend.</span></div>
+      <div class="row"><b>CONTROLS</b><span>← → / A D move · SPACE launch + fire laser · P pause</span></div>
+    </div>
     <button id="pauseResume" class="primary">Resume</button>
+    <button id="pauseHow">Instructions</button>
+    <button id="pauseRestart">Restart Level</button>
     <button id="pauseMenu">Main Menu</button>
   </div>
 </div>
@@ -1891,9 +1909,11 @@ function clearFieldObjects() {
   for (const p of particles) scene.remove(p.m);
   bricks = []; balls = []; powerups = []; lasers = []; particles = [];
 }
+let levelStartScore = 0;  // score at the start of the current level (for restart)
 function loadLevel(n) {
   clearFieldObjects();
   level = n;
+  levelStartScore = score;  // remember score for restart-level
   setupTheme(n);
   const pat = LEVELS[(n - 1) % LEVELS.length];
   let destructible = 0;
@@ -1922,6 +1942,22 @@ function loadLevel(n) {
   updateHud();
 }
 function levelBonus(n) { return 200 + 100 * n; }
+// Restart the current level: reset score to what it was when the level started,
+// then reload the level. Used when the ball gets stuck in a loop.
+function restartLevel() {
+  score = levelStartScore;
+  comboN = 0;
+  bestCombo = 0;
+  setCombo(0);
+  loadLevel(level);
+  togglePause(); // resume the game
+  sfx.resume();
+  // small banner to confirm the restart
+  elBannerTitle.textContent = 'LEVEL ' + level;
+  elBannerSub.textContent = 'RESTARTED — points reset';
+  elBanner.classList.add('show');
+  bannerTimer = 2.0;
+}
 
 // ---------------- balls ----------------
 function ballSpeed() {
@@ -3228,6 +3264,8 @@ function boot() {
   }
   $('pauseBtn').addEventListener('click', e => { togglePause(); e.currentTarget.blur(); });
   $('pauseResume').addEventListener('click', e => { togglePause(); e.currentTarget.blur(); });
+  $('pauseHow').addEventListener('click', e => { $('pauseHowto').classList.toggle('hidden'); e.currentTarget.blur(); });
+  $('pauseRestart').addEventListener('click', e => { restartLevel(); e.currentTarget.blur(); });
   $('pauseMenu').addEventListener('click', e => { backToMenu(); e.currentTarget.blur(); });
 
   elSave.addEventListener('click', saveScore);
