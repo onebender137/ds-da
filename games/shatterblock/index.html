@@ -85,19 +85,36 @@
   #combo { font-size: 13px; color: var(--accent2); transition: transform .12s; font-family: var(--body); }
   #combo.hot { transform: scale(1.2); color: var(--gold); text-shadow: 0 0 14px rgba(255,209,102,0.6); }
   .active-power { margin-top: 10px; min-height: 0; display: none;
-    align-items: center; justify-content: space-between; gap: 8px;
-    padding: 7px 12px; border-radius: 10px;
-    border: 1.5px solid var(--ap-color, var(--gold));
-    background: color-mix(in srgb, var(--ap-color, var(--gold)) 16%, transparent);
-    box-shadow: 0 0 14px color-mix(in srgb, var(--ap-color, var(--gold)) 45%, transparent),
-      inset 0 0 10px color-mix(in srgb, var(--ap-color, var(--gold)) 22%, transparent);
-    animation: apPulse 1.1s ease-in-out infinite; }
+    flex-direction: column; gap: 5px;
+    padding: 10px 14px 9px; border-radius: 12px;
+    border: 2px solid var(--ap-color, var(--gold));
+    background: linear-gradient(135deg,
+      color-mix(in srgb, var(--ap-color, var(--gold)) 24%, transparent) 0%,
+      color-mix(in srgb, var(--ap-color, var(--gold)) 8%, transparent) 100%);
+    box-shadow: 0 0 20px color-mix(in srgb, var(--ap-color, var(--gold)) 55%, transparent),
+      0 0 44px color-mix(in srgb, var(--ap-color, var(--gold)) 22%, transparent),
+      inset 0 0 18px color-mix(in srgb, var(--ap-color, var(--gold)) 28%, transparent);
+    animation: apIn .35s cubic-bezier(.2,1.4,.3,1) forwards, apPulse 1.1s ease-in-out .35s infinite;
+    position: relative; overflow: hidden; }
   .active-power.on { display: flex; }
-  .active-power .ap-name { font-size: 13px; font-weight: 800; letter-spacing: 2px;
-    color: var(--ap-color, var(--gold)); text-shadow: 0 0 10px var(--ap-color, var(--gold)); }
-  .active-power .ap-time { font-size: 13px; font-weight: 700; letter-spacing: 1px;
-    color: var(--fg, #eaf0ff); font-variant-numeric: tabular-nums; }
-  @keyframes apPulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.035); opacity: .82; } }
+  .active-power::before { content: ''; position: absolute; top: 0; left: -100%; width: 60%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+    animation: apShimmer 2.2s ease-in-out infinite; pointer-events: none; }
+  .active-power .ap-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .active-power .ap-name { font-size: 15px; font-weight: 900; letter-spacing: 3px;
+    color: var(--ap-color, var(--gold)); text-shadow: 0 0 12px var(--ap-color, var(--gold)), 0 0 28px var(--ap-color, var(--gold));
+    font-family: var(--display); }
+  .active-power .ap-time { font-size: 14px; font-weight: 800; letter-spacing: 1px;
+    color: #fff; text-shadow: 0 0 8px var(--ap-color, var(--gold)); font-variant-numeric: tabular-nums; }
+  .active-power .ap-bar { width: 100%; height: 4px; border-radius: 2px;
+    background: rgba(255,255,255,0.1); overflow: hidden; }
+  .active-power .ap-bar-fill { height: 100%; border-radius: 2px;
+    background: linear-gradient(90deg, var(--ap-color, var(--gold)), #fff);
+    box-shadow: 0 0 6px var(--ap-color, var(--gold));
+    transition: width .15s linear; }
+  @keyframes apIn { from { transform: scale(0.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  @keyframes apPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.03); } }
+  @keyframes apShimmer { 0% { left: -100%; } 45% { left: 150%; } 100% { left: 150%; } }
   h3.sub { font-size: 10px; letter-spacing: 2px; color: var(--muted); margin: 12px 0 6px; font-weight: 600; }
   ol.tops { list-style: none; }
   ol.tops li { display: flex; justify-content: space-between; font-size: 12px; padding: 3px 4px;
@@ -279,9 +296,10 @@
     #radioBox.dsda-radio { bottom: calc(10px + env(safe-area-inset-bottom)); left: 10px; }
     .card { padding: 20px 22px; }
     .menu-powers { display: none; }
-    #hud .active-power { margin-top: 0; padding: 4px 9px; }
-    #hud .active-power .ap-name { font-size: 11px; letter-spacing: 1px; }
-    #hud .active-power .ap-time { font-size: 10px; }
+    #hud .active-power { margin-top: 0; padding: 7px 10px 6px; }
+    #hud .active-power .ap-name { font-size: 12px; letter-spacing: 2px; }
+    #hud .active-power .ap-time { font-size: 11px; }
+    #hud .active-power .ap-bar { height: 3px; }
     #combo.hot { transform: none; }
     #banner { top: 30%; }
     #combotxt { top: 62%; }
@@ -869,6 +887,43 @@ const servo = {
   },
 };
 
+// ---------------- power-up voice (Kokoro TTS, British male) ----------------
+// Preloads the 8 short voice clips (power/<type>.ogg) and plays the matching
+// one when a power-up is caught. Optional: if a clip fails to load the game
+// still works (the synthesized sfx.power/sfx.bad sound plays underneath).
+const voiceFx = {
+  buffers: {}, loaded: false, loading: false,
+  async load() {
+    if (this.loading || this.loaded) return;
+    this.loading = true;
+    const ctx = AudioEngine.ensure();
+    if (ctx) {
+      await Promise.all(Object.keys(POWER_DEFS).map(async (t) => {
+        try {
+          const res = await fetch('power/' + t + '.ogg');
+          if (!res.ok) return;
+          const buf = await ctx.decodeAudioData(await res.arrayBuffer());
+          this.buffers[t] = buf;
+        } catch (e) { /* voice is a bonus; never break the game */ }
+      }));
+      this.loaded = true;
+    }
+    this.loading = false;
+  },
+  play(type) {
+    const buf = this.buffers[type];
+    if (!buf || !sfx.on) return;
+    const ctx = AudioEngine.ctx;
+    if (!ctx) return;
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const g = ctx.createGain();
+    g.gain.value = 0.95;
+    src.connect(g); g.connect(sfx.out);
+    src.start();
+  },
+};
+
 // ---------------- 8-bit chiptune music (4 tracks) ----------------
 const N2F = m => 440 * Math.pow(2, (m - 69) / 12);
 // Track 1: "Brick Breaker" — driving E-minor breaker loop
@@ -1078,7 +1133,8 @@ let glareLight = null, glarePhase = 0;   // sweeping sheen light across the bric
 let starGroup = null;                     // rotating space starfield + nebulae
 let comboN = 0, bestCombo = 0;            // bricks broken since the last paddle touch (display only — scoring untouched)
 let pausedFrom = null, shakeAmp = 0, shakeT = 0, camPunch = 0;
-let radioWasPlaying = false;  // was the DSDA Radio playing before a pause/menu (so we can resume it)
+let radioWasPlaying = false;  // was the DSDARadio playing before a pause/menu (so we can resume it)
+let _displayedPower = null;   // tracks which power type the HUD panel is showing (avoids innerHTML rebuilds)
 const impacts = [], fxList = [], trailPool = [];
 let trailTex = null, flashBrickMat = null;
 
@@ -1206,13 +1262,42 @@ function powerTexture(type) {
   powerTexCache[type] = t;
   return t;
 }
-const powerGeo = new THREE.BoxGeometry(0.62, 0.62, 0.62);
+// Distinct 3D shapes per power-up type — each reads as its own icon at a glance
+const powerShapeGeo = {
+  wide:   new THREE.BoxGeometry(0.78, 0.26, 0.26),        // wide flat slab
+  shrink: new THREE.BoxGeometry(0.30, 0.30, 0.30),        // tiny cube
+  multi:  new THREE.SphereGeometry(0.20, 10, 8),          // sphere (×3 cluster)
+  slow:   new THREE.OctahedronGeometry(0.30),             // octahedron
+  fast:   new THREE.TetrahedronGeometry(0.34),            // tetrahedron (pointy)
+  laser:  new THREE.BoxGeometry(0.14, 0.72, 0.14),       // tall energy bolt
+  sticky: new THREE.SphereGeometry(0.26, 12, 8),         // sticky ball
+  life:   new THREE.CapsuleGeometry(0.16, 0.26, 4, 8),   // capsule
+};
 function makePowerup(type) {
   const def = POWER_DEFS[type];
-  const face = new THREE.MeshBasicMaterial({ map: powerTexture(type) });
-  const side = new THREE.MeshBasicMaterial({ color: def.color });
-  const m = new THREE.Mesh(powerGeo, [side, side, side, side, face, face]);
-  return m;
+  const mat = new THREE.MeshStandardMaterial({
+    color: def.color, emissive: def.color, emissiveIntensity: 0.55,
+    roughness: 0.25, metalness: 0.3,
+  });
+  let mesh;
+  if (type === 'multi') {
+    const grp = new THREE.Group();
+    for (const [ox, oy] of [[0, 0.17], [-0.15, -0.09], [0.15, -0.09]]) {
+      const s = new THREE.Mesh(powerShapeGeo.multi, mat);
+      s.position.set(ox, oy, 0);
+      grp.add(s);
+    }
+    mesh = grp;
+  } else {
+    mesh = new THREE.Mesh(powerShapeGeo[type], mat);
+  }
+  const glow = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: glowTex, color: def.color, transparent: true, opacity: 0.55,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+  }));
+  glow.scale.set(1.1, 1.1, 1);
+  mesh.add(glow);
+  return mesh;
 }
 
 // ---------------- particles ----------------
@@ -1778,6 +1863,9 @@ function applyPower(type) {
   } else {
     sfx.power();
   }
+  // Kokoro voice announces the power-up (ducks the radio under it)
+  AudioEngine.duck(0.5, 1.0);
+  voiceFx.play(type);
   rescaleBalls();
   updateHud();
 }
@@ -2437,19 +2525,32 @@ function updateHud() {
   elScore.textContent = score;
   elLevel.textContent = level;
   elLives.textContent = '♥'.repeat(Math.max(0, lives)) || '—';
-  // cool active power-up popup (only one at a time)
+  // active power-up panel (only one at a time) — rebuild structure only when the type changes
   let active = null;
   for (const k in power) if (power[k] > 0) { active = k; break; }
   if (active) {
-    // safe: label/color come from the hardcoded POWER_DEFS table, never user input
-    elActivePower.innerHTML =
-      '<span class="ap-name">' + POWER_DEFS[active].label + '</span>' +
-      '<span class="ap-time">' + Math.ceil(power[active]) + 's</span>';
-    elActivePower.style.setProperty('--ap-color', _hex(POWER_DEFS[active].color));
-    elActivePower.classList.add('on');
+    if (_displayedPower !== active) {
+      elActivePower.innerHTML =
+        '<div class="ap-head"><span class="ap-name">' + POWER_DEFS[active].label + '</span>' +
+        '<span class="ap-time">' + Math.ceil(power[active]) + 's</span></div>' +
+        '<div class="ap-bar"><div class="ap-bar-fill" style="width:' + (power[active] / POWER_DUR * 100) + '%"></div></div>';
+      elActivePower.style.setProperty('--ap-color', _hex(POWER_DEFS[active].color));
+      elActivePower.classList.add('on');
+      _displayedPower = active;
+    }
   } else {
-    elActivePower.classList.remove('on');
+    if (_displayedPower !== null) { elActivePower.classList.remove('on'); _displayedPower = null; }
   }
+}
+// per-frame: update the bar width + time text (cheap, no innerHTML rebuild)
+function updatePowerBar() {
+  if (_displayedPower === null) return;
+  const rem = power[_displayedPower] || 0;
+  if (rem <= 0) return;
+  const bar = elActivePower.querySelector('.ap-bar-fill');
+  if (bar) bar.style.width = (rem / POWER_DUR * 100) + '%';
+  const te = elActivePower.querySelector('.ap-time');
+  if (te) te.textContent = Math.ceil(rem) + 's';
 }
 
 // ---------------- input ----------------
@@ -2621,6 +2722,7 @@ function update(dt) {
     if (pv !== 0) { servo.start(); servo.drive(Math.abs(pv) / 14); }
     else servo.stop();
     updatePowers(dt);
+    updatePowerBar();
     // stuck balls follow the paddle
     for (const b of balls) {
       if (b.stuck) {
@@ -2832,6 +2934,7 @@ function boot() {
   phase = 'menu';
   clock = new THREE.Clock();
   animate();
+  voiceFx.load();  // preload the 8 Kokoro voice clips (fetch + decode, non-blocking)
 }
 
 // ---------------- debug / harness API ----------------
