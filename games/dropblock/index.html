@@ -584,7 +584,8 @@ const Vocals = {
   on: true,
   buffers: {},
   _loading: false,
-  _names: ['match', 'double', 'triple', 'massive', 'levelup', 'tryagain'],
+  _names: ['match', 'good', 'boom', 'nice', 'double', 'triple', 'massive', 'levelup', 'tryagain'],
+  _single: ['match', 'good', 'boom', 'nice'],
   async load() {
     if (this._loading) return;
     const ctx = AudioEngine.ensure();
@@ -609,12 +610,12 @@ const Vocals = {
     src.connect(g); g.connect(AudioEngine.sfxBus);
     src.start();
   },
-  // right line for a chain count: 1=match, 2=double, 3=triple, 4+=massive
+  // right line for a chain count: 1=random single, 2=double, 3=triple, 4+=massive
   match(n) {
     if (n >= 4) this.play('massive');
     else if (n === 3) this.play('triple');
     else if (n === 2) this.play('double');
-    else this.play('match');
+    else this.play(this._single[(Math.random() * this._single.length) | 0]);
   },
 };
 
@@ -806,6 +807,9 @@ let menuTime = 0;
 let maxChain = 0, pausedFrom = null, dangerOn = false, dangerT = 0;
 let shakeAmp = 0, shakeT = 0;
 let wobbleAmp = 0, wobbleT = 0;  // horizontal board wobble (decays to idle sway)
+let swingAmp = 0, swingT = 0;    // pendulum swing (pivot above the board)
+let swingPivot = null, boardGroup = null;
+let rimMat = null, rimNodes = [], rimComet = null, rimFlare = 0;  // animated rim
 const camBase = new THREE.Vector3(2.86, 7.32, 19.25);
 const camCur = new THREE.Vector3();
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
@@ -978,14 +982,14 @@ function buildGuide() {
   );
   guideBeam.position.set(0, ROWS / 2, -0.38);
   guideBeam.visible = false;
-  scene.add(guideBeam);
+  boardGroup.add(guideBeam);
   guidePad = new THREE.Mesh(
     new THREE.PlaneGeometry(0.9, 0.9),
     new THREE.MeshBasicMaterial({ map: glowTex, color: 0xffffff, transparent: true, opacity: 0.75, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide })
   );
   guidePad.rotation.x = -Math.PI / 2;
   guidePad.visible = false;
-  scene.add(guidePad);
+  boardGroup.add(guidePad);
 }
 function updateGuide(t) {
   if (!falling || phase !== 'falling') { guideBeam.visible = guidePad.visible = false; return; }
@@ -1039,14 +1043,22 @@ function updatePreview() {
 
 // ---------------- board & scene construction ----------------
 function buildBoard() {
-  const g = new THREE.Group();
+  // pendulum pivot ABOVE the board — the whole well swings from here (Task 2)
+  const PIVOT_Y = ROWS + 5;
+  swingPivot = new THREE.Group();
+  swingPivot.position.set(0, PIVOT_Y, 0);
+  scene.add(swingPivot);
+  boardGroup = new THREE.Group();
+  boardGroup.position.set(0, -PIVOT_Y, 0);  // net zero offset when unrotated
+  swingPivot.add(boardGroup);
+
   const back = new THREE.Mesh(
     new THREE.BoxGeometry(COLS + 0.6, ROWS + 0.6, 0.3),
     new THREE.MeshStandardMaterial({ color: 0x131a33, roughness: 0.85, metalness: 0.15 })
   );
   back.position.set(0, ROWS / 2, -0.62);
   back.receiveShadow = true;
-  g.add(back);
+  boardGroup.add(back);
 
   const lineMat = new THREE.MeshBasicMaterial({ color: 0x2b3a6e, transparent: true, opacity: 0.7 });
   // no top grid line — the well is open at the top so falling blocks don't
@@ -1054,17 +1066,18 @@ function buildBoard() {
   for (let r = 0; r < ROWS; r++) {
     const bar = new THREE.Mesh(new THREE.BoxGeometry(COLS, 0.025, 0.025), lineMat);
     bar.position.set(0, r * CELL, -0.42);
-    g.add(bar);
+    boardGroup.add(bar);
   }
   for (let c = 0; c <= COLS; c++) {
     const bar = new THREE.Mesh(new THREE.BoxGeometry(0.025, ROWS, 0.025), lineMat);
     bar.position.set(xOf(c - 0.5), ROWS / 2, -0.42);
-    g.add(bar);
+    boardGroup.add(bar);
   }
 
-  const rimMat = new THREE.MeshStandardMaterial({
-    color: 0x0a0f22, roughness: 0.35, metalness: 0.7,
-    emissive: 0x1c2f77, emissiveIntensity: 0.7,
+  // ---- the dope rim (Task 5): animated neon energy frame ----
+  rimMat = new THREE.MeshStandardMaterial({
+    color: 0x0a0f22, roughness: 0.28, metalness: 0.85,
+    emissive: 0x22d3ee, emissiveIntensity: 0.9,
   });
   const rimH = new THREE.BoxGeometry(COLS + 0.8, 0.18, 0.7);
   const rimV = new THREE.BoxGeometry(0.18, ROWS + 0.8, 0.7);
@@ -1072,14 +1085,42 @@ function buildBoard() {
   const bot = new THREE.Mesh(rimH, rimMat); bot.position.set(0, -0.09, -0.2);
   const left = new THREE.Mesh(rimV, rimMat); left.position.set(-COLS / 2 - 0.09, ROWS / 2, -0.2);
   const right = new THREE.Mesh(rimV, rimMat); right.position.set(COLS / 2 + 0.09, ROWS / 2, -0.2);
-  g.add(bot, left, right);
+  boardGroup.add(bot, left, right);
 
-  dangerBar = new THREE.Mesh(
-    new THREE.BoxGeometry(COLS + 0.4, 0.05, 0.5),
-    new THREE.MeshBasicMaterial({ color: 0xff3b5c, transparent: true, opacity: 0.85 })
+  // corner nodes — bright pulsing caps at the 4 frame corners
+  const nodeGeo = new THREE.BoxGeometry(0.34, 0.34, 0.84);
+  const corners = [
+    [-COLS / 2 - 0.09, -0.09],          // bottom-left
+    [COLS / 2 + 0.09, -0.09],           // bottom-right
+    [-COLS / 2 - 0.09, ROWS + 0.09],    // top of left rail
+    [COLS / 2 + 0.09, ROWS + 0.09],     // top of right rail
+  ];
+  corners.forEach(([x, y], i) => {
+    const nm = new THREE.MeshStandardMaterial({ color: 0x001418, emissive: 0x67e8f9, emissiveIntensity: 1.6, roughness: 0.2, metalness: 0.5 });
+    const node = new THREE.Mesh(nodeGeo, nm);
+    node.position.set(x, y, -0.2);
+    node.userData.ph = i * 1.3;
+    boardGroup.add(node);
+    rimNodes.push(node);
+    // soft additive glow halo at each corner
+    const gs = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0x67e8f9, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false }));
+    gs.scale.setScalar(2.4);
+    gs.position.set(x, y, -0.1);
+    gs.userData.ph = i * 1.3;
+    boardGroup.add(gs);
+    rimNodes.push(gs);
+  });
+
+  // traveling comet — a bright energy pulse that runs the bottom bar
+  rimComet = new THREE.Mesh(
+    new THREE.BoxGeometry(0.72, 0.24, 0.76),
+    new THREE.MeshBasicMaterial({ color: 0x9bf3ff, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false })
   );
-  dangerBar.position.set(0, ROWS + 0.28, 0);
-  g.add(dangerBar);
+  rimComet.position.set(0, -0.09, -0.2);
+  boardGroup.add(rimComet);
+
+  // the red danger line at the top is gone — it made the well feel boxed in.
+  // (dangerOn logic still drives the edge glow + game-over detection.)
 
   // soft glow behind the board — breathes slowly, flares on clears
   backGlow = new THREE.Mesh(
@@ -1087,8 +1128,9 @@ function buildBoard() {
     new THREE.MeshBasicMaterial({ map: glowTex, color: 0x3350cc, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false })
   );
   backGlow.position.set(0, ROWS / 2, -1.2);
-  g.add(backGlow);
+  boardGroup.add(backGlow);
 
+  // the floor is the ground — it stays put while the well swings
   const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(80, 80),
     new THREE.MeshStandardMaterial({ color: 0x0c101f, roughness: 1, metalness: 0 })
@@ -1096,9 +1138,29 @@ function buildBoard() {
   floor.rotation.x = -Math.PI / 2;
   floor.position.y = -0.5;
   floor.receiveShadow = true;
-  g.add(floor);
+  scene.add(floor);
+}
 
-  scene.add(g);
+// animated rim: cyan<->magenta pulse, breathing corners, bottom comet, match flare
+function updateRim(dt) {
+  if (!rimMat) return;
+  const t = menuTime;
+  if (rimFlare > 0.003) rimFlare *= Math.exp(-dt * 3.0); else rimFlare = 0;
+  // rim emissive cycles cyan -> magenta, breathing + flare
+  const mix = (Math.sin(t * 0.55) + 1) / 2;
+  rimMat.emissive.setRGB(0.14 + mix * 0.62, 0.83 - mix * 0.42, 0.95);
+  rimMat.emissiveIntensity = 0.85 + Math.sin(t * 2.1) * 0.22 + rimFlare * 2.2;
+  // corner nodes + halos pulse (offset phases)
+  for (const n of rimNodes) {
+    const p = (Math.sin(t * 3.0 + n.userData.ph) + 1) / 2;
+    if (n.isSprite) { n.material.opacity = 0.32 + p * 0.4 + rimFlare * 0.5; }
+    else { n.material.emissiveIntensity = 1.3 + p * 1.5 + rimFlare * 2.5; const s = 1 + p * 0.16; n.scale.set(s, s, s); }
+  }
+  // comet runs the bottom bar
+  if (rimComet) {
+    rimComet.position.x = Math.sin(t * 1.15) * (COLS / 2 + 0.15);
+    rimComet.material.opacity = 0.55 + Math.sin(t * 4.0) * 0.2 + rimFlare * 0.4;
+  }
 }
 
 function buildStars() {
@@ -1143,7 +1205,7 @@ function spawnPiece() {
   const mesh = makeCandy(color);
   const y = ROWS * CELL + 1.4;
   mesh.position.set(xOf(col), y, 0);
-  scene.add(mesh);
+  boardGroup.add(mesh);  // swings with the well
   falling = { color, col, y, mesh };
   phase = 'falling';
   updatePreview();
@@ -1181,7 +1243,7 @@ function lockPiece() {
   const mesh = falling.mesh;
   mesh.rotation.set(0, 0, 0);
   if (row >= ROWS) {
-    scene.remove(mesh);
+    boardGroup.remove(mesh);
     falling = null;
     gameOver();
     return;
@@ -1273,6 +1335,10 @@ function startClear(matched, n) {
   // board wobble on every match — quick horizontal turn, dramatic + scales hard with chain
   wobbleT = 0;
   wobbleAmp = Math.min(0.50, 0.10 + n * 0.08);
+  // pendulum swing kick + rim flare, scaling with the chain
+  swingT = 0;
+  swingAmp = Math.min(0.22, 0.05 + n * 0.035);
+  rimFlare = Math.min(1.0, 0.35 + n * 0.18);
   sfx.match(n);
   Vocals.match(n);
   updateHud();
@@ -1280,7 +1346,7 @@ function startClear(matched, n) {
 
 function finishClear() {
   for (const it of clearList) {
-    scene.remove(it.cd.mesh);
+    boardGroup.remove(it.cd.mesh);
     grid[it.r][it.c] = null;
   }
   clearList = [];
@@ -1301,7 +1367,7 @@ function finishClear() {
 function gameOver() {
   track('game_over', { final_score: score, level_reached: level });
   phase = 'over';
-  if (falling) { scene.remove(falling.mesh); falling = null; }
+  if (falling) { boardGroup.remove(falling.mesh); falling = null; }
   sfx.over();
   Vocals.play('tryagain');
   if (DSDARadio) { radioWasPlaying = false; DSDARadio.pause(); }  // music stops on game over
@@ -1331,9 +1397,9 @@ function setDanger(on) {
 function clearBoard() {
   if (grid) for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
     const cd = grid[r][c];
-    if (cd) scene.remove(cd.mesh);
+    if (cd) boardGroup.remove(cd.mesh);
   }
-  if (falling) { scene.remove(falling.mesh); falling = null; }
+  if (falling) { boardGroup.remove(falling.mesh); falling = null; }
   for (const p of particles) scene.remove(p.m);
   particles = [];
   for (const f of fxList) scene.remove(f.m);
@@ -1353,18 +1419,9 @@ function resetGame() {
 
 // ---------------- main menu & high scores ----------------
 function buildTitleCandies() {
-  const n = 9;
-  for (let i = 0; i < n; i++) {
-    const color = i % COLORS.length;
-    const m = makeCandy(color);
-    const x = (i - (n - 1) / 2) * 1.05;
-    const y = ROWS + 1.7;
-    m.position.set(x, y, 0.5);
-    m.scale.setScalar(0.72);
-    m.castShadow = false;
-    scene.add(m);
-    titleCandies.push({ m, baseY: y, ph: i * 0.55 });
-  }
+  // the row of floating candies above the board is gone (was half-clipped at
+  // the top edge); the menuDemo block wall behind the title is the menu visual now.
+  titleCandies.length = 0;
 }
 
 // ---------------- menu demo: blocks dropping + matching behind the title ----------------
@@ -2024,7 +2081,6 @@ function update(dt) {
     nb.material.opacity = 0.14 + Math.sin(menuTime * 0.3 + nb.userData.ph) * 0.03;
   }
   if (backGlow) backGlow.material.opacity += (0.22 + Math.sin(menuTime * 0.9) * 0.03 - backGlow.material.opacity) * Math.min(1, dt * 3);
-  if (dangerBar) dangerBar.material.opacity = dangerOn ? 0.6 + Math.sin(menuTime * 9) * 0.4 : 0.28;
   // camera: menu orbit vs play position, plus slow play sway + match wobble + shake
   camMenuBlend += ((phase === 'menu' ? 1 : 0) - camMenuBlend) * Math.min(1, dt * 1.8);
   const orbit = Math.sin(menuTime * 0.28) * 0.3 * camMenuBlend;
@@ -2044,6 +2100,13 @@ function update(dt) {
   }
   camera.position.copy(camCur);
   camera.lookAt(0, 6, 0);
+  // pendulum swing — the well swings from a pivot above it (idle sway is play-only)
+  if (swingAmp > 0.0004) { swingT += dt; swingAmp *= Math.exp(-dt * 1.6); }
+  else swingAmp = 0;
+  const swingIdle = Math.sin(menuTime * 0.5) * 0.045 * (1 - camMenuBlend);
+  const swingKick = Math.sin(swingT * 8.5) * swingAmp;
+  if (swingPivot) swingPivot.rotation.z = swingIdle + swingKick;
+  updateRim(dt);
   if (phase === 'paused') return;
   updateParticles(dt);
   updateFx(dt);
@@ -2250,7 +2313,10 @@ window.__tl = {
   demoStep(dt) { if (menuDemo.on) updateMenuDemo(dt); return Math.round(menuDemo.t * 100) / 100; },
   camState() { return { blend: Math.round(camMenuBlend * 1000) / 1000, menuT: Math.round(menuTime * 100) / 100, wobbleAmp: Math.round(wobbleAmp * 10000) / 10000, camX: Math.round(camera.position.x * 100) / 100, camZ: Math.round(camera.position.z * 100) / 100, phase: phase }; },
   wobbleTest(amp) { wobbleAmp = amp; wobbleT = 0; return true; },
-  vocals() { return { on: Vocals.on, loading: Vocals._loading, loaded: Object.keys(Vocals.buffers), matchLine: n => (n >= 4 ? 'massive' : n === 3 ? 'triple' : n === 2 ? 'double' : 'match') }; },
+  swingTest(amp) { swingAmp = amp; swingT = 0; return true; },
+  swingState() { return { amp: Math.round(swingAmp * 10000) / 10000, rotZ: swingPivot ? Math.round(swingPivot.rotation.z * 10000) / 10000 : null, rimFlare: Math.round(rimFlare * 1000) / 1000 }; },
+  rimState() { return { emissive: rimMat ? [Math.round(rimMat.emissive.r * 255), Math.round(rimMat.emissive.g * 255), Math.round(rimMat.emissive.b * 255)] : null, intensity: rimMat ? Math.round(rimMat.emissiveIntensity * 100) / 100 : null, cometX: rimComet ? Math.round(rimComet.position.x * 100) / 100 : null, node0: rimNodes.length ? Math.round(rimNodes[0].material.emissiveIntensity * 100) / 100 : null }; },
+  vocals() { return { on: Vocals.on, loading: Vocals._loading, loaded: Object.keys(Vocals.buffers), single: Vocals._single, matchLine: n => (n >= 4 ? 'massive' : n === 3 ? 'triple' : n === 2 ? 'double' : 'random(' + Vocals._single.join('/') + ')') }; },
   vocalPlay(name) { Vocals.play(name); return Vocals.buffers[name] ? 'played' : 'no buffer'; },
   proj(x, y, z) { const v = new THREE.Vector3(x, y, z).project(camera); return [Math.round((v.x * 0.5 + 0.5) * window.innerWidth), Math.round((-v.y * 0.5 + 0.5) * window.innerHeight)]; },
   freezeInput() { inputFrozen = true; },
@@ -2312,24 +2378,24 @@ window.__tl = {
   seedBoard(pat) {
     for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
       const cd = grid[r][c];
-      if (cd) { scene.remove(cd.mesh); grid[r][c] = null; }
+      if (cd) { boardGroup.remove(cd.mesh); grid[r][c] = null; }
     }
-    if (falling) { scene.remove(falling.mesh); falling = null; }
+    if (falling) { boardGroup.remove(falling.mesh); falling = null; }
     for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
       if (!pat || !pat[r] || pat[r][c] == null || pat[r][c] < 0) continue;
       const mesh = makeCandy(pat[r][c]);
       mesh.position.set(xOf(c), r * CELL + CELL / 2, 0);
-      scene.add(mesh);
+      boardGroup.add(mesh);
       grid[r][c] = { color: pat[r][c], mesh, ty: r * CELL + CELL / 2 };
     }
     return 'seeded';
   },
   seedFalling(col, y, color) {
-    if (falling) { scene.remove(falling.mesh); falling = null; }
+    if (falling) { boardGroup.remove(falling.mesh); falling = null; }
     const c = (color === undefined) ? 2 : color;
     const mesh = makeCandy(c);
     mesh.position.set(xOf(col), y, 0);
-    scene.add(mesh);
+    boardGroup.add(mesh);
     falling = { color: c, col, y, mesh };
     phase = 'falling';
     return 'ok';
@@ -2356,9 +2422,9 @@ window.__tl = {
   debugClear() {
     for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
       const cd = grid[r][c];
-      if (cd) { scene.remove(cd.mesh); grid[r][c] = null; }
+      if (cd) { boardGroup.remove(cd.mesh); grid[r][c] = null; }
     }
-    if (falling) { scene.remove(falling.mesh); falling = null; }
+    if (falling) { boardGroup.remove(falling.mesh); falling = null; }
     const pat = [
       [0, 0, 0, 1, 2, 3],
       [4, 1, 5, 1, 2, 5],
@@ -2367,7 +2433,7 @@ window.__tl = {
     for (let r = 0; r < pat.length; r++) for (let c = 0; c < COLS; c++) {
       const mesh = makeCandy(pat[r][c]);
       mesh.position.set(xOf(c), r * CELL + CELL / 2, 0);
-      scene.add(mesh);
+      boardGroup.add(mesh);
       grid[r][c] = { color: pat[r][c], mesh, ty: r * CELL + CELL / 2 };
     }
     combo = 0;
@@ -2381,7 +2447,7 @@ window.__tl = {
         const color = (r + c) % COLORS.length;
         const mesh = makeCandy(color);
         mesh.position.set(xOf(c), r * CELL + CELL / 2, 0);
-        scene.add(mesh);
+        boardGroup.add(mesh);
         grid[r][c] = { color, mesh, ty: r * CELL + CELL / 2 };
       }
     }
