@@ -748,6 +748,21 @@ const sfx = {
     src.start(t0); src.stop(t0 + dur + 0.02);
   },
   wall() { this.tone(190, 0.035, 'square', 0.04, 0, 160, 2200); },
+  // electric plasma-wall bounce: a sharp high zap + a crackling sparkle
+  zap() {
+    this.tone(1900, 0.05, 'sawtooth', 0.07, 0, 420, 9000);
+    this.tone(2600, 0.035, 'square', 0.045, 0, 950, 12000);
+    this.noise(0.045, 0.055, 3200, 13000);
+  },
+  // plasma death reaction: the ball dissolves into the purple bar — a descending
+  // absorb tone, a low rumble, and bubbling/fizzing noise
+  plasma() {
+    AudioEngine.duck(0.3, 0.7);
+    this.tone(640, 0.38, 'sine', 0.17, 0, 70);
+    this.tone(320, 0.34, 'sawtooth', 0.07, 0, 55, 2200);
+    this.noise(0.42, 0.11, 180, 3200);
+    this.noise(0.26, 0.07, 1600, 7000, 0.12);
+  },
   paddle() { this.tone(230, 0.07, 'square', 0.11, 0, 340, 3000); this.noise(0.05, 0.05, 300, 3000); },
   // brick pitch climbs with the combo so a long rally sings
   brick(row, hard, comboN) {
@@ -1160,6 +1175,7 @@ const particleMats = [
   new THREE.MeshBasicMaterial({ color: 0xffb347, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }),
   new THREE.MeshBasicMaterial({ color: 0x4dd2ff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }),
   new THREE.MeshBasicMaterial({ color: 0x8b96c9, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }),
+  new THREE.MeshBasicMaterial({ color: 0xb44dff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }),  // plasma purple
 ];
 let particles = [];
 function spawnBurst(pos, matIdx, n) {
@@ -1294,6 +1310,75 @@ function setCombo(n) {
   }
 }
 
+// ---------------- plasma wall materials ----------------
+// Wavy plasma for the arena rails (cyan/green/blue) and the death bar (purple).
+// A hit ripple (uHitTime/uHitUV) makes the struck section bounce + flash.
+let plasmaTime = 0;
+const plasmaVert = `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+const plasmaWallFrag = `
+  uniform float uTime; uniform float uHitTime; uniform vec2 uHitUV;
+  varying vec2 vUv;
+  void main() {
+    float t = uTime * 1.5;
+    float p1 = sin(vUv.x * 14.0 + t * 2.0);
+    float p2 = sin(vUv.y * 10.0 - t * 1.6 + 1.3);
+    float p3 = sin((vUv.x + vUv.y) * 12.0 + t * 1.1);
+    float v = (p1 + p2 + p3) / 3.0;
+    vec3 cA = vec3(0.0, 0.85, 1.0), cB = vec3(0.2, 1.0, 0.5), cC = vec3(0.1, 0.4, 1.0);
+    vec3 col = mix(cA, cB, 0.5 + 0.5 * v);
+    col = mix(col, cC, 0.5 + 0.5 * sin(v * 2.0 + t * 0.7));
+    col *= 0.85 + 0.35 * sin(v * 3.0 + t);
+    float hitAge = uTime - uHitTime;
+    if (hitAge < 0.6 && hitAge > 0.0) {
+      float d = distance(vUv, uHitUV);
+      float ring = sin(d * 28.0 - hitAge * 22.0) * 0.5 + 0.5;
+      col += vec3(0.6, 0.9, 1.0) * exp(-d * 5.0) * (1.0 - hitAge / 0.6) * ring * 2.2;
+    }
+    gl_FragColor = vec4(col, 1.0);
+  }
+`;
+const plasmaBottomFrag = `
+  uniform float uTime; uniform float uHitTime; uniform vec2 uHitUV;
+  varying vec2 vUv;
+  void main() {
+    float t = uTime * 1.2;
+    float p1 = sin(vUv.x * 16.0 + t * 2.2);
+    float p2 = sin(vUv.y * 8.0 - t * 1.8);
+    float p3 = sin((vUv.x + vUv.y) * 14.0 + t);
+    float v = (p1 + p2 + p3) / 3.0;
+    vec3 cA = vec3(0.45, 0.1, 0.85), cB = vec3(0.16, 0.0, 0.45), cC = vec3(0.8, 0.25, 1.0);
+    vec3 col = mix(cB, cA, 0.5 + 0.5 * v);
+    col = mix(col, cC, 0.3 + 0.3 * sin(v * 2.0 + t * 0.8));
+    col *= 0.7 + 0.3 * sin(v * 3.0 + t);
+    float hitAge = uTime - uHitTime;
+    if (hitAge < 0.8 && hitAge > 0.0) {
+      float d = distance(vUv, uHitUV);
+      float ring = sin(d * 24.0 - hitAge * 16.0) * 0.5 + 0.5;
+      col += vec3(0.75, 0.35, 1.0) * exp(-d * 5.0) * (1.0 - hitAge / 0.8) * ring * 2.5;
+    }
+    gl_FragColor = vec4(col, 1.0);
+  }
+`;
+function makePlasmaMat(frag) {
+  return new THREE.ShaderMaterial({
+    vertexShader: plasmaVert,
+    fragmentShader: frag,
+    uniforms: {
+      uTime: { value: 0 },
+      uHitTime: { value: -10 },
+      uHitUV: { value: new THREE.Vector2(0.5, 0.5) },
+    },
+  });
+}
+const plasmaWallMat = makePlasmaMat(plasmaWallFrag);
+const plasmaBottomMat = makePlasmaMat(plasmaBottomFrag);
+
 // ---------------- scene construction ----------------
 function buildArena() {
   const g = new THREE.Group();
@@ -1317,24 +1402,20 @@ function buildArena() {
     bar.position.set(x, PLAY_H / 2, -0.6);
     g.add(bar);
   }
-  // glowing rails + top wall
-  const railMat = new THREE.MeshStandardMaterial({
-    color: 0x0a0f22, roughness: 0.35, metalness: 0.7,
-    emissive: 0x1c2f77, emissiveIntensity: 0.9,
-  });
-  const top = new THREE.Mesh(new THREE.BoxGeometry(PLAY_W + 0.9, 0.22, 0.6), railMat);
+  // plasma rails + top wall (wavy cyan/green/blue)
+  const top = new THREE.Mesh(new THREE.BoxGeometry(PLAY_W + 0.9, 0.22, 0.6), plasmaWallMat);
   top.position.set(0, PLAY_H + 0.1, -0.15);
-  const left = new THREE.Mesh(new THREE.BoxGeometry(0.22, PLAY_H + 0.9, 0.6), railMat);
+  const left = new THREE.Mesh(new THREE.BoxGeometry(0.22, PLAY_H + 0.9, 0.6), plasmaWallMat);
   left.position.set(-PLAY_W / 2 - 0.11, PLAY_H / 2, -0.15);
-  const right = new THREE.Mesh(new THREE.BoxGeometry(0.22, PLAY_H + 0.9, 0.6), railMat);
+  const right = new THREE.Mesh(new THREE.BoxGeometry(0.22, PLAY_H + 0.9, 0.6), plasmaWallMat);
   right.position.set(PLAY_W / 2 + 0.11, PLAY_H / 2, -0.15);
   g.add(top, left, right);
-  // danger line
+  // plasma death bar (wavy purple) — the ball dissolves into this
   const danger = new THREE.Mesh(
-    new THREE.BoxGeometry(PLAY_W + 0.4, 0.05, 0.5),
-    new THREE.MeshBasicMaterial({ color: 0xff3b5c, transparent: true, opacity: 0.55 })
+    new THREE.BoxGeometry(PLAY_W + 0.4, 0.14, 0.5),
+    plasmaBottomMat
   );
-  danger.position.set(0, -0.03, 0);
+  danger.position.set(0, -0.05, 0);
   g.add(danger);
   // floor
   const floor = new THREE.Mesh(
@@ -1708,6 +1789,13 @@ function showBanner(title, sub) {
 function hideBanner() { elBanner.classList.remove('show'); }
 
 // ---------------- ball physics ----------------
+// plasma wall bounce: ripple the struck section + zap SFX + a cyan spark burst
+function plasmaWallHit(uv, worldPos) {
+  plasmaWallMat.uniforms.uHitTime.value = plasmaTime;
+  plasmaWallMat.uniforms.uHitUV.value.copy(uv);
+  sfx.zap();
+  spawnBurst(worldPos, 2, 6);
+}
 function collideBall(b, dt) {
   const s = ballSpeed();
   const SUB = 4;
@@ -1715,10 +1803,18 @@ function collideBall(b, dt) {
   for (let sub = 0; sub < SUB; sub++) {
     b.x += b.vx * step;
     b.y += b.vy * step;
-    // walls
-    if (b.x - BALL_R < -PLAY_W / 2) { b.x = -PLAY_W / 2 + BALL_R; b.vx = Math.abs(b.vx); sfx.wall(); }
-    else if (b.x + BALL_R > PLAY_W / 2) { b.x = PLAY_W / 2 - BALL_R; b.vx = -Math.abs(b.vx); sfx.wall(); }
-    if (b.y + BALL_R > PLAY_H) { b.y = PLAY_H - BALL_R; b.vy = -Math.abs(b.vy); sfx.wall(); }
+    // walls (plasma bounce: ripple + zap + cyan sparks)
+    if (b.x - BALL_R < -PLAY_W / 2) {
+      b.x = -PLAY_W / 2 + BALL_R; b.vx = Math.abs(b.vx);
+      plasmaWallHit(new THREE.Vector2(0.5, b.y / PLAY_H), new THREE.Vector3(-PLAY_W / 2, b.y, 0));
+    } else if (b.x + BALL_R > PLAY_W / 2) {
+      b.x = PLAY_W / 2 - BALL_R; b.vx = -Math.abs(b.vx);
+      plasmaWallHit(new THREE.Vector2(0.5, b.y / PLAY_H), new THREE.Vector3(PLAY_W / 2, b.y, 0));
+    }
+    if (b.y + BALL_R > PLAY_H) {
+      b.y = PLAY_H - BALL_R; b.vy = -Math.abs(b.vy);
+      plasmaWallHit(new THREE.Vector2(b.x / PLAY_W + 0.5, 0.5), new THREE.Vector3(b.x, PLAY_H, 0));
+    }
     // bricks (first hit per substep)
     for (let bi = 0; bi < bricks.length; bi++) {
       const br = bricks[bi];
@@ -2349,6 +2445,10 @@ function update(dt) {
     starGroup.rotation.y += dt * 0.012;
     starGroup.rotation.x += dt * 0.004;
   }
+  // plasma walls: advance the wavy animation (runs in every phase)
+  plasmaTime += dt;
+  plasmaWallMat.uniforms.uTime.value = plasmaTime;
+  plasmaBottomMat.uniforms.uTime.value = plasmaTime;
   menuTime += dt;
   if (bannerTimer > 0) {
     bannerTimer -= dt;
@@ -2399,6 +2499,11 @@ function update(dt) {
       if (b.stuck) continue;
       collideBall(b, dt);
       if (b.y - BALL_R < -0.4) {
+        // ball dissolves into the purple plasma death bar
+        plasmaBottomMat.uniforms.uHitTime.value = plasmaTime;
+        plasmaBottomMat.uniforms.uHitUV.value.set(b.x / PLAY_W + 0.5, 0.5);
+        sfx.plasma();
+        spawnBurst(new THREE.Vector3(b.x, 0, 0), 4, 16);
         removeBall(i);
         if (balls.length === 0) { loseLife(); break; }
       }
