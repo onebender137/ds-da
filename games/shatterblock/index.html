@@ -232,6 +232,199 @@
   #pause .card h2 { color: var(--accent); text-shadow: 0 0 22px rgba(110,168,255,0.45); }
   #pause .card p { color: var(--muted); font-size: 12px; margin-top: 4px; }
 
+  /* ---- game over card: polished eye-candy ---- */
+  #overlay .card {
+    position: relative;
+    background: linear-gradient(160deg, rgba(16, 20, 42, 0.97) 0%, rgba(10, 12, 28, 0.99) 100%);
+    border: 2px solid transparent;
+    border-radius: 20px;
+    animation: cardInGo .55s cubic-bezier(.18, 1.35, .3, 1) forwards;
+    box-shadow:
+      0 0 0 1px rgba(110, 168, 255, 0.22),
+      0 0 44px rgba(110, 168, 255, 0.16),
+      0 0 88px rgba(192, 107, 255, 0.10),
+      0 28px 72px rgba(0, 0, 0, 0.72),
+      inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  }
+  /* animated rainbow gradient border (cycles through the game palette) */
+  #overlay .card::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 22px;
+    background: linear-gradient(135deg, #6ea8ff, #c06bff, #4ade80, #ffd166, #ff3b5c, #6ea8ff);
+    background-size: 300% 300%;
+    animation: goBorderCycle 5s ease-in-out infinite;
+    z-index: -1;
+    opacity: 0.7;
+  }
+  /* subtle scan-line overlay for a CRT/arcade feel */
+  #overlay .card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(110, 168, 255, 0.022) 3px,
+      rgba(110, 168, 255, 0.022) 4px
+    );
+    pointer-events: none;
+    animation: goScan 10s linear infinite;
+  }
+  @keyframes goBorderCycle {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+  @keyframes goScan {
+    from { background-position: 0 0; }
+    to { background-position: 0 240px; }
+  }
+  @keyframes cardInGo {
+    from { opacity: 0; transform: scale(0.6) translateY(28px); filter: blur(8px); }
+    55% { filter: blur(0); }
+    to { opacity: 1; transform: none; }
+  }
+  /* GAME OVER title: gradient fill + pulsing glow */
+  #overlay .card h2 {
+    font-size: 40px;
+    letter-spacing: 5px;
+    background: linear-gradient(180deg, #ffffff 0%, #ff6b8a 35%, #ff3b5c 65%, #c06bff 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 20px rgba(255, 59, 92, 0.65)) drop-shadow(0 0 40px rgba(192, 107, 255, 0.35));
+    animation: goTitlePulse 2.4s ease-in-out infinite;
+    margin-bottom: 12px;
+  }
+  @keyframes goTitlePulse {
+    0%, 100% { filter: drop-shadow(0 0 20px rgba(255, 59, 92, 0.65)) drop-shadow(0 0 40px rgba(192, 107, 255, 0.35)); }
+    50% { filter: drop-shadow(0 0 32px rgba(255, 59, 92, 0.9)) drop-shadow(0 0 56px rgba(192, 107, 255, 0.55)); }
+  }
+  /* score label + value: bigger, gradient, glowing */
+  #overlay .card .final {
+    font-size: 12px;
+    letter-spacing: 4px;
+    color: var(--muted);
+    margin-bottom: 8px;
+    font-weight: 700;
+  }
+  #overlay .card .final b {
+    font-family: var(--display);
+    font-size: 46px;
+    font-weight: 400;
+    display: block;
+    margin-top: 6px;
+    background: linear-gradient(180deg, #ffffff 0%, #9cc3ff 45%, #6ea8ff 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 18px rgba(110, 168, 255, 0.6));
+  }
+  /* level + combo substat: pill badge */
+  #overlay .card .substat {
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-bottom: 10px;
+    padding: 7px 14px;
+    background: rgba(110, 168, 255, 0.07);
+    border-radius: 10px;
+    display: inline-block;
+    border: 1px solid rgba(110, 168, 255, 0.18);
+  }
+  /* NEW HIGH SCORE: dramatic pulsing badge */
+  #overlay .card #newHigh {
+    font-size: 14px;
+    letter-spacing: 5px;
+    padding: 8px 20px;
+    background: linear-gradient(135deg, rgba(255, 209, 102, 0.14), rgba(255, 122, 61, 0.09));
+    border: 1px solid rgba(255, 209, 102, 0.45);
+    border-radius: 12px;
+    display: inline-block;
+    margin-bottom: 12px;
+    animation: goNewHigh 1.3s ease-in-out infinite;
+  }
+  @keyframes goNewHigh {
+    0%, 100% { box-shadow: 0 0 14px rgba(255, 209, 102, 0.3); transform: scale(1); }
+    50% { box-shadow: 0 0 32px rgba(255, 209, 102, 0.65); transform: scale(1.05); }
+  }
+  /* initials input: deeper, more polished */
+  #overlay .card label {
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--muted);
+    margin: 20px 0 8px;
+    font-weight: 700;
+  }
+  #overlay .card #initials {
+    font-size: 32px;
+    letter-spacing: 18px;
+    padding: 12px 10px;
+    background: rgba(6, 8, 18, 0.95);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    box-shadow: inset 0 3px 16px rgba(0, 0, 0, 0.55);
+  }
+  #overlay .card #initials:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(110, 168, 255, 0.2), inset 0 3px 16px rgba(0, 0, 0, 0.55);
+  }
+  /* buttons: shimmer sweep + lift on hover */
+  #overlay .card button {
+    border-radius: 12px;
+    padding: 13px;
+    font-size: 13px;
+    letter-spacing: 3px;
+    font-weight: 700;
+    text-transform: uppercase;
+    transition: all .16s;
+    position: relative;
+    overflow: hidden;
+  }
+  #overlay .card button::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 60%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.13), transparent);
+    transition: left .45s ease;
+    pointer-events: none;
+  }
+  #overlay .card button:hover::before { left: 160%; }
+  #overlay .card button.primary {
+    background: linear-gradient(135deg, #2b4bd8 0%, #7a3bd8 50%, #c06bff 100%);
+    border: none;
+    font-size: 15px;
+    box-shadow: 0 8px 30px rgba(110, 90, 255, 0.42), 0 0 48px rgba(192, 107, 255, 0.22);
+  }
+  #overlay .card button.primary:hover {
+    filter: brightness(1.22);
+    box-shadow: 0 12px 40px rgba(110, 90, 255, 0.58), 0 0 60px rgba(192, 107, 255, 0.38);
+    transform: translateY(-2px);
+  }
+  #overlay .card button:not(.primary) {
+    background: rgba(28, 36, 72, 0.5);
+    border: 1px solid var(--border);
+  }
+  #overlay .card button:not(.primary):hover {
+    background: rgba(44, 58, 116, 0.6);
+    border-color: var(--accent);
+    transform: translateY(-1px);
+  }
+  /* SHATTER MASTERS header in game over: divider + label */
+  #overlay .card .sub {
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--muted);
+    margin: 16px 0 8px;
+    font-weight: 700;
+    padding-top: 14px;
+    border-top: 1px solid rgba(122, 142, 255, 0.16);
+  }
+
   /* ---- main menu ---- */
   #menu { position: fixed; inset: 0; z-index: 15; display: flex; flex-direction: column;
     align-items: center; justify-content: center; gap: 12px;
@@ -2156,11 +2349,11 @@ function collideBall(b, dt) {
       }
       const off = Math.max(-1, Math.min(1, (b.x - paddleX) / (paddleW / 2)));
       const ang = off * 1.13; // up to 65°
-      punch(paddle, 1.09, 0.78); // malleable squish on impact, springs back via updateImpacts
+      punch(paddle, 1.32, 0.45); // exaggerated malleable squish on impact, springs back via updateImpacts
       b.vx = s * Math.sin(ang);
       b.vy = s * Math.cos(ang);
       b.y = pTop + BALL_R + 0.01;
-      if (paddle) { punch(paddle, 1.06, 0.7); spawnRing(new THREE.Vector3(b.x, pTop, 0), 0x8fd8ff, 1.4, 0.3); }
+      if (paddle) { punch(paddle, 1.3, 0.38); spawnRing(new THREE.Vector3(b.x, pTop, 0), 0x8fd8ff, 2.0, 0.4); }
       setCombo(0);
       sfx.paddle();
     }
