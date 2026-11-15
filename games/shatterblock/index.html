@@ -1765,7 +1765,6 @@ function togglePause() {
     phase = pausedFrom || 'launch'; pausedFrom = null;
     $('pause').classList.add('hidden');
     sfx.resume(); AudioEngine.duck(0, 0.3);
-    window.__rpResume = radioWasPlaying;
     if (radioWasPlaying && DSDARadio) { DSDARadio.play(); radioWasPlaying = false; }  // resume radio if it was playing
     clock.getDelta();
   } else if (phase === 'play' || phase === 'launch') {
@@ -1774,7 +1773,6 @@ function togglePause() {
     heldLeft = heldRight = false; tId = null;
     sfx.pause(); AudioEngine.duck(0.6, 0.2);
     if (DSDARadio) { radioWasPlaying = !!DSDARadio.playing; DSDARadio.pause(); }  // stop radio on pause
-    window.__rpPause = radioWasPlaying;
   }
 }
 function resetGame() {
