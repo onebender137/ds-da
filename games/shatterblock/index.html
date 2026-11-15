@@ -1349,9 +1349,11 @@ const plasmaWallFrag = `
     col *= 0.85 + 0.35 * sin(v * 3.0 + t);
     float hitAge = uTime - uHitTime;
     if (hitAge >= 0.0 && hitAge < 0.7) {
-      float d = distance(vUv, uHitUV);
-      float ring = sin(d * 20.0 - hitAge * 18.0) * 0.5 + 0.5;
-      col += vec3(0.7, 1.0, 1.0) * exp(-d * 1.8) * (1.0 - hitAge / 0.7) * (1.0 + ring * 2.5) * 4.0;
+      // weighted distance: tighter along the wall's length (v) so the ripple
+      // stays localized at the strike point instead of washing the whole rail
+      float d = length(vec2(vUv.x - uHitUV.x, (vUv.y - uHitUV.y) * 5.0));
+      float ring = sin(d * 26.0 - hitAge * 20.0) * 0.5 + 0.5;
+      col += vec3(0.7, 1.0, 1.0) * exp(-d * 3.2) * (1.0 - hitAge / 0.7) * (1.0 + ring * 2.2) * 3.6;
     }
     gl_FragColor = vec4(col, 1.0);
   }
@@ -1371,9 +1373,11 @@ const plasmaBottomFrag = `
     col *= 0.7 + 0.3 * sin(v * 3.0 + t);
     float hitAge = uTime - uHitTime;
     if (hitAge >= 0.0 && hitAge < 0.9) {
-      float d = distance(vUv, uHitUV);
-      float ring = sin(d * 22.0 - hitAge * 15.0) * 0.5 + 0.5;
-      col += vec3(0.8, 0.4, 1.0) * exp(-d * 3.2) * (1.0 - hitAge / 0.9) * (0.7 + ring * 2.2) * 3.2;
+      // weighted distance: tighter along the bar's width (u) so the ripple
+      // stays localized at the strike point
+      float d = length(vec2((vUv.x - uHitUV.x) * 5.0, vUv.y - uHitUV.y));
+      float ring = sin(d * 26.0 - hitAge * 18.0) * 0.5 + 0.5;
+      col += vec3(0.8, 0.4, 1.0) * exp(-d * 3.2) * (1.0 - hitAge / 0.9) * (1.0 + ring * 2.2) * 3.6;
     }
     gl_FragColor = vec4(col, 1.0);
   }
