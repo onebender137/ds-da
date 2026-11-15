@@ -1349,11 +1349,7 @@ const plasmaWallFrag = `
     col *= 0.85 + 0.35 * sin(v * 3.0 + t);
     float hitAge = uTime - uHitTime;
     if (hitAge >= 0.0 && hitAge < 0.7) {
-      // whole-rail gold surge on impact: reads clearly on the bright plasma
-      // and gives the wall a visible "react". Fades over 0.7s.
-      float d = length(vec2(vUv.x - uHitUV.x, (vUv.y - uHitUV.y) * 1.0));
-      float ring = sin(d * 14.0 - hitAge * 14.0) * 0.5 + 0.5;
-      col += vec3(1.0, 0.85, 0.4) * (0.5 + 0.5 * exp(-d * 1.1)) * (1.0 - hitAge / 0.7) * (1.0 + ring * 1.5) * 3.2;
+      col += vec3(1.0, 0.5, 0.0) * (1.0 - hitAge / 0.7) * 3.0;  // whole-wall gold surge
     }
     gl_FragColor = vec4(col, 1.0);
   }
