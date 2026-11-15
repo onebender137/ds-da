@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "network": "DSDA Radio",
+  "updated": "2026-11-15",
+  "note": "DropBlock's in-game radio manifest. Deliberately game-local (NOT the shared cross-game network) so the dial only carries Polkahole + DropBlock's 3 originals — no other game's tracks. Polkahole loops The Rooster's Falsetto + The Polka Man Prevails on repeat. The 3 DropBlock originals were re-synthesized 2026-11-15 as deep synth (detuned-saw lead + synced echo, square bass + sub, sidechain, pads, full kit, bus reverb) — same melodies as the original in-game chiptune.",
+  "stations": [
+    {
+      "id": "polkahole",
+      "name": "Polkahole",
+      "tagline": "Oompah oompah from the hole",
+      "accent": "#ffcc00",
+      "source": "https://polkahole.ca",
+      "note": "Curated Polkahole loop: The Rooster's Falsetto + The Polka Man Prevails, played one after another on repeat.",
+      "tracks": [
+        { "title": "The Rooster's Falsetto", "url": "https://polkahole.ca/songs/whoa_polka/The_Rooster%E2%80%99s_Falsetto.mp3" },
+        { "title": "The Polka Man Prevails", "url": "https://polkahole.ca/songs/whoa_polka/The_Polka_Man_Prevails.mp3" }
+      ]
+    },
+    {
+      "id": "bit-block-boy",
+      "name": "Bit Block Boy",
+      "tagline": "DropBlock original — deep synth swing polka techno",
+      "accent": "#ff3b5c",
+      "source": "ds-da.ca/games/dropblock/original",
+      "note": "DropBlock original #1, re-synthesized 2026-11-15 as deep synth (C->G->Am->F, 138 bpm swing). 1-track station, loops on its own.",
+      "tracks": [
+        { "title": "Bit Block Boy", "url": "/games/dropblock/original/bit-block-boy.mp3" }
+      ]
+    },
+    {
+      "id": "korobeiniki-polka",
+      "name": "Korobeiniki Polka",
+      "tagline": "DropBlock original — deep synth 8-bit polka of the classic theme",
+      "accent": "#ff9f2e",
+      "source": "ds-da.ca/games/dropblock/original",
+      "note": "DropBlock original #2, re-synthesized 2026-11-15 as deep synth (150 bpm swing). 1-track station, loops on its own.",
+      "tracks": [
+        { "title": "Korobeiniki Polka", "url": "/games/dropblock/original/korobeiniki-polka.mp3" }
+      ]
+    },
+    {
+      "id": "dr-dark",
+      "name": "Dr. Dark",
+      "tagline": "DropBlock original — deep dark capsule",
+      "accent": "#c06bff",
+      "source": "ds-da.ca/games/dropblock/original",
+      "note": "DropBlock original #3, re-synthesized 2026-11-15 as deep synth (Dm->Bb->Dm->G, 100 bpm). 1-track station, loops on its own.",
+      "tracks": [
+        { "title": "Dr. Dark", "url": "/games/dropblock/original/dr-dark.mp3" }
+      ]
+    }
+  ]
+}

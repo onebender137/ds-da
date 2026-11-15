@@ -102,12 +102,32 @@
   #soundBtn { position: fixed; bottom: 56px; left: 16px; z-index: 5; background: var(--panel);
     border: 1px solid var(--border); color: var(--text); border-radius: 10px; padding: 8px 12px;
     font-size: 12px; font-weight: 500; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
-  #musicBox { position: fixed; bottom: 16px; left: 16px; z-index: 5; display: flex; align-items: center;
-    gap: 4px; background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
-    padding: 6px 10px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
-  #musicBox button { background: none; border: none; color: var(--muted); font-size: 13px;
-    padding: 2px 5px; line-height: 1; }
-  #musicBox button:hover { color: var(--text); }
+  #musicBox { display: none; /* replaced by DSDA Radio (radio.js) — procedural chiptune kept as offline fallback in code */ }
+  /* DSDA Radio network widget — lower-left (2026-11-15). Streams Polkahole + DropBlock's 3 deep-synth originals. */
+  #radioBox.dsda-radio { position: fixed; bottom: 16px; left: 16px; z-index: 16; width: 150px;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 11px;
+    padding: 7px 9px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    display: flex; flex-direction: column; gap: 5px; box-shadow: 0 5px 18px rgba(0,0,0,0.32); }
+  #radioBox .radio-head { display: flex; align-items: center; gap: 6px; }
+  #radioBox .radio-live { width: 7px; height: 7px; border-radius: 50%; background: var(--radio-accent, #6ea8ff);
+    box-shadow: 0 0 7px var(--radio-accent, #6ea8ff); animation: radioPulse 1.6s ease-in-out infinite; }
+  #radioBox .radio-title { font-size: 9px; letter-spacing: 1.5px; font-weight: 700; color: var(--muted); }
+  @keyframes radioPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+  #radioBox .radio-dial { display: flex; flex-wrap: wrap; gap: 4px; }
+  #radioBox .radio-stn { flex: 1 1 auto; background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+    border-radius: 7px; color: var(--muted); font-size: 9px; font-weight: 600; letter-spacing: 0.5px;
+    padding: 3px 7px; cursor: pointer; transition: all 0.15s; }
+  #radioBox .radio-stn:hover { color: var(--text); border-color: var(--radio-accent, var(--border)); }
+  #radioBox .radio-stn.on { color: #0a0a14; background: var(--radio-accent, #6ea8ff); border-color: var(--radio-accent, #6ea8ff);
+    box-shadow: 0 0 10px color-mix(in srgb, var(--radio-accent, #6ea8ff) 60%, transparent); }
+  #radioBox .radio-now { display: flex; flex-direction: column; gap: 1px; min-height: 22px; }
+  #radioBox .radio-np-stn { font-size: 8px; letter-spacing: 1.5px; font-weight: 700; color: var(--radio-accent, var(--muted)); }
+  #radioBox .radio-np-trk { font-size: 11px; font-weight: 600; color: var(--text); white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; }
+  #radioBox .radio-ctl { display: flex; gap: 4px; }
+  #radioBox .radio-ctl button { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+    border-radius: 7px; color: var(--text); font-size: 11px; padding: 3px 0; cursor: pointer; line-height: 1; }
+  #radioBox .radio-ctl button:hover { background: rgba(255,255,255,0.12); border-color: var(--radio-accent, var(--border)); }
   #musicName { font-size: 11px; letter-spacing: 1px; min-width: 122px; text-align: center;
     white-space: nowrap; color: var(--text); font-weight: 500; }
   #pauseBtn { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 5;
@@ -235,6 +255,7 @@
     #pauseBtn { top: max(10px, env(safe-area-inset-top)); left: 10px; transform: none; padding: 7px 10px; }
     #soundBtn { bottom: calc(54px + env(safe-area-inset-bottom)); left: 10px; padding: 6px 10px; }
     #musicBox { bottom: calc(10px + env(safe-area-inset-bottom)); left: 10px; }
+    #radioBox.dsda-radio { bottom: calc(10px + env(safe-area-inset-bottom)); left: 10px; }
     .card { padding: 20px 22px; }
     #banner { top: 26%; }
     #combo.hot { transform: none; }
@@ -282,6 +303,7 @@
   <button id="musicNext" title="Next track (M)">⏭</button>
   <button id="musicToggle" title="Music on/off">🎵</button>
 </div>
+<div id="radioBox"></div>
 <div id="menu">
   <h1 class="menu-title" aria-label="DROPBLOCK">
     <span class="lt" style="animation-delay:0s">D</span><span class="lt" style="animation-delay:.07s">R</span><span class="lt" style="animation-delay:.14s">O</span><span class="lt" style="animation-delay:.21s">P</span><span class="lt" style="animation-delay:.28s">B</span><span class="lt" style="animation-delay:.35s">L</span><span class="lt" style="animation-delay:.42s">O</span><span class="lt" style="animation-delay:.49s">C</span><span class="lt" style="animation-delay:.56s">K</span>
@@ -602,7 +624,7 @@ const MusicSys = {
   get ctx() { return AudioEngine.ctx; },
   get noiseBuf() { return AudioEngine.noiseBuf; },
   get out() { return AudioEngine.musBus; },
-  on: true, playing: false,
+  on: false, playing: false,  // off by default — the DSDA Radio (radio.js) is now the music source; this chiptune stays as a silent offline fallback
   track: 0,
   step: 0, nextTime: 0, timer: null,
   get cur() { return TRACKS[this.track]; },
@@ -1299,6 +1321,8 @@ function activateMenu() {
   else if (id === 'menuSite') window.location.href = 'https://ds-da.ca/games/';
 }
 
+let radioWasPlaying = false;  // was the DSDARadio playing before a pause/menu (so we can resume it)
+
 function startGameFromMenu() {
   track('game_start');
   $('howto').classList.add('hidden');
@@ -1307,6 +1331,19 @@ function startGameFromMenu() {
   elScores.classList.add('hidden');
   document.body.classList.remove('menu-mode');
   resetGame();
+  if (radioWasPlaying && DSDARadio) {
+    DSDARadio.play();
+    radioWasPlaying = false;
+  } else if (DSDARadio && !DSDARadio.playing && DSDARadio.manifest) {
+    // Auto-start a random DropBlock station (skip Polkahole at index 0)
+    const stations = DSDARadio.manifest.stations;
+    const dbStations = stations.slice(1);
+    if (dbStations.length) {
+      const pick = dbStations[Math.floor(Math.random() * dbStations.length)];
+      const realIdx = stations.indexOf(pick);
+      DSDARadio.setStation(realIdx, Math.floor(Math.random() * pick.tracks.length));
+    }
+  }
 }
 
 function togglePause() {
@@ -1315,6 +1352,7 @@ function togglePause() {
     $('pause').classList.add('hidden');
     sfx.resume();
     AudioEngine.duck(0, 0.3);
+    if (radioWasPlaying && DSDARadio) { DSDARadio.play(); radioWasPlaying = false; }  // resume radio if it was playing
     clock.getDelta();
   } else if (phase === 'falling' || phase === 'clearing' || phase === 'settling') {
     pausedFrom = phase; phase = 'paused';
@@ -1322,6 +1360,7 @@ function togglePause() {
     heldLeft = heldRight = false; keysDown.clear();
     sfx.pause();
     AudioEngine.duck(0.6, 0.2);
+    if (DSDARadio) { radioWasPlaying = !!DSDARadio.playing; DSDARadio.pause(); }  // stop radio on pause
     if (AudioEngine.musBus) { const g = AudioEngine.musBus.gain; g.cancelScheduledValues(AudioEngine.ctx.currentTime + 0.25); }
   }
 }
@@ -1330,6 +1369,7 @@ function backToMenu() {
   pausedFrom = null;
   elOverlay.classList.add('hidden');
   elScores.classList.add('hidden');
+  if (DSDARadio) { radioWasPlaying = !!DSDARadio.playing; DSDARadio.pause(); }  // stop radio on menu (only menu FX)
   document.body.classList.add('menu-mode');
   clearBoard();
   phase = 'menu';
@@ -2132,6 +2172,13 @@ try {
   elBootErr.classList.remove('hidden');
   elBootErr.textContent = window.__bootErr;
 }
+</script>
+<script src="../../radio/radio.js"></script>
+<script>
+  // DSDA Radio — streams Polkahole + DropBlock's 3 deep-synth originals (game-local manifest).
+  // Uses ./stations.json (NOT the shared cross-game one) so the dial carries only
+  // Polkahole + DropBlock originals — no ShatterBlock tracks.
+  DSDARadio.init({ mount: 'radioBox', manifest: 'stations.json' });
 </script>
 </body>
 </html>
