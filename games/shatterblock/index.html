@@ -2581,11 +2581,10 @@ function saveToStorage(name, s) {
   return top;
 }
 
-// ---------------- share score ----------------
-// ---------------- share score (DSDA house card) ----------------
-const SHARE_CARD = { name: 'SHATTERBLOCK', tag: 'Breakout, die-hard', id: 'shatterblock', accent: 0x38bdf8 };
+// ---------------- share score (neon arcade card) ----------------
+const SHARE_CARD = { name: 'SHATTERBLOCK', tag: 'ARKANOID, REBORN', id: 'shatterblock', accent: 0x38bdf8 };
 function shareText(s) {
-  return 'I broke through level ' + level + ' with ' + s + ' in ShatterBlock — think you can beat me? \ud83c\udfae';
+  return 'I broke through level ' + level + ' with ' + s + ' in ShatterBlock — think you got what it takes to beat a Shatter Blaster Master? \ud83c\udfae';
 }
 let __shot = null;
 (function(){ const im = new Image(); im.onload = () => { __shot = im; }; im.src = 'screenshot.png'; })();
@@ -2596,76 +2595,155 @@ function _rr(x, px, py, w, h, r) {
   x.beginPath();
   x.moveTo(px + r, py);
   x.arcTo(px + w, py, px + w, py + h, r);
-  x.arcTo(px + w, py + h, px + w, py + h - r, r);
-  x.arcTo(px + w, py + h, px, py + h, r);
-  x.arcTo(px, py + h, px, py + h - r, r);
+  x.arcTo(px + w, py + h, px, py + h - r, r);
+  x.arcTo(px, py + h, px, py + h, r);
+  x.arcTo(px, py + h, px, py + r, r);
   x.arcTo(px, py + r, px, py, r);
-  x.arcTo(px, py, px + r, py, r);
+  x.arcTo(px + r, py, px + w, py, r);
   x.closePath();
 }
 function _spacedL(x, text, px, y, sp) {
   if ('letterSpacing' in x) { x.letterSpacing = sp + 'px'; x.fillText(text, px, y); x.letterSpacing = '0px'; return; }
   for (const ch of text) { x.fillText(ch, px, y); px += x.measureText(ch).width + sp; }
 }
+// tier title based on score (matches the leaderboard tiers)
+function _tierTitle(s) {
+  if (s >= 50000) return 'SHATTER BLASTER MASTER';
+  if (s >= 15000) return 'SHATTER BLASTER';
+  if (s >= 5000) return 'BLASTER';
+  return 'ROOKIE BLASTER';
+}
 async function makeScoreCard(scoreLine, subLine) {
   const W = 1200, H = 630;
   const cv = document.createElement('canvas');
   cv.width = W; cv.height = H;
   const x = cv.getContext('2d');
-  try { if (document.fonts && document.fonts.load) await document.fonts.load('600 62px "Playfair Display"'); } catch (e) {}
   const A = SHARE_CARD.accent;
-  x.fillStyle = '#070b14'; x.fillRect(0, 0, W, H);
-  const g1 = x.createRadialGradient(220, 60, 40, 220, 60, 620);
-  g1.addColorStop(0, _hexA(A, 0.30)); g1.addColorStop(1, 'rgba(0,0,0,0)');
+  const s = parseInt(scoreLine, 10) || 0;
+
+  // --- background: dark navy + subtle grid ---
+  x.fillStyle = '#080a16'; x.fillRect(0, 0, W, H);
+  x.strokeStyle = 'rgba(110,168,255,0.04)'; x.lineWidth = 1;
+  for (let gx = 0; gx < W; gx += 60) { x.beginPath(); x.moveTo(gx, 0); x.lineTo(gx, H); x.stroke(); }
+  for (let gy = 0; gy < H; gy += 60) { x.beginPath(); x.moveTo(0, gy); x.lineTo(W, gy); x.stroke(); }
+
+  // radial glow (cyan, upper-left)
+  const g1 = x.createRadialGradient(200, 80, 30, 200, 80, 500);
+  g1.addColorStop(0, 'rgba(56,189,248,0.18)'); g1.addColorStop(1, 'rgba(0,0,0,0)');
   x.fillStyle = g1; x.fillRect(0, 0, W, H);
-  x.strokeStyle = 'rgba(255,255,255,0.035)'; x.lineWidth = 1;
-  for (let gx = 30; gx < W; gx += 60) { x.beginPath(); x.moveTo(gx, 0); x.lineTo(gx, H); x.stroke(); }
-  for (let gy = 30; gy < H; gy += 60) { x.beginPath(); x.moveTo(0, gy); x.lineTo(W, gy); x.stroke(); }
-  const vg = x.createRadialGradient(W / 2, H / 2, 240, W / 2, H / 2, 760);
-  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.55)');
-  x.fillStyle = vg; x.fillRect(0, 0, W, H);
-  x.fillStyle = 'rgba(212,175,55,0.9)'; x.fillRect(0, 0, W, 3);
-  // screenshot inset, right side
-  const sw = 540, sh = 304, sx = W - 56 - sw, sy = (H - sh) / 2 - 14;
+  // radial glow (purple, lower-right)
+  const g2 = x.createRadialGradient(W - 200, H - 100, 30, W - 200, H - 100, 450);
+  g2.addColorStop(0, 'rgba(192,107,255,0.12)'); g2.addColorStop(1, 'rgba(0,0,0,0)');
+  x.fillStyle = g2; x.fillRect(0, 0, W, H);
+
+  // --- accent lines ---
+  x.fillStyle = 'rgba(212,175,55,0.85)'; x.fillRect(0, 0, W, 3);
+  x.fillStyle = 'rgba(56,189,248,0.7)'; x.fillRect(0, H - 3, W, H);
+
+  // --- neon corner accents ---
+  x.lineWidth = 2;
+  x.strokeStyle = 'rgba(56,189,248,0.5)'; x.beginPath(); x.arc(30, 30, 24, Math.PI, Math.PI * 1.5); x.stroke();
+  x.strokeStyle = 'rgba(192,107,255,0.5)'; x.beginPath(); x.arc(W - 30, 30, 24, Math.PI * 1.5, Math.PI * 2); x.stroke();
+  x.strokeStyle = 'rgba(74,222,128,0.4)'; x.beginPath(); x.arc(30, H - 30, 24, Math.PI * 0.5, Math.PI); x.stroke();
+  x.strokeStyle = 'rgba(255,59,92,0.4)'; x.beginPath(); x.arc(W - 30, H - 30, 24, 0, Math.PI * 0.5); x.stroke();
+
+  // --- game screenshot inset (right side, larger) ---
+  const sw = 520, sh = 340, sx = W - 48 - sw, sy = (H - sh) / 2;
   x.save();
-  x.shadowColor = _hexA(A, 0.45); x.shadowBlur = 42;
-  _rr(x, sx, sy, sw, sh, 14);
+  x.shadowColor = 'rgba(56,189,248,0.5)'; x.shadowBlur = 48;
+  _rr(x, sx, sy, sw, sh, 16);
   x.fillStyle = '#0b1220'; x.fill();
   x.restore();
-  if (__shot) { x.save(); _rr(x, sx, sy, sw, sh, 14); x.clip(); x.drawImage(__shot, sx, sy, sw, sh); x.restore(); }
-  x.strokeStyle = 'rgba(212,175,55,0.55)'; x.lineWidth = 2; _rr(x, sx, sy, sw, sh, 14); x.stroke();
-  // title + tag
+  if (__shot) { x.save(); _rr(x, sx, sy, sw, sh, 16); x.clip(); x.drawImage(__shot, sx, sy, sw, sh); x.restore(); }
+  // gradient border on the screenshot
+  x.save();
+  x.lineWidth = 2.5;
+  const bgrad = x.createLinearGradient(sx, sy, sx + sw, sy + sh);
+  bgrad.addColorStop(0, 'rgba(56,189,248,0.7)');
+  bgrad.addColorStop(0.5, 'rgba(192,107,255,0.6)');
+  bgrad.addColorStop(1, 'rgba(74,222,128,0.5)');
+  x.strokeStyle = bgrad;
+  _rr(x, sx, sy, sw, sh, 16); x.stroke();
+  x.restore();
+
+  // --- SHATTERBLOCK title (top-left, split color) ---
   x.textAlign = 'left'; x.textBaseline = 'alphabetic';
-  x.fillStyle = '#f7f4ec';
-  x.font = '600 62px "Playfair Display", Georgia, serif';
-  x.fillText(SHARE_CARD.name, 56, 116);
-  x.fillStyle = _hexA(A, 0.95);
-  x.font = '600 19px "Inter", "Segoe UI", system-ui, sans-serif';
-  _spacedL(x, SHARE_CARD.tag.toUpperCase(), 58, 148, 7);
-  // score (auto-shrink to fit the left zone)
-  const sl = String(scoreLine);
-  let spx = 140;
-  x.font = '800 ' + spx + 'px "Segoe UI", system-ui, -apple-system, sans-serif';
-  while (spx > 56 && x.measureText(sl).width > 520) { spx -= 6; x.font = '800 ' + spx + 'px "Segoe UI", system-ui, -apple-system, sans-serif'; }
-  x.shadowColor = _hexA(A, 0.55); x.shadowBlur = 46;
+  x.font = '900 58px "Segoe UI", system-ui, -apple-system, sans-serif';
+  // SHATTER (white with cyan glow)
+  x.save();
+  x.shadowColor = 'rgba(56,189,248,0.6)'; x.shadowBlur = 28;
   x.fillStyle = '#ffffff';
-  x.fillText(sl, 50, 396);
-  x.shadowBlur = 0;
-  x.fillStyle = 'rgba(222,230,248,0.92)';
-  x.font = '500 29px "Segoe UI", system-ui, sans-serif';
-  x.fillText(subLine, 56, 448);
+  x.fillText('SHATTER', 48, 108);
+  x.restore();
+  // BLOCK (cyan)
+  const shW = x.measureText('SHATTER').width;
+  x.save();
+  x.shadowColor = 'rgba(56,189,248,0.7)'; x.shadowBlur = 32;
+  x.fillStyle = '#38bdf8';
+  x.fillText('BLOCK', 48 + shW + 3, 108);
+  x.restore();
+
+  // tagline
+  x.fillStyle = 'rgba(148,163,184,0.75)';
+  x.font = '600 15px "Segoe UI", system-ui, sans-serif';
+  _spacedL(x, 'ARKANOID, REBORN', 50, 138, 6);
+
+  // --- tier title badge ---
+  const tier = _tierTitle(s);
+  x.font = '700 14px "Segoe UI", system-ui, sans-serif';
+  const tierW = x.measureText(tier).width;
+  const tierX = 50, tierY = 170;
+  // badge background
+  x.save();
+  _rr(x, tierX - 8, tierY - 16, tierW + 16, 28, 8);
+  const tierGrad = x.createLinearGradient(tierX, tierY, tierX + tierW, tierY);
+  tierGrad.addColorStop(0, 'rgba(255,209,102,0.15)');
+  tierGrad.addColorStop(1, 'rgba(255,122,61,0.1)');
+  x.fillStyle = tierGrad; x.fill();
+  x.strokeStyle = 'rgba(255,209,102,0.5)'; x.lineWidth = 1.5; x.stroke();
+  x.restore();
   x.fillStyle = '#ffd166';
-  x.font = '600 26px "Segoe UI", system-ui, sans-serif';
-  x.fillText('ds-da.ca/games/' + SHARE_CARD.id, 56, 490);
-  // DSDA lockup
+  x.fillText(tier, tierX, tierY + 4);
+
+  // --- big score with neon glow ---
+  const sl = String(scoreLine);
+  let spx = 120;
+  x.font = '900 ' + spx + 'px "Segoe UI", system-ui, -apple-system, sans-serif';
+  while (spx > 50 && x.measureText(sl).width > 500) { spx -= 5; x.font = '900 ' + spx + 'px "Segoe UI", system-ui, -apple-system, sans-serif'; }
+  x.save();
+  x.shadowColor = 'rgba(56,189,248,0.7)'; x.shadowBlur = 52;
+  x.fillStyle = '#ffffff';
+  x.fillText(sl, 44, 340);
+  x.restore();
+  // score label
+  x.fillStyle = 'rgba(148,163,184,0.7)';
+  x.font = '600 13px "Segoe UI", system-ui, sans-serif';
+  _spacedL(x, 'FINAL SCORE', 50, 365, 5);
+
+  // --- substat line ---
+  x.fillStyle = 'rgba(222,230,248,0.85)';
+  x.font = '500 22px "Segoe UI", system-ui, sans-serif';
+  x.fillText(subLine, 50, 408);
+
+  // --- challenge line (gold) ---
+  x.fillStyle = '#ffd166';
+  x.font = '600 19px "Segoe UI", system-ui, sans-serif';
+  x.fillText("Think you've got what it takes to beat a Shatter Blaster Master?", 50, 452);
+
+  // --- URL ---
+  x.fillStyle = 'rgba(56,189,248,0.7)';
+  x.font = '500 17px "Segoe UI", system-ui, sans-serif';
+  x.fillText('ds-da.ca/games/' + SHARE_CARD.id, 50, 492);
+
+  // --- DSDA lockup (bottom-left) ---
   x.fillStyle = '#f7f4ec';
-  x.font = '600 30px "Playfair Display", Georgia, serif';
-  x.fillText('DSDA', 56, 594);
+  x.font = '700 26px "Segoe UI", system-ui, sans-serif';
+  x.fillText('DSDA', 48, 580);
   const dw = x.measureText('DSDA').width;
   x.fillStyle = '#d4af37';
-  x.font = '600 14px "Inter", "Segoe UI", sans-serif';
-  _spacedL(x, 'ARCADE', 58 + dw + 12, 592, 5);
-  x.fillStyle = _hexA(A, 0.85); x.fillRect(0, H - 3, W, 3);
+  x.font = '600 13px "Segoe UI", system-ui, sans-serif';
+  _spacedL(x, 'ARCADE', 50 + dw + 10, 578, 4);
+
   return cv;
 }
 
