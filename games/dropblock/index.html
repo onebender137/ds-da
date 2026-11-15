@@ -173,9 +173,10 @@
   .card .final { font-size: 14px; color: var(--muted); margin-bottom: 4px; }
   .card .final b { color: var(--text); font-family: var(--display); font-size: 26px; font-weight: 400; display: block; margin-top: 2px; }
   .card .substat { font-size: 11px; color: var(--muted); letter-spacing: 1px; margin-bottom: 4px; }
-  #newHigh { color: var(--gold); font-size: 12px; letter-spacing: 3px; margin-bottom: 6px; font-weight: 700;
-    text-shadow: 0 0 16px rgba(255,210,77,0.6); animation: shimmer 1.4s ease-in-out infinite; }
-  @keyframes shimmer { 0%,100% { opacity: .75; } 50% { opacity: 1; } }
+  #newHigh { color: var(--gold); font-size: 13px; letter-spacing: 3px; margin-bottom: 6px; font-weight: 700;
+    text-shadow: 0 0 18px rgba(255,210,77,0.7); animation: newHighPulse 1.2s ease-in-out infinite; }
+  @keyframes newHighPulse { 0%,100% { opacity: .8; transform: scale(1); text-shadow: 0 0 16px rgba(255,210,77,0.5); }
+    50% { opacity: 1; transform: scale(1.07); text-shadow: 0 0 30px rgba(255,210,77,0.95); } }
   #newHigh.hidden { display: none; }
   .card label { display: block; font-size: 11px; letter-spacing: 2px; color: var(--muted);
     margin: 16px 0 6px; text-align: left; font-weight: 600; }
@@ -202,6 +203,40 @@
   #booterr.hidden { display: none; }
   #pause .card h2 { color: var(--accent); text-shadow: 0 0 22px rgba(110,168,255,0.45); }
   #pause .card p { color: var(--muted); font-size: 12px; margin-top: 4px; }
+
+  /* ---- dope game-over card (matches the animated rim aesthetic) ---- */
+  #overlay { background: radial-gradient(ellipse at center, rgba(46,10,34,0.5) 0%, rgba(6,9,20,0.82) 55%, rgba(3,5,12,0.92) 100%); overflow-y: auto; }
+  #overlay .card {
+    position: relative;
+    border: 2px solid transparent;
+    background:
+      linear-gradient(rgba(12,16,32,0.94), rgba(12,16,32,0.94)) padding-box,
+      linear-gradient(120deg, #22d3ee, #ff3b5c, #c06bff, #22d3ee) border-box;
+    background-size: 100% 100%, 300% 300%;
+    animation: cardIn .34s cubic-bezier(.2,1.2,.3,1), goBorderCycle 7s linear infinite;
+    box-shadow: 0 0 34px rgba(34,211,238,0.16), 0 0 70px rgba(255,59,92,0.12), 0 20px 60px rgba(0,0,0,0.6);
+  }
+  @keyframes goBorderCycle { 0% { background-position: 0 0, 0% 50%; } 100% { background-position: 0 0, 300% 50%; } }
+  .gonode { position: absolute; width: 15px; height: 15px; border-radius: 50%;
+    background: radial-gradient(circle, #ffffff 0%, #67e8f9 42%, rgba(34,211,238,0) 72%);
+    box-shadow: 0 0 14px 4px rgba(103,232,249,0.65);
+    animation: goNodePulse 1.6s ease-in-out infinite; pointer-events: none; }
+  .gonode.tl { top: -8px; left: -8px; }
+  .gonode.tr { top: -8px; right: -8px; animation-delay: .4s; }
+  .gonode.bl { bottom: -8px; left: -8px; animation-delay: .8s; }
+  .gonode.br { bottom: -8px; right: -8px; animation-delay: 1.2s; }
+  @keyframes goNodePulse { 0%,100% { transform: scale(1); opacity: .8; } 50% { transform: scale(1.45); opacity: 1; } }
+  #overlay .card h2 {
+    font-size: 42px; letter-spacing: 3px;
+    animation: goTitleSlam .5s cubic-bezier(.2,1.5,.3,1), goTitlePulse 2.2s ease-in-out .5s infinite;
+    text-shadow: 0 0 26px rgba(255,59,92,0.6), 0 0 52px rgba(255,59,92,0.32);
+  }
+  @keyframes goTitleSlam { 0% { transform: scale(2.3); opacity: 0; } 55% { transform: scale(0.94); opacity: 1; } 100% { transform: scale(1); } }
+  @keyframes goTitlePulse { 0%,100% { text-shadow: 0 0 26px rgba(255,59,92,0.5), 0 0 52px rgba(255,59,92,0.28); }
+    50% { text-shadow: 0 0 36px rgba(255,59,92,0.85), 0 0 72px rgba(255,59,92,0.42); } }
+  #overlay .final b { color: #ffffff; font-size: 42px; text-shadow: 0 0 20px rgba(34,211,238,0.55), 0 0 44px rgba(34,211,238,0.28); }
+  #overlay .card .substat { color: var(--text); opacity: 0.8; }
+  #overlay .tops { max-height: 108px; overflow-y: auto; }  /* keep the card compact; Play Again never clips */
 
   /* ---- main menu ---- */
   #menu { position: fixed; inset: 0; z-index: 15; display: flex; flex-direction: column;
@@ -365,6 +400,7 @@
 </div>
 <div id="overlay" class="hidden">
   <div class="card">
+    <span class="gonode tl"></span><span class="gonode tr"></span><span class="gonode bl"></span><span class="gonode br"></span>
     <h2>GAME OVER</h2>
     <div id="newHigh" class="hidden">★ NEW HIGH SCORE ★</div>
     <p class="final">FINAL SCORE <b id="finalScore">0</b></p>
@@ -1364,6 +1400,16 @@ function finishClear() {
   phase = 'settling';
 }
 
+function countUp(el, target, dur = 950) {
+  const start = performance.now();
+  function tick(now) {
+    const p = Math.min(1, (now - start) / dur);
+    const eased = 1 - Math.pow(1 - p, 3);  // ease-out cubic
+    el.textContent = Math.round(target * eased);
+    if (p < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
 function gameOver() {
   track('game_over', { final_score: score, level_reached: level });
   phase = 'over';
@@ -1371,7 +1417,7 @@ function gameOver() {
   sfx.over();
   Vocals.play('tryagain');
   if (DSDARadio) { radioWasPlaying = false; DSDARadio.pause(); }  // music stops on game over
-  elFinal.textContent = score;
+  countUp(elFinal, score);  // dramatic count-up reveal
   elInitials.value = dsdaInits();
   setSaveEnabled();
   elSavedMsg.textContent = '';
@@ -1576,11 +1622,13 @@ function autoTuneRadio() {
   if (!DSDARadio || !DSDARadio.manifest) return;
   if (radioWasPlaying) { DSDARadio.play(); radioWasPlaying = false; return; }  // resume what was playing
   if (DSDARadio.playing) return;  // user picked a station themselves — keep it
-  // Auto-start a random DropBlock station (skip Polkahole at index 0)
+  // Auto-start a game station. Prefer the originals (index 1+); when only
+  // Polkahole is on the dial (2026-11-15: originals pulled for an EQ/filter
+  // rework, universal cross-game stations coming soon) fall back to Polkahole.
   const stations = DSDARadio.manifest.stations;
-  const dbStations = stations.slice(1);
-  if (dbStations.length) {
-    const pick = dbStations[Math.floor(Math.random() * dbStations.length)];
+  const picks = stations.length > 1 ? stations.slice(1) : stations;
+  if (picks.length) {
+    const pick = picks[Math.floor(Math.random() * picks.length)];
     DSDARadio.setStation(stations.indexOf(pick), Math.floor(Math.random() * pick.tracks.length));
   }
 }
