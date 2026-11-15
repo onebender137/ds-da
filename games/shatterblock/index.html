@@ -125,6 +125,10 @@
   ol.tops li.me { background: rgba(110,168,255,0.14); outline: 1px solid rgba(110,168,255,0.35); }
   ol.tops li .rank { color: var(--muted); width: 20px; font-weight: 700; }
   ol.tops li .name { letter-spacing: 2px; font-weight: 700; }
+  ol.tops li .tier { font-size: 9px; letter-spacing: 1px; font-weight: 600; color: var(--muted);
+    opacity: 0.7; margin-left: auto; margin-right: 8px; text-transform: uppercase; }
+  ol.tops li:nth-child(1) .tier { color: var(--gold); opacity: 1; text-shadow: 0 0 8px rgba(255,209,102,0.4); }
+  ol.tops li:nth-child(n+2):nth-child(-n+5) .tier { color: var(--accent); opacity: 0.9; }
   .keys { margin-top: 12px; font-size: 11px; color: var(--muted); line-height: 1.8; }
   .keys kbd { font: inherit; font-size: 10px; background: rgba(110,168,255,0.12); border: 1px solid rgba(110,168,255,0.25);
     border-radius: 4px; padding: 0 5px; color: var(--text); }
@@ -365,7 +369,7 @@
   <div class="menu-btns">
     <button id="menuStart" class="mbtn primary sel">START GAME</button>
     <button id="menuHow" class="mbtn">HOW TO PLAY</button>
-    <button id="menuScores" class="mbtn">HIGH SCORES</button>
+    <button id="menuScores" class="mbtn">SHATTER MASTERS</button>
     <button id="menuSite" class="mbtn">BACK TO DSDA ARCADE</button>
   </div>
   <div id="howto" class="hidden">
@@ -389,7 +393,7 @@
 </div>
 <div id="scores" class="hidden">
   <div class="card">
-    <h2 style="color: var(--accent);">HIGH SCORES</h2>
+    <h2 style="color: var(--accent);">SHATTER MASTERS</h2>
     <h3 class="sub">GLOBAL — DS-DA.CA</h3>
     <ol id="globalTop" class="tops"></ol>
     <p id="globalNote" class="global-note"></p>
@@ -410,7 +414,7 @@
     <div id="savedMsg"></div>
     <button id="shareBtn">Share Score</button>
     <div id="shareMsg"></div>
-    <h3 class="sub">HIGH SCORES</h3>
+    <h3 class="sub">SHATTER MASTERS</h3>
     <ol id="topList" class="tops"></ol>
     <button id="playAgain" class="primary">Play Again</button>
     <button id="toMenu">Main Menu</button>
@@ -2148,6 +2152,7 @@ function collideBall(b, dt) {
       }
       const off = Math.max(-1, Math.min(1, (b.x - paddleX) / (paddleW / 2)));
       const ang = off * 1.13; // up to 65°
+      punch(paddle, 1.09, 0.78); // malleable squish on impact, springs back via updateImpacts
       b.vx = s * Math.sin(ang);
       b.vy = s * Math.cos(ang);
       b.y = pTop + BALL_R + 0.01;
@@ -2528,8 +2533,11 @@ function renderTopList(el, top) {
     const li = document.createElement('li');
     const r = document.createElement('span'); r.className = 'rank'; r.textContent = i + 1;
     const n = document.createElement('span'); n.className = 'name'; n.textContent = e.n;
+    // ShatterBlock tier titles
+    const tier = i === 0 ? 'Shatter Blaster Master' : i < 5 ? 'Shatter Blasters' : 'Blaster';
+    const t = document.createElement('span'); t.className = 'tier'; t.textContent = tier;
     const s = document.createElement('span'); s.textContent = e.s;
-    li.append(r, n, s);
+    li.append(r, n, t, s);
     el.appendChild(li);
   });
 }
