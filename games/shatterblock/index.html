@@ -1855,7 +1855,7 @@ function initMenuPaddle() {
   const paddleW = 60, paddleH = 9, paddleY = H - 16;
   const ballR = 6;
   let paddleX = W / 2, paddleDir = 1, paddleSpeed = 82;
-  let bx = W / 2, by = H * 0.38, bvx = 56, bvy = 112;
+  let bx = W / 2, by = H * 0.38, bvy = 112;
   let last = 0;
   function rrect(x, px, py, w, h, r) {
     if (x.roundRect) { x.beginPath(); x.roundRect(px, py, w, h, r); return; }
@@ -1879,7 +1879,6 @@ function initMenuPaddle() {
     if (by - ballR < 0) { by = ballR; bvy = Math.abs(bvy); }                 // off the bottom of the title
     if (by + ballR > paddleY) { by = paddleY - ballR; bvy = -Math.abs(bvy); } // off the paddle
     // draw
-    window.__mpBall = [Math.round(bx*10)/10, Math.round(by*10)/10];
     ctx.clearRect(0, 0, W, H);
     const tg = ctx.createLinearGradient(0, 0, W, 0);
     tg.addColorStop(0, 'rgba(110,168,255,0.05)'); tg.addColorStop(0.5, 'rgba(110,168,255,0.55)'); tg.addColorStop(1, 'rgba(192,107,255,0.05)');
