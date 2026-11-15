@@ -1920,8 +1920,11 @@ function updateClearFx(dt) {
     clearFx.points.scale.set(clearFx.pointsBase * grow, clearFx.pointsBase * grow * 0.31, 1);
     clearFx.points.material.opacity = t > CLEAR_FADE_START ? Math.max(0, 1 - (t - CLEAR_FADE_START) / (CLEAR_DUR - CLEAR_FADE_START)) : 1;
   }
-  // banner: fade out during the dissolve
-  if (t > CLEAR_FADE_START) elBanner.style.opacity = Math.max(0, 1 - (t - CLEAR_FADE_START) / (CLEAR_DUR - CLEAR_FADE_START));
+  // banner: fade out during the dissolve (kill the CSS transition so it tracks)
+  if (t > CLEAR_FADE_START) {
+    elBanner.style.transition = 'none';
+    elBanner.style.opacity = Math.max(0, 1 - (t - CLEAR_FADE_START) / (CLEAR_DUR - CLEAR_FADE_START));
+  }
 }
 function endClearFx() {
   if (!clearFx) return;
@@ -1933,6 +1936,7 @@ function endClearFx() {
 function showBanner(title, sub) {
   elBannerTitle.textContent = title;
   elBannerSub.textContent = sub || '';
+  elBanner.style.transition = ''; elBanner.style.opacity = '';
   elBanner.classList.add('show');
   bannerTimer = 1.9;
 }
@@ -2913,6 +2917,7 @@ window.__tl = {
   // overload: type-aware spawn for tests
   applyPower(type) { applyPower(type); return 'ok'; },
   fireLaser() { fireLasers(); return 'ok'; },
+  armLaser() { power.laser = 8; laserCd = 0; fireLasers(); return 'armed+fire'; },
   setLives(n) { lives = n; updateHud(); return 'ok'; },
   setScore(n) { score = n; updateHud(); return 'ok'; },
   gameOver() { lives = 0; gameOver(); return 'ok'; },
