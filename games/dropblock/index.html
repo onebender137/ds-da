@@ -95,6 +95,16 @@
   ol.tops li.me { background: rgba(110,168,255,0.14); outline: 1px solid rgba(110,168,255,0.35); }
   ol.tops li .rank { color: var(--muted); width: 20px; font-weight: 700; }
   ol.tops li .name { letter-spacing: 2px; font-weight: 700; }
+  ol.tops li .tier { font-size: 8px; letter-spacing: 1px; font-weight: 700; color: var(--muted); opacity: .75; padding: 2px 0; }
+  ol.tops li:nth-child(1) .tier { color: var(--gold); opacity: 1; text-shadow: 0 0 8px rgba(212,175,55,0.5); }
+  ol.tops li:nth-child(n+2):nth-child(-n+5) .tier { color: #cfd6e6; opacity: .9; }
+  ol.tops li .score { font-variant-numeric: tabular-nums; }
+  /* leaderboard lists scroll internally — the page itself never scrolls */
+  #scores .card { max-height: calc(100vh - 24px); display: flex; flex-direction: column; overflow: hidden; }
+  #scores .tops { max-height: 216px; flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--border) transparent; margin: 2px 0; }
+  #scores .tops::-webkit-scrollbar { width: 6px; }
+  #scores .tops::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  #scores .card button, #scores .card h2, #scores .card h3 { flex-shrink: 0; }
   .keys { margin-top: 12px; font-size: 11px; color: var(--muted); line-height: 1.8; }
   .keys kbd { font: inherit; font-size: 10px; background: rgba(110,168,255,0.12); border: 1px solid rgba(110,168,255,0.25);
     border-radius: 4px; padding: 0 5px; color: var(--text); }
@@ -130,7 +140,7 @@
   #radioBox .radio-ctl button:hover { background: rgba(255,255,255,0.12); border-color: var(--radio-accent, var(--border)); }
   #musicName { font-size: 11px; letter-spacing: 1px; min-width: 122px; text-align: center;
     white-space: nowrap; color: var(--text); font-weight: 500; }
-  #pauseBtn { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 5;
+  #pauseBtn { position: fixed; bottom: 16px; right: 16px; z-index: 5;
     background: var(--panel); border: 1px solid var(--border); color: var(--muted); border-radius: 10px;
     padding: 7px 12px; font-size: 11px; letter-spacing: 2px; font-weight: 600; backdrop-filter: blur(10px); display: none; }
   body:not(.menu-mode) #pauseBtn { display: block; }
@@ -210,7 +220,8 @@
     0%, 100% { transform: translateY(0) rotate(0deg); }
     50% { transform: translateY(-11px) rotate(-2.5deg); }
   }
-  .menu-tag { font-size: 11px; letter-spacing: 5px; color: var(--muted); text-align: center; font-weight: 600; }
+  .menu-tag { font-size: 11px; letter-spacing: 5px; color: var(--muted); text-align: center; font-weight: 600;
+    text-shadow: 0 1px 3px rgba(0,0,0,.9), 0 0 8px rgba(0,0,0,.7); }
   .menu-btns { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; width: min(82vw, 330px); }
   .mbtn { font: inherit; font-size: 14px; font-weight: 700; letter-spacing: 3px; padding: 13px 13px 13px 30px;
     border-radius: 12px; border: 1px solid var(--border); background: var(--panel); color: var(--text);
@@ -227,11 +238,14 @@
   .mbtn.primary:hover, .mbtn.primary.sel { filter: brightness(1.15); border-color: rgba(255,255,255,0.35); }
   .menu-hint { font-size: 11px; color: var(--muted); letter-spacing: 1px; margin-top: 8px; text-align: center; }
   .menu-best { font-size: 11px; color: var(--gold); letter-spacing: 2px; font-weight: 700; min-height: 14px; }
-  /* how to play */
-  #howto { width: min(86vw, 360px); background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
-    padding: 14px 18px; font-size: 12px; line-height: 1.7; color: var(--text); text-align: left;
-    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); animation: cardIn .25s ease-out; }
+  /* how to play — full-screen overlay, works from both the menu and the pause menu */
+  #howto { position: fixed; inset: 0; z-index: 25; display: flex; align-items: center; justify-content: center;
+    background: rgba(4,7,15,.55); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
   #howto.hidden { display: none; }
+  #howto .howto-card { width: min(86vw, 360px); max-height: 84vh; overflow-y: auto; background: var(--panel);
+    border: 1px solid var(--border); border-radius: 14px; padding: 14px 18px; font-size: 12px; line-height: 1.7;
+    color: var(--text); text-align: left; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); animation: cardIn .25s ease-out; }
+  #howto .howto-card button { margin-top: 10px; width: 100%; }
   #howto h4 { font-family: var(--display); font-size: 13px; font-weight: 400; letter-spacing: 1px; color: var(--accent); margin-bottom: 6px; }
   #howto .row { display: flex; gap: 10px; align-items: baseline; }
   #howto .row b { color: var(--gold); min-width: 92px; font-weight: 700; letter-spacing: 1px; font-size: 11px; }
@@ -252,7 +266,7 @@
     #hud .stat b { font-size: 15px; }
     #hud .dot { width: 18px; height: 18px; }
     #hud .sub, #hud .tops, #hud .keys { display: none; }
-    #pauseBtn { top: max(10px, env(safe-area-inset-top)); left: 10px; transform: none; padding: 7px 10px; }
+    #pauseBtn { bottom: max(10px, env(safe-area-inset-bottom)); right: 10px; padding: 7px 10px; }
     #soundBtn { bottom: calc(54px + env(safe-area-inset-bottom)); left: 10px; padding: 6px 10px; }
     #musicBox { bottom: calc(10px + env(safe-area-inset-bottom)); left: 10px; }
     #radioBox.dsda-radio { bottom: calc(10px + env(safe-area-inset-bottom)); left: 10px; }
@@ -313,30 +327,34 @@
   <div class="menu-btns">
     <button id="menuStart" class="mbtn primary sel">START GAME</button>
     <button id="menuHow" class="mbtn">HOW TO PLAY</button>
-    <button id="menuScores" class="mbtn">HIGH SCORES</button>
+    <button id="menuScores" class="mbtn">BIG BLOCKERS</button>
     <button id="menuSite" class="mbtn">BACK TO DSDA ARCADE</button>
   </div>
-  <div id="howto" class="hidden">
+  <p class="menu-hint" id="menuHint">← → move · ↓ soft drop · ↑/SPACE hard drop · P pause · M music</p>
+</div>
+<div id="howto" class="hidden">
+  <div class="howto-card">
     <h4>HOW TO PLAY</h4>
     <div class="row"><b>GOAL</b><span>Line up <b style="color:var(--text);min-width:0">3+</b> of the same candy — rows, columns, <i>or diagonals</i>.</span></div>
     <div class="row"><b>CHAINS</b><span>Clears that cause more clears multiply your score. ×2, ×3, ×4…</span></div>
     <div class="row"><b>GUIDE</b><span>The glowing beam shows where your candy lands. <b style="color:var(--text);min-width:0">NEXT</b> shows the colour coming after it.</span></div>
     <div class="row"><b>DANGER</b><span>Stack hits the red line = game over. Watch the edges glow.</span></div>
     <div class="row" id="howtoKeys"><b>CONTROLS</b><span>← → move · ↓ soft drop · ↑ / SPACE hard drop · P pause</span></div>
+    <button id="howtoClose" class="primary">Got it</button>
   </div>
-  <p class="menu-hint" id="menuHint">← → move · ↓ soft drop · ↑/SPACE hard drop · P pause · M music</p>
 </div>
 <div id="pause" class="hidden">
   <div class="card">
     <h2>PAUSED</h2>
     <p id="pauseHint">Press P or Esc to resume</p>
     <button id="pauseResume" class="primary">Resume</button>
+    <button id="pauseHow">How to Play</button>
     <button id="pauseMenu">Main Menu</button>
   </div>
 </div>
 <div id="scores" class="hidden">
   <div class="card">
-    <h2 style="color: var(--accent);">HIGH SCORES</h2>
+    <h2 style="color: var(--accent);">BIG BLOCKERS</h2>
     <h3 class="sub">GLOBAL — DS-DA.CA</h3>
     <ol id="globalTop" class="tops"></ol>
     <p id="globalNote" class="global-note"></p>
@@ -357,7 +375,7 @@
     <div id="savedMsg"></div>
     <button id="shareBtn">Share Score</button>
     <div id="shareMsg"></div>
-    <h3 class="sub">HIGH SCORES</h3>
+    <h3 class="sub">BIG BLOCKERS</h3>
     <ol id="topList" class="tops"></ol>
     <button id="playAgain" class="primary">Play Again</button>
     <button id="toMenu">Main Menu</button>
@@ -746,6 +764,7 @@ const titleCandies = [];
 let menuTime = 0;
 let maxChain = 0, pausedFrom = null, dangerOn = false, dangerT = 0;
 let shakeAmp = 0, shakeT = 0;
+let wobbleAmp = 0, wobbleT = 0;  // horizontal board wobble (decays to idle sway)
 const camBase = new THREE.Vector3(2.86, 7.32, 19.25);
 const camCur = new THREE.Vector3();
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
@@ -989,7 +1008,9 @@ function buildBoard() {
   g.add(back);
 
   const lineMat = new THREE.MeshBasicMaterial({ color: 0x2b3a6e, transparent: true, opacity: 0.7 });
-  for (let r = 0; r <= ROWS; r++) {
+  // no top grid line — the well is open at the top so falling blocks don't
+  // visually clip through a solid line
+  for (let r = 0; r < ROWS; r++) {
     const bar = new THREE.Mesh(new THREE.BoxGeometry(COLS, 0.025, 0.025), lineMat);
     bar.position.set(0, r * CELL, -0.42);
     g.add(bar);
@@ -1006,11 +1027,11 @@ function buildBoard() {
   });
   const rimH = new THREE.BoxGeometry(COLS + 0.8, 0.18, 0.7);
   const rimV = new THREE.BoxGeometry(0.18, ROWS + 0.8, 0.7);
-  const top = new THREE.Mesh(rimH, rimMat); top.position.set(0, ROWS + 0.09, -0.2);
+  // no top rim bar — blocks fall in from an open top
   const bot = new THREE.Mesh(rimH, rimMat); bot.position.set(0, -0.09, -0.2);
   const left = new THREE.Mesh(rimV, rimMat); left.position.set(-COLS / 2 - 0.09, ROWS / 2, -0.2);
   const right = new THREE.Mesh(rimV, rimMat); right.position.set(COLS / 2 + 0.09, ROWS / 2, -0.2);
-  g.add(top, bot, left, right);
+  g.add(bot, left, right);
 
   dangerBar = new THREE.Mesh(
     new THREE.BoxGeometry(COLS + 0.4, 0.05, 0.5),
@@ -1208,6 +1229,9 @@ function startClear(matched, n) {
     if (backGlow) backGlow.material.opacity = 0.22 + Math.min(0.5, 0.12 * n + matched.size * 0.03);
   }
   if (n > maxChain) maxChain = n;
+  // board wobble on every match — quick horizontal turn, bigger for chains
+  wobbleT = 0;
+  wobbleAmp = Math.min(0.10, 0.02 + n * 0.014);
   sfx.match(n);
   updateHud();
 }
@@ -1300,6 +1324,128 @@ function buildTitleCandies() {
   }
 }
 
+// ---------------- menu demo: blocks dropping + matching behind the title ----------------
+// Scripted loop: 4 columns of game blocks drop behind the title, a horizontal
+// 3-match pops, then a diagonal 3-match (the diagonal flex), the rest sweep
+// away, repeat. Purely decorative — runs only while phase === 'menu'.
+const DEMO_Z = 0.0;  // board plane — minimizes off-axis perspective skew
+const DEMO_S = 0.92;  // base block scale (slightly under 1.0 to avoid overlap)
+// A wall of game-sized blocks (1.0 spacing, scale 1.0 — same as the board)
+// spanning the title width (~470px) so it reads as blocks behind the letters.
+const DEMO_NCOLS = 20;
+const DEMO_COLS = Array.from({ length: DEMO_NCOLS }, (_, c) => c - 9.5);  // -9.5..9.5
+const DEMO_ROWS = [10.0, 11.0, 12.0];
+// Intended matches, placed in the visible outer regions (beside the letters):
+const DEMO_M1 = [[1, 17], [1, 18], [1, 19]];  // horizontal, middle row, right of title
+const DEMO_M2 = [[0, 0], [1, 1], [2, 2]];      // diagonal, left of title
+// Base color formula (c + 2r) % 6 is match-free in rows, cols and both diagonals;
+// the two intended matches overwrite their cells.
+function demoColor(r, c) {
+  if (DEMO_M1.some(([mr, mc]) => mr === r && mc === c)) return 2;  // Lemon
+  if (DEMO_M2.some(([mr, mc]) => mr === r && mc === c)) return 4;  // Sapphire
+  return (c + 2 * r) % 6;
+}
+const menuDemo = { on: false, t: 0, fade: 0, m1: false, m2: false, blocks: [] };
+const demoFlashMat = new THREE.MeshBasicMaterial({ color: 0xffffff });  // pure-white flash (demo only)
+
+function buildMenuDemo() {
+  for (const b of menuDemo.blocks) scene.remove(b.mesh);
+  menuDemo.blocks = [];
+  for (let r = 0; r < 3; r++) for (let c = 0; c < DEMO_NCOLS; c++) {
+    const color = demoColor(r, c);
+    const m = makeCandy(color);
+    m.castShadow = false;
+    m.scale.setScalar(DEMO_S);
+    m.position.set(DEMO_COLS[c], 18.5, DEMO_Z);
+    m.visible = false;
+    scene.add(m);
+    menuDemo.blocks.push({
+      mesh: m, color, state: 'pre', st: 0, vy: 0,
+      dropDelay: c * 0.09, targetY: DEMO_ROWS[r], sweepDelay: (r * DEMO_NCOLS + c) * 0.02,
+    });
+  }
+  menuDemo.t = 0; menuDemo.m1 = false; menuDemo.m2 = false; menuDemo.fade = 0; menuDemo.on = true;
+}
+function _demoFireMatch(cells) {
+  const centroid = new THREE.Vector3();
+  let color = 0;
+  for (const [r, c] of cells) {
+    const b = menuDemo.blocks[r * DEMO_NCOLS + c];
+    b.state = 'flash'; b.st = 0;
+    b.mesh.material = demoFlashMat;  // pure-white flash
+    color = b.color;
+    centroid.add(b.mesh.position);
+  }
+  centroid.divideScalar(cells.length);
+  spawnBurst(centroid, color);
+  spawnRing(centroid, color, 3.0, 0.5);
+}
+function updateMenuDemo(dt) {
+  if (!menuDemo.on) return;
+  menuDemo.t += dt;
+  const t = menuDemo.t;
+  if (!menuDemo.m1 && t >= 3.4) { menuDemo.m1 = true; _demoFireMatch(DEMO_M1); }
+  if (!menuDemo.m2 && t >= 5.2) { menuDemo.m2 = true; _demoFireMatch(DEMO_M2); }
+  for (const b of menuDemo.blocks) {
+    const m = b.mesh;
+    switch (b.state) {
+      case 'pre':
+        if (t >= b.dropDelay) { b.state = 'drop'; b.vy = 0; m.visible = true; }
+        break;
+      case 'drop':
+        b.vy -= 26 * dt;
+        m.position.y += b.vy * dt;
+        m.rotation.y += dt * 3.2;
+        m.rotation.x += dt * 1.1;
+        if (m.position.y <= b.targetY) {
+          m.position.y = b.targetY;
+          b.state = 'land'; b.st = 0;
+          spawnRing(m.position, b.color, 1.0, 0.25);  // landing puff
+        }
+        break;
+      case 'land': {
+        b.st += dt;
+        const k = Math.min(1, b.st / 0.25);
+        // settle the fall-rotation back to 0 so blocks lock into a clean lattice
+        m.rotation.y += (0 - m.rotation.y) * Math.min(1, dt * 14);
+        m.rotation.x += (0 - m.rotation.x) * Math.min(1, dt * 14);
+        const sq = 1 - 0.4 * Math.sin(k * Math.PI);  // squash & settle
+        m.scale.set(DEMO_S * (2 - sq), DEMO_S * sq, DEMO_S * (2 - sq));
+        if (b.st >= 0.25) { m.scale.setScalar(DEMO_S); m.rotation.set(0, 0, 0); b.state = 'idle'; }
+        break;
+      }
+      case 'flash':
+        b.st += dt;
+        m.scale.setScalar(DEMO_S + 0.3 * Math.sin(Math.min(1, b.st / 0.6) * Math.PI));
+        if (b.st >= 0.6) { b.state = 'pop'; b.st = 0; }
+        break;
+      case 'pop': {
+        b.st += dt;
+        const k = Math.min(1, b.st / 0.35);
+        m.scale.setScalar(DEMO_S * (1 - k));
+        m.position.y += dt * 1.5;
+        m.rotation.y += dt * 6;
+        if (k >= 1) { b.state = 'gone'; m.visible = false; }
+        break;
+      }
+      case 'idle':
+        if (t >= 7.0 + b.sweepDelay) { b.state = 'sweep'; b.st = 0; }
+        break;
+      case 'sweep': {
+        b.st += dt;
+        const k = Math.min(1, b.st / 0.8);
+        m.position.y += dt * 2.2;
+        m.position.x += Math.sin(b.st * 6 + b.sweepDelay * 20) * dt * 0.4;
+        m.scale.setScalar(DEMO_S * (1 - k));
+        m.rotation.y += dt * 2;
+        if (k >= 1) { b.state = 'gone'; m.visible = false; }
+        break;
+      }
+    }
+  }
+  if (t >= 9.3) buildMenuDemo();  // loop
+}
+
 function setMenuSel(i, silent) {
   const prev = menuSel;
   menuSel = (i + menuButtons.length) % menuButtons.length;
@@ -1376,6 +1522,7 @@ function backToMenu() {
   if (DSDARadio) { radioWasPlaying = !!DSDARadio.playing; DSDARadio.pause(); }  // stop radio on menu (only menu FX)
   document.body.classList.add('menu-mode');
   clearBoard();
+  buildMenuDemo();  // fresh drop-and-match loop behind the title
   phase = 'menu';
   setMenuSel(0, true);
   refreshMenuBest();
@@ -1575,6 +1722,12 @@ async function shareScore() {
     window.prompt('Copy your score share:', text);
   }
 }
+function tierName(rank) {
+  if (rank === 1) return 'MISTER BIG BLOCKS';
+  if (rank <= 5) return 'BIG BLOCKERS';
+  if (rank <= 14) return 'BLOCKERS';
+  return 'BABY BLOCKERS';
+}
 function renderTopList(el, top) {
   el.innerHTML = '';
   if (!top.length) {
@@ -1587,8 +1740,9 @@ function renderTopList(el, top) {
     const li = document.createElement('li');
     const r = document.createElement('span'); r.className = 'rank'; r.textContent = i + 1;
     const n = document.createElement('span'); n.className = 'name'; n.textContent = e.n;
-    const s = document.createElement('span'); s.textContent = e.s;
-    li.append(r, n, s);
+    const t = document.createElement('span'); t.className = 'tier'; t.textContent = tierName(i + 1);
+    const s = document.createElement('span'); s.className = 'score'; s.textContent = e.s;
+    li.append(r, n, t, s);
     el.appendChild(li);
   });
 }
@@ -1806,6 +1960,16 @@ function update(dt) {
     tc.m.rotation.y += dt * 0.9;
     tc.m.rotation.x += dt * 0.4;
   }
+  // menu demo: blocks dropping + matching behind the title (fades out fast when leaving the menu)
+  if (phase === 'menu') updateMenuDemo(dt);
+  else if (menuDemo.on) {
+    menuDemo.fade += dt;
+    const k = Math.max(0, 1 - menuDemo.fade / 0.25);
+    for (const b of menuDemo.blocks) {
+      if (b.state !== 'gone') { b.mesh.scale.setScalar(DEMO_S * k); if (k <= 0) b.mesh.visible = false; }
+    }
+    if (menuDemo.fade >= 0.3) menuDemo.on = false;
+  }
   // ambient: drifting stars + breathing nebulae + board glow settling
   if (stars) stars.rotation.y += dt * 0.012;
   for (const nb of nebulae) {
@@ -1814,12 +1978,18 @@ function update(dt) {
     nb.material.opacity = 0.14 + Math.sin(menuTime * 0.3 + nb.userData.ph) * 0.03;
   }
   if (backGlow) backGlow.material.opacity += (0.22 + Math.sin(menuTime * 0.9) * 0.03 - backGlow.material.opacity) * Math.min(1, dt * 3);
-  if (dangerBar) dangerBar.material.opacity = dangerOn ? 0.6 + Math.sin(menuTime * 9) * 0.4 : 0.85;
-  // camera: menu orbit vs play position, plus shake
+  if (dangerBar) dangerBar.material.opacity = dangerOn ? 0.6 + Math.sin(menuTime * 9) * 0.4 : 0.28;
+  // camera: menu orbit vs play position, plus slow play sway + match wobble + shake
   camMenuBlend += ((phase === 'menu' ? 1 : 0) - camMenuBlend) * Math.min(1, dt * 1.8);
-  const orbit = Math.sin(menuTime * 0.28) * 0.42 * camMenuBlend;
-  camCur.copy(camBase).applyAxisAngle(Y_AXIS, orbit);
-  camCur.y += Math.sin(menuTime * 0.2) * 0.6 * camMenuBlend;
+  const orbit = Math.sin(menuTime * 0.28) * 0.3 * camMenuBlend;
+  // slow left-right turn while playing — shows off the 3D board
+  const playSway = Math.sin(menuTime * 0.45) * 0.05 * (1 - camMenuBlend);
+  // match wobble: quick left-right oscillation that decays back into the idle sway
+  if (wobbleAmp > 0.0004) { wobbleT += dt; wobbleAmp *= Math.exp(-dt * 2.4); }
+  else wobbleAmp = 0;
+  const wobble = Math.sin(wobbleT * 13) * wobbleAmp;
+  camCur.copy(camBase).applyAxisAngle(Y_AXIS, orbit + playSway + wobble);
+  camCur.y += Math.sin(menuTime * 0.2) * 0.25 * camMenuBlend;
   if (shakeAmp > 0.001) {
     shakeT += dt;
     const d = Math.exp(-shakeT * 9) * shakeAmp;
@@ -1985,6 +2155,8 @@ function boot() {
   $('pauseBtn').addEventListener('click', e => { togglePause(); e.currentTarget.blur(); });
   $('pauseResume').addEventListener('click', e => { togglePause(); e.currentTarget.blur(); });
   $('pauseMenu').addEventListener('click', e => { backToMenu(); e.currentTarget.blur(); });
+  $('pauseHow').addEventListener('click', e => { $('howto').classList.remove('hidden'); e.currentTarget.blur(); });
+  $('howtoClose').addEventListener('click', e => { $('howto').classList.add('hidden'); e.currentTarget.blur(); });
 
   elSave.addEventListener('click', saveScore);
   elShare.addEventListener('click', shareScore);
@@ -2007,6 +2179,7 @@ function boot() {
   });
 
   buildTitleCandies();
+  buildMenuDemo();
 
   grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
   renderTopList(elHudTop, loadScores().slice(0, 10));
@@ -2024,6 +2197,13 @@ window.__tl = {
   pause() { cancelAnimationFrame(rafId); },
   resume() { clock.getDelta(); animate(); },
   rawFrame() { cancelAnimationFrame(rafId); renderer.render(scene, camera); },
+  pixel(x, y) { const c = renderer.domElement; const sx = c.width / window.innerWidth, sy = c.height / window.innerHeight; const px = Math.round(x * sx), py = Math.round(y * sy); const gl = c.getContext('webgl2') || c.getContext('webgl'); const b = new Uint8Array(4); gl.readPixels(px, c.height - py, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, b); return [b[0], b[1], b[2], b[3]]; },
+  demo() { return { on: menuDemo.on, t: Math.round(menuDemo.t * 100) / 100, states: menuDemo.blocks.map(b => b.state) }; },
+  demoBlock(r, c) { const b = menuDemo.blocks[r * DEMO_NCOLS + c]; const m = b.mesh.material; return { state: b.state, st: Math.round(b.st * 100) / 100, mat: m.color ? [Math.round(m.color.r * 255), Math.round(m.color.g * 255), Math.round(m.color.b * 255)] : null, vis: b.mesh.visible, pos: [Math.round(b.mesh.position.x * 10) / 10, Math.round(b.mesh.position.y * 10) / 10] }; },
+  demoStep(dt) { if (menuDemo.on) updateMenuDemo(dt); return Math.round(menuDemo.t * 100) / 100; },
+  camState() { return { blend: Math.round(camMenuBlend * 1000) / 1000, menuT: Math.round(menuTime * 100) / 100, wobbleAmp: Math.round(wobbleAmp * 10000) / 10000, camX: Math.round(camera.position.x * 100) / 100, camZ: Math.round(camera.position.z * 100) / 100, phase: phase }; },
+  wobbleTest(amp) { wobbleAmp = amp; wobbleT = 0; return true; },
+  proj(x, y, z) { const v = new THREE.Vector3(x, y, z).project(camera); return [Math.round((v.x * 0.5 + 0.5) * window.innerWidth), Math.round((-v.y * 0.5 + 0.5) * window.innerHeight)]; },
   freezeInput() { inputFrozen = true; },
   unfreezeInput() { inputFrozen = false; },
   music() {
