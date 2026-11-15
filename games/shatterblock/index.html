@@ -2751,6 +2751,12 @@ window.__tl = {
     const flash = Math.exp(-d * 1.8) * (1 - ha / 0.7) * (1 + ring * 2.5) * 4.0;
     return { hitAge: +ha.toFixed(3), uHitUV: [uv.x, uv.y], d: +d.toFixed(3), flash: +flash.toFixed(3) };
   },
+  wallMat() {
+    let found = null;
+    scene.traverse(o => { if (o.isMesh && o.position.x > 8 && o.position.y > 8) found = o; });
+    return found ? { matType: found.material.type, isPlasma: found.material === plasmaWallMat } : 'not found';
+  },
+  setWallHit(age) { plasmaWallMat.uniforms.uHitTime.value = plasmaTime - (age || 0); return 'ok'; },
   topBlocks() { const out = []; scene.traverse(o => { if (o.isMesh && o.position.y > 16.5) out.push({ y: +o.position.y.toFixed(2), x: +o.position.x.toFixed(2), geo: o.geometry ? o.geometry.type : '?' }); }); return out; },
   seedBricks() { loadLevel(level); return 'seeded ' + bricks.length; },
   clearBricks() {
