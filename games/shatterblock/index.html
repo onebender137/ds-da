@@ -235,28 +235,18 @@
   /* ---- game over card: polished eye-candy ---- */
   #overlay .card {
     position: relative;
-    background: linear-gradient(160deg, #101428 0%, #0a0c1c 100%);
     border: 2px solid transparent;
     border-radius: 20px;
-    animation: cardInGo .55s cubic-bezier(.18, 1.35, .3, 1) forwards;
+    background:
+      linear-gradient(160deg, #101428 0%, #0a0c1c 100%) padding-box,
+      linear-gradient(135deg, #6ea8ff, #c06bff, #4ade80, #ffd166, #ff3b5c, #6ea8ff) border-box;
+    background-size: 100% 100%, 300% 300%;
+    animation: cardInGo .55s cubic-bezier(.18, 1.35, .3, 1) forwards, goBorderCycle 5s ease-in-out infinite;
     box-shadow:
-      0 0 0 1px rgba(110, 168, 255, 0.22),
       0 0 44px rgba(110, 168, 255, 0.16),
       0 0 88px rgba(192, 107, 255, 0.10),
       0 28px 72px rgba(0, 0, 0, 0.72),
       inset 0 1px 0 rgba(255, 255, 255, 0.07);
-  }
-  /* animated rainbow gradient border (cycles through the game palette) */
-  #overlay .card::before {
-    content: '';
-    position: absolute;
-    inset: -2px;
-    border-radius: 22px;
-    background: linear-gradient(135deg, #6ea8ff, #c06bff, #4ade80, #ffd166, #ff3b5c, #6ea8ff);
-    background-size: 300% 300%;
-    animation: goBorderCycle 5s ease-in-out infinite;
-    z-index: -1;
-    opacity: 0.7;
   }
   /* subtle scan-line overlay for a CRT/arcade feel */
   #overlay .card::after {
@@ -275,8 +265,8 @@
     animation: goScan 10s linear infinite;
   }
   @keyframes goBorderCycle {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
+    0%, 100% { background-position: 0 0, 0% 50%; }
+    50% { background-position: 0 0, 100% 50%; }
   }
   @keyframes goScan {
     from { background-position: 0 0; }
