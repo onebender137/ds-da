@@ -432,7 +432,7 @@ import { RoundedBoxGeometry } from './jsm/geometries/RoundedBoxGeometry.js';
 // ---------------- field geometry ----------------
 const PLAY_W = 16, PLAY_H = 18;          // world units
 const COLS = 14;                          // brick columns
-const BRICK_W = 1.02, BRICK_H = 0.66, BRICK_D = 0.5;
+const BRICK_W = 1.02, BRICK_H = 0.66, BRICK_D = 0.64;
 const BRICK_PITCH_X = 1.10, BRICK_PITCH_Y = 0.84;
 const BRICK_TOP = 15.58;                  // centerY of top row
 const PADDLE_Y = 1.4, PADDLE_H = 0.5;
@@ -1010,7 +1010,6 @@ let bannerTimer = 0;
 let heldLeft = false, heldRight = false;
 let menuSel = 0;
 const menuButtons = [];
-const titleBricks = [];
 let menuTime = 0;
 // visual-polish state
 let glareLight = null, glarePhase = 0;   // sweeping sheen light across the bricks
@@ -1025,8 +1024,13 @@ const colX = c => -7.66 + BRICK_PITCH_X * c + 0.55;
 const rowY = r => BRICK_TOP - r * BRICK_PITCH_Y;
 
 // ---------------- brick assets ----------------
-const BRICK_R = 0.08;   // beveled candy edge
-const brickGeo = new RoundedBoxGeometry(BRICK_W, BRICK_H, BRICK_D, 3, BRICK_R);
+const BRICK_R = 0.09;   // beveled candy edge
+const brickGeo = new RoundedBoxGeometry(BRICK_W, BRICK_H, BRICK_D, 4, BRICK_R);
+// Glossy top "shine" cap: a thin, light, semi-transparent box on the top face
+// of each brick → a bright specular highlight that reads as 3D depth (lit from
+// above). Added as a child of each brick so it's removed with the brick.
+const glossCapGeo = new THREE.BoxGeometry(BRICK_W * 0.86, 0.05, BRICK_D * 0.82);
+const glossCapMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.30, depthWrite: false });
 // Glossy "candy" bricks: saturated color + a clear glassy clearcoat layer that
 // catches the sweeping glare light, NO self-emissive (that reads as glow), and a
 // touch of iridescence for a sugar-coat shimmer. Beveled edges via RoundedBox.
@@ -1044,6 +1048,34 @@ const brickMats = {
   // armour bricks: dark, hard, metallic — reads as a different material
   solid: candyMat(0x39415e, { roughness: 0.22, metalness: 0.7, clearcoatRoughness: 0.16, iridescence: 0.08 }),
 };
+// ---------------- level color themes ----------------
+// Each theme maps brick hitpoints (1/2/3) to a distinct palette so levels don't
+// all look the same. The hp→color MEANING stays consistent within a theme
+// (3 = toughest color, 1 = weakest); we just rotate the palette per level.
+// Solid (unbreakable) bricks keep the same dark-metal armour in every theme so
+// they always read as "hard", regardless of the level's palette.
+const SOLID_MAT = { roughness: 0.22, metalness: 0.7, clearcoatRoughness: 0.16, iridescence: 0.08 };
+const THEMES = [
+  { name: 'Neon Candy',   c1: 0xff5d6c, c2: 0xffb347, c3: 0x4dd2ff },
+  { name: 'Acid Garden',  c1: 0x59ff7d, c2: 0xc8ff3d, c3: 0x2fe0c8 },
+  { name: 'Ember Sunset', c1: 0xff7a3d, c2: 0xff4d94, c3: 0xb44dff },
+  { name: 'Frost',        c1: 0x4dd2ff, c2: 0x8fb8ff, c3: 0xdceeff },
+  { name: 'Jewel',        c1: 0xff3dcf, c2: 0xffd23d, c3: 0x3ddc84 },
+  { name: 'Steel',        c1: 0xc9d2e6, c2: 0x8b96c9, c3: 0x55608a },
+];
+let themeMats = brickMats;                    // current level's brick materials
+let themeHex = [0xff5d6c, 0xffb347, 0x4dd2ff]; // current level's ring / float-text colors
+function setupTheme(n) {
+  const t = THEMES[(n - 1) % THEMES.length];
+  if (themeMats !== brickMats) Object.values(themeMats).forEach(m => m.dispose());
+  themeMats = {
+    1: candyMat(t.c1),
+    2: candyMat(t.c2),
+    3: candyMat(t.c3),
+    solid: candyMat(0x39415e, SOLID_MAT),
+  };
+  themeHex = [t.c1, t.c2, t.c3];
+}
 const ballGeo = new THREE.SphereGeometry(BALL_R, 20, 14);
 const ballMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.18, metalness: 0.1 });   // clean white ball — no self-glow
 const PADDLE_R = 0.2;   // rounded-edge radius (fixed, so ends stay round at any width)
@@ -1378,6 +1410,7 @@ function clearFieldObjects() {
 function loadLevel(n) {
   clearFieldObjects();
   level = n;
+  setupTheme(n);
   const pat = LEVELS[(n - 1) % LEVELS.length];
   let destructible = 0;
   for (let r = 0; r < pat.length; r++) {
@@ -1386,9 +1419,12 @@ function loadLevel(n) {
       if (ch === '.') continue;
       const solid = ch === '*';
       const hp = solid ? 0 : +ch;
-      const mesh = new THREE.Mesh(brickGeo, brickMats[solid ? 'solid' : String(hp)]);
+      const mesh = new THREE.Mesh(brickGeo, themeMats[solid ? 'solid' : String(hp)]);
       mesh.position.set(colX(c), rowY(r), 0);
       mesh.castShadow = true;
+      const cap = new THREE.Mesh(glossCapGeo, glossCapMat);
+      cap.position.y = BRICK_H / 2 + 0.02;  // sit on the top face
+      mesh.add(cap);                          // child → removed with the brick
       scene.add(mesh);
       bricks.push({ mesh, x: colX(c), y: rowY(r), hp, maxHp: hp, solid, row: r });
       if (!solid) destructible++;
@@ -1488,7 +1524,7 @@ function damageBrick(idx, fromLaser) {
   }
   br.hp--;
   if (br.hp > 0) {
-    br.mesh.material = brickMats[String(br.hp)];
+    br.mesh.material = themeMats[String(br.hp)];
     spawnBurst(br.mesh.position, br.hp - 1, 4);
     punch(br.mesh, 1.15, 1.35);
     sfx.brick(br.row, false, comboN);
@@ -1496,7 +1532,7 @@ function damageBrick(idx, fromLaser) {
   }
   // destroyed
   score += 10 * br.maxHp;
-  const BRICK_HEX = [0xff5d6c, 0xffb347, 0x4dd2ff];
+  const BRICK_HEX = themeHex;
   spawnBurst(br.mesh.position, br.maxHp - 1, 12);
   spawnRing(br.mesh.position, BRICK_HEX[br.maxHp - 1], 2.2, 0.35);
   if (!fromLaser) setCombo(comboN + 1);
@@ -1788,16 +1824,6 @@ function resetGame() {
 }
 
 // ---------------- main menu & high scores ----------------
-function buildTitleBricks() {
-  const colors = [1, 2, 3];
-  for (let i = 0; i < 8; i++) {
-    const m = new THREE.Mesh(brickGeo, brickMats[String(colors[i % 3])]);
-    const x = (i - 3.5) * 1.15;
-    m.position.set(x, 17.3, 0.4);
-    scene.add(m);
-    titleBricks.push({ m, baseY: 17.3, ph: i * 0.6 });
-  }
-}
 function setMenuSel(i, silent) {
   const prev = menuSel;
   menuSel = (i + menuButtons.length) % menuButtons.length;
@@ -2308,20 +2334,22 @@ function update(dt) {
   for (const b of balls) updateTrail(b, dt);
   // visual polish: sweeping brick glare + slow space drift (runs in every phase)
   if (glareLight) {
-    glarePhase += dt * 0.55;
+    // Roam the sheen across the whole field (X + Y Lissajous) so every brick
+    // gets lit from a moving angle. Speed scales with the combo: big combos make
+    // it dart around faster, and it eases back to the base pace as the combo
+    // falls away (comboN resets to 0 on every paddle touch).
+    const comboBoost = 1 + Math.min(2, comboN * 0.15);  // 1x base → up to 3x
+    glarePhase += dt * 0.5 * comboBoost;
     const gx = Math.sin(glarePhase) * 9.5;
-    glareLight.position.x = gx;
-    glareLight.target.position.x = gx;
+    const gy = 9 + Math.sin(glarePhase * 0.63 + 1.7) * 6.5;  // roam Y 2.5..15.5
+    glareLight.position.set(gx, gy, 6);
+    glareLight.target.position.set(gx, gy, 0);
   }
   if (starGroup) {
     starGroup.rotation.y += dt * 0.012;
     starGroup.rotation.x += dt * 0.004;
   }
   menuTime += dt;
-  for (const tc of titleBricks) {
-    tc.m.position.y = tc.baseY + Math.sin(menuTime * 1.8 + tc.ph) * 0.14;
-    tc.m.rotation.y += dt * 0.7;
-  }
   if (bannerTimer > 0) {
     bannerTimer -= dt;
     if (bannerTimer <= 0 && phase !== 'clearing') hideBanner();
@@ -2451,7 +2479,7 @@ function boot() {
 
   scene.add(new THREE.HemisphereLight(0x4455aa, 0x0a0c14, 0.55));
   scene.add(new THREE.AmbientLight(0x404a70, 0.5));
-  const dir = new THREE.DirectionalLight(0xffffff, 1.7);
+  const dir = new THREE.DirectionalLight(0xffffff, 2.0);
   dir.position.set(6, 16, 12);
   dir.castShadow = true;
   dir.shadow.mapSize.set(1024, 1024);
@@ -2529,7 +2557,6 @@ function boot() {
     mp.appendChild(d);
   }
 
-  buildTitleBricks();
   renderTopList(elHudTop, loadScores().slice(0, 10));
   updateMusicUI();
   updateHud();
