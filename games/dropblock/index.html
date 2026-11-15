@@ -577,6 +577,47 @@ const sfx = {
   },
 };
 
+// ---------------- BM Lewis game vocals (Kokoro TTS) ----------------
+// One-shot voice lines, decoded once and played through the sfx bus so they
+// get the master compressor and sit cleanly over the radio music.
+const Vocals = {
+  on: true,
+  buffers: {},
+  _loading: false,
+  _names: ['match', 'double', 'triple', 'massive', 'levelup', 'tryagain'],
+  async load() {
+    if (this._loading) return;
+    const ctx = AudioEngine.ensure();
+    if (!ctx) return;
+    this._loading = true;
+    for (const name of this._names) {
+      try {
+        const res = await fetch('vocals/' + name + '.mp3');
+        const arr = await res.arrayBuffer();
+        this.buffers[name] = await ctx.decodeAudioData(arr);
+      } catch (e) { console.warn('[vocals] load fail', name, e); }
+    }
+    this._loading = false;
+  },
+  play(name, vol) {
+    if (!this.on || !this.buffers[name] || !AudioEngine.ctx) return;
+    const ctx = AudioEngine.ctx;
+    const src = ctx.createBufferSource();
+    src.buffer = this.buffers[name];
+    const g = ctx.createGain();
+    g.gain.value = vol != null ? vol : 1.15;
+    src.connect(g); g.connect(AudioEngine.sfxBus);
+    src.start();
+  },
+  // right line for a chain count: 1=match, 2=double, 3=triple, 4+=massive
+  match(n) {
+    if (n >= 4) this.play('massive');
+    else if (n === 3) this.play('triple');
+    else if (n === 2) this.play('double');
+    else this.play('match');
+  },
+};
+
 // ---------------- 8-bit chiptune music (3 tracks) ----------------
 const N2F = m => 440 * Math.pow(2, (m - 69) / 12);
 // Track 1: "Bit Block Boy" — swing polka techno (C -> G -> Am -> F)
@@ -1233,6 +1274,7 @@ function startClear(matched, n) {
   wobbleT = 0;
   wobbleAmp = Math.min(0.10, 0.02 + n * 0.014);
   sfx.match(n);
+  Vocals.match(n);
   updateHud();
 }
 
@@ -1261,6 +1303,7 @@ function gameOver() {
   phase = 'over';
   if (falling) { scene.remove(falling.mesh); falling = null; }
   sfx.over();
+  Vocals.play('tryagain');
   if (DSDARadio) { radioWasPlaying = false; DSDARadio.pause(); }  // music stops on game over
   elFinal.textContent = score;
   elInitials.value = dsdaInits();
@@ -1487,6 +1530,7 @@ function autoTuneRadio() {
 
 function startGameFromMenu() {
   track('game_start');
+  Vocals.load();
   $('howto').classList.add('hidden');
   camMenuBlend = Math.min(camMenuBlend, 1); // lerps to 0 in update()
   elMenu.classList.add('hidden');
@@ -1724,9 +1768,9 @@ async function shareScore() {
 }
 function tierName(rank) {
   if (rank === 1) return 'MISTER BIG BLOCKS';
-  if (rank <= 5) return 'BIG BLOCKERS';
-  if (rank <= 14) return 'BLOCKERS';
-  return 'BABY BLOCKERS';
+  if (rank <= 5) return 'BIG BLOCKER';
+  if (rank <= 14) return 'BLOCKER';
+  return 'BABY BLOCKER';
 }
 function renderTopList(el, top) {
   el.innerHTML = '';
@@ -1797,6 +1841,7 @@ function saveScore() {
 function playAgain() {
   elOverlay.classList.add('hidden');
   elPlayAgain.blur();
+  Vocals.load();
   resetGame();
   autoTuneRadio();  // fresh game = fresh random station
 }
@@ -1822,7 +1867,7 @@ function bumpLevel() {
   if (lv !== level) {
     const up = lv > level;
     level = lv; fallingSpeed = 2.3 + level * 0.55; updateHud(); track('level_up', { level: level });
-    if (up && phase !== 'menu') { sfx.levelUp(); showBanner('LEVEL ' + (1 + level)); if (backGlow) backGlow.material.opacity = 0.6; }
+    if (up && phase !== 'menu') { sfx.levelUp(); Vocals.play('levelup'); showBanner('LEVEL ' + (1 + level)); if (backGlow) backGlow.material.opacity = 0.6; }
   }
 }
 
@@ -1939,6 +1984,7 @@ function touchEnd(e) {
 }
 function toggleSound() {
   sfx.on = !sfx.on;
+  Vocals.on = sfx.on;
   elSound.textContent = sfx.on ? '🔊 sound on' : '🔇 sound off';
   if (sfx.on) { sfx.ensure(); sfx.move(); }
 }
@@ -2193,6 +2239,7 @@ function boot() {
 }
 
 // ---------------- debug / harness API ----------------
+window.__vocals = Vocals;
 window.__tl = {
   pause() { cancelAnimationFrame(rafId); },
   resume() { clock.getDelta(); animate(); },
@@ -2203,6 +2250,8 @@ window.__tl = {
   demoStep(dt) { if (menuDemo.on) updateMenuDemo(dt); return Math.round(menuDemo.t * 100) / 100; },
   camState() { return { blend: Math.round(camMenuBlend * 1000) / 1000, menuT: Math.round(menuTime * 100) / 100, wobbleAmp: Math.round(wobbleAmp * 10000) / 10000, camX: Math.round(camera.position.x * 100) / 100, camZ: Math.round(camera.position.z * 100) / 100, phase: phase }; },
   wobbleTest(amp) { wobbleAmp = amp; wobbleT = 0; return true; },
+  vocals() { return { on: Vocals.on, loading: Vocals._loading, loaded: Object.keys(Vocals.buffers), matchLine: n => (n >= 4 ? 'massive' : n === 3 ? 'triple' : n === 2 ? 'double' : 'match') }; },
+  vocalPlay(name) { Vocals.play(name); return Vocals.buffers[name] ? 'played' : 'no buffer'; },
   proj(x, y, z) { const v = new THREE.Vector3(x, y, z).project(camera); return [Math.round((v.x * 0.5 + 0.5) * window.innerWidth), Math.round((-v.y * 0.5 + 0.5) * window.innerHeight)]; },
   freezeInput() { inputFrozen = true; },
   unfreezeInput() { inputFrozen = false; },
