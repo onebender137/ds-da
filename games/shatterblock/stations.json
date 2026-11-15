@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "network": "DSDA Radio",
+  "updated": "2026-11-14",
+  "note": "ShatterBlock's in-game radio manifest. Deliberately game-local (NOT the shared cross-game network) so the dial only carries Polkahole + ShatterBlock's own originals — no other game's tracks. Polkahole loops Rafters Ring + High Ridge Revelry on repeat. The 4 ShatterBlock originals were re-synthesized 2026-11-14 with richer synths + live feel.",
+  "stations": [
+    {
+      "id": "polkahole",
+      "name": "Polkahole",
+      "tagline": "Oompah oompah from the hole",
+      "accent": "#ffcc00",
+      "source": "https://polkahole.ca",
+      "note": "Curated Polkahole loop: Rafters Ring + High Ridge Revelry, played one after another on repeat.",
+      "tracks": [
+        { "title": "Rafters Ring",       "url": "https://polkahole.ca/songs/Rafters_Ring.mp3" },
+        { "title": "High Ridge Revelry", "url": "https://polkahole.ca/songs/whoa_polka/High_Ridge_Revelry.mp3" }
+      ]
+    },
+    {
+      "id": "brick-breaker",
+      "name": "Brick Breaker",
+      "tagline": "ShatterBlock original — driving E-minor breaker loop",
+      "accent": "#ff6b35",
+      "source": "ds-da.ca/games/shatterblock/original",
+      "note": "ShatterBlock original #1, re-synthesized 2026-11-14 (detuned saw lead, sidechained square bass, full drum kit, synced echo + reverb, humanized). 1-track station, loops on its own.",
+      "tracks": [
+        { "title": "Brick Breaker",    "url": "/games/shatterblock/original/brick-breaker.mp3" }
+      ]
+    },
+    {
+      "id": "deep-space-drift",
+      "name": "Deep Space Drift",
+      "tagline": "ShatterBlock original — mellow D-minor interlude",
+      "accent": "#4d7cfe",
+      "source": "ds-da.ca/games/shatterblock/original",
+      "note": "ShatterBlock original #2, re-synthesized 2026-11-14 (warm detuned pad, triangle bass, light drums, space reverb). 1-track station, loops on its own.",
+      "tracks": [
+        { "title": "Deep Space Drift", "url": "/games/shatterblock/original/deep-space-drift.mp3" }
+      ]
+    },
+    {
+      "id": "neon-rush",
+      "name": "Neon Rush",
+      "tagline": "ShatterBlock original — high-energy A-minor anthem",
+      "accent": "#ff2d95",
+      "source": "ds-da.ca/games/shatterblock/original",
+      "note": "ShatterBlock original #3, re-synthesized 2026-11-14 (fast driving saw lead, punchy kit, arp, echo). 1-track station, loops on its own.",
+      "tracks": [
+        { "title": "Neon Rush",        "url": "/games/shatterblock/original/neon-rush.mp3" }
+      ]
+    },
+    {
+      "id": "crystal-cascade",
+      "name": "Crystal Cascade",
+      "tagline": "ShatterBlock original — bright bouncy F-major interlude",
+      "accent": "#4dd0e1",
+      "source": "ds-da.ca/games/shatterblock/original",
+      "note": "ShatterBlock original #4, re-synthesized 2026-11-14 (bouncy F-major lead, warm pad, crisp kit). 1-track station, loops on its own.",
+      "tracks": [
+        { "title": "Crystal Cascade",  "url": "/games/shatterblock/original/crystal-cascade.mp3" }
+      ]
+    }
+  ]
+}
