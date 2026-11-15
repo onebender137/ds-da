@@ -249,6 +249,7 @@
   .mp b { font-size: 12px; }
   .mp .mp-desc { font-size: 9px; letter-spacing: .4px; color: var(--muted); opacity: .85; text-align: center; line-height: 1.25; }
   .menu-best { font-size: 11px; color: var(--gold); letter-spacing: 2px; font-weight: 700; min-height: 14px; }
+  #menuPaddleCv { display: block; margin: 4px auto 0; width: 240px; height: 76px; opacity: 0.96; }
   /* how to play */
   #howto { width: min(86vw, 360px); background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
     padding: 14px 18px; font-size: 12px; line-height: 1.7; color: var(--text); text-align: left;
@@ -344,6 +345,7 @@
   </h1>
   <p class="menu-tag">ARKANOID, REBORN — DSDA GAMES</p>
   <p class="menu-best" id="menuBest"></p>
+  <canvas id="menuPaddleCv" width="240" height="76"></canvas>
   <div class="menu-btns">
     <button id="menuStart" class="mbtn primary sel">START GAME</button>
     <button id="menuHow" class="mbtn">HOW TO PLAY</button>
@@ -889,7 +891,7 @@ const MusicSys = {
   get ctx() { return AudioEngine.ctx; },
   get noiseBuf() { return AudioEngine.noiseBuf; },
   get out() { return AudioEngine.musBus; },
-  on: true, playing: false,
+  on: false, playing: false,  // off by default — the DSDA Radio (radio.js) is now the music source; this chiptune stays as a silent offline fallback
   track: 0,
   step: 0, nextTime: 0, timer: null,
   get cur() { return TRACKS[this.track]; },
@@ -1015,6 +1017,7 @@ let glareLight = null, glarePhase = 0;   // sweeping sheen light across the bric
 let starGroup = null;                     // rotating space starfield + nebulae
 let comboN = 0, bestCombo = 0;            // bricks broken since the last paddle touch (display only — scoring untouched)
 let pausedFrom = null, shakeAmp = 0, shakeT = 0, camPunch = 0;
+let radioWasPlaying = false;  // was the DSDA Radio playing before a pause/menu (so we can resume it)
 const impacts = [], fxList = [], trailPool = [];
 let trailTex = null, flashBrickMat = null;
 
@@ -1762,12 +1765,14 @@ function togglePause() {
     phase = pausedFrom || 'launch'; pausedFrom = null;
     $('pause').classList.add('hidden');
     sfx.resume(); AudioEngine.duck(0, 0.3);
+    if (radioWasPlaying && DSDARadio) { DSDARadio.play(); radioWasPlaying = false; }  // resume radio if it was playing
     clock.getDelta();
   } else if (phase === 'play' || phase === 'launch') {
     pausedFrom = phase; phase = 'paused';
     $('pause').classList.remove('hidden');
     heldLeft = heldRight = false; tId = null;
     sfx.pause(); AudioEngine.duck(0.6, 0.2);
+    if (DSDARadio) { radioWasPlaying = !!DSDARadio.playing; DSDARadio.pause(); }  // stop radio on pause
   }
 }
 function resetGame() {
@@ -1820,6 +1825,7 @@ function startGameFromMenu() {
   elScores.classList.add('hidden');
   document.body.classList.remove('menu-mode');
   resetGame();
+  if (radioWasPlaying && DSDARadio) { DSDARadio.play(); radioWasPlaying = false; }  // resume radio if it was playing
 }
 function backToMenu() {
   $('pause').classList.add('hidden'); pausedFrom = null;
@@ -1834,6 +1840,69 @@ function backToMenu() {
   setMenuSel(0, true);
   refreshMenuBest();
   elMenu.classList.remove('hidden');
+  if (DSDARadio) { radioWasPlaying = !!DSDARadio.playing; DSDARadio.pause(); }  // stop radio on menu (only menu FX)
+}
+
+// ---------------- menu paddle demo: paddle sweeps, ball bounces off the title ----------------
+// A tiny self-contained 2D canvas preview, right above START GAME. The top edge of
+// the canvas is the "bottom of the SHATTERBLOCK letters"; the ball bounces between
+// that and the sweeping paddle (angle from where it strikes, like the real game).
+function initMenuPaddle() {
+  const cv = $('menuPaddleCv');
+  if (!cv) return;
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  const paddleW = 60, paddleH = 9, paddleY = H - 16;
+  const ballR = 6;
+  let paddleX = W / 2, paddleDir = 1, paddleSpeed = 82;
+  let bx = W / 2, by = H * 0.38, bvx = 56, bvy = 112;
+  let last = 0;
+  function rrect(x, px, py, w, h, r) {
+    if (x.roundRect) { x.beginPath(); x.roundRect(px, py, w, h, r); return; }
+    x.beginPath(); x.moveTo(px + r, py); x.arcTo(px + w, py, px + w, py + h, r);
+    x.arcTo(px + w, py + h, px, py + h, r); x.arcTo(px, py + h, px, py, r);
+    x.arcTo(px, py, px + w, py, r); x.closePath();
+  }
+  function frame(t) {
+    requestAnimationFrame(frame);
+    if (!(document.body.classList.contains('menu-mode') && !elMenu.classList.contains('hidden'))) { last = 0; return; }  // only animate on the menu
+    if (!last) last = t;
+    const dt = Math.min(0.05, (t - last) / 1000);
+    last = t;
+    // paddle sweeps left-right
+    paddleX += paddleDir * paddleSpeed * dt;
+    if (paddleX < paddleW / 2 + 2) { paddleX = paddleW / 2 + 2; paddleDir = 1; }
+    if (paddleX > W - paddleW / 2 - 2) { paddleX = W - paddleW / 2 - 2; paddleDir = -1; }
+    // ball
+    bx += bvx * dt; by += bvy * dt;
+    if (by - ballR < 0) { by = ballR; bvy = Math.abs(bvy); }   // bottom of the title
+    if (bx - ballR < 0) { bx = ballR; bvx = Math.abs(bvx); }
+    if (bx + ballR > W) { bx = W - ballR; bvx = -Math.abs(bvx); }
+    const pTop = paddleY;
+    if (bvy > 0 && by + ballR > pTop && by - ballR < pTop + paddleH && Math.abs(bx - paddleX) < paddleW / 2 + ballR) {
+      by = pTop - ballR;
+      const off = Math.max(-1, Math.min(1, (bx - paddleX) / (paddleW / 2)));
+      const ang = off * 0.9;
+      const speed = Math.hypot(bvx, bvy) || 120;
+      bvx = speed * Math.sin(ang);
+      bvy = -speed * Math.cos(ang);
+    }
+    // draw
+    ctx.clearRect(0, 0, W, H);
+    const tg = ctx.createLinearGradient(0, 0, W, 0);
+    tg.addColorStop(0, 'rgba(110,168,255,0.05)'); tg.addColorStop(0.5, 'rgba(110,168,255,0.55)'); tg.addColorStop(1, 'rgba(192,107,255,0.05)');
+    ctx.strokeStyle = tg; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(0, 1); ctx.lineTo(W, 1); ctx.stroke();
+    const pg = ctx.createLinearGradient(0, paddleY, 0, paddleY + paddleH);
+    pg.addColorStop(0, '#8fc0ff'); pg.addColorStop(0.5, '#4d8dff'); pg.addColorStop(1, '#2b5fd0');
+    ctx.fillStyle = pg;
+    rrect(ctx, paddleX - paddleW / 2, paddleY, paddleW, paddleH, 4); ctx.fill();
+    ctx.save(); ctx.shadowColor = 'rgba(200,230,255,0.9)'; ctx.shadowBlur = 10;
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath(); ctx.arc(bx, by, ballR, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+  requestAnimationFrame(frame);
 }
 
 async function fetchGlobalBoard() {
@@ -2571,6 +2640,7 @@ window.__tl = {
 
 try {
   boot();
+  initMenuPaddle();  // start the menu paddle/ball demo (no-op if the canvas is absent)
 } catch (err) {
   window.__bootErr = (err && err.stack) || String(err);
   elBootErr.classList.remove('hidden');
