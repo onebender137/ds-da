@@ -85,6 +85,15 @@
     padding:9px 16px; border-radius:30px; font-size:13px; opacity:0; transition:all .5s; pointer-events:none;
     backdrop-filter:blur(6px); white-space:nowrap}
   .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+  .gate{position:absolute; inset:0; background:rgba(8,8,16,.85); backdrop-filter:blur(5px);
+    display:none; align-items:center; justify-content:center; flex-direction:column;
+    border-radius:22px; cursor:pointer; z-index:10; text-align:center}
+  .gate.show{display:flex}
+  .gate-icon{font-size:52px; animation:pulse 1.4s infinite}
+  .gate-title{font-size:22px; font-weight:800; letter-spacing:3px; margin-top:16px;
+    background:linear-gradient(90deg,var(--neon),var(--neon2));
+    -webkit-background-clip:text; background-clip:text; color:transparent}
+  .gate-sub{color:var(--dim); font-size:13px; letter-spacing:2px; margin-top:8px}
   .footer{margin-top:18px; text-align:center; color:var(--dim); font-size:11px; letter-spacing:1px}
   .footer b{color:var(--neon2); font-weight:700}
 </style>
@@ -120,6 +129,21 @@
     </div>
 
     <div class="toast" id="toast"></div>
+    <div class="gate" id="gate">
+      <div class="gate-icon"><svg width="72" height="54" viewBox="0 0 72 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <line x1="18" y1="18" x2="48" y2="5" stroke="url(#mg)" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="52" cy="6" r="2.5" fill="url(#mg)"/>
+        <rect x="6" y="18" width="60" height="30" rx="7" fill="#14142a" stroke="url(#mg)" stroke-width="2.5"/>
+        <circle cx="48" cy="33" r="9" fill="none" stroke="url(#mg)" stroke-width="2.5"/>
+        <circle cx="48" cy="33" r="3.5" fill="url(#mg)"/>
+        <rect x="14" y="28" width="20" height="10" rx="2.5" fill="url(#mg)" opacity="0.55"/>
+        <defs><linearGradient id="mg" x1="6" y1="5" x2="66" y2="48" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#c04cff"/><stop offset="1" stop-color="#4cd7ff"/>
+        </linearGradient></defs>
+      </svg></div>
+      <div class="gate-title">TAP TO TUNE IN</div>
+      <div class="gate-sub">Mental FM 137.7</div>
+    </div>
     <div class="footer">You're listening to the <b>live broadcast</b> — everyone's tuned to the same second. · <span id="tagline"></span></div>
   </div>
 
@@ -143,6 +167,7 @@
     toast:document.getElementById('toast'),
     tagline:document.getElementById('tagline'),
     freqNum:document.getElementById('freqNum'),
+    gate:document.getElementById('gate'),
   };
 
   function fmt(s){s=Math.max(0,Math.floor(s));var m=Math.floor(s/60);var ss=s%60;return m+':'+(ss<10?'0':'')+ss;}
@@ -174,7 +199,7 @@
     audio.onloadedmetadata=function(){
       var o=Math.max(0,Math.min(offset,audio.duration-0.15));
       try{audio.currentTime=o;}catch(e){}
-      audio.play().catch(function(){});
+      tryPlay();
       el.title.textContent=item.title;
       el.badge.textContent=item.type.toUpperCase();
       el.badge.className='badge '+item.type;
@@ -206,9 +231,20 @@
     userPaused=p;
     if(p){audio.pause(); radio.classList.add('paused'); el.playBtn.innerHTML='&#9654;';
       el.live.classList.add('paused'); el.liveText.textContent='PAUSED';}
-    else{audio.play().catch(function(){}); radio.classList.remove('paused'); el.playBtn.innerHTML='&#10074;&#10074;';
+    else{tryPlay(); radio.classList.remove('paused'); el.playBtn.innerHTML='&#10074;&#10074;';
       el.live.classList.remove('paused'); el.liveText.textContent='ON AIR';}
   }
+
+  // Mobile browsers block autoplay until a user gesture. tryPlay() surfaces a
+  // "tap to tune in" gate when play() is rejected; tapping it unlocks audio.
+  function tryPlay(){
+    var p=audio.play();
+    if(p&&p.catch){p.catch(function(){if(!userPaused)el.gate.classList.add('show');});}
+  }
+  el.gate.addEventListener('click',function(){
+    el.gate.classList.remove('show');
+    tryPlay();
+  });
 
   function init(){
     return fetch('manifest.json',{cache:'no-store'}).then(function(r){return r.json();}).then(function(m){
