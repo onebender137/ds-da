@@ -1270,9 +1270,9 @@ function startClear(matched, n) {
     if (backGlow) backGlow.material.opacity = 0.22 + Math.min(0.5, 0.12 * n + matched.size * 0.03);
   }
   if (n > maxChain) maxChain = n;
-  // board wobble on every match — quick horizontal turn, bigger for chains
+  // board wobble on every match — quick horizontal turn, dramatic + scales hard with chain
   wobbleT = 0;
-  wobbleAmp = Math.min(0.10, 0.02 + n * 0.014);
+  wobbleAmp = Math.min(0.50, 0.10 + n * 0.08);
   sfx.match(n);
   Vocals.match(n);
   updateHud();
@@ -2028,10 +2028,10 @@ function update(dt) {
   // camera: menu orbit vs play position, plus slow play sway + match wobble + shake
   camMenuBlend += ((phase === 'menu' ? 1 : 0) - camMenuBlend) * Math.min(1, dt * 1.8);
   const orbit = Math.sin(menuTime * 0.28) * 0.3 * camMenuBlend;
-  // slow left-right turn while playing — shows off the 3D board
-  const playSway = Math.sin(menuTime * 0.45) * 0.05 * (1 - camMenuBlend);
+  // slow left-right turn while playing — shows off the 3D board (dramatic)
+  const playSway = Math.sin(menuTime * 0.45) * 0.20 * (1 - camMenuBlend);
   // match wobble: quick left-right oscillation that decays back into the idle sway
-  if (wobbleAmp > 0.0004) { wobbleT += dt; wobbleAmp *= Math.exp(-dt * 2.4); }
+  if (wobbleAmp > 0.0004) { wobbleT += dt; wobbleAmp *= Math.exp(-dt * 1.8); }
   else wobbleAmp = 0;
   const wobble = Math.sin(wobbleT * 13) * wobbleAmp;
   camCur.copy(camBase).applyAxisAngle(Y_AXIS, orbit + playSway + wobble);
