@@ -10,12 +10,32 @@
      ...
      DSDARadio.init({ mount: 'radioBox', manifest: '../../radio/stations.json' });
 
-   Design:
-   - Tracks STREAM from their URLs (no bundling) — a real radio.
-   - Plain <audio> element (robust cross-origin playback).
-   - Optional: if the game exposes window.__dsdaAudioBus (an
-     AudioNode), the radio routes through it for ducking — but
-     that needs the audio to be same-origin or CORS-enabled.
+   Design — TWO playback paths, picked per station:
+
+   A) SEAMLESS (Web Audio).  One-track loop stations (the games'
+      own originals).  The file is fetched and decoded ONCE into an
+      AudioBuffer, then played by an AudioBufferSourceNode with
+      loop = true.  The loop happens inside the audio graph:
+      sample-accurate, no media-element seek, no re-buffer, no
+      decoder reset — therefore no gap.
+      NOTE: <audio>.loop is NOT gapless.  Looping a media element
+      is a seek back to 0, and the element re-establishes its byte
+      range + flushes the decode pipeline to do it.  Over the
+      network that is the 1-2s "skip" we had.  Do not use it for
+      music that has to loop in time.
+
+   B) STREAM (<audio>).  Playlist / cross-origin stations
+      (Polkahole).  A gap between two different songs is
+      inaudible, and Web Audio would need CORS headers from the
+      remote host anyway.
+
+   Which path a station takes:  "loop": true/false in stations.json
+   forces it; with no flag, a one-track SAME-ORIGIN station is
+   treated as a seamless loop and anything else streams.
+
+   - If the game exposes window.__dsdaAudioBus (an AudioNode), the
+     seamless path routes through it, so ducking under voice/SFX
+     works for those stations.
    - New stations/tracks = edit stations.json only. Games never change.
    ============================================================ */
 const DSDARadio = {
@@ -29,6 +49,14 @@ const DSDARadio = {
   el: null,
   els: {},
   _src: null,   // last requested source (for change detection)
+  // --- seamless (Web Audio) path state ---
+  ctx: null,       // AudioContext (the game's own, if it exposes a bus)
+  gain: null,      // volume node for the seamless path
+  node: null,      // live AudioBufferSourceNode
+  _buffers: {},    // url -> decoded AudioBuffer (decode once, retune instantly)
+  _resume: null,   // {url, at} so pause/unpause doesn't restart the loop
+  _nodeStartedAt: 0,
+  _nodeOffset: 0,
 
   get cur() {
     const st = this.manifest && this.manifest.stations[this.station];
@@ -138,9 +166,11 @@ const DSDARadio = {
     body.appendChild(vol);
     el.appendChild(body);
 
-    // audio element
+    // audio element — used for the STREAM path only (playlist / cross-origin).
+    // preload 'auto' (was 'metadata') so the next song is buffered before the
+    // current one ends; shortens the gap between playlist tracks too.
     this.audio = new Audio();
-    this.audio.preload = 'metadata';
+    this.audio.preload = 'auto';
     this.audio.volume = this.volume;
     this.audio.addEventListener('ended', () => this.next());
     this.audio.addEventListener('error', () => {
@@ -201,20 +231,153 @@ const DSDARadio = {
     }
   },
 
+  // ---- path selection -------------------------------------------------
+  _isSeamless(st) {
+    if (!st || !st.tracks || !st.tracks.length) return false;
+    if (typeof st.loop === 'boolean') return st.loop;   // manifest override
+    return st.tracks.length === 1 && this._sameOrigin(st.tracks[0].url);
+  },
+  _sameOrigin(url) {
+    try { return new URL(url, location.href).origin === location.origin; }
+    catch (e) { return false; }
+  },
+
+  // ---- seamless path (Web Audio) --------------------------------------
+  _actx() {
+    if (this.ctx) return this.ctx;
+    const bus = window.__dsdaAudioBus;
+    if (bus && bus.context) {
+      // share the game's context so the radio can be ducked under voice/SFX
+      this.ctx = bus.context;
+      this.gain = this.ctx.createGain();
+      this.gain.connect(bus);
+    } else {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      this.ctx = new AC();
+      this.gain = this.ctx.createGain();
+      this.gain.connect(this.ctx.destination);
+    }
+    this.gain.gain.value = this.volume;
+    return this.ctx;
+  },
+
+  /* Trim the loop to the audio that is actually there.
+     Two kinds of junk sit at the edges of a rendered track:
+       - format padding: MP3 is framed at 1152 samples, so the encoder pads
+         the tail out to a frame boundary (and adds a short encoder delay).
+       - dead air the render script left behind. ShatterBlock's four
+         originals carry ~1.1s of literal zero samples at the end.
+     Either one makes a "seamless" loop audibly skip, so the loop points are
+     set to the first/last sample above -60 dBFS instead of 0..duration.
+     -60 dBFS measured best on the real assets: it costs the Machine Elves
+     tracks nothing (0ms trimmed — their audio runs hot to the last sample)
+     and takes ShatterBlock's dead air off completely (1241ms vs 1088ms at
+     -80 dBFS, where a 150ms breath survived). Each end is capped at 2s so a
+     bad scan can never eat the track.
+
+     Then both ends are SNAPPED to the quietest sample within 5ms (i.e. the
+     nearest zero crossing). Trimming alone leaves a step at the splice —
+     last sample of the loop vs first sample — and a step is a click. Machine
+     Elves' "fairyland" steps 0.45 (-6.9 dBFS) raw; snapping takes it to
+     0.0026 (-51.8 dBFS), inaudible, for under 5ms of loop-length change.
+     A fade would also kill the click but would dip the level every bar. */
+  _loopPoints(buf) {
+    if (buf.__dsdaLoop) return buf.__dsdaLoop;
+    const THR = 1e-3;                    // -60 dBFS
+    const n = buf.length, sr = buf.sampleRate;
+    const ch = [];
+    for (let c = 0; c < buf.numberOfChannels; c++) ch.push(buf.getChannelData(c));
+    const amp = (i) => {
+      let a = 0;
+      for (let c = 0; c < ch.length; c++) { const v = Math.abs(ch[c][i]); if (v > a) a = v; }
+      return a;
+    };
+    // 1. trim format padding + dead air
+    const cap = Math.floor(2 * sr);
+    let s = 0, e = n - 1;
+    while (s < n - 1 && s < cap && amp(s) <= THR) s++;
+    while (e > s && (n - 1 - e) < cap && amp(e) <= THR) e--;
+    e += 1;                              // e is now exclusive
+    // 2. snap both ends to the nearest zero crossing (5ms window)
+    const w = Math.floor(0.005 * sr);
+    let bs = s, bv = Infinity;
+    for (let i = s; i <= Math.min(s + w, n - 1); i++) { const a = amp(i); if (a < bv) { bv = a; bs = i; } }
+    let be = e, bev = Infinity;
+    for (let i = Math.max(bs + 1, e - w); i < Math.min(e + 1, n); i++) { const a = amp(i); if (a < bev) { bev = a; be = i + 1; } }
+    s = bs; e = Math.min(be, n);
+    const pts = { start: s / sr, end: e / sr };
+    try { Object.defineProperty(buf, '__dsdaLoop', { value: pts }); } catch (err) {}
+    return pts;
+  },
+
+  async _playSeamless(url) {
+    const ctx = this._actx();
+    if (ctx.state === 'suspended') { try { await ctx.resume(); } catch (e) {} }
+    let buf = this._buffers[url];
+    if (!buf) {
+      const r = await fetch(url);                     // same-origin (or CORS-enabled)
+      if (!r.ok) throw new Error('radio fetch ' + r.status);
+      buf = await ctx.decodeAudioData(await r.arrayBuffer());
+      this._buffers[url] = buf;
+    }
+    const pts = this._loopPoints(buf);
+    let from = pts.start;
+    if (this._resume && this._resume.url === url &&
+        this._resume.at >= pts.start && this._resume.at < pts.end) from = this._resume.at;
+    this._resume = null;
+    this._stopSeamless();
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.loop = true;
+    src.loopStart = pts.start;
+    src.loopEnd = pts.end;
+    src.connect(this.gain);
+    src.start(0, from);
+    this.node = src;
+    this._nodeStartedAt = ctx.currentTime;
+    this._nodeOffset = from;
+  },
+
+  // where in the buffer we are right now (an AudioBufferSourceNode has no
+  // currentTime, so it's derived from the context clock and wrapped)
+  _seamlessPos() {
+    const src = this.node;
+    if (!src || !this.ctx) return null;
+    const ls = src.loopStart, le = src.loopEnd || src.buffer.duration;
+    const span = Math.max(1e-3, le - ls);
+    let p = this._nodeOffset + (this.ctx.currentTime - this._nodeStartedAt);
+    if (p >= le) p = ls + ((p - ls) % span);
+    return p;
+  },
+
+  _stopSeamless() {
+    if (!this.node) return;
+    try { this.node.stop(); } catch (e) {}
+    try { this.node.disconnect(); } catch (e) {}
+    this.node = null;
+  },
+
+  // ---- shared entry point ---------------------------------------------
   async _loadAndPlay() {
     const c = this.cur;
     if (!c) return;
-    // Single-track stations loop seamlessly (browser-native loop = zero gap)
     const st = this.manifest.stations[this.station];
-    this.audio.loop = (st.tracks.length === 1);
-    if (this._src !== c.track.url) {
-      this._src = c.track.url;
-      this.audio.src = c.track.url;
-    }
     try {
-      await this.audio.play();
+      if (this._isSeamless(st)) {
+        this.audio.pause();                 // keep the stream path silent
+        await this._playSeamless(c.track.url);
+      } else {
+        this._stopSeamless();
+        this.audio.loop = (st.tracks.length === 1);
+        if (this._src !== c.track.url) {
+          this._src = c.track.url;
+          this.audio.src = c.track.url;
+        }
+        await this.audio.play();
+      }
       this.playing = true;
     } catch (e) {
+      console.warn('[DSDARadio] play failed:', e);
       this.playing = false;
     }
     this.render();
@@ -225,6 +388,12 @@ const DSDARadio = {
     await this._loadAndPlay();
   },
   pause() {
+    if (this.node) {
+      const at = this._seamlessPos();
+      const c = this.cur;
+      if (at != null && c) this._resume = { url: c.track.url, at };
+      this._stopSeamless();
+    }
     if (this.audio) this.audio.pause();
     this.playing = false;
     this.render();
@@ -237,12 +406,14 @@ const DSDARadio = {
     const st = this.manifest && this.manifest.stations[this.station];
     if (!st) return;
     this.track = (this.track + 1) % st.tracks.length;
+    this._resume = null;
     if (this.playing) this._loadAndPlay(); else this.render();
   },
   prev() {
     const st = this.manifest && this.manifest.stations[this.station];
     if (!st) return;
     this.track = (this.track - 1 + st.tracks.length) % st.tracks.length;
+    this._resume = null;
     if (this.playing) this._loadAndPlay(); else this.render();
   },
   setStation(i, trackIdx) {
@@ -253,13 +424,18 @@ const DSDARadio = {
     const nTracks = this.manifest.stations[i].tracks.length;
     this.track = (Number.isInteger(trackIdx) && trackIdx >= 0 && trackIdx < nTracks) ? trackIdx : 0;
     this._src = null;
+    this._resume = null;
     // Tuning to a station always starts playing it (real-radio behavior) —
     // the dial click is a user gesture so autoplay is allowed.
     this._loadAndPlay();
   },
   setVolume(v) {
     this.volume = Math.max(0, Math.min(1, v));
-    if (this.audio) this.audio.volume = this.volume;
+    if (this.audio) this.audio.volume = this.volume;          // stream path
+    if (this.gain && this.ctx) {                              // seamless path
+      // short ramp instead of a jump — a bare .value = x on a live graph clicks
+      this.gain.gain.setTargetAtTime(this.volume, this.ctx.currentTime, 0.015);
+    }
     if (this.els.volSlider && document.activeElement !== this.els.volSlider) {
       this.els.volSlider.value = String(Math.round(this.volume * 100));
     }

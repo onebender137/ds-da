@@ -8,7 +8,11 @@
    - Static assets (js/css/png/webmanifest): cache-first, then network →
      the 1.2MB vendored three.js + screenshots load instantly after visit 1.
    - Cross-origin (gtag.js, Google Fonts): never touched — plain network. */
-const CACHE = 'dsda-arcade-v1';
+// Bump this on any deploy that changes a cache-first asset (js/css/png/mp3).
+// Static assets are cache-first, so a returning player keeps serving the old
+// copy out of the cache until the version changes — activate() deletes every
+// cache whose key isn't this one. v2: the gapless DSDA Radio (radio/radio.js).
+const CACHE = 'dsda-arcade-v2';
 const CORE = [
   './',
   './manifest.webmanifest',

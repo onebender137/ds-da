@@ -7,6 +7,7 @@
     {
       "id": "polkahole",
       "name": "Polkahole",
+      "loop": false,
       "tagline": "Oompah oompah from the hole",
       "accent": "#ffcc00",
       "source": "https://polkahole.ca",
@@ -19,6 +20,7 @@
     {
       "id": "brick-breaker",
       "name": "Brick Breaker",
+      "loop": true,
       "tagline": "ShatterBlock original — driving E-minor breaker loop",
       "accent": "#ff6b35",
       "source": "ds-da.ca/games/shatterblock/original",
@@ -30,6 +32,7 @@
     {
       "id": "deep-space-drift",
       "name": "Deep Space Drift",
+      "loop": true,
       "tagline": "ShatterBlock original — mellow D-minor interlude",
       "accent": "#4d7cfe",
       "source": "ds-da.ca/games/shatterblock/original",
@@ -41,6 +44,7 @@
     {
       "id": "neon-rush",
       "name": "Neon Rush",
+      "loop": true,
       "tagline": "ShatterBlock original — high-energy A-minor anthem",
       "accent": "#ff2d95",
       "source": "ds-da.ca/games/shatterblock/original",
@@ -52,6 +56,7 @@
     {
       "id": "crystal-cascade",
       "name": "Crystal Cascade",
+      "loop": true,
       "tagline": "ShatterBlock original — bright bouncy F-major interlude",
       "accent": "#4dd0e1",
       "source": "ds-da.ca/games/shatterblock/original",
