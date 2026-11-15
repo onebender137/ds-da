@@ -1,0 +1,85 @@
+{
+  "station": "Mental FM",
+  "frequency": "137.7",
+  "callSign": "Mental FM 137.7",
+  "tagline": "The secret frequency of the DSDA arcade",
+  "network": "DSDA Radio",
+  "epoch": 1794784829.904,
+  "totalDuration": 1818.531,
+  "updated": "2026-11-15",
+  "note": "Shared broadcast clock: every listener tunes into the same live position. Announcements (BM Lewis / Kokoro TTS) are woven between tracks like real radio.",
+  "program": [
+    {
+      "type": "announce",
+      "title": "Mental FM 137.7 \u2014 On Air",
+      "url": "announcements/id_intro.mp3",
+      "duration": 11.051
+    },
+    {
+      "type": "music",
+      "title": "Dj Mental \u2014 Side B",
+      "url": "music/DjMental-SideB.mp3",
+      "duration": 369.144
+    },
+    {
+      "type": "music",
+      "title": "Dj Mental \u2014 Grease Monkey",
+      "url": "music/djmental-greasemonkey.mp3",
+      "duration": 393.621
+    },
+    {
+      "type": "announce",
+      "title": "DSDA Arcade \u2014 Promo",
+      "url": "announcements/promo_dsda.mp3",
+      "duration": 12.8
+    },
+    {
+      "type": "music",
+      "title": "Dj Mental \u2014 An Amazing Moment",
+      "url": "music/djmentalamazingmoment.mp3",
+      "duration": 206.52
+    },
+    {
+      "type": "announce",
+      "title": "Mental FM 137.7",
+      "url": "announcements/id_short.mp3",
+      "duration": 6.275
+    },
+    {
+      "type": "music",
+      "title": "HHC",
+      "url": "music/hhc.mp3",
+      "duration": 150.0
+    },
+    {
+      "type": "announce",
+      "title": "Hopes and Dreams \u2014 Promo",
+      "url": "announcements/promo_hopes.mp3",
+      "duration": 12.0
+    },
+    {
+      "type": "music",
+      "title": "Nervous",
+      "url": "music/nervous.mp3",
+      "duration": 234.745
+    },
+    {
+      "type": "announce",
+      "title": "Mental FM 137.7",
+      "url": "announcements/id_short.mp3",
+      "duration": 6.275
+    },
+    {
+      "type": "music",
+      "title": "Syncro",
+      "url": "music/syncro.mp3",
+      "duration": 402.0
+    },
+    {
+      "type": "announce",
+      "title": "Polkahole \u2014 Promo",
+      "url": "announcements/promo_polkahole.mp3",
+      "duration": 14.1
+    }
+  ]
+}
