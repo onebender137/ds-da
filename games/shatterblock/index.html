@@ -391,6 +391,7 @@ window.addEventListener('error', e => {
 <script type="module">
 // three.js is vendored next to the game (self-contained, offline-capable, instant boot)
 import * as THREE from './three.module.js';
+import { RoundedBoxGeometry } from './jsm/geometries/RoundedBoxGeometry.js';
 'use strict';
 // Disable the bfcache (back/forward cache) so the mobile browser back button
 // always navigates to the arcade instead of restoring this page frozen in its
@@ -1002,51 +1003,63 @@ const colX = c => -7.66 + BRICK_PITCH_X * c + 0.55;
 const rowY = r => BRICK_TOP - r * BRICK_PITCH_Y;
 
 // ---------------- brick assets ----------------
-const brickGeo = new THREE.BoxGeometry(BRICK_W, BRICK_H, BRICK_D);
-// MeshPhysicalMaterial + clearcoat = a glossy top layer that catches the
-// sweeping glare light, giving each brick a moving specular sheen.
+const BRICK_R = 0.08;   // beveled candy edge
+const brickGeo = new RoundedBoxGeometry(BRICK_W, BRICK_H, BRICK_D, 3, BRICK_R);
+// Glossy "candy" bricks: saturated color + a clear glassy clearcoat layer that
+// catches the sweeping glare light, NO self-emissive (that reads as glow), and a
+// touch of iridescence for a sugar-coat shimmer. Beveled edges via RoundedBox.
+function candyMat(hex, opts) {
+  return new THREE.MeshPhysicalMaterial(Object.assign({
+    color: hex, roughness: 0.14, metalness: 0.0,
+    clearcoat: 1, clearcoatRoughness: 0.08,
+    iridescence: 0.28, iridescenceIOR: 1.25, iridescenceThicknessRange: [120, 240],
+  }, opts || {}));
+}
 const brickMats = {
-  1: new THREE.MeshPhysicalMaterial({ color: 0xff5d6c, roughness: 0.28, metalness: 0.2,
-    clearcoat: 1, clearcoatRoughness: 0.12,
-    emissive: new THREE.Color(0xff5d6c).multiplyScalar(0.16) }),
-  2: new THREE.MeshPhysicalMaterial({ color: 0xffb347, roughness: 0.28, metalness: 0.2,
-    clearcoat: 1, clearcoatRoughness: 0.12,
-    emissive: new THREE.Color(0xffb347).multiplyScalar(0.16) }),
-  3: new THREE.MeshPhysicalMaterial({ color: 0x4dd2ff, roughness: 0.28, metalness: 0.2,
-    clearcoat: 1, clearcoatRoughness: 0.12,
-    emissive: new THREE.Color(0x4dd2ff).multiplyScalar(0.16) }),
-  solid: new THREE.MeshPhysicalMaterial({ color: 0x39415e, roughness: 0.3, metalness: 0.8,
-    clearcoat: 0.8, clearcoatRoughness: 0.2,
-    emissive: 0x101733, emissiveIntensity: 0.8 }),
+  1: candyMat(0xff5d6c),
+  2: candyMat(0xffb347),
+  3: candyMat(0x4dd2ff),
+  // armour bricks: dark, hard, metallic — reads as a different material
+  solid: candyMat(0x39415e, { roughness: 0.22, metalness: 0.7, clearcoatRoughness: 0.16, iridescence: 0.08 }),
 };
 const ballGeo = new THREE.SphereGeometry(BALL_R, 20, 14);
-const ballMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.25, metalness: 0.3,
-  emissive: 0x88aaff, emissiveIntensity: 0.55 });
-const paddleGeo = new THREE.BoxGeometry(1, PADDLE_H, 0.42);
-// Polished paddle: glossy clearcoated body + a bright "energy core" stripe
-// along the top + glowing side accents. Built as a Group so
-// recalcPaddleWidth() can scale the whole assembly.
+const ballMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.18, metalness: 0.1 });   // clean white ball — no self-glow
+const PADDLE_R = 0.2;   // rounded-edge radius (fixed, so ends stay round at any width)
+let paddleBody, paddleCore, paddleAccL, paddleAccR;
+// Polished paddle: glossy clearcoated body + a subtle top highlight + faint side
+// accents. Built at TRUE width (not x-scaled) so the rounded ends stay round —
+// an x-scaled rounded box stretches the ends into flat ellipses.
 function buildPaddle() {
   const g = new THREE.Group();
-  const body = new THREE.Mesh(paddleGeo,
-    new THREE.MeshPhysicalMaterial({ color: 0x4d8dff, roughness: 0.16, metalness: 0.55,
-      clearcoat: 1, clearcoatRoughness: 0.08,
-      emissive: 0x1a3aa0, emissiveIntensity: 0.5 }));
-  body.castShadow = true;
-  g.add(body);
-  // bright energy core stripe along the top-center
-  const core = new THREE.Mesh(new THREE.BoxGeometry(0.98, 0.055, 0.46),
-    new THREE.MeshStandardMaterial({ color: 0xdff3ff, emissive: 0x8fd8ff, emissiveIntensity: 1.8, roughness: 0.15, metalness: 0.1 }));
-  core.position.y = PADDLE_H / 2 - 0.015;
-  g.add(core);
-  // glowing side accents near the edges
-  const accentMat = new THREE.MeshStandardMaterial({ color: 0x9fd0ff, emissive: 0x5fb0ff, emissiveIntensity: 1.3, roughness: 0.3, metalness: 0.2 });
-  const al = new THREE.Mesh(new THREE.BoxGeometry(0.07, PADDLE_H - 0.1, 0.44), accentMat);
-  al.position.x = -0.45;
-  const ar = new THREE.Mesh(new THREE.BoxGeometry(0.07, PADDLE_H - 0.1, 0.44), accentMat);
-  ar.position.x = 0.45;
-  g.add(al, ar);
+  paddleBody = new THREE.Mesh(
+    new RoundedBoxGeometry(1, PADDLE_H, 0.42, 4, PADDLE_R),
+    new THREE.MeshPhysicalMaterial({ color: 0x4d8dff, roughness: 0.12, metalness: 0.6,
+      clearcoat: 1, clearcoatRoughness: 0.06,
+      emissive: 0x1a3aa0, emissiveIntensity: 0.12 }));
+  paddleBody.castShadow = true;
+  g.add(paddleBody);
+  paddleCore = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.05, 0.44),
+    new THREE.MeshStandardMaterial({ color: 0xdff3ff, emissive: 0x8fd8ff, emissiveIntensity: 0.35, roughness: 0.15, metalness: 0.1 }));
+  paddleCore.position.y = PADDLE_H / 2 - 0.02;
+  g.add(paddleCore);
+  const accentMat = new THREE.MeshStandardMaterial({ color: 0x9fd0ff, emissive: 0x5fb0ff, emissiveIntensity: 0.28, roughness: 0.28, metalness: 0.2 });
+  paddleAccL = new THREE.Mesh(new THREE.BoxGeometry(0.06, PADDLE_H - 0.12, 0.4), accentMat);
+  paddleAccL.position.x = -0.45;
+  paddleAccR = new THREE.Mesh(new THREE.BoxGeometry(0.06, PADDLE_H - 0.12, 0.4), accentMat);
+  paddleAccR.position.x = 0.45;
+  g.add(paddleAccL, paddleAccR);
   return g;
+}
+// Rebuild the body at true width so the rounded ends never get stretched flat.
+function setPaddleWidth(w) {
+  w = Math.max(1.0, w);
+  paddleBody.geometry.dispose();
+  paddleBody.geometry = new RoundedBoxGeometry(w, PADDLE_H, 0.42, 4, PADDLE_R);
+  paddleCore.geometry.dispose();
+  paddleCore.geometry = new THREE.BoxGeometry(w * 0.9, 0.05, 0.44);
+  const ax = w / 2 - 0.2;
+  paddleAccL.position.x = -ax;
+  paddleAccR.position.x = ax;
 }
 const laserGeo = new THREE.BoxGeometry(0.1, 0.55, 0.1);
 const laserMat = new THREE.MeshBasicMaterial({ color: 0xffe14d });
@@ -1489,8 +1502,8 @@ function recalcPaddleWidth() {
   if (power.shrink > 0) paddleW *= POWER_DEFS.shrink.w;
   if (paddle) {
     for (let i = impacts.length - 1; i >= 0; i--) if (impacts[i].obj === paddle) impacts.splice(i, 1);
-    paddle.scale.set(paddleW, 1, 1);
-    paddle.userData.base = paddle.scale.clone();
+    setPaddleWidth(paddleW);
+    paddle.userData.base = new THREE.Vector3(1, 1, 1);   // body built at true width; punch() squashes from scale 1
   }
 }
 function dropPowerup(x, forcedType) {
@@ -2304,11 +2317,12 @@ function animate() {
 function fitCamera() {
   const w = window.innerWidth, h = window.innerHeight;
   camera.aspect = w / h;
-  // fit the whole 16x18 field: whichever axis needs more distance wins
+  // fit the whole 16x18 field with generous margin: whichever axis needs more
+  // distance wins, so the entire scene (bricks, paddle, walls) is always in frame
   const t = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
-  const needV = (PLAY_H / 2 + 0.7) / t;
-  const needH = (PLAY_W / 2 + 0.7) / (t * camera.aspect);
-  const dist = Math.max(needV, needH) + 0.5;
+  const needV = (PLAY_H / 2 + 1.3) / t;
+  const needH = (PLAY_W / 2 + 1.3) / (t * camera.aspect);
+  const dist = Math.max(needV, needH) + 1.2;
   camera.position.set(0, PLAY_H / 2, dist);
   camera.userData.base = camera.position.clone();
   camera.lookAt(0, PLAY_H / 2, 0);
@@ -2329,7 +2343,7 @@ function boot() {
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.12;
+    renderer.toneMappingExposure = 1.0;
     renderer.domElement.id = 'scene';
     sceneEl = renderer.domElement;
   } catch (e) {
@@ -2380,7 +2394,7 @@ function boot() {
 
   // paddle (polished group: glossy body + energy core + accents)
   paddle = buildPaddle();
-  paddle.scale.x = PADDLE_BASE_W;
+  setPaddleWidth(PADDLE_BASE_W);
   paddle.position.set(0, PADDLE_Y, 0);
   scene.add(paddle);
 
