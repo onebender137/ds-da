@@ -1888,6 +1888,7 @@ function initMenuPaddle() {
       bvy = -speed * Math.cos(ang);
     }
     // draw
+    window.__mpBall = [Math.round(bx*10)/10, Math.round(by*10)/10];
     ctx.clearRect(0, 0, W, H);
     const tg = ctx.createLinearGradient(0, 0, W, 0);
     tg.addColorStop(0, 'rgba(110,168,255,0.05)'); tg.addColorStop(0.5, 'rgba(110,168,255,0.55)'); tg.addColorStop(1, 'rgba(192,107,255,0.05)');
