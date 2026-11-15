@@ -116,7 +116,11 @@
   @keyframes apPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.03); } }
   @keyframes apShimmer { 0% { left: -100%; } 45% { left: 150%; } 100% { left: 150%; } }
   h3.sub { font-size: 10px; letter-spacing: 2px; color: var(--muted); margin: 12px 0 6px; font-weight: 600; }
-  ol.tops { list-style: none; }
+  ol.tops { list-style: none; max-height: 280px; overflow-y: auto;
+    scrollbar-width: thin; scrollbar-color: rgba(122,142,255,0.3) transparent; }
+  ol.tops::-webkit-scrollbar { width: 5px; }
+  ol.tops::-webkit-scrollbar-track { background: transparent; }
+  ol.tops::-webkit-scrollbar-thumb { background: rgba(122,142,255,0.3); border-radius: 3px; }
   ol.tops li { display: flex; justify-content: space-between; font-size: 12px; padding: 3px 4px;
     border-bottom: 1px dashed rgba(122,142,255,0.1); font-variant-numeric: tabular-nums; border-radius: 4px; }
   ol.tops li:nth-child(1) .rank { color: var(--gold); }
@@ -2189,7 +2193,7 @@ function gameOver() {
   const isHigh = score > 0 && score >= (top[0] ? top[0].s : 0);
   elNewHigh.classList.toggle('hidden', !isHigh);
   if (isHigh) sfx.newHigh();
-  renderTopList(elTopList, top.slice(0, 10));
+  renderTopList(elTopList, top.slice(0, 20));
   elOverlay.classList.remove('hidden');
   elInitials.focus();
 }
@@ -2354,19 +2358,19 @@ setInterval(async () => {
   const g = await fetchGlobalBoard();
   if (!g || !g.top.length) return;
   if (!elScores.classList.contains('hidden')) {
-    renderTopList(elGlobalTop, g.top.slice(0, 10));
+    renderTopList(elGlobalTop, g.top.slice(0, 20));
     elGlobalNote.textContent = 'Verified by the DSDA board · ' + new Date(g.updated || Date.now()).toLocaleDateString();
   } else if (elMenu.classList.contains('hidden')) {
-    renderTopList(elHudTop, g.top.slice(0, 10));
+    renderTopList(elHudTop, g.top.slice(0, 20));
   }
 }, 30000);
 async function showScores() {
   elScores.classList.remove('hidden');
-  renderTopList(elLocalTop, loadScores().slice(0, 10));
+  renderTopList(elLocalTop, loadScores().slice(0, 20));
   elGlobalNote.textContent = 'Loading global board…';
   const g = await fetchGlobalBoard();
   if (g && g.top.length) {
-    renderTopList(elGlobalTop, g.top.slice(0, 10));
+    renderTopList(elGlobalTop, g.top.slice(0, 20));
     elGlobalNote.textContent = 'Verified by the DSDA board · ' + new Date(g.updated || Date.now()).toLocaleDateString();
   } else if (g) {
     renderTopList(elGlobalTop, []);
@@ -2388,7 +2392,7 @@ function saveToStorage(name, s) {
   const arr = loadScores();
   arr.push({ n: name, s: s, d: Date.now() });
   arr.sort((a, b) => b.s - a.s);
-  const top = arr.slice(0, 10);
+  const top = arr.slice(0, 20);
   try { localStorage.setItem(SCORE_KEY, JSON.stringify(top)); } catch (e) {}
   return top;
 }
@@ -2994,7 +2998,7 @@ function boot() {
     mp.appendChild(d);
   }
 
-  renderTopList(elHudTop, loadScores().slice(0, 10));
+  renderTopList(elHudTop, loadScores().slice(0, 20));
   updateMusicUI();
   updateHud();
   setMenuSel(0, true);
