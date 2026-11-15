@@ -280,8 +280,23 @@ const DSDARadio = {
      last sample of the loop vs first sample — and a step is a click. Machine
      Elves' "fairyland" steps 0.45 (-6.9 dBFS) raw; snapping takes it to
      0.0026 (-51.8 dBFS), inaudible, for under 5ms of loop-length change.
-     A fade would also kill the click but would dip the level every bar. */
-  _loopPoints(buf) {
+     A fade would also kill the click but would dip the level every bar.
+
+     Auto-detection has a limit: it finds where the AUDIO ends, which is not
+     the same thing as where the BAR ends. Where a final note's decay rings
+     past the bar line the loop comes out long, and where the render was
+     truncated it comes out short — either way the beat stumbles once a loop.
+     Nothing measurable in the file fixes that, so a track may carry explicit
+     "loopStart"/"loopEnd" (seconds) in stations.json, which win outright.
+     Those come from the render script's own tempo and bar count, or from
+     tuning by ear. */
+  _loopPoints(buf, track) {
+    if (track && (typeof track.loopEnd === 'number' || typeof track.loopStart === 'number')) {
+      const s = Math.max(0, Math.min(buf.duration, +track.loopStart || 0));
+      let e = (typeof track.loopEnd === 'number') ? +track.loopEnd : buf.duration;
+      e = Math.max(s + 0.05, Math.min(buf.duration, e));
+      return { start: s, end: e };
+    }
     if (buf.__dsdaLoop) return buf.__dsdaLoop;
     const THR = 1e-3;                    // -60 dBFS
     const n = buf.length, sr = buf.sampleRate;
@@ -310,7 +325,7 @@ const DSDARadio = {
     return pts;
   },
 
-  async _playSeamless(url) {
+  async _playSeamless(url, track) {
     const ctx = this._actx();
     if (ctx.state === 'suspended') { try { await ctx.resume(); } catch (e) {} }
     let buf = this._buffers[url];
@@ -320,7 +335,7 @@ const DSDARadio = {
       buf = await ctx.decodeAudioData(await r.arrayBuffer());
       this._buffers[url] = buf;
     }
-    const pts = this._loopPoints(buf);
+    const pts = this._loopPoints(buf, track);
     let from = pts.start;
     if (this._resume && this._resume.url === url &&
         this._resume.at >= pts.start && this._resume.at < pts.end) from = this._resume.at;
@@ -365,7 +380,7 @@ const DSDARadio = {
     try {
       if (this._isSeamless(st)) {
         this.audio.pause();                 // keep the stream path silent
-        await this._playSeamless(c.track.url);
+        await this._playSeamless(c.track.url, c.track);
       } else {
         this._stopSeamless();
         this.audio.loop = (st.tracks.length === 1);
