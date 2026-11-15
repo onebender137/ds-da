@@ -1873,20 +1873,11 @@ function initMenuPaddle() {
     paddleX += paddleDir * paddleSpeed * dt;
     if (paddleX < paddleW / 2 + 2) { paddleX = paddleW / 2 + 2; paddleDir = 1; }
     if (paddleX > W - paddleW / 2 - 2) { paddleX = W - paddleW / 2 - 2; paddleDir = -1; }
-    // ball
-    bx += bvx * dt; by += bvy * dt;
-    if (by - ballR < 0) { by = ballR; bvy = Math.abs(bvy); }   // bottom of the title
-    if (bx - ballR < 0) { bx = ballR; bvx = Math.abs(bvx); }
-    if (bx + ballR > W) { bx = W - ballR; bvx = -Math.abs(bvx); }
-    const pTop = paddleY;
-    if (bvy > 0 && by + ballR > pTop && by - ballR < pTop + paddleH && Math.abs(bx - paddleX) < paddleW / 2 + ballR) {
-      by = pTop - ballR;
-      const off = Math.max(-1, Math.min(1, (bx - paddleX) / (paddleW / 2)));
-      const ang = off * 0.9;
-      const speed = Math.hypot(bvx, bvy) || 120;
-      bvx = speed * Math.sin(ang);
-      bvy = -speed * Math.cos(ang);
-    }
+    // ball rides the paddle (x follows) and bounces vertically between the title and the paddle
+    bx = paddleX;
+    by += bvy * dt;
+    if (by - ballR < 0) { by = ballR; bvy = Math.abs(bvy); }                 // off the bottom of the title
+    if (by + ballR > paddleY) { by = paddleY - ballR; bvy = -Math.abs(bvy); } // off the paddle
     // draw
     window.__mpBall = [Math.round(bx*10)/10, Math.round(by*10)/10];
     ctx.clearRect(0, 0, W, H);
