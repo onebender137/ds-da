@@ -7,6 +7,7 @@
     {
       "id": "polkahole",
       "name": "Polkahole",
+      "loop": false,
       "tagline": "Oompah oompah from the hole",
       "accent": "#ffcc00",
       "source": "https://polkahole.ca",
@@ -19,6 +20,7 @@
     {
       "id": "bit-block-boy",
       "name": "Bit Block Boy",
+      "loop": true,
       "tagline": "DropBlock original — deep synth swing polka techno",
       "accent": "#ff3b5c",
       "source": "ds-da.ca/games/dropblock/original",
@@ -30,6 +32,7 @@
     {
       "id": "korobeiniki-polka",
       "name": "Korobeiniki Polka",
+      "loop": true,
       "tagline": "DropBlock original — deep synth 8-bit polka of the classic theme",
       "accent": "#ff9f2e",
       "source": "ds-da.ca/games/dropblock/original",
@@ -41,6 +44,7 @@
     {
       "id": "dr-dark",
       "name": "Dr. Dark",
+      "loop": true,
       "tagline": "DropBlock original — deep dark capsule",
       "accent": "#c06bff",
       "source": "ds-da.ca/games/dropblock/original",
