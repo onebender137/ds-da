@@ -1349,12 +1349,7 @@ const plasmaWallFrag = `
     col *= 0.85 + 0.35 * sin(v * 3.0 + t);
     float hitAge = uTime - uHitTime;
     if (hitAge >= 0.0 && hitAge < 0.7) {
-      // weighted distance: tighter along the wall's length (v) so the ripple
-      // stays localized at the strike point instead of washing the whole rail.
-      // Gold flash: contrasts with the cyan plasma so the strike reads clearly.
-      float d = length(vec2(vUv.x - uHitUV.x, (vUv.y - uHitUV.y) * 3.5));
-      float ring = sin(d * 26.0 - hitAge * 20.0) * 0.5 + 0.5;
-      col += vec3(1.0, 0.85, 0.35) * exp(-d * 2.8) * (1.0 - hitAge / 0.7) * (1.0 + ring * 2.5) * 5.5;
+      col += vec3(1.0, 0.5, 0.0) * (1.0 - hitAge / 0.7) * 3.0;  // TEST: whole wall gold
     }
     gl_FragColor = vec4(col, 1.0);
   }
