@@ -129,9 +129,11 @@
   .keys kbd { font: inherit; font-size: 10px; background: rgba(110,168,255,0.12); border: 1px solid rgba(110,168,255,0.25);
     border-radius: 4px; padding: 0 5px; color: var(--text); }
   button { font: inherit; cursor: pointer; touch-action: manipulation; }
-  #soundBtn { position: fixed; bottom: 16px; right: 16px; left: auto; z-index: 5; background: var(--panel);
-    border: 1px solid var(--border); color: var(--text); border-radius: 10px; padding: 8px 12px;
-    font-size: 12px; font-weight: 500; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  #pauseBtn { position: fixed; bottom: 16px; right: 16px; z-index: 5;
+    background: var(--panel); border: 1px solid var(--border); color: var(--muted); border-radius: 10px;
+    padding: 7px 14px; font-size: 11px; letter-spacing: 2px; font-weight: 600; backdrop-filter: blur(10px); display: none; }
+  body:not(.menu-mode) #pauseBtn { display: block; }
+  #pauseBtn:hover { color: var(--text); border-color: var(--accent); }
   #musicBox { display: none; /* replaced by DSDA Radio (radio.js) — procedural chiptune kept as offline fallback in code */ }
   /* DSDA Radio network widget — lower-left (2026-11-14). Streams Polkahole + ShatterBlock's 4 originals. */
   #radioBox.dsda-radio { position: fixed; bottom: 16px; left: 16px; z-index: 16; width: 150px;
@@ -158,11 +160,6 @@
   #radioBox .radio-ctl button { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--border);
     border-radius: 7px; color: var(--text); font-size: 11px; padding: 3px 0; cursor: pointer; line-height: 1; }
   #radioBox .radio-ctl button:hover { background: rgba(255,255,255,0.12); border-color: var(--radio-accent, var(--border)); }
-  #pauseBtn { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 5;
-    background: var(--panel); border: 1px solid var(--border); color: var(--muted); border-radius: 10px;
-    padding: 7px 12px; font-size: 11px; letter-spacing: 2px; font-weight: 600; backdrop-filter: blur(10px); display: none; }
-  body:not(.menu-mode) #pauseBtn { display: block; }
-  #pauseBtn:hover { color: var(--text); border-color: var(--accent); }
 
   /* ---- level / combo banner ---- */
   #banner { position: fixed; top: 36%; left: 0; right: 0; z-index: 12; text-align: center;
@@ -176,10 +173,13 @@
     text-shadow: 0 0 12px rgba(255,209,102,0.5); }
   #combotxt { position: fixed; left: 50%; top: 58%; transform: translate(-50%,-50%) scale(.6); z-index: 8; pointer-events: none;
     font-family: var(--display); font-size: clamp(22px, 4.5vw, 44px); color: var(--gold); opacity: 0; white-space: nowrap;
-    text-shadow: 0 0 16px rgba(255,209,102,0.7), 0 3px 0 rgba(120,70,0,0.6); }
-  #combotxt.show { animation: comboIn .7s cubic-bezier(.2,1.4,.3,1) forwards; }
-  @keyframes comboIn { 0% { opacity: 0; transform: translate(-50%,-50%) scale(.5); } 20% { opacity: 1; transform: translate(-50%,-50%) scale(1.1); }
-    35% { transform: translate(-50%,-50%) scale(1); } 100% { opacity: 0; transform: translate(-50%,-80%) scale(1); } }
+    text-shadow: 0 0 16px rgba(255,209,102,0.7), 0 3px 0 rgba(120,70,0,0.6);
+    transition: opacity .45s ease, transform .25s ease, color .3s ease, font-size .25s ease; }
+  #combotxt.show { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+  #combotxt.t1 { color: #4ade80; text-shadow: 0 0 18px rgba(74,222,128,0.8), 0 3px 0 rgba(20,80,40,0.7); font-size: clamp(26px, 5vw, 52px); }
+  #combotxt.t2 { color: #ffd166; text-shadow: 0 0 22px rgba(255,209,102,0.9), 0 3px 0 rgba(120,70,0,0.7); font-size: clamp(30px, 6vw, 60px); }
+  #combotxt.t3 { color: #ff7a3d; text-shadow: 0 0 26px rgba(255,122,61,0.9), 0 0 48px rgba(255,122,61,0.4), 0 3px 0 rgba(100,40,0,0.7); font-size: clamp(34px, 7vw, 72px); }
+  #combotxt.t4 { color: #ff3dcf; text-shadow: 0 0 30px rgba(255,61,207,0.95), 0 0 56px rgba(255,61,207,0.5), 0 0 80px rgba(255,209,102,0.3), 0 3px 0 rgba(80,0,60,0.8); font-size: clamp(38px, 8vw, 84px); }
 
   /* ---- overlays (game over / scores / pause) ---- */
   #overlay, #scores, #pause { position: fixed; inset: 0; z-index: 20; display: flex; align-items: center;
@@ -291,8 +291,7 @@
     #hud .stat span { font-size: 8px; letter-spacing: 1px; }
     #hud .stat b { font-size: 15px; }
     #hud .sub, #hud .tops, #hud .keys { display: none; }
-    #pauseBtn { top: max(10px, env(safe-area-inset-top)); left: 10px; transform: none; padding: 7px 10px; }
-    #soundBtn { bottom: calc(10px + env(safe-area-inset-bottom)); right: 10px; left: auto; padding: 6px 10px; }
+    #pauseBtn { bottom: calc(10px + env(safe-area-inset-bottom)); right: 10px; padding: 7px 10px; }
     #radioBox.dsda-radio { bottom: calc(10px + env(safe-area-inset-bottom)); left: 10px; }
     .card { padding: 20px 22px; }
     .menu-powers { display: none; }
@@ -348,7 +347,6 @@
   </div>
 </div>
 <button id="pauseBtn" title="Pause (P / Esc)">⏸ PAUSE</button>
-<button id="soundBtn">🔊 sound on</button>
 <div id="musicBox">
   <button id="musicPrev" title="Previous track">⏮</button>
   <div id="musicName">1. Brick Breaker</div>
@@ -680,7 +678,8 @@ const elTopList = $('topList'), elPlayAgain = $('playAgain'), elNewHigh = $('new
 const elMenu = $('menu'), elScores = $('scores');
 const elGlobalTop = $('globalTop'), elLocalTop = $('localTop'), elGlobalNote = $('globalNote');
 const elScoresBack = $('scoresBack'), elToMenu = $('toMenu');
-const elSound = $('soundBtn'), elBootErr = $('booterr');
+const elSound = null; // sound button removed (2026-11-14) — radio controls handle audio
+const elBootErr = $('booterr');
 const elMusicName = $('musicName'), elMusicPrev = $('musicPrev');
 const elMusicNext = $('musicNext'), elMusicToggle = $('musicToggle');
 const elBanner = $('banner'), elBannerTitle = $('bannerTitle'), elBannerSub = $('bannerSub');
@@ -912,6 +911,43 @@ const voiceFx = {
   },
   play(type) {
     const buf = this.buffers[type];
+    if (!buf || !sfx.on) return;
+    const ctx = AudioEngine.ctx;
+    if (!ctx) return;
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const g = ctx.createGain();
+    g.gain.value = 0.95;
+    src.connect(g); g.connect(sfx.out);
+    src.start();
+  },
+};
+
+// ---------------- combo voice (Kokoro TTS, British male) ----------------
+// George calls out combo tiers: nice (5-9), slick (10-19), dope (20-29),
+// phenomenal (30+). Preloaded at boot alongside the power-up voice clips.
+const comboVoice = {
+  buffers: {}, loaded: false, loading: false,
+  clips: { nice: 'combo/nice.ogg', slick: 'combo/slick.ogg', dope: 'combo/dope.ogg', phenomenal: 'combo/phenomenal.ogg' },
+  async load() {
+    if (this.loading || this.loaded) return;
+    this.loading = true;
+    const ctx = AudioEngine.ensure();
+    if (ctx) {
+      await Promise.all(Object.entries(this.clips).map(async ([name, path]) => {
+        try {
+          const res = await fetch(path);
+          if (!res.ok) return;
+          const buf = await ctx.decodeAudioData(await res.arrayBuffer());
+          this.buffers[name] = buf;
+        } catch (e) { /* voice is a bonus; never break the game */ }
+      }));
+      this.loaded = true;
+    }
+    this.loading = false;
+  },
+  play(name) {
+    const buf = this.buffers[name];
     if (!buf || !sfx.on) return;
     const ctx = AudioEngine.ctx;
     if (!ctx) return;
@@ -1456,11 +1492,29 @@ function setCombo(n) {
   if (n > bestCombo) bestCombo = n;
   const el = $('combo');
   if (n >= 2) { el.textContent = '×' + n; el.classList.add('hot'); } else { el.textContent = '—'; el.classList.remove('hot'); }
-  if (n >= 3 && n % 1 === 0) {
-    const ct = $('combotxt');
-    ct.textContent = n >= 10 ? '×' + n + ' RAMPAGE!' : n >= 6 ? '×' + n + ' COMBO!' : '×' + n + ' COMBO';
-    ct.classList.remove('show'); void ct.offsetWidth; ct.classList.add('show');
+  const ct = $('combotxt');
+  if (n >= 3) {
+    // tier: 0=base(3-4), 1=nice(5-9), 2=slick(10-19), 3=dope(20-29), 4=phenomenal(30+)
+    const tier = n >= 30 ? 4 : n >= 20 ? 3 : n >= 10 ? 2 : n >= 5 ? 1 : 0;
+    ct.textContent = n >= 30 ? '×' + n + ' PHENOMENAL!' : n >= 20 ? '×' + n + ' DOPE!' :
+                     n >= 10 ? '×' + n + ' SLICK!' : n >= 5 ? '×' + n + ' NICE!' : '×' + n + ' COMBO';
+    // swap tier classes (no reflow hack needed — CSS transition handles the change)
+    ct.classList.remove('t1', 't2', 't3', 't4');
+    if (tier > 0) ct.classList.add('t' + tier);
+    ct.classList.add('show');
     sfx.combo(n);
+    // George calls out the tier (only when we cross into a new tier)
+    const voiceTier = n >= 30 ? 'phenomenal' : n >= 20 ? 'dope' : n >= 10 ? 'slick' : n >= 5 ? 'nice' : null;
+    if (voiceTier) {
+      const prevTier = (n - 1) >= 30 ? 4 : (n - 1) >= 20 ? 3 : (n - 1) >= 10 ? 2 : (n - 1) >= 5 ? 1 : 0;
+      const curTier = tier;
+      if (curTier > prevTier) {
+        AudioEngine.duck(0.4, 0.8);
+        comboVoice.play(voiceTier);
+      }
+    }
+  } else {
+    ct.classList.remove('show', 't1', 't2', 't3', 't4');
   }
 }
 
@@ -2648,11 +2702,6 @@ function touchEnd(e) {
     }
   }
 }
-function toggleSound() {
-  sfx.on = !sfx.on;
-  elSound.textContent = sfx.on ? '🔊 sound on' : '🔇 sound off';
-  if (sfx.on) { sfx.ensure(); sfx.paddle(); }
-}
 function toggleMusic() {
   MusicSys.on = !MusicSys.on;
   elMusicToggle.textContent = MusicSys.on ? '🎵' : '🔇';
@@ -2902,7 +2951,6 @@ function boot() {
     if (e.key === 'Enter') saveScore();
     e.stopPropagation();
   });
-  elSound.addEventListener('click', e => { toggleSound(); e.currentTarget.blur(); });
   elMusicPrev.addEventListener('click', e => { MusicSys.prev(); e.currentTarget.blur(); });
   elMusicNext.addEventListener('click', e => { MusicSys.next(); e.currentTarget.blur(); });
   elMusicToggle.addEventListener('click', e => { toggleMusic(); e.currentTarget.blur(); });
@@ -2934,7 +2982,8 @@ function boot() {
   phase = 'menu';
   clock = new THREE.Clock();
   animate();
-  voiceFx.load();  // preload the 8 Kokoro voice clips (fetch + decode, non-blocking)
+  voiceFx.load();   // preload the 8 Kokoro power-up voice clips
+  comboVoice.load(); // preload the 4 Kokoro combo-tier voice clips
 }
 
 // ---------------- debug / harness API ----------------
