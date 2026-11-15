@@ -1350,8 +1350,8 @@ const plasmaWallFrag = `
     float hitAge = uTime - uHitTime;
     if (hitAge < 0.7 && hitAge > 0.0) {
       float d = distance(vUv, uHitUV);
-      float ring = sin(d * 26.0 - hitAge * 20.0) * 0.5 + 0.5;
-      col += vec3(0.6, 0.95, 1.0) * exp(-d * 3.5) * (1.0 - hitAge / 0.7) * (0.7 + ring * 2.0) * 2.8;
+      float ring = sin(d * 20.0 - hitAge * 18.0) * 0.5 + 0.5;
+      col += vec3(0.7, 1.0, 1.0) * exp(-d * 1.8) * (1.0 - hitAge / 0.7) * (1.0 + ring * 2.5) * 4.0;
     }
     gl_FragColor = vec4(col, 1.0);
   }
