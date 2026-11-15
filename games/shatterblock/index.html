@@ -2622,6 +2622,9 @@ window.__tl = {
     return balls.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), vx: +b.vx.toFixed(2), vy: +b.vy.toFixed(2), stuck: b.stuck }));
   },
   setLevel(n) { score = 0; loadLevel(n); return 'level ' + n; },
+  themeInfo() { return { c1: '#' + themeMats[1].color.getHexString(), c2: '#' + themeMats[2].color.getHexString(), c3: '#' + themeMats[3].color.getHexString(), hex: themeHex.map(h => '#' + h.toString(16).padStart(6, '0')) }; },
+  spotPos() { return { x: +glareLight.position.x.toFixed(2), y: +glareLight.position.y.toFixed(2) }; },
+  topBlocks() { let n = 0; scene.traverse(o => { if (o.isMesh && o.position.y > 16.5) n++; }); return n; },
   seedBricks() { loadLevel(level); return 'seeded ' + bricks.length; },
   clearBricks() {
     for (let i = bricks.length - 1; i >= 0; i--) if (!bricks[i].solid) { scene.remove(bricks[i].mesh); bricks.splice(i, 1); }
