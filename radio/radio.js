@@ -57,10 +57,17 @@ const DSDARadio = {
   _resume: null,   // {url, at} so pause/unpause doesn't restart the loop
   _nodeStartedAt: 0,
   _nodeOffset: 0,
+  // --- broadcast (live clock) path state ---
+  _bcast: null,        // { manifest, itemIdx } for the tuned-in broadcast station
+  _bcastCache: {},     // manifestUrl -> parsed manifest (so re-tuning is instant)
 
   get cur() {
     const st = this.manifest && this.manifest.stations[this.station];
     if (!st) return null;
+    if (this._isBroadcast(st)) {
+      const item = this._bcast && this._bcast.manifest.program[this._bcast.itemIdx];
+      return { station: st, track: item || null };
+    }
     return { station: st, track: st.tracks[this.track] };
   },
 
@@ -123,10 +130,10 @@ const DSDARadio = {
       dial.appendChild(b);
     });
     body.appendChild(dial);
-    // now playing
+    // now playing (broadcast stations get a freq readout + LIVE badge + credit)
     const now = document.createElement('div');
     now.className = 'radio-now';
-    now.innerHTML = '<div class="radio-np-stn"></div><div class="radio-np-trk">—</div>';
+    now.innerHTML = '<div class="radio-np-top"><span class="radio-np-stn"></span><span class="radio-np-freq"></span><span class="radio-np-live"></span></div><div class="radio-np-trk">—</div><div class="radio-np-credit"></div>';
     body.appendChild(now);
     // controls
     const ctl = document.createElement('div');
@@ -172,7 +179,7 @@ const DSDARadio = {
     this.audio = new Audio();
     this.audio.preload = 'auto';
     this.audio.volume = this.volume;
-    this.audio.addEventListener('ended', () => this.next());
+    this.audio.addEventListener('ended', () => this._onEnded());
     this.audio.addEventListener('error', () => {
       // skip to next on a bad track (don't stall the radio)
       if (this.playing) setTimeout(() => this.next(), 400);
@@ -211,7 +218,16 @@ const DSDARadio = {
       '#radioBox.dsda-radio .radio-vol-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;' +
       'width:11px;height:11px;border-radius:50%;background:#00e5ff;cursor:pointer;box-shadow:0 0 6px rgba(0,229,255,0.6);}' +
       '#radioBox.dsda-radio .radio-vol-slider::-moz-range-thumb{width:11px;height:11px;border-radius:50%;' +
-      'background:#00e5ff;border:none;cursor:pointer;box-shadow:0 0 6px rgba(0,229,255,0.6);}';
+      'background:#00e5ff;border:none;cursor:pointer;box-shadow:0 0 6px rgba(0,229,255,0.6);}' +
+      '#radioBox.dsda-radio .radio-np-top{display:flex;align-items:center;gap:5px;min-width:0;}' +
+      '#radioBox.dsda-radio .radio-np-stn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}' +
+      '#radioBox.dsda-radio .radio-np-freq{font-size:9px;font-weight:800;letter-spacing:1px;' +
+      'color:var(--radio-accent,#00e5ff);flex-shrink:0;}' +
+      '#radioBox.dsda-radio .radio-np-live{font-size:8px;font-weight:800;letter-spacing:1px;color:#ff4d4d;' +
+      'margin-left:auto;flex-shrink:0;animation:dsdaRadioLive 1.4s ease-in-out infinite;}' +
+      '#radioBox.dsda-radio .radio-np-credit{font-size:8px;opacity:.5;margin-top:1px;white-space:nowrap;' +
+      'overflow:hidden;text-overflow:ellipsis;}' +
+      '@keyframes dsdaRadioLive{0%,100%{opacity:1}50%{opacity:.35}}';
     document.head.appendChild(s);
   },
 
@@ -219,11 +235,18 @@ const DSDARadio = {
     if (!this.els.np && this.el) {
       this.els.npStn = this.el.querySelector('.radio-np-stn');
       this.els.npTrk = this.el.querySelector('.radio-np-trk');
+      this.els.npFreq = this.el.querySelector('.radio-np-freq');
+      this.els.npLive = this.el.querySelector('.radio-np-live');
+      this.els.npCredit = this.el.querySelector('.radio-np-credit');
       this.els.dial = [...this.el.querySelectorAll('.radio-stn')];
     }
     const c = this.cur;
+    const isBcast = c && this._isBroadcast(c.station);
     if (this.els.npStn) this.els.npStn.textContent = c ? c.station.name : 'NO SIGNAL';
-    if (this.els.npTrk) this.els.npTrk.textContent = c ? c.track.title : '—';
+    if (this.els.npTrk) this.els.npTrk.textContent = (c && c.track) ? c.track.title : '—';
+    if (this.els.npFreq) this.els.npFreq.textContent = isBcast ? (c.station.frequency + ' FM') : '';
+    if (this.els.npLive) this.els.npLive.textContent = isBcast && this.playing ? '● LIVE' : '';
+    if (this.els.npCredit) this.els.npCredit.textContent = (isBcast && c.track && c.track.credit) ? c.track.credit : '';
     if (this.els.dial) this.els.dial.forEach((b, i) => b.classList.toggle('on', i === this.station));
     if (this.els.play) this.els.play.textContent = this.playing ? '❚❚' : '▶';
     if (c && c.station.accent && this.el) {
@@ -232,6 +255,7 @@ const DSDARadio = {
   },
 
   // ---- path selection -------------------------------------------------
+  _isBroadcast(st) { return !!(st && st.type === 'broadcast'); },
   _isSeamless(st) {
     if (!st || !st.tracks || !st.tracks.length) return false;
     if (typeof st.loop === 'boolean') return st.loop;   // manifest override
@@ -378,7 +402,16 @@ const DSDARadio = {
     if (!c) return;
     const st = this.manifest.stations[this.station];
     try {
-      if (this._isSeamless(st)) {
+      if (this._isBroadcast(st)) {
+        // resume/re-tune: re-sync to the live clock (time passed while paused)
+        if (!this._bcast) {
+          await this._tuneBroadcast(this.station);
+        } else {
+          const r = this._bcastItemAt(this._bcast.manifest, this._bcastPos(this._bcast.manifest));
+          this._bcast.itemIdx = r.index;
+          await this._playBroadcastItem(r.offset);
+        }
+      } else if (this._isSeamless(st)) {
         this.audio.pause();                 // keep the stream path silent
         await this._playSeamless(c.track.url, c.track);
       } else {
@@ -420,6 +453,7 @@ const DSDARadio = {
   next() {
     const st = this.manifest && this.manifest.stations[this.station];
     if (!st) return;
+    if (this._isBroadcast(st)) { this._advanceBroadcast(); return; }  // live feed: re-sync, no skipping
     this.track = (this.track + 1) % st.tracks.length;
     this._resume = null;
     if (this.playing) this._loadAndPlay(); else this.render();
@@ -427,6 +461,7 @@ const DSDARadio = {
   prev() {
     const st = this.manifest && this.manifest.stations[this.station];
     if (!st) return;
+    if (this._isBroadcast(st)) { this._advanceBroadcast(); return; }  // live feed: re-sync, no skipping
     this.track = (this.track - 1 + st.tracks.length) % st.tracks.length;
     this._resume = null;
     if (this.playing) this._loadAndPlay(); else this.render();
@@ -434,15 +469,95 @@ const DSDARadio = {
   setStation(i, trackIdx) {
     if (!this.manifest || !this.manifest.stations[i]) return;
     this.station = i;
-    // optional second arg: which track to land on (games use it to start mid-playlist,
-    // e.g. a random track per match). Omitted -> 0, exactly the old behavior.
-    const nTracks = this.manifest.stations[i].tracks.length;
-    this.track = (Number.isInteger(trackIdx) && trackIdx >= 0 && trackIdx < nTracks) ? trackIdx : 0;
+    const st = this.manifest.stations[i];
     this._src = null;
     this._resume = null;
     // Tuning to a station always starts playing it (real-radio behavior) —
     // the dial click is a user gesture so autoplay is allowed.
-    this._loadAndPlay();
+    if (this._isBroadcast(st)) {
+      // live broadcast: fetch its manifest and tune to the shared wall clock
+      this._bcast = null;
+      this._tuneBroadcast(i);
+    } else {
+      // optional second arg: which track to land on (games use it to start
+      // mid-playlist, e.g. a random track per match). Omitted -> 0.
+      const nTracks = st.tracks.length;
+      this.track = (Number.isInteger(trackIdx) && trackIdx >= 0 && trackIdx < nTracks) ? trackIdx : 0;
+      this._loadAndPlay();
+    }
+  },
+
+  // ---- broadcast (live clock) path -------------------------------------
+  // A "broadcast" station points at a manifest.json with program[] + epoch +
+  // totalDuration. Every listener shares the same wall clock, so tuning in
+  // lands you mid-item (a real radio catch) and everyone is on the same second.
+  // On track end we re-sync to the clock and advance to the next program item.
+  async _fetchBcastManifest(st) {
+    if (this._bcastCache[st.manifest]) return this._bcastCache[st.manifest];
+    const r = await fetch(st.manifest, { cache: 'no-store' });
+    const m = await r.json();
+    this._bcastCache[st.manifest] = m;
+    return m;
+  },
+  _bcastPos(m) {
+    let pos = (Date.now() / 1000 - m.epoch) % m.totalDuration;
+    if (pos < 0) pos += m.totalDuration;
+    return pos;
+  },
+  _bcastItemAt(m, pos) {
+    let acc = 0;
+    for (let i = 0; i < m.program.length; i++) {
+      if (pos < acc + m.program[i].duration) return { index: i, offset: pos - acc };
+      acc += m.program[i].duration;
+    }
+    return { index: m.program.length - 1, offset: 0 };
+  },
+  async _tuneBroadcast(stationIdx) {
+    const st = this.manifest.stations[stationIdx];
+    let m;
+    try { m = await this._fetchBcastManifest(st); }
+    catch (e) { console.warn('[DSDARadio] broadcast manifest failed:', e); this.render(); return; }
+    const r = this._bcastItemAt(m, this._bcastPos(m));
+    // base = the manifest's location, so the program's RELATIVE urls resolve
+    // correctly no matter which page (game / station) is playing the show.
+    this._bcast = { manifest: m, itemIdx: r.index, base: new URL(st.manifest, location.href) };
+    this._stopSeamless();
+    await this._playBroadcastItem(r.offset);
+  },
+  async _playBroadcastItem(offset) {
+    const m = this._bcast.manifest;
+    const item = m.program[this._bcast.itemIdx];
+    const url = this._bcast.base ? new URL(item.url, this._bcast.base).href : item.url;
+    this.audio.loop = false;
+    this.audio.src = url;
+    this.audio.load();
+    const self = this;
+    await new Promise((resolve) => {
+      const onMeta = () => {
+        self.audio.removeEventListener('loadedmetadata', onMeta);
+        const o = Math.max(0, Math.min(offset || 0, self.audio.duration - 0.15));
+        try { self.audio.currentTime = o; } catch (e) {}
+        resolve();
+      };
+      self.audio.addEventListener('loadedmetadata', onMeta);
+      if (self.audio.readyState >= 1) onMeta();   // already have metadata
+    });
+    await this.audio.play();
+    this.playing = true;
+    this.render();
+  },
+  _onEnded() {
+    const st = this.manifest && this.manifest.stations[this.station];
+    if (this._isBroadcast(st)) this._advanceBroadcast();
+    else this.next();
+  },
+  async _advanceBroadcast() {
+    const m = this._bcast.manifest;
+    const r = this._bcastItemAt(m, this._bcastPos(m));
+    if (r.index === this._bcast.itemIdx) r.index = (this._bcast.itemIdx + 1) % m.program.length;
+    this._bcast.itemIdx = r.index;
+    if (this.playing) await this._playBroadcastItem(r.offset);
+    else this.render();
   },
   setVolume(v) {
     this.volume = Math.max(0, Math.min(1, v));

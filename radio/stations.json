@@ -1,9 +1,27 @@
 {
   "version": 2,
   "network": "DSDA Radio",
-  "updated": "2026-11-14",
-  "note": "Cross-game radio manifest. Single source of truth — games load this + radio.js and never change when new stations/tracks are added. Tracks stream from their source URLs (no bundling). 8 stations: Polkahole (default) + the 3 Machine Elves originals + the 4 ShatterBlock originals. Originals are root-relative (served from /games/<game>/original/) so any game page can reach them. ShatterBlock originals re-synthesized 2026-11-14 with richer synths + live feel (detuned saw leads, sidechained bass, synced echo, FDN reverb, humanized timing/pitch).",
+  "updated": "2026-11-15",
+  "note": "Cross-game radio manifest. Single source of truth — games load this + radio.js and never change when new stations/tracks are added. Tracks stream from their source URLs (no bundling). Station types: 'broadcast' (live clock — tune in mid-song, everyone on the same second; points at a manifest.json with a program), 'stream' (Polkahole), 'seamless' (the games' own 1-track originals). 10 stations: 2 DSDA Radio broadcast shows (Mental FM 137.7, Z107.7 Classic Rock) + Polkahole + the 3 Machine Elves originals + the 4 ShatterBlock originals. Originals are root-relative (served from /games/<game>/original/) so any game page can reach them. ShatterBlock originals re-synthesized 2026-11-14 with richer synths + live feel (detuned saw leads, sidechained bass, synced echo, FDN reverb, humanized timing/pitch).",
   "stations": [
+    {
+      "id": "mental-fm",
+      "name": "Mental FM 137.7",
+      "type": "broadcast",
+      "frequency": "137.7",
+      "tagline": "DSDA arcade radio — live electronic broadcast",
+      "accent": "#00e5ff",
+      "manifest": "/radio/stations/mental-fm/manifest.json"
+    },
+    {
+      "id": "z1077",
+      "name": "Z107.7 Classic Rock",
+      "type": "broadcast",
+      "frequency": "107.7",
+      "tagline": "Classic rock, live — Shane Ivers (CC BY 4.0)",
+      "accent": "#ffb347",
+      "manifest": "/radio/stations/z1077/manifest.json"
+    },
     {
       "id": "polkahole",
       "name": "Polkahole",
