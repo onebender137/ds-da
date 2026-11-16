@@ -4,38 +4,62 @@
   "callSign": "Mental FM 137.7",
   "tagline": "The secret frequency of the DSDA arcade",
   "network": "DSDA Radio",
-  "epoch": 1794784829.904,
-  "totalDuration": 1818.531,
-  "updated": "2026-11-15",
-  "note": "Shared broadcast clock: every listener tunes into the same live position. Announcements (BM Lewis / Kokoro TTS) are woven between tracks like real radio.",
+  "epoch": 1794843440.718,
+  "totalDuration": 3323.064,
+  "updated": "2026-11-16",
+  "note": "Shared broadcast clock: every listener tunes into the same live position. BM Lewis / Kokoro TTS announcements woven between tracks. 14 tracks (6 Dj Mental + 8 Ruller archive cuts).",
   "program": [
     {
       "type": "announce",
-      "title": "Mental FM 137.7 \u2014 On Air",
-      "url": "announcements/id_intro.mp3",
-      "duration": 11.051
+      "title": "Mental FM 137.7 — On Air",
+      "url": "announcements/id_intro_v2.mp3",
+      "duration": 11.025
     },
     {
       "type": "music",
-      "title": "Dj Mental \u2014 Side B",
+      "title": "Ruller — Your Mom Played Me",
+      "url": "music/ruller-your-mom-played-me.mp3",
+      "duration": 238.248
+    },
+    {
+      "type": "music",
+      "title": "Dj Mental — Side B",
       "url": "music/DjMental-SideB.mp3",
       "duration": 369.144
     },
     {
+      "type": "announce",
+      "title": "Ruller — Archive Promo",
+      "url": "announcements/promo_ruller.mp3",
+      "duration": 14.1
+    },
+    {
       "type": "music",
-      "title": "Dj Mental \u2014 Grease Monkey",
+      "title": "Ruller — Reverse Dope",
+      "url": "music/ruller-reverse-dope.mp3",
+      "duration": 251.782
+    },
+    {
+      "type": "music",
+      "title": "Dj Mental — Grease Monkey",
       "url": "music/djmental-greasemonkey.mp3",
       "duration": 393.621
     },
     {
       "type": "announce",
-      "title": "DSDA Arcade \u2014 Promo",
+      "title": "DSDA Arcade — Promo",
       "url": "announcements/promo_dsda.mp3",
       "duration": 12.8
     },
     {
       "type": "music",
-      "title": "Dj Mental \u2014 An Amazing Moment",
+      "title": "Ruller — Hungover",
+      "url": "music/ruller-hungover.mp3",
+      "duration": 244.0
+    },
+    {
+      "type": "music",
+      "title": "Dj Mental — An Amazing Moment",
       "url": "music/djmentalamazingmoment.mp3",
       "duration": 206.52
     },
@@ -47,15 +71,27 @@
     },
     {
       "type": "music",
+      "title": "Ruller — Pop Ya Cork",
+      "url": "music/ruller-pop-ya-cork.mp3",
+      "duration": 172.957
+    },
+    {
+      "type": "music",
       "title": "HHC",
       "url": "music/hhc.mp3",
       "duration": 150.0
     },
     {
       "type": "announce",
-      "title": "Hopes and Dreams \u2014 Promo",
+      "title": "Hopes and Dreams — Promo",
       "url": "announcements/promo_hopes.mp3",
       "duration": 12.0
+    },
+    {
+      "type": "music",
+      "title": "Ruller — GMDC",
+      "url": "music/ruller-gmdc.mp3",
+      "duration": 199.111
     },
     {
       "type": "music",
@@ -65,9 +101,15 @@
     },
     {
       "type": "announce",
-      "title": "Mental FM 137.7",
-      "url": "announcements/id_short.mp3",
-      "duration": 6.275
+      "title": "DSDA Radio Network — Promo",
+      "url": "announcements/promo_network.mp3",
+      "duration": 15.075
+    },
+    {
+      "type": "music",
+      "title": "Ruller — Hulk Attack",
+      "url": "music/ruller-hulkattack.mp3",
+      "duration": 147.2
     },
     {
       "type": "music",
@@ -77,7 +119,25 @@
     },
     {
       "type": "announce",
-      "title": "Polkahole \u2014 Promo",
+      "title": "Mental FM 137.7",
+      "url": "announcements/id_short.mp3",
+      "duration": 6.275
+    },
+    {
+      "type": "music",
+      "title": "Ruller — WTF",
+      "url": "music/ruller-wtf.mp3",
+      "duration": 140.308
+    },
+    {
+      "type": "music",
+      "title": "Ruller — Chica",
+      "url": "music/ruller-chica.mp3",
+      "duration": 81.778
+    },
+    {
+      "type": "announce",
+      "title": "Polkahole — Promo",
       "url": "announcements/promo_polkahole.mp3",
       "duration": 14.1
     }
