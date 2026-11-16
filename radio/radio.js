@@ -38,6 +38,11 @@
      works for those stations.
    - New stations/tracks = edit stations.json only. Games never change.
    ============================================================ */
+// Tuning-knob model: within LOCK_TOL MHz of a station you're "locked" (clear);
+// over FADE_RANGE MHz the static ramps quiet→full (the scan fuzz between stations).
+const LOCK_TOL = 0.6;
+const FADE_RANGE = 3.0;
+const STATIC_LEVEL = 0.5;   // max static gain, relative to master volume
 const DSDARadio = {
   manifest: null,
   station: 0,
@@ -45,7 +50,7 @@ const DSDARadio = {
   playing: false,
   volume: 0.35,   // dropped from 0.5 — the streams are loud; 0.35 is the comfortable default
   audio: null,
-  foldTimer: null, // auto-refold timer (2s after opening)
+  foldTimer: null, // auto-refold timer (6s after opening)
   el: null,
   els: {},
   _src: null,   // last requested source (for change detection)
@@ -60,6 +65,16 @@ const DSDARadio = {
   // --- broadcast (live clock) path state ---
   _bcast: null,        // { manifest, itemIdx } for the tuned-in broadcast station
   _bcastCache: {},     // manifestUrl -> parsed manifest (so re-tuning is instant)
+  // --- tuning knob + static (scan) state ---
+  _scale: null,        // { min, max } frequency range of the dial
+  _scaleEl: null,      // the .radio-scale element
+  _knobEl: null,       // the .radio-knob element
+  _knobPct: 50,        // knob position (0-100)
+  _knobDragging: false,
+  _mixStation: 1,      // station audio level (1 = clear, 0 = muted)
+  _mixStatic: 0,       // static level (0 = none, 1 = full fuzz)
+  _staticSrc: null,    // Web Audio white-noise buffer source
+  _staticGain: null,   // Web Audio gain node for the static
 
   get cur() {
     const st = this.manifest && this.manifest.stations[this.station];
@@ -118,35 +133,23 @@ const DSDARadio = {
     // body (dial + now playing + controls) — hidden when folded
     const body = document.createElement('div');
     body.className = 'radio-body';
-    // station dial
-    const dial = document.createElement('div');
-    dial.className = 'radio-dial';
-    this.manifest.stations.forEach((st, i) => {
-      const b = document.createElement('button');
-      b.className = 'radio-stn';
-      b.textContent = st.name;
-      b.title = st.tagline || '';
-      b.addEventListener('click', () => this.setStation(i));
-      dial.appendChild(b);
-    });
-    body.appendChild(dial);
+    // tuning dial — a frequency scale with a draggable knob (scan stations
+    // left/right like a real radio; authentic static fuzz between stations).
+    this._buildScale();
+    body.appendChild(this._scaleEl);
     // now playing (broadcast stations get a freq readout + LIVE badge + credit)
     const now = document.createElement('div');
     now.className = 'radio-now';
     now.innerHTML = '<div class="radio-np-top"><span class="radio-np-stn"></span><span class="radio-np-freq"></span><span class="radio-np-live"></span></div><div class="radio-np-trk">—</div><div class="radio-np-credit"></div>';
     body.appendChild(now);
-    // controls
+    // controls — play/pause only (you scan stations with the knob, no prev/next)
     const ctl = document.createElement('div');
     ctl.className = 'radio-ctl';
-    const mk = (label, title, fn) => {
-      const b = document.createElement('button');
-      b.textContent = label; b.title = title;
-      b.addEventListener('click', fn);
-      ctl.appendChild(b); return b;
-    };
-    this.els.prev = mk('⏮', 'Previous track', () => this.prev());
-    this.els.play = mk('▶', 'Play / pause', () => this.toggle());
-    this.els.next = mk('⏭', 'Next track', () => this.next());
+    const play = document.createElement('button');
+    play.textContent = '▶'; play.title = 'Play / pause';
+    play.addEventListener('click', () => this.toggle());
+    ctl.appendChild(play);
+    this.els.play = play;
     body.appendChild(ctl);
     // volume control (slider, 0-100)
     const vol = document.createElement('div');
@@ -188,7 +191,7 @@ const DSDARadio = {
   },
 
   // FOLD: collapse the radio to a compact header pill (saves screen space).
-  // Collapsed by default; opening it auto-refolds after 2s.
+  // Collapsed by default; opening it auto-refolds after 6s.
   toggleFold() {
     if (!this.el) return;
     const folded = this.el.classList.toggle('folded');
@@ -196,8 +199,8 @@ const DSDARadio = {
     if (head) head.setAttribute('aria-expanded', String(!folded));
     if (this.foldTimer) { clearTimeout(this.foldTimer); this.foldTimer = null; }
     if (!folded) {
-      // opened — auto-refold after 2s
-      this.foldTimer = setTimeout(() => this.toggleFold(), 2000);
+      // opened — auto-refold after 6s (long enough to tune, short enough to clear)
+      this.foldTimer = setTimeout(() => this.toggleFold(), 6000);
     }
   },
   _injectStyle() {
@@ -227,6 +230,17 @@ const DSDARadio = {
       'margin-left:auto;flex-shrink:0;animation:dsdaRadioLive 1.4s ease-in-out infinite;}' +
       '#radioBox.dsda-radio .radio-np-credit{font-size:8px;opacity:.5;margin-top:1px;white-space:nowrap;' +
       'overflow:hidden;text-overflow:ellipsis;}' +
+      '#radioBox.dsda-radio .radio-scale{position:relative;height:48px;margin:2px 0 4px;cursor:ew-resize;touch-action:none;user-select:none;}' +
+      '#radioBox.dsda-radio .radio-scale-track{position:absolute;left:0;right:0;top:24px;height:14px;' +
+      'background:linear-gradient(180deg,#08080f,#12122a);border:1px solid var(--border);border-radius:4px;}' +
+      '#radioBox.dsda-radio .radio-tick{position:absolute;top:26px;width:1px;height:8px;background:var(--border);transform:translateX(-50%);}' +
+      '#radioBox.dsda-radio .radio-tick-major{top:24px;height:12px;background:var(--muted);}' +
+      '#radioBox.dsda-radio .radio-stn-label{position:absolute;top:7px;transform:translateX(-50%);font-size:8px;font-weight:700;' +
+      'letter-spacing:.5px;color:var(--radio-accent,#00e5ff);pointer-events:none;white-space:nowrap;}' +
+      '#radioBox.dsda-radio .radio-knob{position:absolute;top:18px;bottom:26px;width:3px;background:var(--radio-accent,#00e5ff);' +
+      'transform:translateX(-50%);box-shadow:0 0 8px var(--radio-accent,#00e5ff);cursor:ew-resize;z-index:2;}' +
+      '#radioBox.dsda-radio .radio-knob-handle{position:absolute;top:-5px;left:50%;transform:translateX(-50%);width:13px;height:13px;' +
+      'border-radius:50%;background:var(--radio-accent,#00e5ff);box-shadow:0 0 10px var(--radio-accent,#00e5ff);}' +
       '@keyframes dsdaRadioLive{0%,100%{opacity:1}50%{opacity:.35}}';
     document.head.appendChild(s);
   },
@@ -238,7 +252,6 @@ const DSDARadio = {
       this.els.npFreq = this.el.querySelector('.radio-np-freq');
       this.els.npLive = this.el.querySelector('.radio-np-live');
       this.els.npCredit = this.el.querySelector('.radio-np-credit');
-      this.els.dial = [...this.el.querySelectorAll('.radio-stn')];
     }
     const c = this.cur;
     const isBcast = c && this._isBroadcast(c.station);
@@ -247,7 +260,11 @@ const DSDARadio = {
     if (this.els.npFreq) this.els.npFreq.textContent = isBcast ? (c.station.frequency + ' FM') : '';
     if (this.els.npLive) this.els.npLive.textContent = isBcast && this.playing ? '● LIVE' : '';
     if (this.els.npCredit) this.els.npCredit.textContent = (isBcast && c.track && c.track.credit) ? c.track.credit : '';
-    if (this.els.dial) this.els.dial.forEach((b, i) => b.classList.toggle('on', i === this.station));
+    // park the knob on the current station's frequency (unless mid-drag)
+    if (this._knobEl && !this._knobDragging && c && c.station.frequency) {
+      this._knobPct = this._freqToPct(parseFloat(c.station.frequency));
+      this._knobEl.style.left = this._knobPct + '%';
+    }
     if (this.els.play) this.els.play.textContent = this.playing ? '❚❚' : '▶';
     if (c && c.station.accent && this.el) {
       this.el.style.setProperty('--radio-accent', c.station.accent);
@@ -396,6 +413,159 @@ const DSDARadio = {
     this.node = null;
   },
 
+  // ---- tuning dial (frequency scale + draggable knob) ------------------
+  // Builds the dial face: a frequency scale with tick marks, a label per
+  // station, and a draggable knob. Dragging scans left/right; releasing
+  // snaps to the nearest station and tunes in. Pointer Events cover both
+  // mouse (desktop) and touch (mobile hold-and-drag).
+  _buildScale() {
+    const freqs = this.manifest.stations
+      .map((st, i) => ({ st, i }))
+      .filter(o => o.st.type === 'broadcast' && o.st.frequency);
+    const vals = freqs.map(o => parseFloat(o.st.frequency));
+    const pad = 2.0;
+    const min = vals.length ? Math.min(...vals) - pad : 88;
+    const max = vals.length ? Math.max(...vals) + pad : 108;
+    this._scale = { min, max };
+
+    const el = document.createElement('div');
+    el.className = 'radio-scale';
+    el.setAttribute('role', 'slider');
+    el.setAttribute('aria-label', 'Radio tuning dial — drag to scan stations');
+    // the scale track
+    const track = document.createElement('div');
+    track.className = 'radio-scale-track';
+    el.appendChild(track);
+    // tick marks: 1 MHz minor, 5 MHz major
+    for (let f = Math.ceil(min); f <= Math.floor(max); f++) {
+      const tick = document.createElement('div');
+      tick.className = 'radio-tick' + (f % 5 === 0 ? ' radio-tick-major' : '');
+      tick.style.left = this._freqToPct(f) + '%';
+      el.appendChild(tick);
+    }
+    // station frequency labels
+    freqs.forEach(o => {
+      const lbl = document.createElement('div');
+      lbl.className = 'radio-stn-label';
+      lbl.textContent = o.st.frequency;
+      lbl.style.left = this._freqToPct(parseFloat(o.st.frequency)) + '%';
+      el.appendChild(lbl);
+    });
+    // the draggable knob (pointer)
+    const knob = document.createElement('div');
+    knob.className = 'radio-knob';
+    knob.innerHTML = '<div class="radio-knob-handle"></div>';  // static structure
+    el.appendChild(knob);
+    this._scaleEl = el;
+    this._knobEl = knob;
+    // park the knob on the current station (or center)
+    const cur = this.manifest.stations[this.station];
+    this._knobPct = (cur && cur.frequency) ? this._freqToPct(parseFloat(cur.frequency)) : 50;
+    knob.style.left = this._knobPct + '%';
+
+    // --- pointer interaction (mouse + touch) ---
+    const onDown = (e) => {
+      this._knobDragging = true;
+      try { el.setPointerCapture(e.pointerId); } catch (err) {}
+      this._knobMove(e);
+      e.preventDefault();
+    };
+    const onMove = (e) => { if (this._knobDragging) this._knobMove(e); };
+    const onUp = () => {
+      if (!this._knobDragging) return;
+      this._knobDragging = false;
+      this._knobSnap();
+    };
+    el.addEventListener('pointerdown', onDown);
+    el.addEventListener('pointermove', onMove);
+    el.addEventListener('pointerup', onUp);
+    el.addEventListener('pointercancel', onUp);
+  },
+  _freqToPct(f) { return (f - this._scale.min) / (this._scale.max - this._scale.min) * 100; },
+  _pctToFreq(p) { return this._scale.min + (p / 100) * (this._scale.max - this._scale.min); },
+  _knobMove(e) {
+    const rect = this._scaleEl.getBoundingClientRect();
+    if (rect.width === 0) return;   // folded/hidden — no measurable width
+    let pct = (e.clientX - rect.left) / rect.width * 100;
+    pct = Math.max(0, Math.min(100, pct));
+    this._knobPct = pct;
+    this._knobEl.style.left = pct + '%';
+    this._tuneToKnob();
+  },
+  // While dragging: lock onto a station when close (clear audio), otherwise
+  // cross-fade the current station out and the static in (the scan fuzz).
+  _tuneToKnob() {
+    const freq = this._pctToFreq(this._knobPct);
+    let best = -1, bestDist = Infinity;
+    this.manifest.stations.forEach((st, i) => {
+      if (st.type === 'broadcast' && st.frequency) {
+        const d = Math.abs(freq - parseFloat(st.frequency));
+        if (d < bestDist) { bestDist = d; best = i; }
+      }
+    });
+    if (best < 0) return;
+    if (bestDist < LOCK_TOL) {
+      // locked — clear audio, no static
+      if (best !== this.station) this.setStation(best);   // tune in (broadcast clock)
+      this._setMix(1, 0);
+    } else {
+      const f = Math.min(1, (bestDist - LOCK_TOL) / (FADE_RANGE - LOCK_TOL));
+      this._setMix(1 - f, f);   // current station fades out, static fades in
+    }
+  },
+  // On release: snap the knob to the nearest station and tune in.
+  _knobSnap() {
+    const freq = this._pctToFreq(this._knobPct);
+    let best = 0, bestDist = Infinity;
+    this.manifest.stations.forEach((st, i) => {
+      if (st.type === 'broadcast' && st.frequency) {
+        const d = Math.abs(freq - parseFloat(st.frequency));
+        if (d < bestDist) { bestDist = d; best = i; }
+      }
+    });
+    const st = this.manifest.stations[best];
+    if (!st) return;
+    this._knobPct = this._freqToPct(parseFloat(st.frequency));
+    this._knobEl.style.left = this._knobPct + '%';
+    if (best !== this.station) this.setStation(best);
+    this._setMix(1, 0);
+  },
+  // --- static (white-noise) engine + volume mix -------------------------
+  _initStatic(ctx) {
+    if (this._staticSrc) return;
+    if (ctx.state === 'suspended') { try { ctx.resume(); } catch (e) {} }
+    const len = ctx.sampleRate * 2;
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+    this._staticSrc = ctx.createBufferSource();
+    this._staticSrc.buffer = buf;
+    this._staticSrc.loop = true;
+    this._staticGain = ctx.createGain();
+    this._staticGain.gain.value = 0;
+    this._staticSrc.connect(this._staticGain);
+    this._staticGain.connect(this._dest());   // route through the ducking bus
+    this._staticSrc.start();
+  },
+  _dest() {
+    const bus = window.__dsdaAudioBus;
+    if (bus && bus.duck) return bus.duck('radio');
+    return this._actx().destination;
+  },
+  _setMix(stationFactor, staticFactor) {
+    this._mixStation = stationFactor;
+    this._mixStatic = staticFactor;
+    this._applyVolume();
+  },
+  _applyVolume() {
+    const sf = (this._mixStation != null) ? this._mixStation : 1;
+    const stf = (this._mixStatic != null) ? this._mixStatic : 0;
+    if (stf > 0.001 && !this._staticGain) this._initStatic(this._actx());
+    if (this.audio) this.audio.volume = this.volume * sf;
+    if (this.gain && this.ctx) this.gain.gain.setTargetAtTime(this.volume * sf, this.ctx.currentTime, 0.015);
+    if (this._staticGain) this._staticGain.gain.setTargetAtTime(this.volume * stf * STATIC_LEVEL, this.ctx.currentTime, 0.01);
+  },
+
   // ---- shared entry point ---------------------------------------------
   async _loadAndPlay() {
     const c = this.cur;
@@ -428,6 +598,7 @@ const DSDARadio = {
       console.warn('[DSDARadio] play failed:', e);
       this.playing = false;
     }
+    this._applyVolume();   // restore the station/static mix (e.g. after pause)
     this.render();
   },
 
@@ -443,6 +614,7 @@ const DSDARadio = {
       this._stopSeamless();
     }
     if (this.audio) this.audio.pause();
+    if (this._staticGain) this._staticGain.gain.value = 0;   // static off while paused
     this.playing = false;
     this.render();
   },
@@ -484,6 +656,11 @@ const DSDARadio = {
       const nTracks = st.tracks.length;
       this.track = (Number.isInteger(trackIdx) && trackIdx >= 0 && trackIdx < nTracks) ? trackIdx : 0;
       this._loadAndPlay();
+    }
+    // park the knob on the station's frequency (unless mid-drag)
+    if (this._knobEl && !this._knobDragging && st.frequency) {
+      this._knobPct = this._freqToPct(parseFloat(st.frequency));
+      this._knobEl.style.left = this._knobPct + '%';
     }
   },
 
@@ -561,11 +738,7 @@ const DSDARadio = {
   },
   setVolume(v) {
     this.volume = Math.max(0, Math.min(1, v));
-    if (this.audio) this.audio.volume = this.volume;          // stream path
-    if (this.gain && this.ctx) {                              // seamless path
-      // short ramp instead of a jump — a bare .value = x on a live graph clicks
-      this.gain.gain.setTargetAtTime(this.volume, this.ctx.currentTime, 0.015);
-    }
+    this._applyVolume();
     if (this.els.volSlider && document.activeElement !== this.els.volSlider) {
       this.els.volSlider.value = String(Math.round(this.volume * 100));
     }
