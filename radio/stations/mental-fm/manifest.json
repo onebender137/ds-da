@@ -4,10 +4,10 @@
   "callSign": "Mental FM 137.7",
   "tagline": "The secret frequency of the DSDA arcade",
   "network": "DSDA Radio",
-  "epoch": 1794845211.844,
+  "epoch": 1794849009.215,
   "totalDuration": 3357.19,
   "updated": "2026-11-16",
-  "note": "Shared broadcast clock. BM Lewis / Kokoro TTS. 14 tracks + 10 announces (incl. 3 underground/secret IDs). ds-da=Dee Ess Dee Eh, Ruller=Ruler.",
+  "note": "Shared broadcast clock. BM Lewis / Kokoro TTS. 14 tracks + 10 announces, evenly spread (no back-to-back IDs). ds-da=Dee Ess Dee Eh, Ruller=Ruler.",
   "program": [
     {
       "type": "announce",
@@ -22,12 +22,6 @@
       "duration": 238.248
     },
     {
-      "type": "music",
-      "title": "Dj Mental — Side B",
-      "url": "music/DjMental-SideB.mp3",
-      "duration": 369.144
-    },
-    {
       "type": "announce",
       "title": "Ruller — Archive Promo",
       "url": "announcements/promo_ruller.mp3",
@@ -35,9 +29,21 @@
     },
     {
       "type": "music",
+      "title": "Dj Mental — Side B",
+      "url": "music/DjMental-SideB.mp3",
+      "duration": 369.144
+    },
+    {
+      "type": "music",
       "title": "Ruller — Reverse Dope",
       "url": "music/ruller-reverse-dope.mp3",
       "duration": 251.782
+    },
+    {
+      "type": "announce",
+      "title": "DSDA Arcade — Promo",
+      "url": "announcements/promo_dsda.mp3",
+      "duration": 13.376
     },
     {
       "type": "music",
@@ -47,9 +53,9 @@
     },
     {
       "type": "announce",
-      "title": "DSDA Arcade — Promo",
-      "url": "announcements/promo_dsda.mp3",
-      "duration": 13.376
+      "title": "The Underground — Secret ID",
+      "url": "announcements/promo_secret1.mp3",
+      "duration": 11.275
     },
     {
       "type": "music",
@@ -65,9 +71,9 @@
     },
     {
       "type": "announce",
-      "title": "The Underground — Secret ID",
-      "url": "announcements/promo_secret1.mp3",
-      "duration": 11.275
+      "title": "Mental FM 137.7",
+      "url": "announcements/id_short.mp3",
+      "duration": 6.275
     },
     {
       "type": "music",
@@ -76,22 +82,28 @@
       "duration": 172.957
     },
     {
+      "type": "announce",
+      "title": "Hopes and Dreams — Promo",
+      "url": "announcements/promo_hopes.mp3",
+      "duration": 12.0
+    },
+    {
       "type": "music",
       "title": "HHC",
       "url": "music/hhc.mp3",
       "duration": 150.0
     },
     {
-      "type": "announce",
-      "title": "Mental FM 137.7",
-      "url": "announcements/id_short.mp3",
-      "duration": 6.275
-    },
-    {
       "type": "music",
       "title": "Ruller — GMDC",
       "url": "music/ruller-gmdc.mp3",
       "duration": 199.111
+    },
+    {
+      "type": "announce",
+      "title": "The Underground — Secret ID",
+      "url": "announcements/promo_secret2.mp3",
+      "duration": 12.775
     },
     {
       "type": "music",
@@ -101,9 +113,9 @@
     },
     {
       "type": "announce",
-      "title": "Hopes and Dreams — Promo",
-      "url": "announcements/promo_hopes.mp3",
-      "duration": 12.0
+      "title": "The Underground — Secret ID",
+      "url": "announcements/promo_secret3.mp3",
+      "duration": 14.1
     },
     {
       "type": "music",
@@ -119,9 +131,9 @@
     },
     {
       "type": "announce",
-      "title": "The Underground — Secret ID",
-      "url": "announcements/promo_secret2.mp3",
-      "duration": 12.775
+      "title": "DSDA Radio Network — Promo",
+      "url": "announcements/promo_network.mp3",
+      "duration": 15.65
     },
     {
       "type": "music",
@@ -134,18 +146,6 @@
       "title": "Ruller — Chica",
       "url": "music/ruller-chica.mp3",
       "duration": 81.778
-    },
-    {
-      "type": "announce",
-      "title": "The Underground — Secret ID",
-      "url": "announcements/promo_secret3.mp3",
-      "duration": 14.1
-    },
-    {
-      "type": "announce",
-      "title": "DSDA Radio Network — Promo",
-      "url": "announcements/promo_network.mp3",
-      "duration": 15.65
     },
     {
       "type": "announce",
