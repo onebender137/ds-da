@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DSDA Radio — The Arcade Network</title>
+<style>
+  :root{
+    --bg:#07070d; --panel:#0d0d18; --panel2:#12122a; --border:#23233f;
+    --ink:#e8e8f5; --muted:#8a8ab0; --accent:#00e5ff; --accent2:#b967ff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:"Segoe UI",system-ui,-apple-system,sans-serif;
+    background-image:
+      radial-gradient(circle at 20% 0%, rgba(0,229,255,.08), transparent 40%),
+      radial-gradient(circle at 80% 100%, rgba(185,103,255,.08), transparent 40%);
+    min-height:100vh; padding:24px 18px 40px;
+  }
+  .wrap{max-width:760px;margin:0 auto}
+  header{text-align:center;margin-bottom:22px}
+  .logo{display:inline-flex;align-items:center;gap:10px;margin-bottom:6px}
+  .logo svg{width:40px;height:40px;filter:drop-shadow(0 0 10px rgba(0,229,255,.5))}
+  h1{font-size:34px;letter-spacing:6px;font-weight:800;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .sub{font-size:12px;letter-spacing:4px;color:var(--muted);margin-top:4px}
+
+  /* the live radio widget (radio.js styles it; give it a frame) */
+  .radio-frame{
+    background:var(--panel);border:1px solid var(--border);border-radius:14px;
+    padding:14px;margin-bottom:26px;box-shadow:0 8px 40px rgba(0,0,0,.4);
+  }
+  .radio-frame .hint{font-size:11px;color:var(--muted);letter-spacing:.5px;margin-bottom:10px;text-align:center}
+  .radio-frame .hint b{color:var(--accent)}
+
+  .stations{display:flex;flex-direction:column;gap:12px}
+  .stn{
+    display:flex;align-items:center;gap:16px;
+    background:var(--panel2);border:1px solid var(--border);border-left:4px solid var(--stn-accent,var(--accent));
+    border-radius:12px;padding:14px 16px;text-decoration:none;color:inherit;
+    transition:transform .12s, box-shadow .12s, border-color .12s;
+  }
+  .stn:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.5);border-color:var(--stn-accent,var(--accent))}
+  .stn-freq{
+    font-size:26px;font-weight:800;letter-spacing:1px;flex:0 0 auto;width:78px;text-align:center;
+    color:var(--stn-accent,var(--accent));text-shadow:0 0 14px var(--stn-accent,var(--accent));
+  }
+  .stn-freq small{display:block;font-size:9px;letter-spacing:2px;color:var(--muted);text-shadow:none;margin-top:2px}
+  .stn-body{flex:1;min-width:0}
+  .stn-name{font-size:17px;font-weight:700;letter-spacing:.5px}
+  .stn-tag{font-size:12px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .stn-live{display:inline-flex;align-items:center;gap:5px;font-size:10px;letter-spacing:1.5px;color:var(--stn-accent,var(--accent));margin-top:6px}
+  .stn-live .dot{width:7px;height:7px;border-radius:50%;background:var(--stn-accent,var(--accent));box-shadow:0 0 8px var(--stn-accent,var(--accent));animation:pulse 1.4s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+  .stn-go{
+    flex:0 0 auto;background:var(--stn-accent,var(--accent));color:#05050a;font-weight:700;
+    font-size:12px;letter-spacing:1px;padding:9px 16px;border-radius:8px;text-decoration:none;
+  }
+  .stn:hover .stn-go{filter:brightness(1.1)}
+  footer{text-align:center;font-size:11px;color:var(--muted);letter-spacing:1px;margin-top:26px;line-height:1.7}
+  footer a{color:var(--accent);text-decoration:none}
+  @media(max-width:480px){
+    h1{font-size:26px;letter-spacing:4px}
+    .stn{flex-wrap:wrap}
+    .stn-freq{width:auto;font-size:22px}
+    .stn-go{width:100%;text-align:center;margin-top:4px}
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">
+        <svg viewBox="0 0 48 48" fill="none"><rect x="6" y="14" width="36" height="26" rx="4" stroke="#00e5ff" stroke-width="2.5"/><circle cx="30" cy="27" r="7" stroke="#00e5ff" stroke-width="2.5"/><circle cx="30" cy="27" r="2.5" fill="#00e5ff"/><line x1="11" y1="22" x2="22" y2="22" stroke="#00e5ff" stroke-width="2.5"/><line x1="11" y1="28" x2="20" y2="28" stroke="#00e5ff" stroke-width="2"/><line x1="14" y1="6" x2="26" y2="14" stroke="#b967ff" stroke-width="2.5" stroke-linecap="round"/></svg>
+        <h1>DSDA RADIO</h1>
+      </div>
+      <div class="sub">THE ARCADE NETWORK — TUNE IN</div>
+    </header>
+
+    <div class="radio-frame">
+      <div class="hint">🎙️ <b>Live dial</b> — grab the knob to scan (static between stations), tap a frequency, or use ⏮ / ⏭ to jump. Same radio as in-game.</div>
+      <div id="radioBox"></div>
+    </div>
+
+    <div class="stations" id="stations"></div>
+
+    <footer>
+      Every listener shares the same broadcast second — tune in mid-song.<br>
+      Music is CC-licensed (credit shown on each station) · <a href="../">ds-da.ca</a>
+    </footer>
+  </div>
+
+  <script src="../radio.js?v=6"></script>
+  <script>
+  (function(){
+    var MANIFEST = '../stations.json';
+    // mount the shared live radio (the same widget the games use).
+    // Note: radio.js uses `const DSDARadio` (global lexical scope, NOT on window),
+    // so check `typeof` not `window.DSDARadio`.
+    if (typeof DSDARadio !== 'undefined') DSDARadio.init({ mount: 'radioBox', manifest: MANIFEST });
+
+    // render the station cards (each links to its full standalone page)
+    fetch(MANIFEST, { cache: 'no-store' })
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        var box = document.getElementById('stations');
+        (d.stations || []).forEach(function(st){
+          var a = document.createElement('a');
+          a.className = 'stn';
+          a.href = st.id + '/';                 // -> /radio/stations/<id>/
+          a.style.setProperty('--stn-accent', st.accent || '#00e5ff');
+          // innerHTML is a static template; dynamic name/tagline go through
+          // textContent below, and frequency comes from our own trusted stations.json
+          a.innerHTML =
+            '<div class="stn-freq">' + st.frequency + '<small>FM</small></div>' +
+            '<div class="stn-body">' +
+              '<div class="stn-name"></div>' +
+              '<div class="stn-tag"></div>' +
+              '<span class="stn-live"><span class="dot"></span>LIVE</span>' +
+            '</div>' +
+            '<span class="stn-go">LISTEN</span>';
+          a.querySelector('.stn-name').textContent = st.name;
+          a.querySelector('.stn-tag').textContent = st.tagline || '';
+          box.appendChild(a);
+        });
+      })
+      .catch(function(e){
+        document.getElementById('stations').innerHTML =
+          '<div style="text-align:center;color:#8a8ab0">Could not load the station list.</div>';
+        console.error(e);
+      });
+  })();
+  </script>
+</body>
+</html>
