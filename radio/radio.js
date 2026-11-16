@@ -99,10 +99,12 @@ const DSDARadio = {
     await this.loadManifest();
     this.buildUI();
     this.render();
-    // start collapsed by default (saves screen space); the header pill re-opens it
-    this.el.classList.add('folded');
+    // persistent (hub page): start open + never auto-fold — the dial is the hero.
+    // In games: start collapsed (saves screen space); the header pill re-opens it.
+    this.persistent = !!opts.persistent;
+    if (!this.persistent) this.el.classList.add('folded');
     const head = this.el.querySelector('.radio-head');
-    if (head) head.setAttribute('aria-expanded', 'false');
+    if (head) head.setAttribute('aria-expanded', String(!this.persistent));
   },
 
   async loadManifest() {
@@ -214,8 +216,9 @@ const DSDARadio = {
     const head = this.el.querySelector('.radio-head');
     if (head) head.setAttribute('aria-expanded', String(!folded));
     if (this.foldTimer) { clearTimeout(this.foldTimer); this.foldTimer = null; }
-    if (!folded) {
-      // opened — auto-refold after 6s (long enough to tune, short enough to clear)
+    if (!folded && !this.persistent) {
+      // opened — auto-refold after 6s (long enough to tune, short enough to clear).
+      // Skipped when persistent (the hub page keeps the dial open as the hero).
       this.foldTimer = setTimeout(() => this.toggleFold(), 6000);
     }
   },
