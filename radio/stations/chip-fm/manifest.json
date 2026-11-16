@@ -1,0 +1,95 @@
+{
+  "name": "103.7 Chip FM",
+  "tagline": "8-bit chiptunes, square waves & retro vibes",
+  "type": "broadcast",
+  "musicCredit": "HydroGene (CC0)",
+  "epoch": 1794791571,
+  "totalDuration": 1259,
+  "note": "Music-only for now \u2014 the Neural2 host announcements (announcements/) get spliced in once the Google TTS key is ready (gen_tts.py).",
+  "items": [
+    {
+      "type": "music",
+      "title": "I Am Not Clumsy",
+      "artist": "HydroGene",
+      "url": "music/01_i-am-not-clumsy.mp3",
+      "duration": 39
+    },
+    {
+      "type": "music",
+      "title": "Infinite Darkness",
+      "artist": "HydroGene",
+      "url": "music/02_infinite-darkness.mp3",
+      "duration": 165
+    },
+    {
+      "type": "music",
+      "title": "Jester Battle",
+      "artist": "HydroGene",
+      "url": "music/03_jester-battle.mp3",
+      "duration": 96
+    },
+    {
+      "type": "music",
+      "title": "Jester Theme",
+      "artist": "HydroGene",
+      "url": "music/04_jester-theme.mp3",
+      "duration": 65
+    },
+    {
+      "type": "music",
+      "title": "Monstervania 2",
+      "artist": "HydroGene",
+      "url": "music/05_monstervania-2.mp3",
+      "duration": 143
+    },
+    {
+      "type": "music",
+      "title": "Perilous Dungeon",
+      "artist": "HydroGene",
+      "url": "music/06_perilous-dungeon.mp3",
+      "duration": 113
+    },
+    {
+      "type": "music",
+      "title": "Rush Point",
+      "artist": "HydroGene",
+      "url": "music/07_rush-point.mp3",
+      "duration": 151
+    },
+    {
+      "type": "music",
+      "title": "The Quiet Spy",
+      "artist": "HydroGene",
+      "url": "music/08_the-quiet-spy.mp3",
+      "duration": 102
+    },
+    {
+      "type": "music",
+      "title": "Truth",
+      "artist": "HydroGene",
+      "url": "music/09_truth.mp3",
+      "duration": 111
+    },
+    {
+      "type": "music",
+      "title": "Unknown Planet",
+      "artist": "HydroGene",
+      "url": "music/10_unknown-planet.mp3",
+      "duration": 69
+    },
+    {
+      "type": "music",
+      "title": "Last Mission",
+      "artist": "HydroGene",
+      "url": "music/11_last-mission.mp3",
+      "duration": 123
+    },
+    {
+      "type": "music",
+      "title": "Slay The Evil",
+      "artist": "HydroGene",
+      "url": "music/12_slay-the-evil.mp3",
+      "duration": 82
+    }
+  ]
+}

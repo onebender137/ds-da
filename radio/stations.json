@@ -1,8 +1,8 @@
 {
-  "version": 3,
+  "version": 4,
   "network": "DSDA Radio",
   "updated": "2026-11-15",
-  "note": "Cross-game radio manifest — the shared dial. TEMPORARY (2026-11-15): stripped to just the 2 DSDA Radio broadcast shows (Mental FM 137.7, Z107.7 Classic Rock) so we can model the in-game radio without clutter. Polkahole + the game originals come back to THIS manifest as we build them out (the originals are preserved in each game's local stations.json). Station types: 'broadcast' (live clock — tune in mid-song, everyone on the same second; points at a manifest.json with a program), 'stream' (Polkahole), 'seamless' (the games' own 1-track originals).",
+  "note": "Cross-game radio manifest — the shared dial. 3 DSDA Radio broadcast shows: Mental FM 137.7 (electronic), Z107.7 Classic Rock (Shane Ivers, CC BY 4.0), 103.7 Chip FM (8-bit chiptunes, HydroGene CC0). Polkahole + the game originals come back to THIS manifest as we build them out (the originals are preserved in each game's local stations.json). Station types: 'broadcast' (live clock — tune in mid-song, everyone on the same second; points at a manifest.json with a program), 'stream' (Polkahole), 'seamless' (the games' own 1-track originals).",
   "stations": [
     {
       "id": "mental-fm",
@@ -21,6 +21,15 @@
       "tagline": "Classic rock, live — Shane Ivers (CC BY 4.0)",
       "accent": "#ffb347",
       "manifest": "/radio/stations/z1077/manifest.json"
+    },
+    {
+      "id": "chip-fm",
+      "name": "103.7 Chip FM",
+      "type": "broadcast",
+      "frequency": "103.7",
+      "tagline": "8-bit chiptunes — HydroGene (CC0)",
+      "accent": "#39ff14",
+      "manifest": "/radio/stations/chip-fm/manifest.json"
     }
   ]
 }
