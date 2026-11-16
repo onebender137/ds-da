@@ -1,0 +1,173 @@
+{
+  "name": "Tripped Up FM 127.5",
+  "tagline": "jazz, triphop & late-night vibes",
+  "type": "broadcast",
+  "musicCredit": "HoliznaCC0 (CC0)",
+  "hostVoice": "Kokoro af_heart (local)",
+  "epoch": 1794795227,
+  "totalDuration": 3401,
+  "note": "18 HoliznaCC0 CC0 jazz-lofi/triphop tracks + 5 local Kokoro (af_heart) host announcements, interleaved.",
+  "program": [
+    {
+      "type": "announcement",
+      "title": "on air",
+      "artist": "Tripped 127.5",
+      "url": "announcements/01_intro.mp3",
+      "duration": 9
+    },
+    {
+      "type": "music",
+      "title": "Breath",
+      "artist": "HoliznaCC0",
+      "url": "music/breath.mp3",
+      "duration": 151
+    },
+    {
+      "type": "music",
+      "title": "Bus Stop",
+      "artist": "HoliznaCC0",
+      "url": "music/bus-stop.mp3",
+      "duration": 196
+    },
+    {
+      "type": "music",
+      "title": "Busking In the Sunlight",
+      "artist": "HoliznaCC0",
+      "url": "music/busking-in-the-sunlight.mp3",
+      "duration": 263
+    },
+    {
+      "type": "music",
+      "title": "Busted AC Unit",
+      "artist": "HoliznaCC0",
+      "url": "music/busted-ac-unit.mp3",
+      "duration": 152
+    },
+    {
+      "type": "announcement",
+      "title": "on air",
+      "artist": "Tripped 127.5",
+      "url": "announcements/02_promo.mp3",
+      "duration": 6
+    },
+    {
+      "type": "music",
+      "title": "Day Trips",
+      "artist": "HoliznaCC0",
+      "url": "music/day-trips.mp3",
+      "duration": 184
+    },
+    {
+      "type": "music",
+      "title": "Eat",
+      "artist": "HoliznaCC0",
+      "url": "music/eat.mp3",
+      "duration": 180
+    },
+    {
+      "type": "music",
+      "title": "Endless Grind",
+      "artist": "HoliznaCC0",
+      "url": "music/endless-grind.mp3",
+      "duration": 236
+    },
+    {
+      "type": "music",
+      "title": "Fresh Fit",
+      "artist": "HoliznaCC0",
+      "url": "music/fresh-fit.mp3",
+      "duration": 163
+    },
+    {
+      "type": "music",
+      "title": "Hooptie Windows Down",
+      "artist": "HoliznaCC0",
+      "url": "music/hooptie-with-the-windows-down.mp3",
+      "duration": 234
+    },
+    {
+      "type": "announcement",
+      "title": "on air",
+      "artist": "Tripped 127.5",
+      "url": "announcements/03_promo.mp3",
+      "duration": 6
+    },
+    {
+      "type": "music",
+      "title": "Make Funk",
+      "artist": "HoliznaCC0",
+      "url": "music/make-funk.mp3",
+      "duration": 163
+    },
+    {
+      "type": "music",
+      "title": "Make Love",
+      "artist": "HoliznaCC0",
+      "url": "music/make-love.mp3",
+      "duration": 226
+    },
+    {
+      "type": "music",
+      "title": "Make Money",
+      "artist": "HoliznaCC0",
+      "url": "music/make-money.mp3",
+      "duration": 224
+    },
+    {
+      "type": "music",
+      "title": "Moving Forward",
+      "artist": "HoliznaCC0",
+      "url": "music/moving-forward.mp3",
+      "duration": 129
+    },
+    {
+      "type": "announcement",
+      "title": "on air",
+      "artist": "Tripped 127.5",
+      "url": "announcements/04_bump.mp3",
+      "duration": 5
+    },
+    {
+      "type": "music",
+      "title": "Nowhere To Be",
+      "artist": "HoliznaCC0",
+      "url": "music/nowhere-to-be-nothing-to-do.mp3",
+      "duration": 218
+    },
+    {
+      "type": "music",
+      "title": "On Foot",
+      "artist": "HoliznaCC0",
+      "url": "music/on-foot.mp3",
+      "duration": 116
+    },
+    {
+      "type": "music",
+      "title": "Sky Scrapers",
+      "artist": "HoliznaCC0",
+      "url": "music/sky-scrapers.mp3",
+      "duration": 138
+    },
+    {
+      "type": "music",
+      "title": "Sleep",
+      "artist": "HoliznaCC0",
+      "url": "music/sleep.mp3",
+      "duration": 198
+    },
+    {
+      "type": "music",
+      "title": "Studio Apartment",
+      "artist": "HoliznaCC0",
+      "url": "music/studio-apartment.mp3",
+      "duration": 197
+    },
+    {
+      "type": "announcement",
+      "title": "on air",
+      "artist": "Tripped 127.5",
+      "url": "announcements/05_outro.mp3",
+      "duration": 7
+    }
+  ]
+}

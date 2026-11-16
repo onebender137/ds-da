@@ -1,0 +1,131 @@
+{
+  "name": "Most Pit FM 73.7",
+  "tagline": "death metal, doom & heavy riffs",
+  "type": "broadcast",
+  "musicCredit": "vitalezzz, Kaiser, ShggothSlave, Kistol, Emma_MA (CC0)",
+  "hostVoice": "Kokoro am_puck (local)",
+  "epoch": 1794795227,
+  "totalDuration": 2998,
+  "note": "12 CC0 metal tracks (vitalezzz, Kaiser, ShggothSlave, Kistol, Emma_MA) + 5 local Kokoro (am_puck) host announcements, interleaved.",
+  "program": [
+    {
+      "type": "announcement",
+      "title": "on air",
+      "artist": "Most 73.7",
+      "url": "announcements/01_intro.mp3",
+      "duration": 9
+    },
+    {
+      "type": "music",
+      "title": "Burzum",
+      "artist": "Kaiser",
+      "url": "music/04_burzum.mp3",
+      "duration": 617
+    },
+    {
+      "type": "music",
+      "title": "Corrupted Minds",
+      "artist": "vitalezzz",
+      "url": "music/corrupted_minds.mp3",
+      "duration": 198
+    },
+    {
+      "type": "music",
+      "title": "Curse of the Moon",
+      "artist": "vitalezzz",
+      "url": "music/curse_of_the_moon.mp3",
+      "duration": 215
+    },
+    {
+      "type": "announcement",
+      "title": "on air",
+      "artist": "Most 73.7",
+      "url": "announcements/02_promo.mp3",
+      "duration": 6
+    },
+    {
+      "type": "music",
+      "title": "Cybersecutor",
+      "artist": "ShggothSlave",
+      "url": "music/cybersecutor.mp3",
+      "duration": 218
+    },
+    {
+      "type": "music",
+      "title": "Devoted Guard",
+      "artist": "vitalezzz",
+      "url": "music/devoted_guard.mp3",
+      "duration": 182
+    },
+    {
+      "type": "music",
+      "title": "Megasong",
+      "artist": "Emma_MA",
+      "url": "music/megasong.mp3",
+      "duration": 224
+    },
+    {
+      "type": "announcement",
+      "title": "on air",
+      "artist": "Most 73.7",
+      "url": "announcements/03_promo.mp3",
+      "duration": 5
+    },
+    {
+      "type": "music",
+      "title": "Occupier of the Highest Seat",
+      "artist": "Kaiser",
+      "url": "music/08_occupier_of_the_highest_seat_in_the_land.mp3",
+      "duration": 397
+    },
+    {
+      "type": "music",
+      "title": "Realm of Torment",
+      "artist": "vitalezzz",
+      "url": "music/realm_of_torment.mp3",
+      "duration": 198
+    },
+    {
+      "type": "music",
+      "title": "Shadows Awaken Within",
+      "artist": "vitalezzz",
+      "url": "music/shadows_awaken_within.mp3",
+      "duration": 223
+    },
+    {
+      "type": "announcement",
+      "title": "on air",
+      "artist": "Most 73.7",
+      "url": "announcements/04_bump.mp3",
+      "duration": 4
+    },
+    {
+      "type": "music",
+      "title": "Unholy Surge",
+      "artist": "vitalezzz",
+      "url": "music/unholy_surge.mp3",
+      "duration": 198
+    },
+    {
+      "type": "music",
+      "title": "Untitled Metal Track",
+      "artist": "Kistol",
+      "url": "music/untitled_metal_track.mp3",
+      "duration": 145
+    },
+    {
+      "type": "music",
+      "title": "Western Rock-Metal",
+      "artist": "ShggothSlave",
+      "url": "music/western_rock-metal_song.mp3",
+      "duration": 152
+    },
+    {
+      "type": "announcement",
+      "title": "on air",
+      "artist": "Most 73.7",
+      "url": "announcements/05_outro.mp3",
+      "duration": 7
+    }
+  ]
+}

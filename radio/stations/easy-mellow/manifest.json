@@ -1,0 +1,145 @@
+{
+  "name": "Easy Mellow FM 92.5",
+  "tagline": "bossa, lounge & easy listening oldies",
+  "type": "broadcast",
+  "musicCredit": "Alex Morgan (CC BY 4.0)",
+  "hostVoice": "Kokoro am_michael (local)",
+  "epoch": 1794795226,
+  "totalDuration": 1836,
+  "note": "14 Alex Morgan CC BY 4.0 bossa/lounge tracks + 5 local Kokoro (am_michael) host announcements, interleaved.",
+  "program": [
+    {
+      "type": "announcement",
+      "title": "on air",
+      "artist": "Easy 92.5",
+      "url": "announcements/01_intro.mp3",
+      "duration": 13
+    },
+    {
+      "type": "music",
+      "title": "Cafe Bright Rhythm",
+      "artist": "Alex Morgan",
+      "url": "music/bossa-nova-cafe-bright-rhythm.mp3",
+      "duration": 124
+    },
+    {
+      "type": "music",
+      "title": "Cocktail Bar Early Evening",
+      "artist": "Alex Morgan",
+      "url": "music/bossa-lounge-cocktail-bar-early-evening.mp3",
+      "duration": 110
+    },
+    {
+      "type": "music",
+      "title": "Cocktail Bar Short Set",
+      "artist": "Alex Morgan",
+      "url": "music/bossa-nova-cocktail-bar-short-set.mp3",
+      "duration": 95
+    },
+    {
+      "type": "announcement",
+      "title": "on air",
+      "artist": "Easy 92.5",
+      "url": "announcements/02_promo.mp3",
+      "duration": 8
+    },
+    {
+      "type": "music",
+      "title": "Coffee Shop Long Take",
+      "artist": "Alex Morgan",
+      "url": "music/bossa-nova-coffee-shop-long-take.mp3",
+      "duration": 185
+    },
+    {
+      "type": "music",
+      "title": "Coffee Shop Warm Loop",
+      "artist": "Alex Morgan",
+      "url": "music/bossa-lounge-coffee-shop-warm-loop.mp3",
+      "duration": 124
+    },
+    {
+      "type": "music",
+      "title": "Flamenco Fire",
+      "artist": "Alex Morgan",
+      "url": "music/flamenco-fire-with-driving-palmas.mp3",
+      "duration": 157
+    },
+    {
+      "type": "music",
+      "title": "Midnight Club Late Bossa",
+      "artist": "Alex Morgan",
+      "url": "music/bossa-nova-midnight-club-late-bossa.mp3",
+      "duration": 128
+    },
+    {
+      "type": "announcement",
+      "title": "on air",
+      "artist": "Easy 92.5",
+      "url": "announcements/03_promo.mp3",
+      "duration": 8
+    },
+    {
+      "type": "music",
+      "title": "Midnight Club Slow Sway",
+      "artist": "Alex Morgan",
+      "url": "music/bossa-lounge-midnight-club-slow-sway.mp3",
+      "duration": 148
+    },
+    {
+      "type": "music",
+      "title": "Rainy Night Quiet Sway",
+      "artist": "Alex Morgan",
+      "url": "music/bossa-nova-rainy-night-quiet-sway.mp3",
+      "duration": 107
+    },
+    {
+      "type": "music",
+      "title": "Rainy Night Soft Guitar",
+      "artist": "Alex Morgan",
+      "url": "music/bossa-lounge-rainy-night-soft-guitar.mp3",
+      "duration": 150
+    },
+    {
+      "type": "announcement",
+      "title": "on air",
+      "artist": "Easy 92.5",
+      "url": "announcements/04_bump.mp3",
+      "duration": 5
+    },
+    {
+      "type": "music",
+      "title": "Restaurant Dinner Sway",
+      "artist": "Alex Morgan",
+      "url": "music/bossa-lounge-restaurant-dinner-sway.mp3",
+      "duration": 113
+    },
+    {
+      "type": "music",
+      "title": "Restaurant Service Standard",
+      "artist": "Alex Morgan",
+      "url": "music/bossa-nova-restaurant-service-standard.mp3",
+      "duration": 142
+    },
+    {
+      "type": "music",
+      "title": "Sunny Cafe Easy Major",
+      "artist": "Alex Morgan",
+      "url": "music/bossa-nova-sunny-cafe-easy-major-key.mp3",
+      "duration": 101
+    },
+    {
+      "type": "music",
+      "title": "Sunny Cafe Slow Bounce",
+      "artist": "Alex Morgan",
+      "url": "music/bossa-lounge-sunny-cafe-slow-bounce.mp3",
+      "duration": 110
+    },
+    {
+      "type": "announcement",
+      "title": "on air",
+      "artist": "Easy 92.5",
+      "url": "announcements/05_outro.mp3",
+      "duration": 8
+    }
+  ]
+}

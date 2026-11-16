@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>73.7 MOST PIT FM — DEATH METAL · DOOM · HEAVY</title>
+<style>
+
+  :root{ --bg:#0a0505;--panel:#160808;--acc:#ff3b30;--acc-dim:#8a1a12;--glow:rgba(255,59,48,.42);--ink:#f5d8d5;--muted:#a06058;--cred:#e8a098; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:'Arial Black',Impact,system-ui,sans-serif;
+    display:flex; align-items:center; justify-content:center;
+    padding:20px; overflow:hidden;
+    background-image:radial-gradient(circle at 50% 0%, var(--glow), transparent 55%), repeating-linear-gradient(115deg, rgba(255,59,48,.05) 0 2px, transparent 2px 9px);
+  }
+  .card{
+    width:min(440px,100%); background:var(--panel);
+    border:2px solid var(--acc-dim); border-radius:14px;
+    box-shadow:0 0 40px var(--glow), inset 0 0 60px rgba(0,0,0,.55);
+    padding:26px 24px 22px; position:relative;
+  }
+  .top{display:flex; align-items:center; gap:12px; margin-bottom:18px}
+  .logo{width:46px;height:46px;flex:0 0 auto;filter:drop-shadow(0 0 8px var(--glow))}
+  .titles{flex:1;min-width:0}
+  .freq{font-size:12px;letter-spacing:3px;color:var(--muted)}
+  h1{font-size:26px;letter-spacing:2px;color:var(--acc);text-shadow:0 0 12px var(--glow);line-height:1.05}
+  .tagline{font-size:11px;color:var(--muted);letter-spacing:1px;margin-top:3px}
+  .live{display:flex;align-items:center;gap:6px;font-size:11px;letter-spacing:2px;color:var(--acc);
+    border:1px solid var(--acc-dim);border-radius:6px;padding:5px 9px;flex:0 0 auto}
+  .live .dot{width:8px;height:8px;border-radius:50%;background:var(--acc);box-shadow:0 0 8px var(--acc);animation:pulse 1.4s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+  .now{background:rgba(0,0,0,.4);border:1px solid var(--acc-dim);border-radius:10px;padding:16px;margin-bottom:18px;
+    min-height:96px;display:flex;flex-direction:column;justify-content:center}
+  .now .label{font-size:10px;letter-spacing:3px;color:var(--muted);margin-bottom:8px}
+  .now .track{font-size:18px;color:var(--acc);letter-spacing:1px;text-shadow:0 0 10px var(--glow);word-break:break-word}
+  .now .artist{font-size:13px;color:var(--ink);margin-top:5px}
+  .now .credit{font-size:11px;color:var(--cred);margin-top:8px;letter-spacing:.5px}
+  .bar{height:5px;background:var(--glow);border-radius:3px;overflow:hidden;margin-bottom:20px}
+  .bar .fill{height:100%;width:0%;background:var(--acc);box-shadow:0 0 10px var(--acc);transition:width .3s linear}
+  .controls{display:flex;align-items:center;justify-content:center;gap:18px}
+  .play{width:70px;height:70px;border-radius:50%;border:2px solid var(--acc);background:var(--glow);color:var(--acc);
+    cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 0 20px var(--glow);
+    transition:transform .1s, background .15s}
+  .play:active{transform:scale(.94)}
+  .play svg{width:30px;height:30px}
+  .foot{margin-top:18px;text-align:center;font-size:10px;color:var(--muted);letter-spacing:1px}
+  .gate{position:absolute;inset:0;border-radius:12px;z-index:5;background:rgba(0,0,0,.88);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;cursor:pointer}
+  .gate .big{font-size:16px;letter-spacing:3px;color:var(--acc);text-shadow:0 0 12px var(--glow)}
+  .gate .sub{font-size:11px;color:var(--muted);letter-spacing:1px}
+  .gate.hidden{display:none}
+
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="gate" id="gate">
+      <svg width="54" height="54" viewBox="0 0 48 48" fill="none"><rect x="6" y="14" width="36" height="26" rx="4" stroke="#ff3b30" stroke-width="2.5"/><circle cx="30" cy="27" r="7" stroke="#ff3b30" stroke-width="2.5"/><circle cx="30" cy="27" r="2.5" fill="#ff3b30"/><line x1="11" y1="22" x2="22" y2="22" stroke="#ff3b30" stroke-width="2.5"/><line x1="11" y1="28" x2="20" y2="28" stroke="#ff3b30" stroke-width="2"/><line x1="14" y1="6" x2="26" y2="14" stroke="#8a1a12" stroke-width="2.5" stroke-linecap="round"/></svg>
+      <div class="big">TAP TO TUNE IN</div>
+      <div class="sub">73.7 MOST PIT FM</div>
+    </div>
+    <div class="top">
+      <svg class="logo" viewBox="0 0 48 48" fill="none"><rect x="6" y="14" width="36" height="26" rx="4" stroke="#ff3b30" stroke-width="2.5"/><circle cx="30" cy="27" r="7" stroke="#ff3b30" stroke-width="2.5"/><circle cx="30" cy="27" r="2.5" fill="#ff3b30"/><line x1="11" y1="22" x2="22" y2="22" stroke="#ff3b30" stroke-width="2.5"/><line x1="11" y1="28" x2="20" y2="28" stroke="#ff3b30" stroke-width="2"/><line x1="14" y1="6" x2="26" y2="14" stroke="#8a1a12" stroke-width="2.5" stroke-linecap="round"/></svg>
+      <div class="titles">
+        <div class="freq">73.7 MHz</div>
+        <h1>MOST PIT</h1>
+        <div class="tagline">DEATH METAL · DOOM · HEAVY</div>
+      </div>
+      <div class="live"><span class="dot"></span>LIVE</div>
+    </div>
+    <div class="now">
+      <div class="label">NOW PLAYING</div>
+      <div class="track" id="track">Tuning in…</div>
+      <div class="artist" id="artist"></div>
+      <div class="credit" id="credit"></div>
+    </div>
+    <div class="bar"><div class="fill" id="fill"></div></div>
+    <div class="controls">
+      <button class="play" id="play" aria-label="Play">
+        <svg id="playicon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+    </div>
+    <div class="foot">CC0 · VITALEZZZ, KAISER & MORE</div>
+    <audio id="audio" preload="auto"></audio>
+  </div>
+<script>
+
+(function(){
+  var MANIFEST = "manifest.json";
+  var audio = document.getElementById('audio');
+  var trackEl = document.getElementById('track');
+  var artistEl = document.getElementById('artist');
+  var creditEl = document.getElementById('credit');
+  var fillEl = document.getElementById('fill');
+  var playBtn = document.getElementById('play');
+  var playIcon = document.getElementById('playicon');
+  var gate = document.getElementById('gate');
+
+  var m = null, epoch = 0, total = 1, started = false;
+  var curIdx = -1, curStart = 0;
+
+  function loadManifest(){
+    return fetch(MANIFEST, {cache:'no-store'}).then(function(r){return r.json();});
+  }
+  function bcastPos(){
+    var pos = ((Date.now()/1000 - epoch) % total + total) % total;
+    var acc = 0;
+    for (var i=0;i<m.program.length;i++){
+      acc += m.program[i].duration;
+      if (pos < acc) return {idx:i, offset:pos - (acc - m.program[i].duration)};
+    }
+    return {idx:m.program.length-1, offset:0};
+  }
+  function itemUrl(it){ return new URL(it.url, new URL(MANIFEST, location.href)).href; }
+  function showItem(it){
+    trackEl.textContent = it.title;
+    artistEl.textContent = it.artist ? "— " + it.artist : "";
+    creditEl.textContent = m.musicCredit || "";
+  }
+  function tickProgress(){
+    if (!started) return;
+    var p = bcastPos();
+    if (p.idx !== curIdx){
+      curIdx = p.idx; curStart = p.offset;
+      var it = m.program[p.idx];
+      showItem(it);
+      audio.src = itemUrl(it);
+      audio.currentTime = p.offset;
+      audio.play().catch(function(){});
+    }
+    var it = m.program[curIdx];
+    var within = (Date.now()/1000) - curStart;
+    fillEl.style.width = Math.min(100, (within / it.duration) * 100) + "%";
+  }
+  function start(){
+    if (started) return; started = true;
+    gate.classList.add('hidden');
+    tickProgress();
+    setInterval(tickProgress, 500);
+  }
+  function setPlayIcon(playing){
+    playIcon.innerHTML = playing
+      ? '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>'
+      : '<path d="M8 5v14l11-7z"/>';
+  }
+  function tryPlay(){
+    if (!m) return;
+    audio.play().then(function(){ setPlayIcon(true); })
+      .catch(function(){});
+  }
+  playBtn.addEventListener('click', function(){
+    if (!m) return;
+    if (audio.paused){
+      var p = bcastPos(); curIdx = p.idx; curStart = p.offset;
+      var it = m.program[p.idx];
+      audio.src = itemUrl(it); audio.currentTime = p.offset;
+      audio.play().then(function(){ setPlayIcon(true); }).catch(function(){});
+    } else { audio.pause(); setPlayIcon(false); }
+  });
+  audio.addEventListener('play', function(){ setPlayIcon(true); });
+  audio.addEventListener('pause', function(){ setPlayIcon(false); });
+  gate.addEventListener('click', function(){ start(); tryPlay(); });
+  loadManifest().then(function(data){
+    m = data; epoch = data.epoch; total = data.totalDuration;
+    var p = bcastPos(); curIdx = p.idx; curStart = p.offset;
+    showItem(m.program[p.idx]);
+  }).catch(function(e){
+    trackEl.textContent = "Can't reach the signal";
+    console.error(e);
+  });
+})();
+
+</script>
+</body>
+</html>
