@@ -76,6 +76,10 @@
     transition:transform .12s, box-shadow .12s, border-color .12s;
   }
   .stn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.5);border-color:var(--stn-accent,var(--accent))}
+  .stn-thumb{
+    width:52px;height:52px;flex:0 0 auto;border-radius:9px;object-fit:cover;
+    border:1px solid var(--border);box-shadow:0 3px 10px rgba(0,0,0,.4);
+  }
   .stn-freq{
     font-size:21px;font-weight:800;letter-spacing:.5px;flex:0 0 auto;width:60px;text-align:center;
     color:var(--stn-accent,var(--accent));text-shadow:0 0 12px var(--stn-accent,var(--accent));
@@ -83,8 +87,10 @@
   .stn-freq small{display:block;font-size:8px;letter-spacing:2px;color:var(--muted);text-shadow:none;margin-top:1px}
   .stn-body{flex:1;min-width:0}
   .stn-name{font-size:14px;font-weight:700;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .stn-freq-row{display:flex;align-items:center;gap:8px;margin-top:2px}
+  .stn-freq-inline{font-size:12px;font-weight:800;letter-spacing:.5px;color:var(--stn-accent,var(--accent));text-shadow:0 0 10px var(--stn-accent,var(--accent))}
   .stn-tag{font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .stn-live{display:inline-flex;align-items:center;gap:5px;font-size:9px;letter-spacing:1.5px;color:var(--stn-accent,var(--accent));margin-top:5px}
+  .stn-live{display:inline-flex;align-items:center;gap:5px;font-size:9px;letter-spacing:1.5px;color:var(--stn-accent,var(--accent))}
   .stn-live .dot{width:6px;height:6px;border-radius:50%;background:var(--stn-accent,var(--accent));box-shadow:0 0 7px var(--stn-accent,var(--accent));animation:pulse 1.4s infinite}
   .stn-go{
     flex:0 0 auto;background:var(--stn-accent,var(--accent));color:#05050a;font-weight:700;
@@ -156,14 +162,15 @@
           // innerHTML is a static template; dynamic name/tagline go through
           // textContent below, and frequency comes from our own trusted stations.json
           a.innerHTML =
-            '<div class="stn-freq">' + st.frequency + '<small>FM</small></div>' +
+            '<img class="stn-thumb" src="' + st.id + '/station-thumb.png" alt="' + st.name + '" loading="lazy">' +
             '<div class="stn-body">' +
               '<div class="stn-name"></div>' +
+              '<div class="stn-freq-row"><span class="stn-freq-inline"></span><span class="stn-live"><span class="dot"></span>LIVE</span></div>' +
               '<div class="stn-tag"></div>' +
-              '<span class="stn-live"><span class="dot"></span>LIVE</span>' +
             '</div>' +
             '<span class="stn-go">LISTEN</span>';
           a.querySelector('.stn-name').textContent = st.name;
+          a.querySelector('.stn-freq-inline').textContent = st.frequency + ' FM';
           a.querySelector('.stn-tag').textContent = st.tagline || '';
           box.appendChild(a);
         });
