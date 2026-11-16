@@ -13,7 +13,7 @@
     <link rel="icon" type="image/x-icon" href="../favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
     <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
-    <link rel="stylesheet" href="proof.css?v=18">
+    <link rel="stylesheet" href="proof.css?v=19">
     <link rel="stylesheet" href="proof-fx.css?v=1">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script>
@@ -29,17 +29,29 @@
     <header class="header">
         <div class="header-inner">
             <a href="/" class="logo">DSDA</a>
-            <nav class="nav">
-                <span class="wallet-status" id="walletStatus">Notary: loading…</span>
+            <nav class="nav" aria-label="ds-da.ca">
                 <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
                     <span class="theme-icon">☀️</span>
                     <span class="theme-label">Light</span>
                 </button>
-                <a href="/" id="navHome">Home</a>
-                <a href="?view=faq" id="navFaq">FAQ</a>
-                <a href="?view=dashboard" id="navDashboard" class="nav-login">Dashboard</a>
-                <button class="btn-login" id="loginBtn">🔑 Login</button>
+                <a href="https://hopes-and-dreams.ca">Hopes &amp; Dreams</a>
+                <a href="https://polkahole.ca">Polkahole</a>
+                <a href="/proof/" class="nav-current" aria-current="page">Proof<span class="nav-wide"> of Creation</span></a>
+                <a href="/games/">Arcade</a>
+                <a href="/radio/stations/" class="nav-radio"><span class="nav-dot" aria-hidden="true"></span><span><span class="nav-wide">DSDA </span>Radio</span></a>
             </nav>
+        </div>
+        <!-- Proof of Creation's own controls: second row, under the site menu -->
+        <div class="subnav">
+            <div class="subnav-inner">
+                <span class="wallet-status" id="walletStatus">Notary: loading…</span>
+                <nav class="subnav-links" aria-label="Proof of Creation">
+                    <a href="?view=anchor" id="navHome">Anchor</a>
+                    <a href="?view=faq" id="navFaq">FAQ</a>
+                    <a href="?view=dashboard" id="navDashboard" class="nav-login">Dashboard</a>
+                    <button class="btn-login" id="loginBtn">🔑 Login</button>
+                </nav>
+            </div>
         </div>
     </header>
 

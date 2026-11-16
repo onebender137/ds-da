@@ -463,6 +463,12 @@ html.dark ::-webkit-scrollbar-thumb:hover {
 @keyframes onair { 50% { opacity: 0.35; } }
 html.dark .nav a.nav-radio { color: var(--gold); }
 html.dark .nav a.nav-radio:hover { color: #0a1628; }
+/* tablets / narrow laptops: keep the whole site menu on one line */
+.nav a { white-space: nowrap; }
+@media (max-width: 1000px) {
+    .nav { gap: 8px 18px; }
+    .nav-wide { display: none; }
+}
 @media (max-width: 768px) {
     /* five links on one phone row: drop "DSDA" and "of Creation", tighten the gaps */
     .nav { gap: 8px 10px; }

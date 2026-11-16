@@ -1262,3 +1262,65 @@ html.dark ::-webkit-scrollbar-thumb:hover {
 #walletDoneBtn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
 .modal.shake { animation: walletShake .4s; }
 @keyframes walletShake { 20%,60% { transform: translateX(-6px); } 40%,80% { transform: translateX(6px); } }
+
+/* ============================================================================
+   HEADER v2 — the standard ds-da.ca site menu on top (same links as the home
+   page), with Proof of Creation's own controls on a second row underneath.
+   ========================================================================== */
+.nav { gap: 36px; }
+.nav a.nav-current { color: var(--gold); font-weight: 600; }
+.nav a.nav-radio {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 14px; border-radius: 20px;
+    border: 1px solid rgba(201, 162, 39, 0.55);
+    color: var(--gold-dark); font-weight: 600; white-space: nowrap;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.nav a.nav-radio:hover { background: var(--gold); border-color: var(--gold); color: #0a1628; }
+.nav-dot {
+    width: 7px; height: 7px; border-radius: 50%; flex: none;
+    background: #e5484d; box-shadow: 0 0 8px rgba(229, 72, 77, 0.8);
+    animation: onair 1.8s ease-in-out infinite;
+}
+@keyframes onair { 50% { opacity: 0.35; } }
+html.dark .nav a.nav-current, html.dark .nav a.nav-current:hover { color: var(--gold); }
+html.dark .nav a.nav-radio { color: var(--gold); }
+html.dark .nav a.nav-radio:hover { color: #0a1628; }
+
+.subnav { border-top: 1px solid var(--border); }
+.subnav-inner {
+    max-width: 1200px; margin: 0 auto; padding: 8px 40px;
+    display: flex; align-items: center; justify-content: space-between; gap: 20px;
+}
+.subnav-links { display: flex; align-items: center; gap: 24px; margin-left: auto; }
+.subnav-links a {
+    color: var(--text-dim); text-decoration: none;
+    font-size: 0.82rem; font-weight: 500; letter-spacing: 0.5px; white-space: nowrap;
+    transition: color 0.2s ease;
+}
+.subnav-links a:hover { color: var(--gold-dark); }
+html.dark .subnav { border-top-color: #1e293b; }
+html.dark .subnav-links a { color: #94a3b8; }
+html.dark .subnav-links a:hover { color: var(--gold); }
+
+/* tablets / narrow laptops: keep the whole site menu on one line */
+.nav a { white-space: nowrap; }
+@media (max-width: 1000px) {
+    .nav { gap: 8px 18px; }
+    .nav-wide { display: none; }
+}
+@media (max-width: 768px) {
+    /* five site links on one phone row: drop "of Creation" and "DSDA", tighten the gaps */
+    .nav { gap: 8px 10px; }
+    .nav a.nav-radio { padding: 3px 8px; gap: 5px; }
+    .nav-wide { display: none; }
+    .subnav-inner { padding: 4px 20px; justify-content: center; }
+    .subnav-links { margin: 0; gap: 18px; }
+    .subnav-links a { font-size: 0.72rem; letter-spacing: 0.3px; }
+}
+@media (max-width: 350px) {
+    .nav { gap: 8px 7px; }
+    .nav a { font-size: 0.66rem; letter-spacing: 0; }
+    .nav a.nav-radio { padding: 3px 6px; }
+}
+@media (prefers-reduced-motion: reduce) { .nav-dot { animation: none; } }
