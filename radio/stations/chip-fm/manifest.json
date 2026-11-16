@@ -3,10 +3,18 @@
   "tagline": "8-bit chiptunes, square waves & retro vibes",
   "type": "broadcast",
   "musicCredit": "HydroGene (CC0)",
-  "epoch": 1794791571,
-  "totalDuration": 1259,
-  "note": "Music-only for now \u2014 the Neural2 host announcements (announcements/) get spliced in once the Google TTS key is ready (gen_tts.py).",
+  "hostVoice": "Kokoro am_eric (local)",
+  "epoch": 1794792697,
+  "totalDuration": 1302,
+  "note": "12 HydroGene CC0 chiptunes + 5 local Kokoro (am_eric) host announcements, interleaved. Host voice is local Kokoro for now; flip to Google Neural2 (gen_tts.py) if pronunciations disappoint.",
   "items": [
+    {
+      "type": "announcement",
+      "title": "on air",
+      "artist": "Chip FM",
+      "url": "announcements/01_intro.mp3",
+      "duration": 10
+    },
     {
       "type": "music",
       "title": "I Am Not Clumsy",
@@ -20,6 +28,13 @@
       "artist": "HydroGene",
       "url": "music/02_infinite-darkness.mp3",
       "duration": 165
+    },
+    {
+      "type": "announcement",
+      "title": "on air",
+      "artist": "Chip FM",
+      "url": "announcements/02_midshow.mp3",
+      "duration": 9
     },
     {
       "type": "music",
@@ -36,6 +51,13 @@
       "duration": 65
     },
     {
+      "type": "announcement",
+      "title": "on air",
+      "artist": "Chip FM",
+      "url": "announcements/03_upnext.mp3",
+      "duration": 6
+    },
+    {
       "type": "music",
       "title": "Monstervania 2",
       "artist": "HydroGene",
@@ -48,6 +70,13 @@
       "artist": "HydroGene",
       "url": "music/06_perilous-dungeon.mp3",
       "duration": 113
+    },
+    {
+      "type": "announcement",
+      "title": "on air",
+      "artist": "Chip FM",
+      "url": "announcements/04_retro.mp3",
+      "duration": 9
     },
     {
       "type": "music",
@@ -69,6 +98,13 @@
       "artist": "HydroGene",
       "url": "music/09_truth.mp3",
       "duration": 111
+    },
+    {
+      "type": "announcement",
+      "title": "on air",
+      "artist": "Chip FM",
+      "url": "announcements/05_outro.mp3",
+      "duration": 9
     },
     {
       "type": "music",
