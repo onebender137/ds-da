@@ -122,11 +122,13 @@
     .radio-frame{padding:16px 14px}
     .radio-frame #radioBox.dsda-radio .radio-stn-label{font-size:15px;}
     .radio-frame #radioBox.dsda-radio .radio-np-trk{font-size:19px;}
-    .stations{grid-template-columns:1fr}
+    .stations{grid-template-columns:minmax(0,1fr)}  /* minmax(0,…): plain 1fr let the nowrap taglines push the cards off the side of a phone */
   }
 </style>
 </head>
 <body>
+  <!-- ds-da.ca site header (shared by every radio page) -->
+  <script src="/radio/site-bar.js?v=1"></script>
   <div class="wrap">
     <header>
       <div class="logo">
