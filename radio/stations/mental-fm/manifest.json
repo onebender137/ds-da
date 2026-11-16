@@ -4,16 +4,16 @@
   "callSign": "Mental FM 137.7",
   "tagline": "The secret frequency of the DSDA arcade",
   "network": "DSDA Radio",
-  "epoch": 1794843440.718,
-  "totalDuration": 3323.064,
+  "epoch": 1794844267.246,
+  "totalDuration": 3325.315,
   "updated": "2026-11-16",
-  "note": "Shared broadcast clock: every listener tunes into the same live position. BM Lewis / Kokoro TTS announcements woven between tracks. 14 tracks (6 Dj Mental + 8 Ruller archive cuts).",
+  "note": "Shared broadcast clock. BM Lewis / Kokoro TTS. 14 tracks (6 Dj Mental + 8 Ruller archive). Pronunciation: ds-da=Dee Ess Dee Eh, Ruller=Ruler.",
   "program": [
     {
       "type": "announce",
       "title": "Mental FM 137.7 — On Air",
       "url": "announcements/id_intro_v2.mp3",
-      "duration": 11.025
+      "duration": 11.7
     },
     {
       "type": "music",
@@ -31,7 +31,7 @@
       "type": "announce",
       "title": "Ruller — Archive Promo",
       "url": "announcements/promo_ruller.mp3",
-      "duration": 14.1
+      "duration": 14.525
     },
     {
       "type": "music",
@@ -49,7 +49,7 @@
       "type": "announce",
       "title": "DSDA Arcade — Promo",
       "url": "announcements/promo_dsda.mp3",
-      "duration": 12.8
+      "duration": 13.376
     },
     {
       "type": "music",
@@ -103,7 +103,7 @@
       "type": "announce",
       "title": "DSDA Radio Network — Promo",
       "url": "announcements/promo_network.mp3",
-      "duration": 15.075
+      "duration": 15.65
     },
     {
       "type": "music",
