@@ -67,6 +67,7 @@ const DSDARadio = {
   _bcastCache: {},     // manifestUrl -> parsed manifest (so re-tuning is instant)
   // --- tuning knob + static (scan) state ---
   _scale: null,        // { min, max } frequency range of the dial
+  _labelPct: {},       // station index -> nudged label position (knob parks here)
   _scaleEl: null,      // the .radio-scale element
   _knobEl: null,       // the .radio-knob element
   _knobPct: 50,        // knob position (0-100)
@@ -287,9 +288,9 @@ const DSDARadio = {
     if (this.els.npFreq) this.els.npFreq.textContent = isBcast ? (c.station.frequency + ' FM') : '';
     if (this.els.npLive) this.els.npLive.textContent = isBcast && this.playing ? '● LIVE' : '';
     if (this.els.npCredit) this.els.npCredit.textContent = (isBcast && c.track && c.track.credit) ? c.track.credit : '';
-    // park the knob on the current station's frequency (unless mid-drag)
+    // park the knob on the current station's label (unless mid-drag)
     if (this._knobEl && !this._knobDragging && c && c.station.frequency) {
-      this._knobPct = this._freqToPct(parseFloat(c.station.frequency));
+      this._knobPct = this._knobPctFor(this.station);
       this._knobEl.style.left = this._knobPct + '%';
     }
     if (this.els.play) this.els.play.textContent = this.playing ? '❚❚' : '▶';
@@ -489,6 +490,11 @@ const DSDARadio = {
     }
     // keep labels on the scale (the leftmost one can get pushed off-edge)
     labelSpecs.forEach(s => { s.pct = Math.max(4, Math.min(96, s.pct)); });
+    // remember each station's nudged label position so the knob can park
+    // EXACTLY on its label (labels are de-crowded for readability; the knob
+    // must match the label's on-screen position, not the raw frequency)
+    this._labelPct = {};
+    labelSpecs.forEach(spec => { this._labelPct[spec.o.i] = spec.pct; });
     labelSpecs.forEach(spec => {
       const o = spec.o;
       const lbl = document.createElement('div');
@@ -509,9 +515,8 @@ const DSDARadio = {
     el.appendChild(knob);
     this._scaleEl = el;
     this._knobEl = knob;
-    // park the knob on the current station (or center)
-    const cur = this.manifest.stations[this.station];
-    this._knobPct = (cur && cur.frequency) ? this._freqToPct(parseFloat(cur.frequency)) : 50;
+    // park the knob on the current station's label (or center)
+    this._knobPct = this._knobPctFor(this.station);
     knob.style.left = this._knobPct + '%';
 
     // --- pointer interaction (mouse + touch) ---
@@ -534,6 +539,14 @@ const DSDARadio = {
   },
   _freqToPct(f) { return (f - this._scale.min) / (this._scale.max - this._scale.min) * 100; },
   _pctToFreq(p) { return this._scale.min + (p / 100) * (this._scale.max - this._scale.min); },
+  // where the knob should sit for a station: its nudged LABEL position (so the
+  // knob lines up with the on-screen label), falling back to the raw frequency.
+  _knobPctFor(idx) {
+    const st = this.manifest.stations[idx];
+    if (!st) return 50;
+    if (this._labelPct && this._labelPct[idx] != null) return this._labelPct[idx];
+    return this._freqToPct(parseFloat(st.frequency));
+  },
   _knobMove(e) {
     const rect = this._scaleEl.getBoundingClientRect();
     if (rect.width === 0) return;   // folded/hidden — no measurable width
@@ -576,7 +589,7 @@ const DSDARadio = {
     });
     const st = this.manifest.stations[best];
     if (!st) return;
-    this._knobPct = this._freqToPct(parseFloat(st.frequency));
+    this._knobPct = this._knobPctFor(best);
     this._knobEl.style.left = this._knobPct + '%';
     if (best !== this.station) this.setStation(best);
     this._setMix(1, 0);
@@ -708,9 +721,9 @@ const DSDARadio = {
       this.track = (Number.isInteger(trackIdx) && trackIdx >= 0 && trackIdx < nTracks) ? trackIdx : 0;
       this._loadAndPlay();
     }
-    // park the knob on the station's frequency (unless mid-drag)
+    // park the knob on the station's label (unless mid-drag)
     if (this._knobEl && !this._knobDragging && st.frequency) {
-      this._knobPct = this._freqToPct(parseFloat(st.frequency));
+      this._knobPct = this._knobPctFor(i);
       this._knobEl.style.left = this._knobPct + '%';
     }
   },
