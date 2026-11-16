@@ -2171,6 +2171,20 @@ window.__tl = {
     // DSDA Radio — shared cross-game dial (6 stations). The radio is the music source;
     // the game's own procedural music is disabled (SFX one-shots kept).
     DSDARadio.init({ mount: 'radioBox', manifest: '../../radio/stations.json' });
+    // Cookie Frog runs a continuous RAF loop (mobile auto-run), which can delay the
+    // radio's async play() past the browser's user-gesture window. This pointerdown
+    // handler resumes the radio's AudioContext + nudges play() synchronously on tap,
+    // so the first tap reliably unlocks audio.
+    (function(){
+      var box = document.getElementById('radioBox');
+      if (!box) return;
+      box.addEventListener('pointerdown', function(){
+        try {
+          if (DSDARadio._actx) { var ctx = DSDARadio._actx(); if (ctx && ctx.state === 'suspended') ctx.resume(); }
+          if (DSDARadio.audio && DSDARadio.audio.paused && DSDARadio._bcast) { DSDARadio.audio.play().catch(function(){}); }
+        } catch(e) {}
+      }, { passive: true });
+    })();
   </script>
 </body>
 </html>
