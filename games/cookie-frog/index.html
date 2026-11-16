@@ -1380,12 +1380,12 @@ function frogDecide(e){
   const mode='frog';
   if(e.desired!=null&&walkable(e.tile.x+DIRS[e.desired].x,e.tile.y+DIRS[e.desired].y,mode))return e.desired;
   if(e.dir!=null&&walkable(e.tile.x+DIRS[e.dir].x,e.tile.y+DIRS[e.dir].y,mode))return e.dir;
-  // Mobile auto-run: the frog is always moving — a swipe only steers, it never
-  // waits for input to hop. At a wall (or before the first input) auto-pick a
-  // walkable turn so it keeps flowing. Desktop keeps precise stop-at-wall.
-  if(TOUCH&&G.state==='play'){
-    const order=e.dir==null?[0,2,3,1]:[(e.dir+1)%4,(e.dir+3)%4,e.dir^2];
-    for(const di of order){if(walkable(e.tile.x+DIRS[di].x,e.tile.y+DIRS[di].y,mode))return di;}
+  // Mobile auto-run: the frog hops on its own from a COMPLETE stop (level
+  // start / after death) so a swipe is only ever for STEERING. Once it has a
+  // direction, a wall STOPS it (Pac-Man style) — no auto-turn, or it would
+  // clear the whole board by itself. Desktop keeps precise stop-at-wall too.
+  if(TOUCH&&G.state==='play'&&e.dir==null&&e.desired==null){
+    for(const di of [0,2,3,1]){if(walkable(e.tile.x+DIRS[di].x,e.tile.y+DIRS[di].y,mode))return di;}
   }
   return null;
 }
