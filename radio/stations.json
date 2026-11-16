@@ -1,8 +1,8 @@
 {
-  "version": 2,
+  "version": 3,
   "network": "DSDA Radio",
   "updated": "2026-11-15",
-  "note": "Cross-game radio manifest. Single source of truth — games load this + radio.js and never change when new stations/tracks are added. Tracks stream from their source URLs (no bundling). Station types: 'broadcast' (live clock — tune in mid-song, everyone on the same second; points at a manifest.json with a program), 'stream' (Polkahole), 'seamless' (the games' own 1-track originals). 10 stations: 2 DSDA Radio broadcast shows (Mental FM 137.7, Z107.7 Classic Rock) + Polkahole + the 3 Machine Elves originals + the 4 ShatterBlock originals. Originals are root-relative (served from /games/<game>/original/) so any game page can reach them. ShatterBlock originals re-synthesized 2026-11-14 with richer synths + live feel (detuned saw leads, sidechained bass, synced echo, FDN reverb, humanized timing/pitch).",
+  "note": "Cross-game radio manifest — the shared dial. TEMPORARY (2026-11-15): stripped to just the 2 DSDA Radio broadcast shows (Mental FM 137.7, Z107.7 Classic Rock) so we can model the in-game radio without clutter. Polkahole + the game originals come back to THIS manifest as we build them out (the originals are preserved in each game's local stations.json). Station types: 'broadcast' (live clock — tune in mid-song, everyone on the same second; points at a manifest.json with a program), 'stream' (Polkahole), 'seamless' (the games' own 1-track originals).",
   "stations": [
     {
       "id": "mental-fm",
@@ -21,103 +21,6 @@
       "tagline": "Classic rock, live — Shane Ivers (CC BY 4.0)",
       "accent": "#ffb347",
       "manifest": "/radio/stations/z1077/manifest.json"
-    },
-    {
-      "id": "polkahole",
-      "name": "Polkahole",
-      "loop": false,
-      "tagline": "Oompah oompah from the hole",
-      "accent": "#ffcc00",
-      "source": "https://polkahole.ca",
-      "note": "Curated Polkahole loop: Rafters Ring + High Ridge Revelry, played one after another on repeat.",
-      "tracks": [
-        { "title": "Rafters Ring",       "url": "https://polkahole.ca/songs/Rafters_Ring.mp3" },
-        { "title": "High Ridge Revelry", "url": "https://polkahole.ca/songs/whoa_polka/High_Ridge_Revelry.mp3" }
-      ]
-    },
-    {
-      "id": "fairyland",
-      "name": "Fairyland",
-      "loop": true,
-      "tagline": "Original 8-bit — bright bouncy menu loop",
-      "accent": "#00e5ff",
-      "source": "ds-da.ca/games/popper/original",
-      "note": "Machine Elves original chiptune #1 (rendered from the in-game MusicSys). 1-track station, loops on its own.",
-      "tracks": [
-        { "title": "Fairyland",        "url": "/games/popper/original/fairyland.mp3" }
-      ]
-    },
-    {
-      "id": "sparkle-rush",
-      "name": "Sparkle Rush",
-      "loop": true,
-      "tagline": "Original 8-bit — driving action anthem",
-      "accent": "#ff2d95",
-      "source": "ds-da.ca/games/popper/original",
-      "note": "Machine Elves original chiptune #2 (rendered from the in-game MusicSys). 1-track station, loops on its own.",
-      "tracks": [
-        { "title": "Sparkle Rush",     "url": "/games/popper/original/sparkle-rush.mp3" }
-      ]
-    },
-    {
-      "id": "twilight-garden",
-      "name": "Twilight Garden",
-      "loop": true,
-      "tagline": "Original 8-bit — dreamy interlude",
-      "accent": "#b78bff",
-      "source": "ds-da.ca/games/popper/original",
-      "note": "Machine Elves original chiptune #3 (rendered from the in-game MusicSys). 1-track station, loops on its own.",
-      "tracks": [
-        { "title": "Twilight Garden",  "url": "/games/popper/original/twilight-garden.mp3" }
-      ]
-    },
-    {
-      "id": "brick-breaker",
-      "name": "Brick Breaker",
-      "loop": true,
-      "tagline": "ShatterBlock original — driving E-minor breaker loop",
-      "accent": "#ff6b35",
-      "source": "ds-da.ca/games/shatterblock/original",
-      "note": "ShatterBlock original #1, re-synthesized 2026-11-14 (detuned saw lead, sidechained square bass, full drum kit, synced echo + reverb, humanized). 1-track station, loops on its own.",
-      "tracks": [
-        { "title": "Brick Breaker",    "url": "/games/shatterblock/original/brick-breaker.mp3" }
-      ]
-    },
-    {
-      "id": "deep-space-drift",
-      "name": "Deep Space Drift",
-      "loop": true,
-      "tagline": "ShatterBlock original — mellow D-minor interlude",
-      "accent": "#4d7cfe",
-      "source": "ds-da.ca/games/shatterblock/original",
-      "note": "ShatterBlock original #2, re-synthesized 2026-11-14 (warm detuned pad, triangle bass, light drums, space reverb). 1-track station, loops on its own.",
-      "tracks": [
-        { "title": "Deep Space Drift", "url": "/games/shatterblock/original/deep-space-drift.mp3" }
-      ]
-    },
-    {
-      "id": "neon-rush",
-      "name": "Neon Rush",
-      "loop": true,
-      "tagline": "ShatterBlock original — high-energy A-minor anthem",
-      "accent": "#ff2d95",
-      "source": "ds-da.ca/games/shatterblock/original",
-      "note": "ShatterBlock original #3, re-synthesized 2026-11-14 (fast driving saw lead, punchy kit, arp, echo). 1-track station, loops on its own.",
-      "tracks": [
-        { "title": "Neon Rush",        "url": "/games/shatterblock/original/neon-rush.mp3" }
-      ]
-    },
-    {
-      "id": "crystal-cascade",
-      "name": "Crystal Cascade",
-      "loop": true,
-      "tagline": "ShatterBlock original — bright bouncy F-major interlude",
-      "accent": "#4dd0e1",
-      "source": "ds-da.ca/games/shatterblock/original",
-      "note": "ShatterBlock original #4, re-synthesized 2026-11-14 (bouncy F-major lead, warm pad, crisp kit). 1-track station, loops on its own.",
-      "tracks": [
-        { "title": "Crystal Cascade",  "url": "/games/shatterblock/original/crystal-cascade.mp3" }
-      ]
     }
   ]
 }
