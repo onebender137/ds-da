@@ -194,7 +194,7 @@
     <script>
       // Live play counters — totals aggregated from each game's leaderboard
       (function () {
-        var boards = ['dropblock/leaderboard.json', 'shatterblock/leaderboard.json', 'popper/leaderboard.json', 'slipstream/leaderboard.json', 'stunts/leaderboard.json', 'blockcrush/leaderboard.json', 'plumber-bob/leaderboard.json', 'dragon-slalom/leaderboard.json', 'tappycat/leaderboard.json', 'angry-nerds/leaderboard.json', 'neon-circuit/leaderboard.json', 'cookie-frog/leaderboard.json'];
+        var boards = ['dropblock/leaderboard.json', 'shatterblock/leaderboard.json', 'popper/leaderboard.json', 'slipstream/leaderboard.json', 'stunts/leaderboard.json', 'blockcrush/leaderboard.json', 'plumber-bob/leaderboard.json', 'dragon-slalom/leaderboard.json', 'tappycat/leaderboard.json', 'angry-nerds/leaderboard.json', 'neon-circuit/leaderboard.json', 'cookie-frog/leaderboard.json', 'beaverz/leaderboard.json'];
         Promise.all(boards.map(function (url) {
           return fetch(url, { cache: 'no-store' }).then(function (r) { return r.json(); }).catch(function () { return null; });
         })).then(function (results) {
@@ -359,19 +359,26 @@
           board: 'cookie-frog/leaderboard.json', dark: false, accent: 0x84cc16
         },
         {
+          id: 'beaverz', name: 'Beaverz', tag: 'Dam Warfare \u00b7 Turn-Based Artillery',
+          desc: 'Two beaver squads, one river, eleven weapons and a valley you can blow to pieces. Read the wind, charge the shot, and run before the Dam Buster goes. Play the AI or pass the controls for a local duel.',
+          shot: 'beaverz/screenshot.png', url: 'beaverz/',
+          board: null, note: 'vs AI \u00b7 local 2-player duel', dark: false, accent: 0xffb020
+        },
+        {
           id: 'soon', name: 'Coming Soon', tag: 'Next game in development',
           desc: 'A new cabinet is being built in the DSDA workshop. The screen stays dark until it\u2019s ready.',
           shot: null, url: null, board: null, dark: true, accent: 0x64748b
         }
       ];
 
-      // infinite row: repeating 12-game pattern (12 live). Coming Soon sits past the
-      // cycle (index 12) and is not part of the wrap.
-      // NUM_CABS spans two full cycles + the centre (p = -12..+12) so every game
+      // infinite row: repeating 13-game pattern (13 live). Coming Soon sits past the
+      // cycle (index 13) and is not part of the wrap.
+      // NUM_CABS spans two full cycles + the centre (p = -13..+13) so every game
       // appears on BOTH sides of the centre.
-      const NUM_CABS = 25;
+      const CYCLE_N = 13;                   // live cabinets in the wrap — bump when adding one
+      const NUM_CABS = CYCLE_N * 2 + 1;
       const SPACING = 2.3;
-      const CYCLE_W = SPACING * 12;         // 27.6 — wrap distance (12-game cycle)
+      const CYCLE_W = SPACING * CYCLE_N;   // wrap distance (one full cycle)
       const CAM_DIST = 5.9;
       const DRIFT = 0.22;                   // units/sec auto-scroll
 
@@ -767,7 +774,7 @@
       function buildCabinets() {
         for (let i = 0; i < NUM_CABS; i++) {
           const x = (i - (NUM_CABS - 1) / 2) * SPACING;
-          const game = GAMES[(((i - (NUM_CABS - 1) / 2) % 12) + 12) % 12];
+          const game = GAMES[(((i - (NUM_CABS - 1) / 2) % CYCLE_N) + CYCLE_N) % CYCLE_N];
           cabinets.push(makeCabinet(game, x));
         }
       }
@@ -850,7 +857,7 @@
           d.className = 'card';
           d.innerHTML = c.game.dark
             ? `<div class="name">${c.game.name}</div><div class="tag">${c.game.tag}</div><div class="desc">${c.game.desc}</div><div class="soon">\u2014 in development \u2014</div>`
-            : `<div class="name">${c.game.name}</div><div class="tag">${c.game.tag}</div><div class="desc">${c.game.desc}</div><div class="stats" data-game="${c.game.id}">loading the record\u2026</div><button class="play" data-i="${i}">P L A Y</button>`;
+            : `<div class="name">${c.game.name}</div><div class="tag">${c.game.tag}</div><div class="desc">${c.game.desc}</div><div class="stats" data-game="${c.game.id}">${c.game.board ? 'loading the record\u2026' : c.game.note}</div><button class="play" data-i="${i}">P L A Y</button>`;
           cardsEl.appendChild(d);
           c.card = d;
           if (!c.game.dark) d.querySelector('.play').addEventListener('click', () => startZoom(i));
@@ -859,7 +866,7 @@
 
       function loadBoards() {
         // one fetch per game; fill every card showing that game
-        GAMES.filter(g => !g.dark).forEach(game => {
+        GAMES.filter(g => !g.dark && g.board).forEach(game => {   // board: null = no leaderboard (Beaverz)
           fetch(game.board, { cache: 'no-store' })
             .then(r => r.ok ? r.json() : null)
             .then(j => {
