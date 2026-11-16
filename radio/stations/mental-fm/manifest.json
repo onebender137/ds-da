@@ -4,10 +4,10 @@
   "callSign": "Mental FM 137.7",
   "tagline": "The secret frequency of the DSDA arcade",
   "network": "DSDA Radio",
-  "epoch": 1794844267.246,
-  "totalDuration": 3325.315,
+  "epoch": 1794845211.844,
+  "totalDuration": 3357.19,
   "updated": "2026-11-16",
-  "note": "Shared broadcast clock. BM Lewis / Kokoro TTS. 14 tracks (6 Dj Mental + 8 Ruller archive). Pronunciation: ds-da=Dee Ess Dee Eh, Ruller=Ruler.",
+  "note": "Shared broadcast clock. BM Lewis / Kokoro TTS. 14 tracks + 10 announces (incl. 3 underground/secret IDs). ds-da=Dee Ess Dee Eh, Ruller=Ruler.",
   "program": [
     {
       "type": "announce",
@@ -65,9 +65,9 @@
     },
     {
       "type": "announce",
-      "title": "Mental FM 137.7",
-      "url": "announcements/id_short.mp3",
-      "duration": 6.275
+      "title": "The Underground — Secret ID",
+      "url": "announcements/promo_secret1.mp3",
+      "duration": 11.275
     },
     {
       "type": "music",
@@ -83,9 +83,9 @@
     },
     {
       "type": "announce",
-      "title": "Hopes and Dreams — Promo",
-      "url": "announcements/promo_hopes.mp3",
-      "duration": 12.0
+      "title": "Mental FM 137.7",
+      "url": "announcements/id_short.mp3",
+      "duration": 6.275
     },
     {
       "type": "music",
@@ -101,9 +101,9 @@
     },
     {
       "type": "announce",
-      "title": "DSDA Radio Network — Promo",
-      "url": "announcements/promo_network.mp3",
-      "duration": 15.65
+      "title": "Hopes and Dreams — Promo",
+      "url": "announcements/promo_hopes.mp3",
+      "duration": 12.0
     },
     {
       "type": "music",
@@ -119,9 +119,9 @@
     },
     {
       "type": "announce",
-      "title": "Mental FM 137.7",
-      "url": "announcements/id_short.mp3",
-      "duration": 6.275
+      "title": "The Underground — Secret ID",
+      "url": "announcements/promo_secret2.mp3",
+      "duration": 12.775
     },
     {
       "type": "music",
@@ -134,6 +134,18 @@
       "title": "Ruller — Chica",
       "url": "music/ruller-chica.mp3",
       "duration": 81.778
+    },
+    {
+      "type": "announce",
+      "title": "The Underground — Secret ID",
+      "url": "announcements/promo_secret3.mp3",
+      "duration": 14.1
+    },
+    {
+      "type": "announce",
+      "title": "DSDA Radio Network — Promo",
+      "url": "announcements/promo_network.mp3",
+      "duration": 15.65
     },
     {
       "type": "announce",
