@@ -444,3 +444,34 @@ html.dark ::-webkit-scrollbar-thumb {
 html.dark ::-webkit-scrollbar-thumb:hover {
     background: var(--gold);
 }
+
+/* --- NAV: DSDA Radio pill (shared by home + arcade headers) --- */
+.nav { align-items: center; }
+.nav a.nav-radio {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 14px; border-radius: 20px;
+    border: 1px solid rgba(201, 162, 39, 0.55);
+    color: var(--gold-dark); font-weight: 600; white-space: nowrap;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.nav a.nav-radio:hover { background: var(--gold); border-color: var(--gold); color: #0a1628; }
+.nav-dot {
+    width: 7px; height: 7px; border-radius: 50%; flex: none;
+    background: #e5484d; box-shadow: 0 0 8px rgba(229, 72, 77, 0.8);
+    animation: onair 1.8s ease-in-out infinite;
+}
+@keyframes onair { 50% { opacity: 0.35; } }
+html.dark .nav a.nav-radio { color: var(--gold); }
+html.dark .nav a.nav-radio:hover { color: #0a1628; }
+@media (max-width: 768px) {
+    /* five links on one phone row: drop "DSDA" and "of Creation", tighten the gaps */
+    .nav { gap: 8px 10px; }
+    .nav a.nav-radio { padding: 3px 8px; gap: 5px; }
+    .nav-wide { display: none; }
+}
+@media (max-width: 350px) {
+    .nav { gap: 8px 7px; }
+    .nav a { font-size: 0.66rem; letter-spacing: 0; }
+    .nav a.nav-radio { padding: 3px 6px; }
+}
+@media (prefers-reduced-motion: reduce) { .nav-dot { animation: none; } }

@@ -162,4 +162,110 @@
     if ('IntersectionObserver' in window) {   /* don't burn battery when the hero is offscreen */
         new IntersectionObserver(function (es) { visible = es[0].isIntersecting; visible ? start() : stop(); }).observe(hero);
     }
+
+    /* ---------- DSDA Radio band: live from /radio/stations.json ----------
+       The markup in index.html is the fallback. When the shared manifest loads,
+       the dial + cards are rebuilt from it, so a new station shows up here by itself. */
+    (function () {
+        var band = document.getElementById('radio');
+        var grid = document.getElementById('stationGrid');
+        var dial = document.getElementById('dial');
+        var tuner = document.getElementById('tuner');
+        if (!band || !grid || !dial || !tuner) return;
+        var elFreq = document.getElementById('tunerFreq');
+        var elName = document.getElementById('tunerName');
+        var elTag = document.getElementById('tunerTag');
+        var elCount = document.getElementById('radioCount');
+        var WORDS = ['Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve'];
+        var list = [], lo = 70, hi = 140, active = 0, hovering = false, inView = false;
+
+        function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
+        function color(c) { return /^#[0-9a-f]{3,8}$/i.test(c || '') ? c : '#c9a227'; }
+        function pct(f) { return ((f - lo) / (hi - lo) * 100).toFixed(2) + '%'; }
+        // "Most Pit FM 73.7" -> "Most Pit FM"; leaves "Z107.7 Classic Rock" alone
+        function shortName(name, freq) {
+            var out = (' ' + name + ' ').replace(' ' + freq + ' ', ' ').trim();
+            return out || name;
+        }
+        // drop a trailing licence/credit segment: "8-bit chiptunes — HydroGene (CC0)" -> "8-bit chiptunes"
+        function genre(tag) {
+            var parts = String(tag || '').split(' — ');
+            if (parts.length > 1 && /\bCC/.test(parts[parts.length - 1])) parts.pop();
+            return parts.join(' — ');
+        }
+
+        function fromDom() {
+            return [].map.call(grid.querySelectorAll('.station'), function (a) {
+                return {
+                    freq: a.getAttribute('data-freq'), href: a.getAttribute('href'),
+                    accent: a.style.getPropertyValue('--accent').trim(),
+                    name: a.querySelector('.st-name').textContent, tag: a.querySelector('.st-tag').textContent
+                };
+            });
+        }
+        function fromManifest(m) {
+            return (m.stations || []).filter(function (s) { return s && s.name && isFinite(parseFloat(s.frequency)); })
+                .sort(function (a, b) { return parseFloat(a.frequency) - parseFloat(b.frequency); })
+                .map(function (s) {
+                    var href = /^\/radio\/stations\/[\w-]+\/manifest\.json$/.test(s.manifest || '')
+                        ? s.manifest.replace('manifest.json', '') : '/radio/stations/';
+                    return { freq: String(s.frequency), href: href, accent: color(s.accent), name: shortName(s.name, String(s.frequency)), tag: genre(s.tagline) };
+                });
+        }
+
+        function render() {
+            var f = list.map(function (s) { return parseFloat(s.freq); });
+            lo = Math.floor(Math.min.apply(null, f) / 10) * 10;
+            hi = Math.ceil(Math.max.apply(null, f) / 10) * 10;
+            if (hi <= lo) hi = lo + 10;
+            var html = '';
+            for (var n = lo; n <= hi; n += 10) html += '<span class="dial-num" style="--p:' + pct(n) + '">' + n + '</span>';
+            list.forEach(function (s) { html += '<i class="dial-mark" style="--p:' + pct(parseFloat(s.freq)) + ';--accent:' + s.accent + '"></i>'; });
+            dial.style.setProperty('--span', hi - lo);
+            dial.innerHTML = html + '<div class="dial-needle"></div>';
+            grid.innerHTML = list.map(function (s) {
+                return '<a class="station" href="' + esc(s.href) + '" data-freq="' + esc(s.freq) + '" style="--accent:' + s.accent + '">' +
+                    '<span class="st-freq">' + esc(s.freq) + '</span><span class="st-name">' + esc(s.name) + '</span>' +
+                    '<span class="st-tag">' + esc(s.tag) + '</span></a>';
+            }).join('');
+            if (elCount) elCount.textContent = WORDS[list.length] || String(list.length);
+            wire();
+            tune(Math.min(active, list.length - 1));
+        }
+
+        function tune(i) {
+            var s = list[i]; if (!s) return;
+            active = i;
+            tuner.style.setProperty('--accent', s.accent);
+            elFreq.textContent = s.freq; elName.textContent = s.name; elTag.textContent = s.tag;
+            var needle = dial.querySelector('.dial-needle');
+            if (needle) needle.style.setProperty('--pos', pct(parseFloat(s.freq)));
+            [].forEach.call(dial.querySelectorAll('.dial-mark'), function (m, k) { m.classList.toggle('on', k === i); });
+            [].forEach.call(grid.querySelectorAll('.station'), function (a, k) { a.classList.toggle('on', k === i); });
+        }
+        function wire() {
+            [].forEach.call(grid.querySelectorAll('.station'), function (a, k) {
+                a.addEventListener('pointerenter', function () { tune(k); });
+                a.addEventListener('focus', function () { tune(k); });
+            });
+        }
+
+        list = fromDom();
+        if (list.length) { wire(); tune(0); }
+        grid.addEventListener('pointerenter', function () { hovering = true; });
+        grid.addEventListener('pointerleave', function () { hovering = false; });
+
+        // idle: the needle scans the dial, one station every few seconds, while the band is on screen
+        if (!reduce && 'IntersectionObserver' in window) {
+            new IntersectionObserver(function (es) { inView = es[0].isIntersecting; }, { threshold: 0.25 }).observe(band);
+            setInterval(function () {
+                if (inView && !hovering && !document.hidden && list.length > 1) tune((active + 1) % list.length);
+            }, 3400);
+        }
+
+        fetch('/radio/stations.json', { cache: 'no-cache' })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (m) { var next = m ? fromManifest(m) : []; if (next.length) { list = next; render(); } })
+            .catch(function () {});
+    })();
 })();

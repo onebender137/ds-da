@@ -19,7 +19,7 @@ const CORE = [
   './three.module.js',
   './icon-192.png',
   './icon-512.png',
-  '../style.css?v=2.0.4',
+  '../style.css?v=2.0.6',
   '../theme.js?v=1'
 ];
 
