@@ -334,8 +334,22 @@ body.touch #deskHint{display:none}
 #tooltip p{color:var(--muted);font-weight:700;line-height:1.4;margin-bottom:7px}
 #tooltip .tags{display:flex;gap:5px;flex-wrap:wrap}
 
-/* ============================ PAUSE / HOW / OVER ============================ */
-#pauseScreen,#howScreen,#overScreen{z-index:40;background:rgba(8,10,7,.72);backdrop-filter:blur(5px)}
+/* ============================ PAUSE / HOW / OVER / SCORES ============================ */
+#pauseScreen,#howScreen,#overScreen,#scoresOv{z-index:40;background:rgba(8,10,7,.72);backdrop-filter:blur(5px)}
+#scoresPanel{width:min(420px,94vw);max-height:88vh;padding:24px;display:flex;flex-direction:column;gap:12px}
+#scoresPanel h2{font-family:var(--disp);font-size:26px;color:var(--amber-hi);text-align:center;margin-bottom:2px;letter-spacing:1px;text-shadow:0 3px 0 rgba(20,10,4,.8)}
+.scores-live{font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--cyan);text-align:center}
+#scoresInits{display:flex;align-items:center;justify-content:space-between;gap:12px;background:rgba(0,0,0,.25);border:1.5px solid rgba(255,205,120,.18);border-radius:12px;padding:9px 14px;font-weight:900;font-size:12px;color:var(--muted)}
+#initsInput{width:64px;background:#170d06;border:2px solid var(--edge);border-radius:8px;color:var(--amber-hi);font-family:var(--mono);font-size:18px;font-weight:900;letter-spacing:.3em;text-align:center;padding:4px 6px;text-transform:uppercase}
+#initsInput:focus{outline:none;border-color:var(--lime)}
+.lb-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px;max-height:220px;overflow-y:auto}
+.lb-list li{display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.22);border:1px solid rgba(255,205,120,.12);border-radius:9px;padding:7px 12px;font-family:var(--mono);font-size:14px}
+.lb-list li .rank{color:var(--dim);width:22px;flex:none;font-weight:700}
+.lb-list li .name{color:var(--amber-hi);font-weight:900;letter-spacing:.12em;flex:1}
+.lb-list li .pts{color:var(--lime);font-weight:900}
+.lb-list li.you{border-color:var(--lime);background:rgba(143,230,73,.12)}
+.lb-list li.lb-empty{justify-content:center;color:var(--dim);font-size:11px;letter-spacing:.14em;font-weight:700}
+.scores-local-title{font-size:10px;letter-spacing:.24em;color:var(--muted);font-weight:700;margin-top:4px}
 #pausePanel{width:min(360px,92vw);padding:26px;display:flex;flex-direction:column;gap:11px}
 #pausePanel h2{font-family:var(--disp);font-size:28px;color:var(--amber-hi);text-align:center;margin-bottom:6px;letter-spacing:1px;text-shadow:0 3px 0 rgba(20,10,4,.8)}
 .tglRow{display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,.25);border:1.5px solid rgba(255,205,120,.18);border-radius:12px;padding:9px 14px;font-weight:900;font-size:13.5px;color:var(--muted)}
@@ -488,6 +502,7 @@ body.touch #deskHint{display:none}
     <button class="wbtn big" id="btnVsLocal">🎮 &nbsp;LOCAL 2P DUEL</button>
     <div class="menuRow">
       <button class="wbtn" id="btnHowTitle">📖 HOW TO PLAY</button>
+      <button class="wbtn" id="btnScores">🏆 TOP BEAVERZ</button>
       <a class="wbtn" id="btnArcade" href="../">🕹 DSDA ARCADE</a>
     </div>
   </div>
@@ -697,6 +712,22 @@ body.touch #deskHint{display:none}
   </div>
 </div>
 
+<!-- TOP BEAVERZ BOARD -->
+<div class="screen hidden" id="scoresOv">
+  <div class="panel" id="scoresPanel">
+    <h2 id="scoresTitle">🏆 TOP BEAVERZ</h2>
+    <div id="scoresLive" class="scores-live">LOADING…</div>
+    <div id="scoresInits">
+      <span>YOUR INITIALS</span>
+      <input id="initsInput" maxlength="3" placeholder="ABC" autocomplete="off">
+    </div>
+    <ol id="scoresList" class="lb-list"></ol>
+    <div class="scores-local-title">THIS LODGE · THIS DEVICE</div>
+    <ol id="scoresLocal" class="lb-list"></ol>
+    <button class="wbtn primary" id="btnScoresClose">✕ &nbsp;CLOSE</button>
+  </div>
+</div>
+
 <!-- GAME OVER -->
 <div class="screen hidden" id="overScreen">
   <div class="panel" id="overPanel">
@@ -784,6 +815,97 @@ function rankInfo(wins){let i=0;for(let k=0;k<RANKS.length;k++)if(wins>=RANKS[k]
   const cur=RANKS[i],next=RANKS[i+1]||null;
   const pct=next?clamp((wins-cur.w)/(next.w-cur.w),0,1):1;
   return{cur,next,pct};}
+
+/* ============================== DSDA ARCADE BOARD — TOP BEAVERZ ==============================
+   Same contract as every other cabinet at ds-da.ca/games:
+     GET  /api/board/leaderboard?game=beaverz  -> {updated, top:[{n,s,d}], stats}
+     POST /api/board/score  {initials,score,secret,game}
+   Score metric = damage dealt (VS AI). Served by the Cloudflare Worker on
+   api.ds-da.ca/api/board/*. Falls back to this cabinet's static leaderboard.json.
+   Initials live under the arcade-wide key (dsda-initials). */
+const GAME_ID='beaverz';
+const BOARD_API='https://api.ds-da.ca/api/board';
+const SCORE_SECRET='6216cf68f4e077d3cd991f2d6bd3e878';
+const DSDA_INITS_KEY='dsda-initials';
+const LOCAL_LB_KEY='bz_local_lb';
+let lastPosted=0;
+function cleanInits(s){return (s||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,3);}
+function getInits(){try{return cleanInits(localStorage.getItem(DSDA_INITS_KEY)||'');}catch(e){return '';}}
+function setInits(v){const i=cleanInits(v);try{localStorage.setItem(DSDA_INITS_KEY,i);}catch(e){}return i;}
+function fetchTimeout(url,opts,ms){
+  const c=new AbortController(),t=setTimeout(()=>c.abort(),ms||4000);
+  return fetch(url,Object.assign({signal:c.signal},opts||{})).then(r=>{clearTimeout(t);return r;},e=>{clearTimeout(t);throw e;});
+}
+function getLocalBoard(){try{return JSON.parse(localStorage.getItem(LOCAL_LB_KEY)||'[]')||[];}catch(e){return [];}}
+function saveLocal(initials,score){
+  const lb=getLocalBoard();
+  lb.push({n:initials,s:Math.round(score),d:Date.now()});
+  lb.sort((a,b)=>b.s-a.s);
+  if(lb.length>10)lb.length=10;
+  try{localStorage.setItem(LOCAL_LB_KEY,JSON.stringify(lb));}catch(e){}
+  return lb;
+}
+function renderBoardList(el,top,me){
+  el.innerHTML='';
+  if(!top||!top.length){
+    const li=document.createElement('li');li.className='lb-empty';
+    li.textContent='NO BEAVERZ YET — FIRST SCORE GOES TO YOU';
+    el.appendChild(li);return;
+  }
+  top.slice(0,10).forEach((e,i)=>{
+    const li=document.createElement('li');
+    if(me&&e.n===me)li.classList.add('you');
+    const n=String(e.n||'???').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,3).padEnd(3,'?');
+    li.innerHTML='<span class="rank">'+(i+1)+'.</span><span class="name">'+n+'</span><span class="pts">'+Math.round(e.s).toLocaleString()+'</span>';
+    el.appendChild(li);
+  });
+}
+async function submitScore(initials,sc){
+  if(!sc||sc<=0)return 'local';
+  if(sc<=(lastPosted||0))return 'ok';
+  const inits=cleanInits(initials||getInits());
+  if(!inits){setInits('YOU');}
+  saveLocal(inits,sc);
+  try{
+    const r=await fetchTimeout(BOARD_API+'/score',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({initials:inits,score:Math.round(sc),secret:SCORE_SECRET,game:GAME_ID})},5000);
+    if(r.ok){lastPosted=Math.max(lastPosted||0,Math.round(sc));return 'ok';}
+  }catch(e){}
+  return 'local';
+}
+async function fetchBoard(){
+  try{
+    const r=await fetchTimeout(BOARD_API+'/leaderboard?game='+GAME_ID,{cache:'no-store'});
+    if(!r.ok)throw new Error('http-'+r.status);
+    const j=await r.json();
+    if(j&&Array.isArray(j.top))return{top:j.top,live:true};
+    throw new Error('bad shape');
+  }catch(e){
+    try{
+      const r=await fetch('leaderboard.json?nocache='+Date.now(),{cache:'no-store'});
+      if(!r.ok)return null;
+      const j=await r.json();
+      if(j&&Array.isArray(j.top))return{top:j.top,live:false};
+      if(Array.isArray(j))return{top:j,live:false};
+      return null;
+    }catch(e2){return null;}
+  }
+}
+function showScores(){
+  $('scoresOv').classList.remove('hidden');
+  auInit();auResume();
+  const me=getInits();
+  const inp=$('initsInput');if(inp)inp.value=me;
+  renderBoardList($('scoresList'),null,me);
+  renderBoardList($('scoresLocal'),getLocalBoard(),me);
+  fetchBoard().then(b=>{
+    if($('scoresOv').classList.contains('hidden'))return;
+    renderBoardList($('scoresList'),b?b.top:null,me);
+    const live=$('scoresLive');
+    if(live)live.textContent=b?(b.live?'LIVE · DSDA ARCADE BOARD':'OFFLINE · STATIC MIRROR'):'OFFLINE — BOARD UNREACHABLE';
+  });
+}
+function closeScores(){$('scoresOv').classList.add('hidden');}
 
 /* ============================ AUDIO ============================ */
 /* Sound effects + ambience only. The procedural lodge-groove music that shipped
@@ -2652,6 +2774,7 @@ function showGameOver(){
     c.matches++;c.kos+=t1.stats.kos;c.dmg+=t1.stats.dmg;
     if(winner===0)c.wins++;else if(winner===1)c.losses++;else c.draws++;
     persist();
+    submitScore(getInits(), t1.stats.dmg);  // Top Beaverz: post damage dealt
     const ri=rankInfo(c.wins);
     $("rankWrap").style.display="";
     $("overRankName").textContent=ri.cur.n;
@@ -2810,6 +2933,9 @@ $("btnResume").addEventListener("click",closePause);
 $("btnPauseHow").addEventListener("click",openHow);
 $("btnRestartMatch").addEventListener("click",()=>{SFX.click();G.paused=false;$("pauseScreen").classList.add("hidden");startMatch(G.seed);});
 $("btnQuitTitle").addEventListener("click",()=>{SFX.click();G.paused=false;showTitle();});
+$("btnScores").addEventListener("click",()=>{SFX.click();showScores();});
+$("btnScoresClose").addEventListener("click",()=>{SFX.click();closeScores();});
+$("initsInput").addEventListener("input",e=>{setInits(e.target.value);});
 $("tglShake").addEventListener("click",()=>{G.shakeOn=!G.shakeOn;SAVE.shake=G.shakeOn;persist();$("tglShake").classList.toggle("on",G.shakeOn);SFX.click();});
 $("tglTouch").addEventListener("click",()=>{
   G.touchForced=!G.touchForced;
@@ -2905,6 +3031,21 @@ requestAnimationFrame(t=>{lastT=t;requestAnimationFrame(frame);});
     // DSDA Radio is the music source for this cabinet; the game's own
     // procedural music is removed (SFX and ambience kept).
     DSDARadio.init({ mount: 'radioBox', manifest: '../../radio/stations.json' });
+    // The game runs a continuous RAF loop + a window pointerdown handler, so a
+    // radio tap's async play() lands past the user-gesture window and the
+    // browser stays silent. Catching pointerdown on the radio box (capture
+    // phase) fires before the game's handler: resume the AudioContext + nudge
+    // play() synchronously on the real touch/click.
+    (function(){
+      var box = document.getElementById('radioBox');
+      if (!box) return;
+      box.addEventListener('pointerdown', function(){
+        var r = window.DSDARadio;
+        if (!r) return;
+        try { var ac = r._actx && r._actx(); if (ac && ac.state === 'suspended') ac.resume(); } catch(e){}
+        try { r.play(); } catch(e){}
+      }, true);
+    })();
   </script>
 </body>
 </html>

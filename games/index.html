@@ -194,7 +194,7 @@
     <script>
       // Live play counters — totals aggregated from each game's leaderboard
       (function () {
-        var boards = ['dropblock/leaderboard.json', 'shatterblock/leaderboard.json', 'popper/leaderboard.json', 'slipstream/leaderboard.json', 'stunts/leaderboard.json', 'blockcrush/leaderboard.json', 'plumber-bob/leaderboard.json', 'dragon-slalom/leaderboard.json', 'tappycat/leaderboard.json', 'angry-nerds/leaderboard.json', 'neon-circuit/leaderboard.json', 'cookie-frog/leaderboard.json'];
+        var boards = ['dropblock/leaderboard.json', 'shatterblock/leaderboard.json', 'popper/leaderboard.json', 'slipstream/leaderboard.json', 'stunts/leaderboard.json', 'blockcrush/leaderboard.json', 'plumber-bob/leaderboard.json', 'dragon-slalom/leaderboard.json', 'tappycat/leaderboard.json', 'angry-nerds/leaderboard.json', 'neon-circuit/leaderboard.json', 'cookie-frog/leaderboard.json', 'beaverz/leaderboard.json'];
         Promise.all(boards.map(function (url) {
           return fetch(url, { cache: 'no-store' }).then(function (r) { return r.json(); }).catch(function () { return null; });
         })).then(function (results) {
