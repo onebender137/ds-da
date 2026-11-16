@@ -7,7 +7,7 @@
   "epoch": 1794792697,
   "totalDuration": 1302,
   "note": "12 HydroGene CC0 chiptunes + 5 local Kokoro (am_eric) host announcements, interleaved. Host voice is local Kokoro for now; flip to Google Neural2 (gen_tts.py) if pronunciations disappoint.",
-  "items": [
+  "program": [
     {
       "type": "announcement",
       "title": "on air",

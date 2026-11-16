@@ -80,7 +80,7 @@ const DSDARadio = {
     const st = this.manifest && this.manifest.stations[this.station];
     if (!st) return null;
     if (this._isBroadcast(st)) {
-      const item = this._bcast && this._bcast.manifest.program[this._bcast.itemIdx];
+      const item = this._bcast && this._bcastProg(this._bcast.manifest)[this._bcast.itemIdx];
       return { station: st, track: item || null };
     }
     return { station: st, track: st.tracks[this.track] };
@@ -736,6 +736,9 @@ const DSDARadio = {
   // totalDuration. Every listener shares the same wall clock, so tuning in
   // lands you mid-item (a real radio catch) and everyone is on the same second.
   // On track end we re-sync to the clock and advance to the next program item.
+  // The program array may be keyed `program` (standard) or `items` (legacy) —
+  // accept both so a manifest field-name typo never kills a station.
+  _bcastProg(m) { return (m && (m.program || m.items)) || []; },
   async _fetchBcastManifest(st) {
     if (this._bcastCache[st.manifest]) return this._bcastCache[st.manifest];
     const r = await fetch(st.manifest, { cache: 'no-store' });
@@ -750,11 +753,11 @@ const DSDARadio = {
   },
   _bcastItemAt(m, pos) {
     let acc = 0;
-    for (let i = 0; i < m.program.length; i++) {
-      if (pos < acc + m.program[i].duration) return { index: i, offset: pos - acc };
-      acc += m.program[i].duration;
+    for (let i = 0; i < this._bcastProg(m).length; i++) {
+      if (pos < acc + this._bcastProg(m)[i].duration) return { index: i, offset: pos - acc };
+      acc += this._bcastProg(m)[i].duration;
     }
-    return { index: m.program.length - 1, offset: 0 };
+    return { index: this._bcastProg(m).length - 1, offset: 0 };
   },
   async _tuneBroadcast(stationIdx) {
     const st = this.manifest.stations[stationIdx];
@@ -770,7 +773,7 @@ const DSDARadio = {
   },
   async _playBroadcastItem(offset) {
     const m = this._bcast.manifest;
-    const item = m.program[this._bcast.itemIdx];
+    const item = this._bcastProg(m)[this._bcast.itemIdx];
     const url = this._bcast.base ? new URL(item.url, this._bcast.base).href : item.url;
     this.audio.loop = false;
     this.audio.src = url;
@@ -798,7 +801,7 @@ const DSDARadio = {
   async _advanceBroadcast() {
     const m = this._bcast.manifest;
     const r = this._bcastItemAt(m, this._bcastPos(m));
-    if (r.index === this._bcast.itemIdx) r.index = (this._bcast.itemIdx + 1) % m.program.length;
+    if (r.index === this._bcast.itemIdx) r.index = (this._bcast.itemIdx + 1) % this._bcastProg(m).length;
     this._bcast.itemIdx = r.index;
     if (this.playing) await this._playBroadcastItem(r.offset);
     else this.render();

@@ -134,11 +134,11 @@
   function bcastPos(){
     var pos = ((Date.now()/1000 - epoch) % total + total) % total;
     var acc = 0;
-    for (var i=0;i<m.items.length;i++){
-      acc += m.items[i].duration;
-      if (pos < acc) return {idx:i, offset:pos - (acc - m.items[i].duration)};
+    for (var i=0;i<m.program.length;i++){
+      acc += m.program[i].duration;
+      if (pos < acc) return {idx:i, offset:pos - (acc - m.program[i].duration)};
     }
-    return {idx:m.items.length-1, offset:0};
+    return {idx:m.program.length-1, offset:0};
   }
   function itemUrl(it){ return new URL(it.url, new URL(MANIFEST, location.href)).href; }
 
@@ -152,13 +152,13 @@
     var p = bcastPos();
     if (p.idx !== curIdx){
       curIdx = p.idx; curStart = p.offset;
-      var it = m.items[p.idx];
+      var it = m.program[p.idx];
       showItem(it);
       audio.src = itemUrl(it);
       audio.currentTime = p.offset;
       audio.play().catch(function(){});
     }
-    var it = m.items[curIdx];
+    var it = m.program[curIdx];
     var within = (Date.now()/1000) - curStart;
     fillEl.style.width = Math.min(100, (within / it.duration) * 100) + "%";
   }
@@ -188,7 +188,7 @@
     if (audio.paused){
       // re-sync to live position
       var p = bcastPos(); curIdx = p.idx; curStart = p.offset;
-      var it = m.items[p.idx];
+      var it = m.program[p.idx];
       audio.src = itemUrl(it); audio.currentTime = p.offset;
       audio.play().then(function(){ setPlayIcon(true); }).catch(function(){});
     } else {
@@ -207,7 +207,7 @@
     m = data; epoch = data.epoch; total = data.totalDuration;
     // pre-load the live item's metadata (don't play until gesture)
     var p = bcastPos(); curIdx = p.idx; curStart = p.offset;
-    showItem(m.items[p.idx]);
+    showItem(m.program[p.idx]);
   }).catch(function(e){
     trackEl.textContent = "Can't reach the signal";
     console.error(e);
