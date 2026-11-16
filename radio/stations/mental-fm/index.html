@@ -89,6 +89,13 @@
     box-shadow:0 8px 24px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.08); transition:transform .08s}
   .playbtn:active{transform:scale(.95)}
   .playbtn:hover{box-shadow:0 8px 30px rgba(192,76,255,.35), inset 0 1px 0 rgba(255,255,255,.1)}
+.sharebtn{width:50px;height:50px;border-radius:50%;border:1px solid var(--line);cursor:pointer;
+    background:radial-gradient(circle at 35% 30%, #2a2a4a, #14142a);
+    color:var(--neon2);display:flex;align-items:center;justify-content:center;
+    box-shadow:0 6px 18px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.06);transition:transform .08s}
+  .sharebtn:active{transform:scale(.95)}
+  .sharebtn:hover{box-shadow:0 6px 24px rgba(76,215,255,.3), inset 0 1px 0 rgba(255,255,255,.08)}
+
 
   .toast{position:absolute; left:50%; bottom:16px; transform:translateX(-50%) translateY(20px);
     background:rgba(192,76,255,.16); border:1px solid rgba(192,76,255,.4); color:var(--fg);
@@ -136,6 +143,7 @@
 
     <div class="controls">
       <button class="playbtn" id="playBtn" title="Play / Pause">&#10074;&#10074;</button>
+      <button class="sharebtn" id="shareBtn" title="Share this station"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.5" x2="15.4" y2="6.5"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/></svg></button>
     </div>
 
     <div class="toast" id="toast"></div>
@@ -263,6 +271,15 @@
       el.freqNum.textContent=m.frequency;
       audio=new Audio(); audio.preload='auto';
       el.playBtn.addEventListener('click',function(){setPaused(!userPaused);});
+      el.shareBtn=document.getElementById('shareBtn');
+      el.shareBtn.addEventListener('click',function(){
+        var data={title:document.title,url:location.href};
+        if(navigator.share){navigator.share(data).catch(function(){});}
+        else if(navigator.clipboard){navigator.clipboard.writeText(location.href).then(function(){showToast('Link copied \u2014 share it!');}).catch(function(){showToast(location.href);});}
+        else{showToast(location.href);}
+      });
+      function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2600);}
+
       var r=itemAt(broadcastPos());
       loadItem(r.index,r.offset,true);
       setPaused(false);
