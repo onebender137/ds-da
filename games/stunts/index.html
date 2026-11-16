@@ -223,6 +223,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
+  <!-- DSDA Radio network widget (shared 6-station dial) -->
+  <style>
+  #radioBox.dsda-radio{position:fixed;bottom:16px;left:16px;z-index:50;width:150px;
+    background:rgba(14,14,24,0.92);border:1px solid rgba(110,168,255,0.32);border-radius:11px;
+    padding:7px 9px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    display:flex;flex-direction:column;gap:5px;box-shadow:0 5px 18px rgba(0,0,0,0.42);
+    color:#e8e8f5;font-family:"Segoe UI",system-ui,-apple-system,sans-serif;}
+  #radioBox.dsda-radio .radio-np-trk{color:#6ea8ff;}
+  </style>
 </head>
 <body>
 <div id="scene"></div>
@@ -775,6 +785,7 @@ const RADIO = {
   },
   resume(){ if (this.st > 0 && this.st_n === 0 && AU.ac) this.tuneTo(this.st, true); },
   tick(){
+    return; /* DSDA Radio is the music source — the in-game radio music is disabled (SFX + crowd kept) */
     if (!AU.ac || this.st_n === 0) return;
     const st = this.subs[this.st_n];
     const spb = 60/st.bpm/4;
@@ -2720,5 +2731,14 @@ try { boot(); } catch(err){
   console.error(err);
 }
 </script>
+
+  <!-- DSDA Radio network widget (shared 6-station dial) -->
+  <div id="radioBox"></div>
+  <script src="../../radio/radio.js?v=10"></script>
+  <script>
+    // DSDA Radio — shared cross-game dial (6 stations). The radio is the music source;
+    // the game's own procedural music is disabled.
+    DSDARadio.init({ mount: 'radioBox', manifest: '../../radio/stations.json' });
+  </script>
 </body>
 </html>

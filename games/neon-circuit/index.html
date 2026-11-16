@@ -198,6 +198,16 @@ body[data-steer="slide"] #pBrake{left:calc(14px + var(--safeL));bottom:calc(16px
   gtag('js', new Date());
   gtag('config', 'G-M9D0GNYMWJ', { page_title: 'NEON CIRCUIT — RC Combat Racing', page_path: '/games/neon-circuit/' });
 </script>
+
+  <!-- DSDA Radio network widget (shared 6-station dial) -->
+  <style>
+  #radioBox.dsda-radio{position:fixed;bottom:16px;left:16px;z-index:50;width:150px;
+    background:rgba(14,14,24,0.92);border:1px solid rgba(110,168,255,0.32);border-radius:11px;
+    padding:7px 9px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    display:flex;flex-direction:column;gap:5px;box-shadow:0 5px 18px rgba(0,0,0,0.42);
+    color:#e8e8f5;font-family:"Segoe UI",system-ui,-apple-system,sans-serif;}
+  #radioBox.dsda-radio .radio-np-trk{color:#6ea8ff;}
+  </style>
 </head>
 <body data-state="boot">
 <canvas id="gl" tabindex="0"></canvas>
@@ -593,7 +603,7 @@ const station=()=>STATIONS[clamp(save.station|0,0,STATIONS.length-1)];
 
 /* ---------- audio ---------- */
 const AudioSys={ctx:null,master:null,music:null,sfx:null,engine:null,next:0,step:0,noise:null,delay:null,pending:null,
-unlock(){if(this.ctx){if(this.ctx.state==="suspended")this.ctx.resume();return}try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;const c=this.ctx=new C();this.master=c.createGain();this.master.gain.value=save.muted?0:.85;this.master.connect(c.destination);this.music=c.createGain();this.music.gain.value=.42;this.music.connect(this.master);this.sfx=c.createGain();this.sfx.gain.value=.8;this.sfx.connect(this.master);
+unlock(){if(this.ctx){if(this.ctx.state==="suspended")this.ctx.resume();return}try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;const c=this.ctx=new C();this.master=c.createGain();this.master.gain.value=save.muted?0:.85;this.master.connect(c.destination);this.music=c.createGain();this.music.gain.value=0;/* DSDA Radio is the music source — procedural music muted (SFX kept) */;this.music.connect(this.master);this.sfx=c.createGain();this.sfx.gain.value=.8;this.sfx.connect(this.master);
  const o=this.engine={osc:c.createOscillator(),gain:c.createGain(),filter:c.createBiquadFilter()};o.osc.type="sawtooth";o.osc.frequency.value=55;o.filter.type="lowpass";o.filter.frequency.value=480;o.gain.gain.value=0;o.osc.connect(o.filter);o.filter.connect(o.gain);o.gain.connect(this.sfx);o.osc.start();
  // one noise buffer, reused by every hat and snare hit for the rest of the session
  const nl=Math.floor(c.sampleRate*.5),nb=c.createBuffer(1,nl,c.sampleRate),nd=nb.getChannelData(0);
@@ -1414,5 +1424,14 @@ function boot(){
 }
 boot();
 </script>
+
+  <!-- DSDA Radio network widget (shared 6-station dial) -->
+  <div id="radioBox"></div>
+  <script src="../../radio/radio.js?v=10"></script>
+  <script>
+    // DSDA Radio — shared cross-game dial (6 stations). The radio is the music source;
+    // the game's own procedural music is disabled.
+    DSDARadio.init({ mount: 'radioBox', manifest: '../../radio/stations.json' });
+  </script>
 </body>
 </html>

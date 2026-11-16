@@ -168,6 +168,16 @@ input:focus{border-color:var(--gold);box-shadow:0 0 15px rgba(255,203,99,.28)}
   #name::placeholder { opacity: 0.4; }
   #saveBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 </style>
+
+  <!-- DSDA Radio network widget (shared 6-station dial) -->
+  <style>
+  #radioBox.dsda-radio{position:fixed;bottom:16px;left:16px;z-index:50;width:150px;
+    background:rgba(14,14,24,0.92);border:1px solid rgba(110,168,255,0.32);border-radius:11px;
+    padding:7px 9px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    display:flex;flex-direction:column;gap:5px;box-shadow:0 5px 18px rgba(0,0,0,0.42);
+    color:#e8e8f5;font-family:"Segoe UI",system-ui,-apple-system,sans-serif;}
+  #radioBox.dsda-radio .radio-np-trk{color:#6ea8ff;}
+  </style>
 </head>
 <body>
 <canvas id="cv"></canvas>
@@ -371,7 +381,7 @@ var Audio={
       comp.threshold.value=-18;comp.knee.value=20;comp.ratio.value=8;comp.attack.value=.003;comp.release.value=.25;
       this.master=this.ctx.createGain();this.master.gain.value=this.muted?0:.8;
       this.master.connect(comp);comp.connect(this.ctx.destination);
-      this.music=this.ctx.createGain();this.music.gain.value=.22;this.music.connect(this.master);
+      this.music=this.ctx.createGain();this.music.gain.value=0;/* DSDA Radio is the music source — procedural chords muted (SFX + wind kept) */;this.music.connect(this.master);
       this.sfx=this.ctx.createGain();this.sfx.gain.value=.72;this.sfx.connect(this.master);
       var len=this.ctx.sampleRate*2,buf=this.ctx.createBuffer(1,len,this.ctx.sampleRate),d=buf.getChannelData(0);
       for(var i=0;i<len;i++)d[i]=Math.random()*2-1;
@@ -389,7 +399,7 @@ var Audio={
     if(this.master)this.master.gain.setTargetAtTime(m?0:.8,this.ctx.currentTime,.04);
     if(m)this.next=this.ctx.currentTime+.2;
   },
-  duck:function(on){if(this.music)this.music.gain.setTargetAtTime(on?.06:.22,this.ctx.currentTime,.25);},
+  duck:function(on){if(this.music)this.music.gain.setTargetAtTime(0,this.ctx.currentTime,.25);},/* music muted (DSDA Radio) */
   windLevel:function(v){
     if(!this.wind)return;var n=this.ctx.currentTime;if(n-this.lastWind<.3)return;this.lastWind=n;
     this.wind.gain.setTargetAtTime(v,n,.4);
@@ -1386,5 +1396,14 @@ window.__tl={
 };
 })();
 </script>
+
+  <!-- DSDA Radio network widget (shared 6-station dial) -->
+  <div id="radioBox"></div>
+  <script src="../../radio/radio.js?v=10"></script>
+  <script>
+    // DSDA Radio — shared cross-game dial (6 stations). The radio is the music source;
+    // the game's own procedural music is disabled.
+    DSDARadio.init({ mount: 'radioBox', manifest: '../../radio/stations.json' });
+  </script>
 </body>
 </html>
