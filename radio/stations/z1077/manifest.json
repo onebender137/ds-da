@@ -1,0 +1,155 @@
+{
+  "station": "Z107.7",
+  "frequency": "107.7",
+  "callSign": "Z107.7 Classic Rock",
+  "tagline": "Where the guitars stay loud",
+  "network": "DSDA Radio",
+  "host": "af_sarah (Kokoro TTS)",
+  "license": "All music: Shane Ivers / Silverman Sound, CC BY 4.0 (silvermansound.com). Announcements: DSDA Radio.",
+  "epoch": 1794787495.619,
+  "totalDuration": 2401.121,
+  "updated": "2026-11-15",
+  "note": "Shared broadcast clock. CC BY 4.0 classic rock with on-screen artist attribution.",
+  "program": [
+    {
+      "type": "announce",
+      "title": "Z107.7 \u2014 On Air",
+      "url": "announcements/id_intro.mp3",
+      "duration": 11.175,
+      "credit": "DSDA Radio"
+    },
+    {
+      "type": "music",
+      "title": "Apple For The Preacher \u2014 Shane Ivers",
+      "url": "music/apple-for-the-preacher.mp3",
+      "duration": 204.173,
+      "credit": "Silverman Sound (CC BY 4.0)"
+    },
+    {
+      "type": "music",
+      "title": "Hard Sell Hotel \u2014 Shane Ivers",
+      "url": "music/hard-sell-hotel.mp3",
+      "duration": 203.207,
+      "credit": "Silverman Sound (CC BY 4.0)"
+    },
+    {
+      "type": "announce",
+      "title": "DSDA Arcade \u2014 Promo",
+      "url": "announcements/promo_dsda.mp3",
+      "duration": 13.575,
+      "credit": "DSDA Radio"
+    },
+    {
+      "type": "music",
+      "title": "Rockapalooza! \u2014 Shane Ivers",
+      "url": "music/rockapalooza.mp3",
+      "duration": 157.571,
+      "credit": "Silverman Sound (CC BY 4.0)"
+    },
+    {
+      "type": "music",
+      "title": "Later Alligator \u2014 Shane Ivers",
+      "url": "music/later-alligator.mp3",
+      "duration": 210.39,
+      "credit": "Silverman Sound (CC BY 4.0)"
+    },
+    {
+      "type": "announce",
+      "title": "Z107.7",
+      "url": "announcements/id_short.mp3",
+      "duration": 5.55,
+      "credit": "DSDA Radio"
+    },
+    {
+      "type": "music",
+      "title": "Night Drive \u2014 Shane Ivers",
+      "url": "music/night-drive.mp3",
+      "duration": 226.795,
+      "credit": "Silverman Sound (CC BY 4.0)"
+    },
+    {
+      "type": "music",
+      "title": "Dirty Gertie \u2014 Shane Ivers",
+      "url": "music/dirty-gertie.mp3",
+      "duration": 154.282,
+      "credit": "Silverman Sound (CC BY 4.0)"
+    },
+    {
+      "type": "announce",
+      "title": "Hopes and Dreams \u2014 Promo",
+      "url": "announcements/promo_hopes.mp3",
+      "duration": 10.2,
+      "credit": "DSDA Radio"
+    },
+    {
+      "type": "music",
+      "title": "Eyesplit \u2014 Shane Ivers",
+      "url": "music/eyesplit.mp3",
+      "duration": 152.79,
+      "credit": "Silverman Sound (CC BY 4.0)"
+    },
+    {
+      "type": "music",
+      "title": "Say You Will \u2014 Shane Ivers",
+      "url": "music/say-you-will.mp3",
+      "duration": 90.932,
+      "credit": "Silverman Sound (CC BY 4.0)"
+    },
+    {
+      "type": "music",
+      "title": "Yeah \u2014 Shane Ivers",
+      "url": "music/yeah.mp3",
+      "duration": 80.513,
+      "credit": "Silverman Sound (CC BY 4.0)"
+    },
+    {
+      "type": "announce",
+      "title": "Z107.7",
+      "url": "announcements/id_short.mp3",
+      "duration": 5.55,
+      "credit": "DSDA Radio"
+    },
+    {
+      "type": "music",
+      "title": "La \u2014 Shane Ivers",
+      "url": "music/la.mp3",
+      "duration": 189.1,
+      "credit": "Silverman Sound (CC BY 4.0)"
+    },
+    {
+      "type": "music",
+      "title": "Overlander \u2014 Shane Ivers",
+      "url": "music/overlander.mp3",
+      "duration": 149.64,
+      "credit": "Silverman Sound (CC BY 4.0)"
+    },
+    {
+      "type": "music",
+      "title": "Tomorrow's Times \u2014 Shane Ivers",
+      "url": "music/tomorrow-s-times.mp3",
+      "duration": 172.382,
+      "credit": "Silverman Sound (CC BY 4.0)"
+    },
+    {
+      "type": "announce",
+      "title": "Polkahole \u2014 Promo",
+      "url": "announcements/promo_polkahole.mp3",
+      "duration": 12.475,
+      "credit": "DSDA Radio"
+    },
+    {
+      "type": "music",
+      "title": "Gravitational Collapse \u2014 Shane Ivers",
+      "url": "music/gravitational-collapse.mp3",
+      "duration": 167.52,
+      "credit": "Silverman Sound (CC BY 4.0)"
+    },
+    {
+      "type": "music",
+      "title": "I Domine \u2014 Shane Ivers",
+      "url": "music/i-domine.mp3",
+      "duration": 183.301,
+      "credit": "Silverman Sound (CC BY 4.0)"
+    }
+  ]
+}

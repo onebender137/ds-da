@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Z107.7 Classic Rock — DSDA Radio</title>
+<style>
+  :root{
+    --bg:#140d0a; --panel:#1e130d; --panel2:#2a1a10;
+    --fg:#f7f1ea; --dim:#a08a78; --line:#3a281c;
+    --neon:#ffb347; --neon2:#ff5e3a; --live:#ff3b3b; --ok:#5ad98a;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:radial-gradient(1200px 600px at 50% -10%, #3a1e10 0%, var(--bg) 60%);
+    color:var(--fg); font-family:"Segoe UI",system-ui,-apple-system,sans-serif;
+    display:flex; align-items:center; justify-content:center; padding:20px; min-height:100%;
+  }
+  .radio{
+    width:100%; max-width:560px; background:linear-gradient(180deg,var(--panel2),var(--panel));
+    border:1px solid var(--line); border-radius:22px; padding:26px 26px 22px;
+    box-shadow:0 30px 80px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.04);
+    position:relative; overflow:hidden;
+  }
+  .radio::before{
+    content:""; position:absolute; inset:0;
+    background:repeating-linear-gradient(115deg, rgba(255,255,255,.012) 0 2px, transparent 2px 6px);
+    pointer-events:none;
+  }
+  .top{display:flex; align-items:flex-start; justify-content:space-between; gap:12px}
+  .brand .name{
+    font-size:34px; font-weight:800; letter-spacing:1px; line-height:1;
+    background:linear-gradient(90deg,var(--neon),var(--neon2));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .brand .sub{color:var(--dim); font-size:12px; letter-spacing:4px; margin-top:6px; text-transform:uppercase}
+  .freq{
+    text-align:right; background:#0c0705; border:1px solid var(--line); border-radius:12px;
+    padding:8px 14px; min-width:118px;
+  }
+  .freq .num{font-size:30px; font-weight:800; color:var(--neon); font-variant-numeric:tabular-nums; line-height:1}
+  .freq .unit{font-size:11px; color:var(--dim); letter-spacing:2px}
+  .live{
+    display:inline-flex; align-items:center; gap:6px; margin-top:8px;
+    font-size:11px; letter-spacing:2px; color:var(--live); font-weight:700;
+  }
+  .live .dot{width:9px; height:9px; border-radius:50%; background:var(--live);
+    box-shadow:0 0 10px var(--live); animation:pulse 1.4s infinite}
+  .live.paused{color:var(--dim)} .live.paused .dot{background:var(--dim); box-shadow:none; animation:none}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+
+  .vu{display:flex; align-items:flex-end; gap:3px; height:46px; margin:20px 0 6px;
+    padding:0 4px; background:#0c0705; border:1px solid var(--line); border-radius:10px}
+  .vu .bar{flex:1; background:linear-gradient(180deg,var(--neon2),var(--neon));
+    border-radius:2px; height:30%; transform-origin:bottom; animation:vub 0.9s ease-in-out infinite}
+  .radio.paused .vu .bar{animation-play-state:paused; height:12% !important; opacity:.5}
+  @keyframes vub{0%,100%{height:18%}50%{height:95%}}
+
+  .now{background:#0c0705; border:1px solid var(--line); border-radius:14px; padding:16px 18px; margin-top:14px}
+  .now .label{font-size:11px; letter-spacing:3px; color:var(--dim); text-transform:uppercase}
+  .now .track{font-size:20px; font-weight:700; margin-top:8px; line-height:1.25}
+  .badge{display:inline-block; font-size:10px; font-weight:800; letter-spacing:1.5px;
+    padding:3px 8px; border-radius:6px; margin-top:10px; vertical-align:middle}
+  .badge.music{background:rgba(255,179,71,.15); color:var(--neon); border:1px solid rgba(255,179,71,.35)}
+  .badge.announce{background:rgba(255,94,58,.16); color:var(--neon2); border:1px solid rgba(255,94,58,.4)}
+  .credit{margin-top:8px; font-size:11px; color:var(--dim); letter-spacing:.5px}
+
+  .prog{margin-top:16px}
+  .prog .trackbar{height:8px; background:#160d08; border-radius:6px; overflow:hidden; border:1px solid var(--line)}
+  .prog .fill{height:100%; width:0%; background:linear-gradient(90deg,var(--neon),var(--neon2)); border-radius:6px; transition:width .25s linear}
+  .prog .times{display:flex; justify-content:space-between; margin-top:8px;
+    font-size:12px; color:var(--dim); font-variant-numeric:tabular-nums}
+
+  .controls{display:flex; align-items:center; justify-content:center; gap:18px; margin-top:20px}
+  .playbtn{width:74px; height:74px; border-radius:50%; border:none; cursor:pointer;
+    background:radial-gradient(circle at 35% 30%, #3a2410, #1a1008);
+    color:var(--fg); font-size:30px; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 8px 24px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.08); transition:transform .08s}
+  .playbtn:active{transform:scale(.95)}
+  .playbtn:hover{box-shadow:0 8px 30px rgba(255,179,71,.35), inset 0 1px 0 rgba(255,255,255,.1)}
+
+  .toast{position:absolute; left:50%; bottom:16px; transform:translateX(-50%) translateY(20px);
+    background:rgba(255,179,71,.16); border:1px solid rgba(255,179,71,.4); color:var(--fg);
+    padding:9px 16px; border-radius:30px; font-size:13px; opacity:0; transition:all .5s; pointer-events:none;
+    backdrop-filter:blur(6px); white-space:nowrap}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+  .gate{position:absolute; inset:0; background:rgba(12,7,5,.86); backdrop-filter:blur(5px);
+    display:none; align-items:center; justify-content:center; flex-direction:column;
+    border-radius:22px; cursor:pointer; z-index:10; text-align:center}
+  .gate.show{display:flex}
+  .gate-icon{animation:pulse 1.4s infinite}
+  .gate-title{font-size:22px; font-weight:800; letter-spacing:3px; margin-top:16px;
+    background:linear-gradient(90deg,var(--neon),var(--neon2));
+    -webkit-background-clip:text; background-clip:text; color:transparent}
+  .gate-sub{color:var(--dim); font-size:13px; letter-spacing:2px; margin-top:8px}
+  .footer{margin-top:18px; text-align:center; color:var(--dim); font-size:11px; letter-spacing:1px}
+  .footer b{color:var(--neon); font-weight:700}
+</style>
+</head>
+<body>
+  <div class="radio" id="radio">
+    <div class="top">
+      <div class="brand">
+        <div class="name">Z107.7</div>
+        <div class="sub">Classic Rock</div>
+      </div>
+      <div class="freq">
+        <div class="num" id="freqNum">107.7</div>
+        <div class="unit">FM &nbsp;STEREO</div>
+        <div class="live" id="live"><span class="dot"></span><span id="liveText">ON AIR</span></div>
+      </div>
+    </div>
+
+    <div class="vu" id="vu"></div>
+
+    <div class="now">
+      <div class="label">Now Playing</div>
+      <div class="track" id="trackTitle">Tuning…</div>
+      <span class="badge music" id="badge">MUSIC</span>
+      <div class="credit" id="credit"></div>
+      <div class="prog">
+        <div class="trackbar"><div class="fill" id="fill"></div></div>
+        <div class="times"><span id="elapsed">0:00</span><span id="total">0:00</span></div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="playbtn" id="playBtn" title="Play / Pause">&#10074;&#10074;</button>
+    </div>
+
+    <div class="toast" id="toast"></div>
+    <div class="gate" id="gate">
+      <div class="gate-icon"><svg width="72" height="54" viewBox="0 0 72 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <line x1="18" y1="18" x2="48" y2="5" stroke="url(#zg)" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="52" cy="6" r="2.5" fill="url(#zg)"/>
+        <rect x="6" y="18" width="60" height="30" rx="7" fill="#1a1008" stroke="url(#zg)" stroke-width="2.5"/>
+        <circle cx="48" cy="33" r="9" fill="none" stroke="url(#zg)" stroke-width="2.5"/>
+        <circle cx="48" cy="33" r="3.5" fill="url(#zg)"/>
+        <rect x="14" y="28" width="20" height="10" rx="2.5" fill="url(#zg)" opacity="0.55"/>
+        <defs><linearGradient id="zg" x1="6" y1="5" x2="66" y2="48" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#ffb347"/><stop offset="1" stop-color="#ff5e3a"/>
+        </linearGradient></defs>
+      </svg></div>
+      <div class="gate-title">TAP TO TUNE IN</div>
+      <div class="gate-sub">Z107.7 Classic Rock</div>
+    </div>
+    <div class="footer">You're listening to the <b>live broadcast</b> — everyone's tuned to the same second. · <span id="tagline"></span></div>
+  </div>
+
+<script>
+(function(){
+  var radio=document.getElementById('radio');
+  var vu=document.getElementById('vu');
+  for(var i=0;i<28;i++){var b=document.createElement('div');b.className='bar';
+    b.style.animationDelay=(Math.random()*-0.9)+'s';b.style.animationDuration=(0.7+Math.random()*0.6)+'s';vu.appendChild(b);}
+
+  var manifest=null, program=[], total=0, audio=null, currentIdx=-1, userPaused=false;
+  var el={
+    title:document.getElementById('trackTitle'),
+    badge:document.getElementById('badge'),
+    credit:document.getElementById('credit'),
+    fill:document.getElementById('fill'),
+    elapsed:document.getElementById('elapsed'),
+    total:document.getElementById('total'),
+    playBtn:document.getElementById('playBtn'),
+    live:document.getElementById('live'),
+    liveText:document.getElementById('liveText'),
+    toast:document.getElementById('toast'),
+    tagline:document.getElementById('tagline'),
+    freqNum:document.getElementById('freqNum'),
+    gate:document.getElementById('gate'),
+  };
+
+  function fmt(s){s=Math.max(0,Math.floor(s));var m=Math.floor(s/60);var ss=s%60;return m+':'+(ss<10?'0':'')+ss;}
+
+  function broadcastPos(){
+    var now=Date.now()/1000;
+    var pos=(now-manifest.epoch)%total;
+    if(pos<0)pos+=total;
+    return pos;
+  }
+  function itemAt(pos){
+    var acc=0;
+    for(var i=0;i<program.length;i++){
+      if(pos<acc+program[i].duration)return{index:i,offset:pos-acc};
+      acc+=program[i].duration;
+    }
+    return{index:program.length-1,offset:0};
+  }
+
+  function toast(msg){
+    el.toast.textContent=msg; el.toast.classList.add('show');
+    clearTimeout(toast._t); toast._t=setTimeout(function(){el.toast.classList.remove('show');},4200);
+  }
+
+  function loadItem(index,offset,isTuneIn){
+    currentIdx=index;
+    var item=program[index];
+    audio.src=item.url;
+    audio.onloadedmetadata=function(){
+      var o=Math.max(0,Math.min(offset,audio.duration-0.15));
+      try{audio.currentTime=o;}catch(e){}
+      tryPlay();
+      el.title.textContent=item.title;
+      el.badge.textContent=item.type.toUpperCase();
+      el.badge.className='badge '+item.type;
+      el.credit.textContent=item.credit||'';
+      el.total.textContent=fmt(item.duration);
+      if(isTuneIn&&o>3){toast('Tuned in at '+fmt(o)+' into “'+item.title.split(' — ')[0]+'”');}
+    };
+    audio.onended=onEnded;
+    audio.onerror=function(){onEnded();};
+  }
+
+  function onEnded(){
+    var r=itemAt(broadcastPos());
+    var idx=r.index, off=r.offset;
+    if(idx===currentIdx){idx=(currentIdx+1)%program.length; off=0;}
+    loadItem(idx,off,false);
+  }
+
+  function tick(){
+    if(!manifest)return;
+    var item=program[currentIdx];
+    if(item){
+      var e=(audio&&audio.readyState>=1&&!isNaN(audio.currentTime))?audio.currentTime:0;
+      el.fill.style.width=Math.min(100,(e/item.duration)*100)+'%';
+      el.elapsed.textContent=fmt(e);
+    }
+  }
+
+  function setPaused(p){
+    userPaused=p;
+    if(p){audio.pause(); radio.classList.add('paused'); el.playBtn.innerHTML='&#9654;';
+      el.live.classList.add('paused'); el.liveText.textContent='PAUSED';}
+    else{tryPlay(); radio.classList.remove('paused'); el.playBtn.innerHTML='&#10074;&#10074;';
+      el.live.classList.remove('paused'); el.liveText.textContent='ON AIR';}
+  }
+
+  // Mobile browsers block autoplay until a user gesture. tryPlay() surfaces a
+  // "tap to tune in" gate when play() is rejected; tapping it unlocks audio.
+  function tryPlay(){
+    var p=audio.play();
+    if(p&&p.catch){p.catch(function(){if(!userPaused)el.gate.classList.add('show');});}
+  }
+  el.gate.addEventListener('click',function(){
+    el.gate.classList.remove('show');
+    tryPlay();
+  });
+
+  function init(){
+    return fetch('manifest.json',{cache:'no-store'}).then(function(r){return r.json();}).then(function(m){
+      manifest=m; program=m.program; total=m.totalDuration;
+      el.tagline.textContent=m.tagline;
+      el.freqNum.textContent=m.frequency;
+      audio=new Audio(); audio.preload='auto';
+      el.playBtn.addEventListener('click',function(){setPaused(!userPaused);});
+      var r=itemAt(broadcastPos());
+      loadItem(r.index,r.offset,true);
+      setPaused(false);
+      setInterval(tick,250);
+    }).catch(function(e){el.title.textContent='Could not load manifest: '+e.message;});
+  }
+  init();
+})();
+</script>
+</body>
+</html>
