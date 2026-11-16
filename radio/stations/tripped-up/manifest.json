@@ -156,18 +156,18 @@
       "duration": 198
     },
     {
-      "type": "music",
-      "title": "Studio Apartment",
-      "artist": "HoliznaCC0",
-      "url": "music/studio-apartment.mp3",
-      "duration": 197
-    },
-    {
       "type": "announcement",
       "title": "on air",
       "artist": "Tripped 127.5",
       "url": "announcements/05_outro.mp3",
       "duration": 7
+    },
+    {
+      "type": "music",
+      "title": "Studio Apartment",
+      "artist": "HoliznaCC0",
+      "url": "music/studio-apartment.mp3",
+      "duration": 197
     }
   ]
 }

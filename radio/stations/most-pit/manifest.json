@@ -114,18 +114,18 @@
       "duration": 145
     },
     {
-      "type": "music",
-      "title": "Western Rock-Metal",
-      "artist": "ShggothSlave",
-      "url": "music/western_rock-metal_song.mp3",
-      "duration": 152
-    },
-    {
       "type": "announcement",
       "title": "on air",
       "artist": "Most 73.7",
       "url": "announcements/05_outro.mp3",
       "duration": 7
+    },
+    {
+      "type": "music",
+      "title": "Western Rock-Metal",
+      "artist": "ShggothSlave",
+      "url": "music/western_rock-metal_song.mp3",
+      "duration": 152
     }
   ]
 }

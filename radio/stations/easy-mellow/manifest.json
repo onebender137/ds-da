@@ -128,18 +128,18 @@
       "duration": 101
     },
     {
-      "type": "music",
-      "title": "Sunny Cafe Slow Bounce",
-      "artist": "Alex Morgan",
-      "url": "music/bossa-lounge-sunny-cafe-slow-bounce.mp3",
-      "duration": 110
-    },
-    {
       "type": "announcement",
       "title": "on air",
       "artist": "Easy 92.5",
       "url": "announcements/05_outro.mp3",
       "duration": 8
+    },
+    {
+      "type": "music",
+      "title": "Sunny Cafe Slow Bounce",
+      "artist": "Alex Morgan",
+      "url": "music/bossa-lounge-sunny-cafe-slow-bounce.mp3",
+      "duration": 110
     }
   ]
 }
