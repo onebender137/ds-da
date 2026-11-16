@@ -43,6 +43,11 @@
 const LOCK_TOL = 0.6;
 const FADE_RANGE = 3.0;
 const STATIC_LEVEL = 0.5;   // max static gain, relative to master volume
+// GA4 analytics (no-op if gtag isn't loaded — games/hub load it; standalone use doesn't).
+// Fires radio engagement events so ds-da.ca can track which stations folks tune to.
+function trackRadio(event, params) {
+  try { if (typeof gtag === 'function') gtag('event', event, Object.assign({ surface: 'dsda_radio' }, params || {})); } catch (e) {}
+}
 const DSDARadio = {
   manifest: null,
   station: 0,
@@ -100,6 +105,7 @@ const DSDARadio = {
     await this.loadManifest();
     this.buildUI();
     this.render();
+    trackRadio('radio_init', { persistent: !!opts.persistent });
     // persistent (hub page): start open + never auto-fold — the dial is the hero.
     // In games: start collapsed (saves screen space); the header pill re-opens it.
     this.persistent = !!opts.persistent;
@@ -668,9 +674,11 @@ const DSDARadio = {
 
   async play() {
     if (!this.audio) return;
+    trackRadio('radio_play');
     await this._loadAndPlay();
   },
   pause() {
+    trackRadio('radio_pause');
     if (this.node) {
       const at = this._seamlessPos();
       const c = this.cur;
@@ -706,6 +714,7 @@ const DSDARadio = {
     if (!this.manifest || !this.manifest.stations[i]) return;
     this.station = i;
     const st = this.manifest.stations[i];
+    trackRadio('station_select', { station: st.name, frequency: st.frequency });
     this._src = null;
     this._resume = null;
     // Tuning to a station always starts playing it (real-radio behavior) —

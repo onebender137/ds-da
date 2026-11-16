@@ -4,6 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>92.5 EASY MELLOW FM — BOSSA · LOUNGE · EASY LISTENING</title>
+<!-- GA4: track this station page + radio events (see track()) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-M9D0GNYMWJ"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-M9D0GNYMWJ', { page_title: 'Easy Mellow FM 92.5', page_path: '/radio/stations/easy-mellow/' });
+</script>
+
 <meta property="og:title" content="Easy Mellow FM 92.5 — DSDA Radio">
 <meta property="og:description" content="Easy listening bossa & lounge, live off the DSDA Radio network.">
 <meta property="og:type" content="website">
@@ -106,6 +115,11 @@
 <script>
 
 (function(){
+
+  // GA4 analytics (never breaks playback)
+function track(event, params) {
+  try { if (typeof gtag === 'function') gtag('event', event, Object.assign({ station: 'easy-mellow', frequency: '92.5' }, params || {})); } catch(e) {}
+}
   var MANIFEST = "manifest.json";
   var audio = document.getElementById('audio');
   var trackEl = document.getElementById('track');
@@ -118,6 +132,7 @@
   var shareBtn = document.getElementById('share');
   var shareSvg = shareBtn.innerHTML;
   shareBtn.addEventListener('click', function(){
+    track('share');
     var data = {title: document.title, url: location.href};
     var check = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
     function done(){ shareBtn.innerHTML = check; setTimeout(function(){ shareBtn.innerHTML = shareSvg; }, 1800); }
@@ -182,15 +197,16 @@
   playBtn.addEventListener('click', function(){
     if (!m) return;
     if (audio.paused){
+      track('play');
       var p = bcastPos(); curIdx = p.idx; curStart = p.offset;
       var it = m.program[p.idx];
       audio.src = itemUrl(it); audio.currentTime = p.offset;
       audio.play().then(function(){ setPlayIcon(true); }).catch(function(){});
-    } else { audio.pause(); setPlayIcon(false); }
+    } else { track('pause'); audio.pause(); setPlayIcon(false); }
   });
   audio.addEventListener('play', function(){ setPlayIcon(true); });
   audio.addEventListener('pause', function(){ setPlayIcon(false); });
-  gate.addEventListener('click', function(){ start(); tryPlay(); });
+  gate.addEventListener('click', function(){ track('tune_in'); start(); tryPlay(); });
   loadManifest().then(function(data){
     m = data; epoch = data.epoch; total = data.totalDuration;
     var p = bcastPos(); curIdx = p.idx; curStart = p.offset;

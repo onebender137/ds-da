@@ -13,6 +13,14 @@
 <meta name="twitter:title" content="DSDA Radio — The Arcade Network">
 <meta name="twitter:description" content="6 live stations, one dial, zero ads. The secret frequency of the DSDA arcade. Tune in.">
 <meta name="twitter:image" content="https://ds-da.ca/radio/stations/station-og.png">
+<!-- GA4: track the hub page + radio events (see track() in radio.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-M9D0GNYMWJ"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-M9D0GNYMWJ', { page_title: 'DSDA Radio — The Arcade Network', page_path: '/radio/stations/' });
+</script>
 <style>
   :root{
     --bg:#07070d; --panel:#0d0d18; --panel2:#12122a; --border:#23233f;
@@ -146,7 +154,7 @@
     </footer>
   </div>
 
-  <script src="../radio.js?v=10"></script>
+  <script src="../radio.js?v=11"></script>
   <script>
   (function(){
     var MANIFEST = '../stations.json';

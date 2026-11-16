@@ -4,6 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mental FM 137.7 — DSDA Radio</title>
+<!-- GA4: track this station page + radio events (see track()) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-M9D0GNYMWJ"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-M9D0GNYMWJ', { page_title: 'Mental FM 137.7', page_path: '/radio/stations/mental-fm/' });
+</script>
+
 <meta property="og:title" content="Mental FM 137.7 — DSDA Radio">
 <meta property="og:description" content="Electronic & doom, live off the DSDA Radio network. The secret frequency.">
 <meta property="og:type" content="website">
@@ -167,6 +176,11 @@
 
 <script>
 (function(){
+
+  // GA4 analytics (never breaks playback)
+function track(event, params) {
+  try { if (typeof gtag === 'function') gtag('event', event, Object.assign({ station: 'mental-fm', frequency: '137.7' }, params || {})); } catch(e) {}
+}
   var radio=document.getElementById('radio');
   var vu=document.getElementById('vu');
   for(var i=0;i<28;i++){var b=document.createElement('div');b.className='bar';
@@ -260,6 +274,7 @@
     if(p&&p.catch){p.catch(function(){if(!userPaused)el.gate.classList.add('show');});}
   }
   el.gate.addEventListener('click',function(){
+    track('tune_in');
     el.gate.classList.remove('show');
     tryPlay();
   });
@@ -270,9 +285,10 @@
       el.tagline.textContent=m.tagline;
       el.freqNum.textContent=m.frequency;
       audio=new Audio(); audio.preload='auto';
-      el.playBtn.addEventListener('click',function(){setPaused(!userPaused);});
+      el.playBtn.addEventListener('click',function(){var p=!userPaused;setPaused(p);track(p?'pause':'play');});
       el.shareBtn=document.getElementById('shareBtn');
       el.shareBtn.addEventListener('click',function(){
+        track('share');
         var data={title:document.title,url:location.href};
         if(navigator.share){navigator.share(data).catch(function(){});}
         else if(navigator.clipboard){navigator.clipboard.writeText(location.href).then(function(){showToast('Link copied \u2014 share it!');}).catch(function(){showToast(location.href);});}
