@@ -2543,10 +2543,10 @@ try {
 </script>
 <script src="../../radio/radio.js?v=10"></script>
 <script>
-  // DSDA Radio — streams Polkahole + DropBlock's 3 deep-synth originals (game-local manifest).
-  // Uses ./stations.json (NOT the shared cross-game one) so the dial carries only
-  // Polkahole + DropBlock originals — no ShatterBlock tracks.
-  DSDARadio.init({ mount: 'radioBox', manifest: 'stations.json' });
+  // DSDA Radio — the shared cross-game dial (6 stations: Most Pit, Easy Mellow,
+  // Chip FM, Z107.7, Tripped Up, Mental FM). Uses ../../radio/stations.json so
+  // every game tunes to the same live network.
+  DSDARadio.init({ mount: 'radioBox', manifest: '../../radio/stations.json' });
 </script>
 </body>
 </html>
