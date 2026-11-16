@@ -2457,7 +2457,7 @@ function buildWorld(seed,theme,demo){
     const sy=surfaceY(x);if(sy===null||sy<180)continue;
     const t=makeTree(x,theme,rng);if(t){G.trees.push(t);placed++;}
   }
-  G.camX=W/2;G.camY=H/2;G.zoomUser=1;
+  G.camX=W/2;G.camY=H/2;G.zoomUser=1;G.camOffX=0;G.camOffY=0;
 }
 function buildDemo(){
   buildWorld(G.seed,G.theme,true);
@@ -2530,10 +2530,11 @@ function updateCamera(dt,t){
   const k=1-Math.exp(-5.5*dt);
   G.camX=lerp(G.camX,tx,k);G.camY=lerp(G.camY,ty,k);G.camDist=lerp(G.camDist,dist,k);
   G.punch*=Math.exp(-4*dt);
+  clampCamOff();
   let sx=0,sy=0;
   if(G.shake>0.2){sx=rand(-1,1)*G.shake;sy=rand(-1,1)*G.shake;G.shake*=Math.exp(-5*dt);}
-  camera.position.set(G.camX+sx,G.camY+sy,G.camDist);
-  camera.lookAt(G.camX+sx*.5,G.camY+sy*.5,0);
+  camera.position.set(G.camX+G.camOffX+sx,G.camY+G.camOffY+sy,G.camDist);
+  camera.lookAt(G.camX+G.camOffX+sx*.5,G.camY+G.camOffY+sy*.5,0);
 }
 
 /* ============================ HUD ============================ */
@@ -2852,6 +2853,81 @@ renderer.domElement.addEventListener("wheel",e=>{
   e.preventDefault();
   G.zoomUser=clamp(G.zoomUser*(e.deltaY>0?.92:1.08),.55,2.3);
 },{passive:false});
+
+/* ============================ CAMERA PAN + PINCH ZOOM ============================
+   Mobile: two-finger drag = pan, pinch = zoom. Single finger = aim (existing).
+   Desktop: right-mouse drag = pan, scroll wheel = zoom (existing). */
+const _cptrs=new Map();  // pointerId -> {x,y}
+let _panMid={x:0,y:0},_pinchDist=0;
+function _cptrDist(){
+  if(_cptrs.size<2)return 0;
+  const pts=[..._cptrs.values()];
+  return Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y);
+}
+function _cptrMid(){
+  if(_cptrs.size<2)return{x:0,y:0};
+  const pts=[..._cptrs.values()];
+  return{x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2};
+}
+renderer.domElement.addEventListener("pointerdown",e=>{
+  _cptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(_cptrs.size===2){
+    _panMid=_cptrMid();_pinchDist=_cptrDist();
+    aimDrag=false;  // two fingers = camera, not aim
+  }
+  // Right-mouse pan (desktop)
+  if(e.button===2&&_cptrs.size===1){
+    _panMid={x:e.clientX,y:e.clientY};_pinchDist=0;
+  }
+},{capture:true});
+renderer.domElement.addEventListener("pointermove",e=>{
+  if(!_cptrs.has(e.pointerId))return;
+  _cptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  // Two-finger: pan + pinch zoom
+  if(_cptrs.size===2){
+    const mid=_cptrMid(),dist=_cptrDist();
+    const scale=G.camDist/FIT_DIST;  // world units per screen px
+    G.camOffX-=(mid.x-_panMid.x)*scale;
+    G.camOffY+=(mid.y-_panMid.y)*scale;
+    _panMid=mid;
+    if(_pinchDist>0&&dist>0){
+      G.zoomUser=clamp(G.zoomUser*(_pinchDist/dist),.55,2.3);
+    }
+    _pinchDist=dist;
+    e.preventDefault();
+  }
+  // Right-mouse pan (desktop)
+  else if(_cptrs.size===1){
+    const p=[..._cptrs.keys()][0];
+    const pe=e.pointerId;
+    // Check if this is the right-mouse pointer
+    const isRight=e.button===2;
+    if(isRight){
+      const scale=G.camDist/FIT_DIST;
+      G.camOffX-=(e.clientX-_panMid.x)*scale;
+      G.camOffY+=(e.clientY-_panMid.y)*scale;
+      _panMid={x:e.clientX,y:e.clientY};
+      e.preventDefault();
+    }
+  }
+},{capture:true});
+function _cptrUp(e){
+  _cptrs.delete(e.pointerId);
+  if(_cptrs.size<2){_pinchDist=0;}
+  if(_cptrs.size===1){
+    // Reset pan mid to the remaining pointer
+    const rem=[..._cptrs.values()][0];
+    _panMid={x:rem.x,y:rem.y};
+  }
+}
+renderer.domElement.addEventListener("pointerup",_cptrUp,{capture:true});
+renderer.domElement.addEventListener("pointercancel",_cptrUp,{capture:true});
+// Clamp pan offsets so the camera can't drift too far
+function clampCamOff(){
+  const maxPanX=W*.6,maxPanY=H*.6;
+  G.camOffX=clamp(G.camOffX,-maxPanX,maxPanX);
+  G.camOffY=clamp(G.camOffY,-maxPanY,maxPanY);
+}
 window.addEventListener("keydown",e=>{
   auInit();auResume();
   const tag=(e.target.tagName||"").toLowerCase();
