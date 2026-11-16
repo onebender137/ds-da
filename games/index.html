@@ -194,7 +194,7 @@
     <script>
       // Live play counters — totals aggregated from each game's leaderboard
       (function () {
-        var boards = ['dropblock/leaderboard.json', 'shatterblock/leaderboard.json', 'popper/leaderboard.json', 'slipstream/leaderboard.json', 'stunts/leaderboard.json', 'blockcrush/leaderboard.json', 'plumber-bob/leaderboard.json', 'dragon-slalom/leaderboard.json', 'tappycat/leaderboard.json', 'angry-nerds/leaderboard.json', 'neon-circuit/leaderboard.json'];
+        var boards = ['dropblock/leaderboard.json', 'shatterblock/leaderboard.json', 'popper/leaderboard.json', 'slipstream/leaderboard.json', 'stunts/leaderboard.json', 'blockcrush/leaderboard.json', 'plumber-bob/leaderboard.json', 'dragon-slalom/leaderboard.json', 'tappycat/leaderboard.json', 'angry-nerds/leaderboard.json', 'neon-circuit/leaderboard.json', 'cookie-frog/leaderboard.json'];
         Promise.all(boards.map(function (url) {
           return fetch(url, { cache: 'no-store' }).then(function (r) { return r.json(); }).catch(function () { return null; });
         })).then(function (results) {
@@ -353,19 +353,25 @@
           board: 'neon-circuit/leaderboard.json', dark: false, accent: 0x00e5ff
         },
         {
+          id: 'cookie-frog', name: 'Cookie Frog', tag: 'Pond Hop · Fox Den Escape',
+          desc: 'Hop a marsh maze, eat the glowing flies, and dodge four foxes who hunt by your eyes. Grab a cookie to turn the tables, survive the hunt, and slip out through the tunnel \u2014 the den is not safe.',
+          shot: 'cookie-frog/screenshot.png', url: 'cookie-frog/',
+          board: 'cookie-frog/leaderboard.json', dark: false, accent: 0x84cc16
+        },
+        {
           id: 'soon', name: 'Coming Soon', tag: 'Next game in development',
           desc: 'A new cabinet is being built in the DSDA workshop. The screen stays dark until it\u2019s ready.',
           shot: null, url: null, board: null, dark: true, accent: 0x64748b
         }
       ];
 
-      // infinite row: repeating 11-game pattern (11 live). Coming Soon sits past the
-      // cycle (index 11) and is not part of the wrap.
-      // NUM_CABS spans two full cycles + the centre (p = -11..+11) so every game
+      // infinite row: repeating 12-game pattern (12 live). Coming Soon sits past the
+      // cycle (index 12) and is not part of the wrap.
+      // NUM_CABS spans two full cycles + the centre (p = -12..+12) so every game
       // appears on BOTH sides of the centre.
-      const NUM_CABS = 23;
+      const NUM_CABS = 25;
       const SPACING = 2.3;
-      const CYCLE_W = SPACING * 11;         // 25.3 — wrap distance (11-game cycle)
+      const CYCLE_W = SPACING * 12;         // 27.6 — wrap distance (12-game cycle)
       const CAM_DIST = 5.9;
       const DRIFT = 0.22;                   // units/sec auto-scroll
 
@@ -761,7 +767,7 @@
       function buildCabinets() {
         for (let i = 0; i < NUM_CABS; i++) {
           const x = (i - (NUM_CABS - 1) / 2) * SPACING;
-          const game = GAMES[(((i - (NUM_CABS - 1) / 2) % 11) + 11) % 11];
+          const game = GAMES[(((i - (NUM_CABS - 1) / 2) % 12) + 12) % 12];
           cabinets.push(makeCabinet(game, x));
         }
       }
