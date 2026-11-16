@@ -4,9 +4,9 @@
   "type": "broadcast",
   "musicCredit": "Alex Morgan (CC BY 4.0)",
   "hostVoice": "Kokoro am_michael (local)",
-  "epoch": 1794795226,
-  "totalDuration": 1836,
-  "note": "14 Alex Morgan CC BY 4.0 bossa/lounge tracks + 5 local Kokoro (am_michael) host announcements, interleaved.",
+  "epoch": 1794854191.374,
+  "totalDuration": 1873.25,
+  "note": "Shared broadcast clock. am_michael / Kokoro TTS. 14 tracks + 5 on-air IDs + 5 'easier than' jokes, evenly spread (no back-to-back, ends on music).",
   "program": [
     {
       "type": "announcement",
@@ -21,6 +21,12 @@
       "artist": "Alex Morgan",
       "url": "music/bossa-nova-cafe-bright-rhythm.mp3",
       "duration": 124
+    },
+    {
+      "type": "announce",
+      "title": "Easy Mellow — Easier Than Pissing",
+      "url": "announcements/joke1_pissing.mp3",
+      "duration": 5.25
     },
     {
       "type": "music",
@@ -51,6 +57,12 @@
       "duration": 185
     },
     {
+      "type": "announce",
+      "title": "Easy Mellow — Easy Sunday Morning",
+      "url": "announcements/joke2_sunday.mp3",
+      "duration": 6.175
+    },
+    {
       "type": "music",
       "title": "Coffee Shop Warm Loop",
       "artist": "Alex Morgan",
@@ -65,6 +77,13 @@
       "duration": 157
     },
     {
+      "type": "announcement",
+      "title": "on air",
+      "artist": "Easy 92.5",
+      "url": "announcements/03_promo.mp3",
+      "duration": 8
+    },
+    {
       "type": "music",
       "title": "Midnight Club Late Bossa",
       "artist": "Alex Morgan",
@@ -72,11 +91,10 @@
       "duration": 128
     },
     {
-      "type": "announcement",
-      "title": "on air",
-      "artist": "Easy 92.5",
-      "url": "announcements/03_promo.mp3",
-      "duration": 8
+      "type": "announce",
+      "title": "Easy Mellow — Warm Bath",
+      "url": "announcements/joke3_bath.mp3",
+      "duration": 7.175
     },
     {
       "type": "music",
@@ -93,6 +111,13 @@
       "duration": 107
     },
     {
+      "type": "announcement",
+      "title": "on air",
+      "artist": "Easy 92.5",
+      "url": "announcements/04_bump.mp3",
+      "duration": 5
+    },
+    {
       "type": "music",
       "title": "Rainy Night Soft Guitar",
       "artist": "Alex Morgan",
@@ -100,11 +125,10 @@
       "duration": 150
     },
     {
-      "type": "announcement",
-      "title": "on air",
-      "artist": "Easy 92.5",
-      "url": "announcements/04_bump.mp3",
-      "duration": 5
+      "type": "announce",
+      "title": "Easy Mellow — Last Slice of Pizza",
+      "url": "announcements/joke4_pizza.mp3",
+      "duration": 7.85
     },
     {
       "type": "music",
@@ -121,13 +145,6 @@
       "duration": 142
     },
     {
-      "type": "music",
-      "title": "Sunny Cafe Easy Major",
-      "artist": "Alex Morgan",
-      "url": "music/bossa-nova-sunny-cafe-easy-major-key.mp3",
-      "duration": 101
-    },
-    {
       "type": "announcement",
       "title": "on air",
       "artist": "Easy 92.5",
@@ -136,10 +153,24 @@
     },
     {
       "type": "music",
+      "title": "Sunny Cafe Easy Major",
+      "artist": "Alex Morgan",
+      "url": "music/bossa-nova-sunny-cafe-easy-major-key.mp3",
+      "duration": 101
+    },
+    {
+      "type": "announce",
+      "title": "Easy Mellow — Finding Parking",
+      "url": "announcements/joke5_parking.mp3",
+      "duration": 10.8
+    },
+    {
+      "type": "music",
       "title": "Sunny Cafe Slow Bounce",
       "artist": "Alex Morgan",
       "url": "music/bossa-lounge-sunny-cafe-slow-bounce.mp3",
       "duration": 110
     }
-  ]
+  ],
+  "updated": "2026-11-16"
 }
