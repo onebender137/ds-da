@@ -177,7 +177,15 @@
         var elTag = document.getElementById('tunerTag');
         var elCount = document.getElementById('radioCount');
         var WORDS = ['Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve'];
+        var elNow = document.getElementById('tunerNow');
+        var elPlay = document.getElementById('tunerPlay');
+        var elVol = document.getElementById('tunerVol');
+        var elPage = document.getElementById('tunerPage');
         var list = [], lo = 70, hi = 140, active = 0, hovering = false, inView = false;
+        // --- live player state (same wall-clock maths as radio.js and the station pages) ---
+        var audio = null, playing = false, touched = false, swapping = false;
+        var prog = null, progUrl = '', itemIdx = -1, ticker = null, manifests = {}, token = 0;
+        var SILENCE = 'data:audio/wav;base64,UklGRrQBAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YZABAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA';
 
         function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
         function color(c) { return /^#[0-9a-f]{3,8}$/i.test(c || '') ? c : '#c9a227'; }
@@ -199,6 +207,7 @@
                 return {
                     freq: a.getAttribute('data-freq'), href: a.getAttribute('href'),
                     accent: a.style.getPropertyValue('--accent').trim(),
+                    id: (a.getAttribute('href').match(/([\w-]+)\/$/) || [])[1] || '', man: a.getAttribute('href') + 'manifest.json',
                     name: a.querySelector('.st-name').textContent, tag: a.querySelector('.st-tag').textContent
                 };
             });
@@ -207,9 +216,9 @@
             return (m.stations || []).filter(function (s) { return s && s.name && isFinite(parseFloat(s.frequency)); })
                 .sort(function (a, b) { return parseFloat(a.frequency) - parseFloat(b.frequency); })
                 .map(function (s) {
-                    var href = /^\/radio\/stations\/[\w-]+\/manifest\.json$/.test(s.manifest || '')
-                        ? s.manifest.replace('manifest.json', '') : '/radio/stations/';
-                    return { freq: String(s.frequency), href: href, accent: color(s.accent), name: shortName(s.name, String(s.frequency)), tag: genre(s.tagline) };
+                    var ok = s.type === 'broadcast' && /^\/radio\/stations\/[\w-]+\/manifest\.json$/.test(s.manifest || '');
+                    var href = ok ? s.manifest.replace('manifest.json', '') : '/radio/stations/';
+                    return { id: String(s.id || ''), man: ok ? s.manifest : null, freq: String(s.frequency), href: href, accent: color(s.accent), name: shortName(s.name, String(s.frequency)), tag: genre(s.tagline) };
                 });
         }
 
@@ -231,6 +240,7 @@
             if (elCount) elCount.textContent = WORDS[list.length] || String(list.length);
             wire();
             tune(Math.min(active, list.length - 1));
+            markPlaying();
         }
 
         function tune(i) {
@@ -238,6 +248,7 @@
             active = i;
             tuner.style.setProperty('--accent', s.accent);
             elFreq.textContent = s.freq; elName.textContent = s.name; elTag.textContent = s.tag;
+            if (elPage) elPage.setAttribute('href', s.href);
             var needle = dial.querySelector('.dial-needle');
             if (needle) needle.style.setProperty('--pos', pct(parseFloat(s.freq)));
             [].forEach.call(dial.querySelectorAll('.dial-mark'), function (m, k) { m.classList.toggle('on', k === i); });
@@ -245,10 +256,113 @@
         }
         function wire() {
             [].forEach.call(grid.querySelectorAll('.station'), function (a, k) {
-                a.addEventListener('pointerenter', function () { tune(k); });
-                a.addEventListener('focus', function () { tune(k); });
+                // preview on hover/focus, but never yank the readout off a station that is on air
+                a.addEventListener('pointerenter', function () { if (!playing) tune(k); });
+                a.addEventListener('focus', function () { if (!playing) tune(k); });
+                a.addEventListener('click', function (e) {
+                    // plain click = play it right here; ctrl/cmd/middle click still opens the station page
+                    if (!list[k].man || e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
+                    e.preventDefault();
+                    if (!(playing && k === active)) playStation(k);
+                });
             });
         }
+
+
+        /* ---- live player ---- */
+        function ev(name) { try { if (typeof gtag === 'function') gtag('event', name, { surface: 'home', station: (list[active] || {}).id, frequency: (list[active] || {}).freq }); } catch (e) {} }
+        function getVol() {
+            var v = 0.35;   // radio.js default; the key is shared, so volume follows you into the games
+            try { var sv = parseFloat(localStorage.getItem('dsda_radio_volume')); if (!isNaN(sv)) v = Math.max(0, Math.min(1, sv)); } catch (e) {}
+            return v;
+        }
+        function livePos(m) {
+            var total = m.totalDuration || 1;
+            var pos = ((Date.now() / 1000 - m.epoch) % total + total) % total, acc = 0;
+            for (var i = 0; i < m.program.length; i++) {
+                acc += m.program[i].duration;
+                if (pos < acc) return { idx: i, offset: pos - (acc - m.program[i].duration) };
+            }
+            return { idx: m.program.length - 1, offset: 0 };
+        }
+        function getManifest(url) {
+            if (manifests[url]) return Promise.resolve(manifests[url]);
+            return fetch(url, { cache: 'no-cache' }).then(function (r) { return r.json(); }).then(function (m) {
+                if (!m || !m.program || !m.program.length) throw new Error('empty program');
+                manifests[url] = m; return m;
+            });
+        }
+        function setState(state) {            // 'off' | 'loading' | 'on'
+            playing = state === 'on';
+            tuner.classList.toggle('playing', playing);
+            tuner.classList.toggle('loading', state === 'loading');
+            elPlay.setAttribute('aria-pressed', String(playing));
+            elPlay.setAttribute('aria-label', playing ? 'Pause DSDA Radio' : 'Play DSDA Radio');
+            elPlay.querySelector('path').setAttribute('d', state === 'off' ? 'M8 5v14l11-7z' : 'M6 5h4v14H6zM14 5h4v14h-4z');
+            if (state === 'loading') elNow.textContent = 'Tuning in…';
+            markPlaying();
+        }
+        function markPlaying() {
+            [].forEach.call(grid.querySelectorAll('.station'), function (a, k) { a.classList.toggle('playing', playing && k === active); });
+        }
+        function loadLive() {
+            var p = livePos(prog), it = prog.program[p.idx];
+            itemIdx = p.idx; swapping = true;
+            audio.src = new URL(it.url, new URL(progUrl, location.href)).href;
+            audio.addEventListener('loadedmetadata', function () {
+                var q = livePos(prog);
+                if (q.idx !== itemIdx) return;
+                try { audio.currentTime = Math.max(0, Math.min(q.offset, (audio.duration || q.offset) - 0.2)); } catch (e) {}
+            }, { once: true });
+            elNow.textContent = '♪ ' + it.title + (it.artist ? ' — ' + it.artist : '');
+            return audio.play();
+        }
+        function stop() {
+            token++; clearInterval(ticker); ticker = null;
+            if (audio) audio.pause();
+            setState('off');
+        }
+        function playStation(i) {
+            var s = list[i]; if (!s) return;
+            if (!s.man) { location.href = s.href; return; }      // not a live-clock station: its own page handles it
+            touched = true;
+            var my = ++token, cached = manifests[s.man];
+            if (!audio) {
+                audio = new Audio(); audio.preload = 'auto'; audio.volume = getVol();
+                audio.addEventListener('playing', function () { swapping = false; setState('on'); });
+                // paused from outside (media keys, headset, OS): follow it
+                audio.addEventListener('pause', function () { if (!swapping && !audio.ended && playing) stop(); });
+                audio.addEventListener('error', function () { if (audio.src.indexOf('data:') === 0) return; swapping = false; stop(); elNow.textContent = ''; });
+            }
+            clearInterval(ticker);
+            playing = false; tune(i); setState('loading');
+            // iOS only lets audio start inside the tap itself. If this station's manifest
+            // isn't in hand yet, unlock the element now with a blip of silence.
+            if (!cached) { swapping = true; audio.src = SILENCE; audio.play().catch(function () {}); }
+            getManifest(s.man).then(function (m) {
+                if (my !== token) return;
+                prog = m; progUrl = s.man;
+                ticker = setInterval(function () { if (playing && livePos(prog).idx !== itemIdx) loadLive().catch(function () {}); }, 500);
+                return loadLive().then(function () { ev('play'); });
+            }).catch(function (err) {
+                if (my !== token || (err && err.name === 'AbortError')) return;   // AbortError = we swapped tracks mid-load, not a failure
+                stop(); elNow.textContent = '';
+            });
+        }
+        elPlay.addEventListener('click', function () {
+            if (playing || tuner.classList.contains('loading')) { ev('pause'); stop(); }
+            else playStation(active);
+        });
+        if (elVol) {
+            elVol.value = String(Math.round(getVol() * 100));
+            elVol.addEventListener('input', function () {
+                var v = Math.max(0, Math.min(1, elVol.value / 100));
+                if (audio) audio.volume = v;
+                try { localStorage.setItem('dsda_radio_volume', String(v)); } catch (e) {}
+            });
+        }
+        // warm the station manifests once the band scrolls into view, so play is instant
+        function warm() { list.forEach(function (s) { if (s.man) getManifest(s.man).catch(function () {}); }); }
 
         list = fromDom();
         if (list.length) { wire(); tune(0); }
@@ -259,13 +373,20 @@
         if (!reduce && 'IntersectionObserver' in window) {
             new IntersectionObserver(function (es) { inView = es[0].isIntersecting; }, { threshold: 0.25 }).observe(band);
             setInterval(function () {
-                if (inView && !hovering && !document.hidden && list.length > 1) tune((active + 1) % list.length);
+                if (inView && !hovering && !touched && !document.hidden && list.length > 1) tune((active + 1) % list.length);
             }, 3400);
         }
 
+        var warmed = false;
+        function warmOnce() { if (!warmed) { warmed = true; warm(); } }
         fetch('/radio/stations.json', { cache: 'no-cache' })
             .then(function (r) { return r.ok ? r.json() : null; })
-            .then(function (m) { var next = m ? fromManifest(m) : []; if (next.length) { list = next; render(); } })
-            .catch(function () {});
+            .then(function (m) { var next = m ? fromManifest(m) : []; if (next.length && !playing) { list = next; render(); } })
+            .catch(function () {})
+            .then(function () {
+                if (!('IntersectionObserver' in window)) return warmOnce();
+                var wio = new IntersectionObserver(function (es) { if (es[0].isIntersecting) { wio.disconnect(); warmOnce(); } }, { rootMargin: '300px' });
+                wio.observe(band);
+            });
     })();
 })();

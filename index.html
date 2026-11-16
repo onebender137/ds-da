@@ -22,7 +22,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
     <link rel="stylesheet" href="style.css?v=2.0.6">
-    <link rel="stylesheet" href="fx.css?v=3">
+    <link rel="stylesheet" href="fx.css?v=4">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script>
       // Apply the saved theme on load (before the page renders, to avoid a flash)
@@ -111,15 +111,17 @@
             <div class="radio-head reveal">
                 <div class="hero-eyebrow radio-eyebrow"><span class="dot"></span>On the air now</div>
                 <h2 class="section-title">DSDA Radio</h2>
-                <p><span id="radioCount">Six</span> live stations on one dial, no ads. Everyone hears the same second, so you drop in mid-song. It&rsquo;s the same radio that&rsquo;s built into every cabinet in the arcade.</p>
+                <p><span id="radioCount">Six</span> live stations on one dial, no ads. Hit play or pick a station: everyone hears the same second, so you drop in mid-song. It&rsquo;s the same radio that&rsquo;s built into every cabinet in the arcade.</p>
             </div>
 
-            <a class="tuner reveal" id="tuner" href="/radio/stations/" aria-label="Open the DSDA Radio dial">
+            <div class="tuner reveal" id="tuner">
                 <div class="tuner-top">
+                    <button class="tuner-play" id="tunerPlay" type="button" aria-label="Play DSDA Radio" aria-pressed="false"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></button>
                     <div class="tuner-freq"><span id="tunerFreq">73.7</span><small>FM</small></div>
                     <div class="tuner-meta">
                         <div class="tuner-name" id="tunerName">Most Pit FM</div>
                         <div class="tuner-tag" id="tunerTag">Death metal, doom &amp; heavy riffs</div>
+                        <div class="tuner-now" id="tunerNow" aria-live="polite"></div>
                     </div>
                     <div class="tuner-live"><span class="nav-dot" aria-hidden="true"></span>Live</div>
                 </div>
@@ -128,7 +130,14 @@
                     <i class="dial-mark on" style="--p:5.29%;--accent:#ff3b30"></i><i class="dial-mark" style="--p:32.14%;--accent:#e8a87c"></i><i class="dial-mark" style="--p:48.14%;--accent:#39ff14"></i><i class="dial-mark" style="--p:53.86%;--accent:#ffb347"></i><i class="dial-mark" style="--p:82.14%;--accent:#b967ff"></i><i class="dial-mark" style="--p:96.71%;--accent:#00e5ff"></i>
                     <div class="dial-needle" style="--pos:5.29%"></div>
                 </div>
-            </a>
+                <div class="tuner-foot">
+                    <label class="tuner-vol">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5v5h3.5L12 18V6L7.5 9.5H4z"/><path d="M15.5 9a4 4 0 010 6M18 6.5a7.5 7.5 0 010 11"/></svg>
+                        <input type="range" id="tunerVol" min="0" max="100" step="1" value="35" aria-label="Radio volume">
+                    </label>
+                    <a class="link" id="tunerPage" href="/radio/stations/most-pit/">Station page &rarr;</a>
+                </div>
+            </div>
 
             <div class="station-grid reveal" id="stationGrid">
                 <a class="station on" href="/radio/stations/most-pit/" data-freq="73.7" style="--accent:#ff3b30"><span class="st-freq">73.7</span><span class="st-name">Most Pit FM</span><span class="st-tag">Death metal, doom &amp; heavy riffs</span></a>
@@ -280,6 +289,6 @@
         })();
     </script>
     <script src="theme.js?v=1"></script>
-    <script src="fx.js?v=2"></script>
+    <script src="fx.js?v=3"></script>
 </body>
 </html>

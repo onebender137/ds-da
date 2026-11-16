@@ -143,11 +143,12 @@ function track(event, params) {
 
 
   var m = null, epoch = 0, total = 1, started = false;
-  var curIdx = -1, curStart = 0;
+  var curIdx = -1;
 
   function loadManifest(){
     return fetch(MANIFEST, {cache:'no-store'}).then(function(r){return r.json();});
   }
+  // which item is live right now + offset into it
   function bcastPos(){
     var pos = ((Date.now()/1000 - epoch) % total + total) % total;
     var acc = 0;
@@ -158,65 +159,86 @@ function track(event, params) {
     return {idx:m.program.length-1, offset:0};
   }
   function itemUrl(it){ return new URL(it.url, new URL(MANIFEST, location.href)).href; }
+
   function showItem(it){
     trackEl.textContent = it.title;
     artistEl.textContent = it.artist ? "— " + it.artist : "";
     creditEl.textContent = m.musicCredit || "";
   }
-  function tickProgress(){
+
+  // Point the <audio> at whatever is on air this second. The seek happens once
+  // the file reports its length (a currentTime set before that is dropped on
+  // iOS), and it re-reads the clock so load time doesn't put us behind.
+  function loadLive(){
+    var p = bcastPos(); curIdx = p.idx;
+    var it = m.program[p.idx];
+    showItem(it);
+    audio.src = itemUrl(it);
+    audio.addEventListener('loadedmetadata', function(){
+      var q = bcastPos();
+      if (q.idx !== curIdx) return;
+      try { audio.currentTime = Math.max(0, Math.min(q.offset, (audio.duration || q.offset) - 0.2)); } catch(e) {}
+    }, {once:true});
+  }
+  // Load the live item and play it. Rejects when the browser blocks autoplay.
+  function tuneIn(){
+    loadLive();
+    return audio.play();
+  }
+
+  function tick(){
     if (!started) return;
     var p = bcastPos();
     if (p.idx !== curIdx){
-      curIdx = p.idx; curStart = p.offset;
-      var it = m.program[p.idx];
-      showItem(it);
-      audio.src = itemUrl(it);
-      audio.currentTime = p.offset;
-      audio.play().catch(function(){});
+      // a track that ran out also reads as paused, so check ended: only a real pause (or the gate) holds the audio back
+      if (audio.paused && !audio.ended){ curIdx = p.idx; showItem(m.program[p.idx]); }
+      else { tuneIn().catch(function(){}); }                             // on air: roll into the next item
     }
-    var it = m.program[curIdx];
-    var within = (Date.now()/1000) - curStart;
-    fillEl.style.width = Math.min(100, (within / it.duration) * 100) + "%";
+    fillEl.style.width = Math.min(100, (p.offset / m.program[p.idx].duration) * 100) + "%";
   }
-  function start(){
-    if (started) return; started = true;
-    gate.classList.add('hidden');
-    tickProgress();
-    setInterval(tickProgress, 500);
-  }
+
   function setPlayIcon(playing){
+    // innerHTML is safe here: fixed SVG path strings, not user input
     playIcon.innerHTML = playing
       ? '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>'
       : '<path d="M8 5v14l11-7z"/>';
   }
-  function tryPlay(){
-    if (!m) return;
-    audio.play().then(function(){ setPlayIcon(true); })
-      .catch(function(){});
-  }
+
   playBtn.addEventListener('click', function(){
     if (!m) return;
     if (audio.paused){
       track('play');
-      var p = bcastPos(); curIdx = p.idx; curStart = p.offset;
-      var it = m.program[p.idx];
-      audio.src = itemUrl(it); audio.currentTime = p.offset;
-      audio.play().then(function(){ setPlayIcon(true); }).catch(function(){});
-    } else { track('pause'); audio.pause(); setPlayIcon(false); }
+      tuneIn().catch(function(){});     // always rejoin at the live position
+    } else {
+      track('pause');
+      audio.pause(); setPlayIcon(false);
+    }
   });
-  audio.addEventListener('play', function(){ setPlayIcon(true); });
+  // sound is actually coming out: drop the gate, show pause
+  audio.addEventListener('playing', function(){ gate.classList.add('hidden'); setPlayIcon(true); });
   audio.addEventListener('pause', function(){ setPlayIcon(false); });
-  gate.addEventListener('click', function(){ track('tune_in'); start(); tryPlay(); });
+
+  // Autoplay was blocked: the first click or tap ANYWHERE on the page tunes in
+  // (the gate is just the visible prompt for it).
+  document.addEventListener('click', function(){
+    if (!m || gate.classList.contains('hidden')) return;
+    track('tune_in');
+    tuneIn().catch(function(){});
+  });
+
   loadManifest().then(function(data){
     m = data; epoch = data.epoch; total = data.totalDuration;
-    var p = bcastPos(); curIdx = p.idx; curStart = p.offset;
-    showItem(m.program[p.idx]);
+    started = true;
+    setInterval(tick, 500);
+    // Try to go on air straight away. Browsers allow this when the visitor has
+    // already interacted with ds-da.ca (came from the dial, the home page, a
+    // game); on a cold visit they refuse, and the TAP TO TUNE IN gate stays up.
+    tuneIn().then(function(){ track('autoplay'); }).catch(function(){ tick(); });
   }).catch(function(e){
     trackEl.textContent = "Can't reach the signal";
     console.error(e);
   });
 })();
-
 </script>
 </body>
 </html>
