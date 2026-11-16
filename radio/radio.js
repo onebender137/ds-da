@@ -142,14 +142,30 @@ const DSDARadio = {
     now.className = 'radio-now';
     now.innerHTML = '<div class="radio-np-top"><span class="radio-np-stn"></span><span class="radio-np-freq"></span><span class="radio-np-live"></span></div><div class="radio-np-trk">—</div><div class="radio-np-credit"></div>';
     body.appendChild(now);
-    // controls — play/pause only (you scan stations with the knob, no prev/next)
+    // controls — prev station / play-pause / next station. The knob still
+    // scans (with the static fuzz), but these buttons make it easy to jump
+    // to a specific station on a small screen where the knob is fiddly
+    // (103.7 and 107.7 are only 4 MHz apart, so the snap is easy to miss).
     const ctl = document.createElement('div');
     ctl.className = 'radio-ctl';
+    const prevSt = document.createElement('button');
+    prevSt.textContent = '⏮'; prevSt.title = 'Previous station';
+    prevSt.setAttribute('aria-label', 'Previous station');
+    prevSt.addEventListener('click', () => this.prevStation());
+    ctl.appendChild(prevSt);
+    this.els.prevSt = prevSt;
     const play = document.createElement('button');
     play.textContent = '▶'; play.title = 'Play / pause';
+    play.setAttribute('aria-label', 'Play or pause');
     play.addEventListener('click', () => this.toggle());
     ctl.appendChild(play);
     this.els.play = play;
+    const nextSt = document.createElement('button');
+    nextSt.textContent = '⏭'; nextSt.title = 'Next station';
+    nextSt.setAttribute('aria-label', 'Next station');
+    nextSt.addEventListener('click', () => this.nextStation());
+    ctl.appendChild(nextSt);
+    this.els.nextSt = nextSt;
     body.appendChild(ctl);
     // volume control (slider, 0-100)
     const vol = document.createElement('div');
@@ -230,16 +246,24 @@ const DSDARadio = {
       'margin-left:auto;flex-shrink:0;animation:dsdaRadioLive 1.4s ease-in-out infinite;}' +
       '#radioBox.dsda-radio .radio-np-credit{font-size:8px;opacity:.5;margin-top:1px;white-space:nowrap;' +
       'overflow:hidden;text-overflow:ellipsis;}' +
-      '#radioBox.dsda-radio .radio-scale{position:relative;height:48px;margin:2px 0 4px;cursor:ew-resize;touch-action:none;user-select:none;}' +
-      '#radioBox.dsda-radio .radio-scale-track{position:absolute;left:0;right:0;top:24px;height:14px;' +
+      '#radioBox.dsda-radio .radio-ctl{display:flex;align-items:center;justify-content:center;gap:16px;margin:3px 0;}' +
+      '#radioBox.dsda-radio .radio-ctl button{background:none;border:none;color:inherit;cursor:pointer;font-size:17px;line-height:1;padding:5px 6px;opacity:.85;}' +
+      '#radioBox.dsda-radio .radio-ctl button:hover{opacity:1;}' +
+      // Open (unfolded) radio needs real width — the scale + 3 tappable labels
+      // (103.7/107.7/137.7) are unreadable in a 130px corner widget. The folded
+      // pill stays compact; only the expanded body is forced wider.
+      '#radioBox.dsda-radio:not(.folded){min-width:240px;max-width:300px;}' +
+      '#radioBox.dsda-radio .radio-scale{position:relative;height:64px;margin:2px 0 4px;cursor:ew-resize;touch-action:none;user-select:none;}' +
+      '#radioBox.dsda-radio .radio-scale-track{position:absolute;left:0;right:0;top:36px;height:16px;' +
       'background:linear-gradient(180deg,#08080f,#12122a);border:1px solid var(--border);border-radius:4px;}' +
-      '#radioBox.dsda-radio .radio-tick{position:absolute;top:26px;width:1px;height:8px;background:var(--border);transform:translateX(-50%);}' +
-      '#radioBox.dsda-radio .radio-tick-major{top:24px;height:12px;background:var(--muted);}' +
-      '#radioBox.dsda-radio .radio-stn-label{position:absolute;top:7px;transform:translateX(-50%);font-size:8px;font-weight:700;' +
-      'letter-spacing:.5px;color:var(--radio-accent,#00e5ff);pointer-events:none;white-space:nowrap;}' +
-      '#radioBox.dsda-radio .radio-knob{position:absolute;top:18px;bottom:26px;width:3px;background:var(--radio-accent,#00e5ff);' +
+      '#radioBox.dsda-radio .radio-tick{position:absolute;top:38px;width:1px;height:9px;background:var(--border);transform:translateX(-50%);}' +
+      '#radioBox.dsda-radio .radio-tick-major{top:36px;height:13px;background:var(--muted);}' +
+      '#radioBox.dsda-radio .radio-stn-label{position:absolute;top:4px;transform:translateX(-50%);font-size:12px;font-weight:700;' +
+      'letter-spacing:.5px;color:var(--radio-accent,#00e5ff);cursor:pointer;white-space:nowrap;padding:2px 3px;}' +
+      '#radioBox.dsda-radio .radio-stn-label:hover{text-shadow:0 0 8px var(--radio-accent,#00e5ff);}' +
+      '#radioBox.dsda-radio .radio-knob{position:absolute;top:28px;bottom:36px;width:4px;background:var(--radio-accent,#00e5ff);' +
       'transform:translateX(-50%);box-shadow:0 0 8px var(--radio-accent,#00e5ff);cursor:ew-resize;z-index:2;}' +
-      '#radioBox.dsda-radio .radio-knob-handle{position:absolute;top:-5px;left:50%;transform:translateX(-50%);width:13px;height:13px;' +
+      '#radioBox.dsda-radio .radio-knob-handle{position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:18px;height:18px;' +
       'border-radius:50%;background:var(--radio-accent,#00e5ff);box-shadow:0 0 10px var(--radio-accent,#00e5ff);}' +
       '@keyframes dsdaRadioLive{0%,100%{opacity:1}50%{opacity:.35}}';
     document.head.appendChild(s);
@@ -443,12 +467,36 @@ const DSDARadio = {
       tick.style.left = this._freqToPct(f) + '%';
       el.appendChild(tick);
     }
-    // station frequency labels
-    freqs.forEach(o => {
+    // station frequency labels — TAP one to jump straight to that station
+    // (a reliable way to pick a station without dragging the knob precisely).
+    // 103.7 and 107.7 are only 4 MHz apart (≈10% of this 38 MHz scale), so
+    // their labels would overlap and be unreadable — de-crowd them so each
+    // stays visible + tappable. (Nudging is visual only: tapping a label tunes
+    // to its true station via the click handler, not its on-screen position.)
+    const labelSpecs = freqs
+      .map(o => ({ o, pct: this._freqToPct(parseFloat(o.st.frequency)) }))
+      .sort((a, b) => a.pct - b.pct);
+    const MIN_GAP = 22;   // pct; keeps 5-char labels clear on the ~220px open scale
+    for (let i = 1; i < labelSpecs.length; i++) {
+      if (labelSpecs[i].pct - labelSpecs[i-1].pct < MIN_GAP) {
+        const mid = (labelSpecs[i].pct + labelSpecs[i-1].pct) / 2;
+        labelSpecs[i-1].pct = mid - MIN_GAP / 2;
+        labelSpecs[i].pct = mid + MIN_GAP / 2;
+      }
+    }
+    // keep labels on the scale (the leftmost one can get pushed off-edge)
+    labelSpecs.forEach(s => { s.pct = Math.max(4, Math.min(96, s.pct)); });
+    labelSpecs.forEach(spec => {
+      const o = spec.o;
       const lbl = document.createElement('div');
       lbl.className = 'radio-stn-label';
       lbl.textContent = o.st.frequency;
-      lbl.style.left = this._freqToPct(parseFloat(o.st.frequency)) + '%';
+      lbl.style.left = spec.pct + '%';
+      lbl.title = 'Tune to ' + o.st.name;
+      lbl.setAttribute('role', 'button');
+      lbl.setAttribute('aria-label', 'Tune to ' + o.st.name);
+      lbl.addEventListener('pointerdown', (e) => e.stopPropagation());  // don't start a knob drag
+      lbl.addEventListener('click', (e) => { e.stopPropagation(); this.setStation(o.i); });
       el.appendChild(lbl);
     });
     // the draggable knob (pointer)
@@ -662,6 +710,25 @@ const DSDARadio = {
       this._knobPct = this._freqToPct(parseFloat(st.frequency));
       this._knobEl.style.left = this._knobPct + '%';
     }
+  },
+  // Cycle to the previous / next station on the dial (wraps around). Used by
+  // the ⏮ / ⏭ buttons — a reliable way to pick a station when the tuning
+  // knob is hard to land precisely on a small screen.
+  _dialIndices() {
+    return (this.manifest && this.manifest.stations)
+      ? this.manifest.stations.map((_, i) => i) : [];
+  },
+  nextStation() {
+    const idxs = this._dialIndices();
+    if (!idxs.length) return;
+    const pos = idxs.indexOf(this.station);
+    this.setStation(idxs[(pos + 1) % idxs.length]);
+  },
+  prevStation() {
+    const idxs = this._dialIndices();
+    if (!idxs.length) return;
+    const pos = idxs.indexOf(this.station);
+    this.setStation(idxs[(pos - 1 + idxs.length) % idxs.length]);
   },
 
   // ---- broadcast (live clock) path -------------------------------------
