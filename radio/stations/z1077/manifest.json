@@ -1,15 +1,12 @@
 {
-  "station": "Z107.7",
-  "frequency": "107.7",
-  "callSign": "Z107.7 Classic Rock",
+  "name": "Z107.7",
   "tagline": "Where the guitars stay loud",
-  "network": "DSDA Radio",
-  "host": "af_sarah (Kokoro TTS)",
-  "license": "All music: Shane Ivers / Silverman Sound, CC BY 4.0 (silvermansound.com). Announcements: DSDA Radio.",
-  "epoch": 1794787495.619,
-  "totalDuration": 2401.121,
-  "updated": "2026-11-15",
-  "note": "Shared broadcast clock. CC BY 4.0 classic rock with on-screen artist attribution.",
+  "type": "broadcast",
+  "musicCredit": "Shane Ivers / Silverman Sound (CC BY 4.0) + Vlad Annenkov (CC BY 4.0)",
+  "hostVoice": "af_sarah (Kokoro TTS)",
+  "epoch": 1794884220.246,
+  "totalDuration": 2544.2,
+  "note": "15 music tracks + 6 host announcements, interleaved (no back-to-back, ends on music).",
   "program": [
     {
       "type": "announce",
@@ -96,13 +93,6 @@
       "credit": "Silverman Sound (CC BY 4.0)"
     },
     {
-      "type": "music",
-      "title": "Yeah \u2014 Shane Ivers",
-      "url": "music/yeah.mp3",
-      "duration": 80.513,
-      "credit": "Silverman Sound (CC BY 4.0)"
-    },
-    {
       "type": "announce",
       "title": "Z107.7",
       "url": "announcements/id_short.mp3",
@@ -111,10 +101,24 @@
     },
     {
       "type": "music",
+      "title": "Yeah \u2014 Shane Ivers",
+      "url": "music/yeah.mp3",
+      "duration": 80.513,
+      "credit": "Silverman Sound (CC BY 4.0)"
+    },
+    {
+      "type": "music",
       "title": "La \u2014 Shane Ivers",
       "url": "music/la.mp3",
       "duration": 189.1,
       "credit": "Silverman Sound (CC BY 4.0)"
+    },
+    {
+      "type": "announce",
+      "title": "Polkahole \u2014 Promo",
+      "url": "announcements/promo_polkahole.mp3",
+      "duration": 12.475,
+      "credit": "DSDA Radio"
     },
     {
       "type": "music",
@@ -131,13 +135,6 @@
       "credit": "Silverman Sound (CC BY 4.0)"
     },
     {
-      "type": "announce",
-      "title": "Polkahole \u2014 Promo",
-      "url": "announcements/promo_polkahole.mp3",
-      "duration": 12.475,
-      "credit": "DSDA Radio"
-    },
-    {
       "type": "music",
       "title": "Gravitational Collapse \u2014 Shane Ivers",
       "url": "music/gravitational-collapse.mp3",
@@ -150,6 +147,21 @@
       "url": "music/i-domine.mp3",
       "duration": 183.301,
       "credit": "Silverman Sound (CC BY 4.0)"
+    },
+    {
+      "type": "music",
+      "title": "Arena Thunder",
+      "artist": "Vlad Annenkov",
+      "url": "music/annenkov-arena-thunder.mp3",
+      "duration": 143.1,
+      "credit": "FMA CC BY 4.0"
     }
-  ]
+  ],
+  "station": "Z107.7",
+  "frequency": "107.7",
+  "callSign": "Z107.7 Classic Rock",
+  "network": "DSDA Radio",
+  "host": "af_sarah (Kokoro TTS)",
+  "license": "All music: Shane Ivers / Silverman Sound, CC BY 4.0 (silvermansound.com). Announcements: DSDA Radio.",
+  "updated": "2026-11-16"
 }

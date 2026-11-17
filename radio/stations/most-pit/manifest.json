@@ -2,11 +2,11 @@
   "name": "Most Pit FM 73.7",
   "tagline": "death metal, doom & heavy riffs",
   "type": "broadcast",
-  "musicCredit": "vitalezzz, Kaiser, ShggothSlave, Kistol, Emma_MA (CC0)",
+  "musicCredit": "vitalezzz, Kaiser, ShggothSlave, Kistol, Emma_MA (CC0) + Soularflair, David J. Barrios (CC BY 4.0)",
   "hostVoice": "Kokoro am_puck (local)",
-  "epoch": 1794795227,
-  "totalDuration": 2998,
-  "note": "12 CC0 metal tracks (vitalezzz, Kaiser, ShggothSlave, Kistol, Emma_MA) + 5 local Kokoro (am_puck) host announcements, interleaved.",
+  "epoch": 1794884220.246,
+  "totalDuration": 3545.2,
+  "note": "15 music tracks + 5 host announcements, interleaved (no back-to-back, ends on music).",
   "program": [
     {
       "type": "announcement",
@@ -114,6 +114,13 @@
       "duration": 145
     },
     {
+      "type": "music",
+      "title": "Western Rock-Metal",
+      "artist": "ShggothSlave",
+      "url": "music/western_rock-metal_song.mp3",
+      "duration": 152
+    },
+    {
       "type": "announcement",
       "title": "on air",
       "artist": "Most 73.7",
@@ -122,10 +129,28 @@
     },
     {
       "type": "music",
-      "title": "Western Rock-Metal",
-      "artist": "ShggothSlave",
-      "url": "music/western_rock-metal_song.mp3",
-      "duration": 152
+      "title": "The Department Of Just Us",
+      "artist": "Soularflair",
+      "url": "music/soularflair-department-just-us.mp3",
+      "duration": 190.5,
+      "credit": "FMA CC BY 4.0"
+    },
+    {
+      "type": "music",
+      "title": "Comfort in Darkness",
+      "artist": "David J. Barrios",
+      "url": "music/barrios-comfort-darkness.mp3",
+      "duration": 154.7,
+      "credit": "FMA CC BY 4.0"
+    },
+    {
+      "type": "music",
+      "title": "Cold Cortex",
+      "artist": "David J. Barrios",
+      "url": "music/barrios-cold-cortex.mp3",
+      "duration": 202.0,
+      "credit": "FMA CC BY 4.0"
     }
-  ]
+  ],
+  "updated": "2026-11-16"
 }

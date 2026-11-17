@@ -4,9 +4,9 @@
   "type": "broadcast",
   "musicCredit": "Alex Morgan (CC BY 4.0)",
   "hostVoice": "Kokoro am_michael (local)",
-  "epoch": 1794854191.374,
-  "totalDuration": 1873.25,
-  "note": "Shared broadcast clock. am_michael / Kokoro TTS. 14 tracks + 5 on-air IDs + 5 'easier than' jokes, evenly spread (no back-to-back, ends on music).",
+  "epoch": 1794884220.246,
+  "totalDuration": 2024.0,
+  "note": "15 music tracks + 10 host announcements, interleaved (no back-to-back, ends on music).",
   "program": [
     {
       "type": "announcement",
@@ -24,7 +24,7 @@
     },
     {
       "type": "announce",
-      "title": "Easy Mellow — Easier Than Pissing",
+      "title": "Easy Mellow \u2014 Easier Than Pissing",
       "url": "announcements/joke1_pissing.mp3",
       "duration": 5.25
     },
@@ -36,6 +36,13 @@
       "duration": 110
     },
     {
+      "type": "announcement",
+      "title": "on air",
+      "artist": "Easy 92.5",
+      "url": "announcements/02_promo.mp3",
+      "duration": 8
+    },
+    {
       "type": "music",
       "title": "Cocktail Bar Short Set",
       "artist": "Alex Morgan",
@@ -43,11 +50,10 @@
       "duration": 95
     },
     {
-      "type": "announcement",
-      "title": "on air",
-      "artist": "Easy 92.5",
-      "url": "announcements/02_promo.mp3",
-      "duration": 8
+      "type": "announce",
+      "title": "Easy Mellow \u2014 Easy Sunday Morning",
+      "url": "announcements/joke2_sunday.mp3",
+      "duration": 6.175
     },
     {
       "type": "music",
@@ -57,10 +63,11 @@
       "duration": 185
     },
     {
-      "type": "announce",
-      "title": "Easy Mellow — Easy Sunday Morning",
-      "url": "announcements/joke2_sunday.mp3",
-      "duration": 6.175
+      "type": "announcement",
+      "title": "on air",
+      "artist": "Easy 92.5",
+      "url": "announcements/03_promo.mp3",
+      "duration": 8
     },
     {
       "type": "music",
@@ -68,6 +75,12 @@
       "artist": "Alex Morgan",
       "url": "music/bossa-lounge-coffee-shop-warm-loop.mp3",
       "duration": 124
+    },
+    {
+      "type": "announce",
+      "title": "Easy Mellow \u2014 Warm Bath",
+      "url": "announcements/joke3_bath.mp3",
+      "duration": 7.175
     },
     {
       "type": "music",
@@ -80,8 +93,8 @@
       "type": "announcement",
       "title": "on air",
       "artist": "Easy 92.5",
-      "url": "announcements/03_promo.mp3",
-      "duration": 8
+      "url": "announcements/04_bump.mp3",
+      "duration": 5
     },
     {
       "type": "music",
@@ -92,9 +105,9 @@
     },
     {
       "type": "announce",
-      "title": "Easy Mellow — Warm Bath",
-      "url": "announcements/joke3_bath.mp3",
-      "duration": 7.175
+      "title": "Easy Mellow \u2014 Last Slice of Pizza",
+      "url": "announcements/joke4_pizza.mp3",
+      "duration": 7.85
     },
     {
       "type": "music",
@@ -104,6 +117,13 @@
       "duration": 148
     },
     {
+      "type": "announcement",
+      "title": "on air",
+      "artist": "Easy 92.5",
+      "url": "announcements/05_outro.mp3",
+      "duration": 8
+    },
+    {
       "type": "music",
       "title": "Rainy Night Quiet Sway",
       "artist": "Alex Morgan",
@@ -111,11 +131,10 @@
       "duration": 107
     },
     {
-      "type": "announcement",
-      "title": "on air",
-      "artist": "Easy 92.5",
-      "url": "announcements/04_bump.mp3",
-      "duration": 5
+      "type": "announce",
+      "title": "Easy Mellow \u2014 Finding Parking",
+      "url": "announcements/joke5_parking.mp3",
+      "duration": 10.8
     },
     {
       "type": "music",
@@ -123,12 +142,6 @@
       "artist": "Alex Morgan",
       "url": "music/bossa-lounge-rainy-night-soft-guitar.mp3",
       "duration": 150
-    },
-    {
-      "type": "announce",
-      "title": "Easy Mellow — Last Slice of Pizza",
-      "url": "announcements/joke4_pizza.mp3",
-      "duration": 7.85
     },
     {
       "type": "music",
@@ -145,13 +158,6 @@
       "duration": 142
     },
     {
-      "type": "announcement",
-      "title": "on air",
-      "artist": "Easy 92.5",
-      "url": "announcements/05_outro.mp3",
-      "duration": 8
-    },
-    {
       "type": "music",
       "title": "Sunny Cafe Easy Major",
       "artist": "Alex Morgan",
@@ -159,17 +165,19 @@
       "duration": 101
     },
     {
-      "type": "announce",
-      "title": "Easy Mellow — Finding Parking",
-      "url": "announcements/joke5_parking.mp3",
-      "duration": 10.8
-    },
-    {
       "type": "music",
       "title": "Sunny Cafe Slow Bounce",
       "artist": "Alex Morgan",
       "url": "music/bossa-lounge-sunny-cafe-slow-bounce.mp3",
       "duration": 110
+    },
+    {
+      "type": "music",
+      "title": "Latin Jazz Restaurant Warm Service",
+      "artist": "Alex Morgan",
+      "url": "music/latin-jazz-restaurant-warm-service.mp3",
+      "duration": 150.8,
+      "credit": "FMA CC BY 4.0"
     }
   ],
   "updated": "2026-11-16"

@@ -2,11 +2,11 @@
   "name": "103.7 Chip FM",
   "tagline": "8-bit chiptunes, square waves & retro vibes",
   "type": "broadcast",
-  "musicCredit": "HydroGene (CC0)",
+  "musicCredit": "HydroGene (CC0) + Shane Ivers (CC BY 4.0)",
   "hostVoice": "Kokoro am_eric (local)",
-  "epoch": 1794792697,
-  "totalDuration": 1302,
-  "note": "12 HydroGene CC0 chiptunes + 5 local Kokoro (am_eric) host announcements, interleaved. Host voice is local Kokoro for now; flip to Google Neural2 (gen_tts.py) if pronunciations disappoint.",
+  "epoch": 1794884220.246,
+  "totalDuration": 1797.0,
+  "note": "16 music tracks + 5 host announcements, interleaved (no back-to-back, ends on music).",
   "program": [
     {
       "type": "announcement",
@@ -30,6 +30,13 @@
       "duration": 165
     },
     {
+      "type": "music",
+      "title": "Jester Battle",
+      "artist": "HydroGene",
+      "url": "music/03_jester-battle.mp3",
+      "duration": 96
+    },
+    {
       "type": "announcement",
       "title": "on air",
       "artist": "Chip FM",
@@ -38,24 +45,10 @@
     },
     {
       "type": "music",
-      "title": "Jester Battle",
-      "artist": "HydroGene",
-      "url": "music/03_jester-battle.mp3",
-      "duration": 96
-    },
-    {
-      "type": "music",
       "title": "Jester Theme",
       "artist": "HydroGene",
       "url": "music/04_jester-theme.mp3",
       "duration": 65
-    },
-    {
-      "type": "announcement",
-      "title": "on air",
-      "artist": "Chip FM",
-      "url": "announcements/03_upnext.mp3",
-      "duration": 6
     },
     {
       "type": "music",
@@ -75,8 +68,8 @@
       "type": "announcement",
       "title": "on air",
       "artist": "Chip FM",
-      "url": "announcements/04_retro.mp3",
-      "duration": 9
+      "url": "announcements/03_upnext.mp3",
+      "duration": 6
     },
     {
       "type": "music",
@@ -103,7 +96,7 @@
       "type": "announcement",
       "title": "on air",
       "artist": "Chip FM",
-      "url": "announcements/05_outro.mp3",
+      "url": "announcements/04_retro.mp3",
       "duration": 9
     },
     {
@@ -126,6 +119,46 @@
       "artist": "HydroGene",
       "url": "music/12_slay-the-evil.mp3",
       "duration": 82
+    },
+    {
+      "type": "announcement",
+      "title": "on air",
+      "artist": "Chip FM",
+      "url": "announcements/05_outro.mp3",
+      "duration": 9
+    },
+    {
+      "type": "music",
+      "title": "80s Motivational Chiptune",
+      "artist": "Shane Ivers",
+      "url": "music/ivers-80s-chiptune.mp3",
+      "duration": 117.7,
+      "credit": "FMA CC BY 4.0"
+    },
+    {
+      "type": "music",
+      "title": "FeSTV FRLiX",
+      "artist": "Shane Ivers",
+      "url": "music/ivers-festv-frlix.mp3",
+      "duration": 129.1,
+      "credit": "FMA CC BY 4.0"
+    },
+    {
+      "type": "music",
+      "title": "ChipStep",
+      "artist": "Shane Ivers",
+      "url": "music/ivers-chipstep.mp3",
+      "duration": 136.1,
+      "credit": "FMA CC BY 4.0"
+    },
+    {
+      "type": "music",
+      "title": "HappyNES",
+      "artist": "Shane Ivers",
+      "url": "music/ivers-happynes.mp3",
+      "duration": 112.1,
+      "credit": "FMA CC BY 4.0"
     }
-  ]
+  ],
+  "updated": "2026-11-16"
 }

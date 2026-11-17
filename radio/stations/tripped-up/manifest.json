@@ -2,11 +2,11 @@
   "name": "Tripped Up FM 127.5",
   "tagline": "jazz, triphop & late-night vibes",
   "type": "broadcast",
-  "musicCredit": "HoliznaCC0 (CC0)",
+  "musicCredit": "HoliznaCC0 (CC0) + Alex Morgan (CC BY 4.0)",
   "hostVoice": "Kokoro af_heart (local)",
-  "epoch": 1794795227,
-  "totalDuration": 3401,
-  "note": "18 HoliznaCC0 CC0 jazz-lofi/triphop tracks + 5 local Kokoro (af_heart) host announcements, interleaved.",
+  "epoch": 1794884220.246,
+  "totalDuration": 3764.4,
+  "note": "20 music tracks + 5 host announcements, interleaved (no back-to-back, ends on music).",
   "program": [
     {
       "type": "announcement",
@@ -79,18 +79,18 @@
       "duration": 163
     },
     {
-      "type": "music",
-      "title": "Hooptie Windows Down",
-      "artist": "HoliznaCC0",
-      "url": "music/hooptie-with-the-windows-down.mp3",
-      "duration": 234
-    },
-    {
       "type": "announcement",
       "title": "on air",
       "artist": "Tripped 127.5",
       "url": "announcements/03_promo.mp3",
       "duration": 6
+    },
+    {
+      "type": "music",
+      "title": "Hooptie Windows Down",
+      "artist": "HoliznaCC0",
+      "url": "music/hooptie-with-the-windows-down.mp3",
+      "duration": 234
     },
     {
       "type": "music",
@@ -114,18 +114,18 @@
       "duration": 224
     },
     {
-      "type": "music",
-      "title": "Moving Forward",
-      "artist": "HoliznaCC0",
-      "url": "music/moving-forward.mp3",
-      "duration": 129
-    },
-    {
       "type": "announcement",
       "title": "on air",
       "artist": "Tripped 127.5",
       "url": "announcements/04_bump.mp3",
       "duration": 5
+    },
+    {
+      "type": "music",
+      "title": "Moving Forward",
+      "artist": "HoliznaCC0",
+      "url": "music/moving-forward.mp3",
+      "duration": 129
     },
     {
       "type": "music",
@@ -149,13 +149,6 @@
       "duration": 138
     },
     {
-      "type": "music",
-      "title": "Sleep",
-      "artist": "HoliznaCC0",
-      "url": "music/sleep.mp3",
-      "duration": 198
-    },
-    {
       "type": "announcement",
       "title": "on air",
       "artist": "Tripped 127.5",
@@ -164,10 +157,34 @@
     },
     {
       "type": "music",
+      "title": "Sleep",
+      "artist": "HoliznaCC0",
+      "url": "music/sleep.mp3",
+      "duration": 198
+    },
+    {
+      "type": "music",
       "title": "Studio Apartment",
       "artist": "HoliznaCC0",
       "url": "music/studio-apartment.mp3",
       "duration": 197
+    },
+    {
+      "type": "music",
+      "title": "Nu Jazz Restaurant Modern Dinner Groove",
+      "artist": "Alex Morgan",
+      "url": "music/alexmorgan-nu-jazz-restaurant.mp3",
+      "duration": 189.6,
+      "credit": "FMA CC BY 4.0"
+    },
+    {
+      "type": "music",
+      "title": "Acid Jazz Rainy Night Minor Groove",
+      "artist": "Alex Morgan",
+      "url": "music/alexmorgan-acid-jazz-rainy.mp3",
+      "duration": 173.8,
+      "credit": "FMA CC BY 4.0"
     }
-  ]
+  ],
+  "updated": "2026-11-16"
 }
