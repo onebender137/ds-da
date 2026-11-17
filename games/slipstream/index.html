@@ -323,11 +323,19 @@ const DIRT_SPEED = 12;                   // on construction dirt
 // Gaps are centre-to-centre. Cars are ~3 units long, so bumper contact is at a gap of ~3:
 // the pocket and the rear-end threshold both moved back by the same 2.05 so you no longer
 // drive *through* the car ahead before it counts (pocket is still 6.6 units deep — same timing).
-const DRAFT_MIN = 2.95, DRAFT_MAX = 9.55; // gap to leader (units) for the pocket
+// Slipstream wake (2026-11-17). The tow is a field you move through, not a switch:
+// it fades in from DRAFT_FAR, is strongest just behind the car, and eases back to
+// DRAFT_CUSHION at the bumper where the air piles up again — so the tow stops firing
+// you into the car that's giving it to you.
+const DRAFT_FAR = 15;                    // outer edge of the dirty air: first faint tug
+const DRAFT_PEAK = 6.5;                  // deepest part of the wake
+const DRAFT_NOSE = 3.0;                  // bumper (= COL_DIST)
+const DRAFT_CUSHION = 0.3;              // fraction of the tow still there on the bumper
+const DRAFT_LAT_IN = 0.55, DRAFT_LAT_OUT = 1.35;   // full tow / nothing, laterally
+const DRAFT_IN = 0.22, DRAFT_OUT = 0.8;  // seconds: responsive while you're in the wake, slow once you leave it (the slingshot)
 const COL_DIST = 3.0;                    // rear-end threshold (gap) = bumper to bumper
 const CAR_LANE_TOL = 1.2;                // lateral overlap that counts as contact: cars are ~1.3 wide, so straddling the
                                          // line between two occupied lanes is now a hit (the old 0.92 let you ghost down the middle)
-const DRAFT_TOL = 0.92;                  // you still have to be properly tucked in behind to get the tow
 const WALL_TOL = 1.4, WALL_DEPTH = 1.5;  // barricade is 1.86 wide: clipping it from the lane line counts
 const DIRT_TOL = 1.3;                    // a wheel on the dirt is on the dirt
 const PED_TOL_X = 1.1, PED_TOL_Z = 1.5;
@@ -685,7 +693,7 @@ const sfx = {
     }, fade * 1000 + 200);
   },
   // rpm 800..7200, load 0..1 (how hard the engine is pulling), spool 0..1, speed in world u/s
-  updateEngine(rpm, load, spool, spd, dirtAmt) {
+  updateEngine(rpm, load, spool, spd, dirtAmt, tow) {
     const E = this.eng; if (!E || !this.ctx) return;
     const t = this.ctx.currentTime, tc = 0.035, r = rpm / 1000, n = Math.min(1, rpm / 7000), v = Math.min(1.3, spd / 44);
     E.src.playbackRate.setTargetAtTime(r, t, tc);
@@ -700,8 +708,9 @@ const sfx = {
     E.roadLp.frequency.setTargetAtTime(300 + v * 520, t, 0.1);
     E.roadG.gain.setTargetAtTime(Math.min(0.2, v * v * 0.13) * (1 - dirtAmt * 0.6), t, 0.1);
     E.dirtG.gain.setTargetAtTime(dirtAmt * 0.55, t, 0.05);
-    E.windBp.frequency.setTargetAtTime(1300 + v * 1500, t, 0.15);
-    E.windG.gain.setTargetAtTime(Math.min(0.17, v * v * v * 0.085), t, 0.15);
+    // tucked into the wake you are in still air: the wind noise drops away, and slams back when you pull out
+    E.windBp.frequency.setTargetAtTime((1300 + v * 1500) * (1 - 0.25 * (tow || 0)), t, 0.15);
+    E.windG.gain.setTargetAtTime(Math.min(0.17, v * v * v * 0.085) * (1 - 0.62 * (tow || 0)), t, 0.15);
   },
 };
 // don't leave the engine droning in a background tab (rAF stops, audio would not)
@@ -723,6 +732,7 @@ let countdown = 0;
 let lastCount = -1;
 let menuScroll = 0;
 let drafting = false;
+let draftPull = 0;                           // 0..1 how much of the tow we're actually getting
 let onDirt = false;
 let recoverTimer = 0;
 let boostTimer = 0;
@@ -1862,9 +1872,13 @@ function updateHud() {
   elTime.textContent = fmtClock(elapsed * 1000);
   elSpeed.textContent = Math.round(speed * 3.2);  // ~km/h feel
   elDistFill.style.width = Math.min(100, (playerDist / TRACK_LEN) * 100) + '%';
-  elDraftTag.classList.toggle('on', drafting);
-  elFx.classList.toggle('draft', drafting);
+  // the SLIPSTREAM tag and the screen glow both ride the tow strength, so you can see it swell
+  const dp = (phase === 'play') ? draftPull : 0;
+  elDraftTag.classList.toggle('on', dp > 0.12);
+  elDraftTag.style.opacity = dp > 0.12 ? (0.4 + 0.6 * dp).toFixed(2) : '';
   elFx.classList.toggle('boost', boostTimer > 0);
+  elFx.style.boxShadow = (boostTimer > 0 || dp <= 0.05) ? ''
+    : 'inset 0 0 ' + Math.round(46 + 94 * dp) + 'px ' + Math.round(3 + 10 * dp) + 'px rgba(53,230,255,' + (0.06 + 0.3 * dp).toFixed(3) + ')';
   if (bestTime !== null) elBest.textContent = (bestTime / 1000).toFixed(2);
   elGear.textContent = phase === 'play' || phase === 'finish' ? drive.gear : 'N';
   elRevFill.style.width = Math.min(100, drive.rpm / 72) + '%';
@@ -1937,7 +1951,7 @@ function startGameFromMenu() {
 function startRace() {
   // reset world
   playerDist = 0; speed = 0; carX = 0; prevCarX = 0; roll = 0; rollTarget = 0;
-  elapsed = 0; drafting = false; onDirt = false; recoverTimer = 0; boostTimer = 0; collisionCooldown = 0; pedCooldown = 0; shake = 0;
+  elapsed = 0; drafting = false; draftPull = 0; onDirt = false; recoverTimer = 0; boostTimer = 0; collisionCooldown = 0; pedCooldown = 0; shake = 0;
   wallHit = {};
   carVX = 0; prevVX = 0; latAcc = 0; steerTargetX = null; steerVis = 0; yawVis = 0; yawVel = 0; rollV = 0; pitch = 0; pitchV = 0; heave = 0; heaveV = 0;
   prevSpeed = 0; longAcc = 0; camX = 0; camKick = 0; lastTile = 0; flame = 0;
@@ -2392,6 +2406,24 @@ function updateHazardPositions(offset) {
   if (finishGate) { finishGate.position.z = offset - TRACK_LEN; finishGate.position.x = bendOff(TRACK_LEN); finishGate.rotation.y = bendYaw(TRACK_LEN); }
 }
 
+// ---------------- slipstream wake field ----------------
+// gap = centre-to-centre distance to the car ahead, dx = lateral offset from its lane.
+function wakeAt(gap, dx) {
+  if (gap >= DRAFT_FAR || gap <= DRAFT_NOSE - 1.6) return 0;
+  let s;
+  if (gap > DRAFT_PEAK) {                        // dirty air: squared, so the far edge is a whisper
+    const t = (DRAFT_FAR - gap) / (DRAFT_FAR - DRAFT_PEAK);
+    s = t * t;
+  } else {                                       // the pocket: eases off into the cushion at the bumper
+    const u = clamp((gap - DRAFT_NOSE) / (DRAFT_PEAK - DRAFT_NOSE), 0, 1);
+    s = DRAFT_CUSHION + (1 - DRAFT_CUSHION) * u * u * (3 - 2 * u);
+  }
+  const a = Math.abs(dx);
+  if (a >= DRAFT_LAT_OUT) return 0;
+  const l = a <= DRAFT_LAT_IN ? 1 : 1 - (a - DRAFT_LAT_IN) / (DRAFT_LAT_OUT - DRAFT_LAT_IN);
+  return s * l * l;                              // squared: you have to be properly tucked in
+}
+
 // ---------------- drivetrain model (drives the engine note + the gear / rev read-out; never touches race speed) ----------------
 const GEAR_TOP = [0, 13, 21, 30, 41, 53, 68];     // road speed at the 7000 rpm redline in each gear
 function updateDrive(dt, target, moving) {
@@ -2418,7 +2450,7 @@ function updateDrive(dt, target, moving) {
   D.load += (eff - D.load) * (1 - Math.exp(-dt * 20));
   const sp = load > 0.55 ? Math.min(1, D.rpm / 5200) : 0;
   D.spool += (sp - D.spool) * (1 - Math.exp(-dt * (sp > D.spool ? 2.6 : 7)));
-  sfx.updateEngine(D.rpm, D.load, D.spool, speed, onDirt ? 1 : 0);
+  sfx.updateEngine(D.rpm, D.load, D.spool, speed, onDirt ? 1 : 0, draftPull);
 }
 
 // ---------------- car body: lateral feel, roll / pitch / heave springs, wheels ----------------
@@ -2506,18 +2538,22 @@ function update(dt) {
     if (carX !== nx) carVX = 0;
     prevCarX = carX;
 
-    // drafting + rear collision
-    drafting = false;
+    // slipstream + rear collision: take the strongest wake we're sitting in
+    let wake = 0;
     for (const c of traffic) {
       const gap = c.p - playerDist;   // >0 ahead (centre to centre)
       const dxl = Math.abs(LANE_X[c.lane] - carX);
-      if (dxl < DRAFT_TOL && gap >= DRAFT_MIN && gap <= DRAFT_MAX) drafting = true;
+      const w = wakeAt(gap, dxl);
+      if (w > wake) wake = w;
       if (dxl < CAR_LANE_TOL && gap < COL_DIST && gap > -2.3 && collisionCooldown <= 0) hitRear(c);
       if (c.cd > 0) c.cd -= dt;
     }
-    // target speed
-    let target = BASE_SPEED;
-    if (drafting) target = DRAFT_SPEED;
+    // inside the wake the tow tracks promptly (so the bumper cushion actually bites); once you
+    // break clear of it the tow bleeds away slowly, which is the slingshot out of the pocket
+    draftPull += (wake - draftPull) * (1 - Math.exp(-dt / (wake > 0.05 ? DRAFT_IN : DRAFT_OUT)));
+    drafting = draftPull > 0.12;
+    // target speed: the tow is proportional, so the surge swells instead of snapping on
+    let target = BASE_SPEED + (DRAFT_SPEED - BASE_SPEED) * draftPull;
     if (recoverTimer > 0) target = Math.min(target, BASE_SPEED * 0.72);
     if (boostTimer > 0) target = BOOST_SPEED;
     speed += (target - speed) * (1 - Math.exp(-(boostTimer > 0 ? 5.0 : 3.0) * dt));
@@ -2654,6 +2690,7 @@ function updateCameraPlay(dt) {
   headLight.position.set(carX, 0.75, -1.2);
   headLight.target.position.set(carX + bendOff(playerDist + 24) + Math.sin(yawVis) * 12, -0.4, -26);
   Post.motion = clamp((speed - 21) / 35, 0, 1) * 0.075;
+  Post.flash = draftPull * 0.085;          // the screen cools as the tow swells
   _v3.set(carX, 0.5, 0.2).project(camera); Post.carUv.set(_v3.x * 0.5 + 0.5, _v3.y * 0.5 + 0.5);
 }
 function updateCameraMenu(dt) {
@@ -2869,7 +2906,7 @@ window.__tl = {
   state() {
     return {
       phase, dist: +playerDist.toFixed(2), speed: +speed.toFixed(2), carX: +carX.toFixed(2),
-      time: +elapsed.toFixed(3), drafting, onDirt, recover: +recoverTimer.toFixed(2),
+      time: +elapsed.toFixed(3), drafting, draftPull: +draftPull.toFixed(3), onDirt, recover: +recoverTimer.toFixed(2),
       traffic: traffic.length, boosts: boosts.length, boost: +boostTimer.toFixed(2), dirt: dirt.length, walls: walls.length, peds: peds.length,
       best: bestTime, finishTime: finishTime,
     };
