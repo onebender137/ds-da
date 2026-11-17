@@ -269,9 +269,24 @@
     }
   }
 
-  gate.addEventListener('click', () => {
+  // Sound is actually coming out: drop the gate, show pause icon
+  audio.addEventListener('playing', () => {
     gate.classList.add('hidden');
-    togglePlay();
+    playing = true;
+    btnPlay.innerHTML = '&#10074;&#10074;';
+  });
+  audio.addEventListener('pause', () => {
+    if (!audio.ended) btnPlay.innerHTML = '&#9654;';
+  });
+
+  // Autoplay was blocked: the first click or tap ANYWHERE on the page tunes in
+  // (the gate is just the visible prompt for it).
+  document.addEventListener('click', () => {
+    if (!manifest || gate.classList.contains('hidden')) return;
+    setupAudioCtx();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    if (window.gtag) gtag('event', 'tune_in', { station: 'jungle-massive', frequency: '88.3' });
+    playIdx(curIdx >= 0 ? curIdx : 0);
   });
 
   btnPlay.addEventListener('click', togglePlay);
@@ -292,7 +307,11 @@
   });
 
   loadManifest().then(() => {
-    if (window.gtag) gtag('event', 'tune_in', { station: 'jungle-massive', frequency: '88.3' });
+    // Try to go on air straight away. Browsers allow this when the visitor has
+    // already interacted with ds-da.ca (came from the dial, the home page, a
+    // game); on a cold visit they refuse, and the TAP TO TUNE IN gate stays up.
+    setupAudioCtx();
+    playIdx(curIdx >= 0 ? curIdx : 0);
   });
 })();
 </script>
