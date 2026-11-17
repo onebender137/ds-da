@@ -66,8 +66,12 @@
     border-radius: 14px; padding: 14px 16px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
     box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
   #titleBox { top: 16px; left: 16px; z-index: 5; }
-  #titleBox h1 { font-size: 18px; letter-spacing: 3px; font-weight: 900; }
-  #titleBox h1 span { color: var(--accent); }
+  #titleBox h1 { font-size: 19px; letter-spacing: 1px; font-weight: 900; font-style: italic;
+    font-family: "Arial Black", "Segoe UI Black", Impact, system-ui, sans-serif;
+    background: linear-gradient(176deg, #ffffff 0%, #cdd8ea 38%, #7f8ca3 50%, #ffffff 56%, #aab6cb 80%, #f0f5ff 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 -1px 0 rgba(255,146,44,.85)) drop-shadow(0 1px 0 rgba(56,186,255,.5)) drop-shadow(0 0 10px rgba(255,122,20,.4)); }
+  #titleBox h1 span { color: transparent; }
   #titleBox p { font-size: 11px; color: var(--muted); letter-spacing: 1px; margin-top: 2px; }
   #hud { top: 16px; right: 16px; width: 224px; z-index: 5; }
   .stat { display: flex; justify-content: space-between; align-items: baseline; padding: 4px 0;
@@ -113,19 +117,62 @@
   /* ---- main menu ---- */
   #menu { position: fixed; inset: 0; z-index: 15; display: flex; flex-direction: column;
     align-items: center; justify-content: center; gap: 14px;
-    background: radial-gradient(ellipse at 50% 40%, rgba(20,12,8,0.14) 0%, rgba(8,6,14,0.78) 82%);
+    background: radial-gradient(ellipse at 50% 42%, rgba(20,12,8,0.06) 0%, rgba(8,6,14,0.62) 84%);
     backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); }
   #menu.hidden { display: none; }
   body.menu-mode #titleBox, body.menu-mode #hud { display: none; }
-  .menu-title { font-size: clamp(40px, 9vw, 92px); font-weight: 900; letter-spacing: 8px;
-    display: flex; user-select: none; line-height: 1; flex-wrap: wrap; justify-content: center; }
-  .menu-title .lt { display: inline-block;
-    background: linear-gradient(180deg, #ffffff 0%, var(--accent) 46%, var(--accent2) 100%);
-    -webkit-background-clip: text; background-clip: text; color: transparent;
-    animation: ltfloat 2.8s ease-in-out infinite;
-    filter: drop-shadow(0 6px 24px rgba(255,179,71,0.45)); }
-  @keyframes ltfloat { 0%,100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-13px) rotate(-3deg); } }
-  .menu-tag { font-size: 12px; letter-spacing: 5px; color: var(--muted); text-align: center; }
+  /* ---- wordmark: chromed, bevelled, orange rim + cyan edge, to match the DSDA poster ---- */
+  .menu-title { font-size: clamp(38px, 9.4vw, 96px); font-weight: 900; font-style: italic;
+    font-family: "Arial Black", "Segoe UI Black", Impact, system-ui, sans-serif;
+    letter-spacing: 1px; display: flex; user-select: none; line-height: 1;
+    justify-content: center; position: relative; padding: 0 6px; }
+  /* three layers per letter, painted in order: dark bevel, then the chrome face on top.
+     (the chrome has to be a ::after — a background-clip fill paints under any ::before.) */
+  .menu-title .lt { display: inline-block; position: relative; transform-origin: 50% 50%;
+    color: transparent;
+    filter: drop-shadow(0 -2px 0 rgba(255,146,44,.9)) drop-shadow(0 2px 0 rgba(56,186,255,.6))
+            drop-shadow(0 0 16px rgba(255,122,20,.55)) drop-shadow(0 0 30px rgba(44,170,255,.3)); }
+  .menu-title .lt::before, .menu-title .lt::after {
+    content: attr(data-c); position: absolute; left: 0; top: 0; white-space: pre; }
+  .menu-title .lt::before { color: #0a0814; -webkit-text-stroke: 0.085em #0a0814; }
+  .menu-title .lt::after {
+    background-image:
+      linear-gradient(104deg, transparent 36%, rgba(255,255,255,.95) 47%, rgba(255,255,255,0) 58%),
+      linear-gradient(176deg, #ffffff 0%, #e6eefc 13%, #aebbd2 31%, #6f7d95 46%,
+                              #ffffff 52%, #dde7f7 59%, #8e9bb2 76%, #f2f7ff 100%);
+    background-size: 280% 100%, 100% 100%;
+    background-position: 185% 0, 0 0;
+    -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .menu-title.intro .lt { animation: ltIn .46s cubic-bezier(.14,1.08,.32,1) both var(--d); }
+  .menu-title.intro .lt::after { animation: ltShine 5.5s ease-in-out infinite calc(1.2s + var(--d) * 4); }
+  /* letters arrive stretched out of the left, overshoot a touch, then plant */
+  @keyframes ltIn {
+    0%   { opacity: 0; transform: translateX(-180%) scaleX(2.6); }
+    50%  { opacity: 1; }
+    72%  { transform: translateX(5%) scaleX(.94); }
+    100% { opacity: 1; transform: translateX(0) scaleX(1); }
+  }
+  @keyframes ltShine { 0%, 72% { background-position: 185% 0, 0 0; } 100% { background-position: -85% 0, 0 0; } }
+  /* speed streak that rips across behind the letters as they land */
+  .menu-title::after { content: ''; position: absolute; left: -8%; right: -8%; top: 52%; height: 3px;
+    border-radius: 3px; opacity: 0; pointer-events: none;
+    background: linear-gradient(90deg, transparent, rgba(255,150,50,.95) 38%, rgba(120,220,255,.95) 62%, transparent); }
+  .menu-title.intro::after { animation: ltStreak .5s ease-out .06s both; }
+  @keyframes ltStreak {
+    0% { opacity: 0; transform: translateX(-60%) scaleX(.4); }
+    35% { opacity: .95; }
+    100% { opacity: 0; transform: translateX(42%) scaleX(1.25); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .menu-title.intro .lt, .menu-title.intro .lt::after { animation: none; }
+    .menu-title.intro::after { animation: none; }
+  }
+  /* the line under the title sits over moving traffic, so it gets its own plate */
+  .menu-tag { font-size: clamp(10px, 1.55vw, 13px); letter-spacing: 3px; font-weight: 700;
+    color: #fbf4e8; text-align: center; margin-top: 2px; padding: 9px 20px; border-radius: 999px;
+    background: rgba(9,7,17,0.74); border: 1px solid rgba(255,179,71,0.3);
+    box-shadow: 0 8px 26px rgba(0,0,0,0.5); backdrop-filter: blur(9px); -webkit-backdrop-filter: blur(9px); }
+  .menu-tag b { color: var(--accent); font-weight: 800; }
   .menu-btns { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; width: min(82vw, 340px); }
   .mbtn { font: inherit; font-size: 15px; font-weight: 700; letter-spacing: 3px; padding: 13px;
     border-radius: 12px; border: 1px solid var(--border); background: var(--panel); color: var(--text);
@@ -134,7 +181,10 @@
     box-shadow: 0 0 24px rgba(255,179,71,0.28); transform: translateX(4px); }
   .mbtn.primary { background: linear-gradient(135deg, #ff8a3d, #ff3d5a); border: none; font-size: 16px; }
   .mbtn.primary:hover, .mbtn.primary.sel { filter: brightness(1.15); }
-  .menu-hint { font-size: 11px; color: var(--muted); letter-spacing: 1px; margin-top: 10px; text-align: center; }
+  .menu-hint { font-size: 11px; color: #d9d2e6; letter-spacing: 1px; margin-top: 10px; text-align: center;
+    padding: 8px 16px; border-radius: 10px; max-width: min(92vw, 620px); line-height: 1.5;
+    background: rgba(9,7,17,0.66); border: 1px solid rgba(255,255,255,0.08);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
   .menu-legend { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; justify-content: center; max-width: 560px; }
   .ml { font-size: 10px; letter-spacing: 1px; padding: 7px 10px; border-radius: 8px;
     border: 1px solid var(--border); background: var(--panel); color: var(--muted);
@@ -187,6 +237,8 @@
     #radioBox { bottom: calc(10px + env(safe-area-inset-bottom)); left: 10px; }
     .card { padding: 20px 22px; }
     .menu-legend { display: none; }
+    .menu-title { font-size: clamp(42px, 11vw, 62px); }
+    .menu-tag { letter-spacing: 1.4px; padding: 8px 14px; line-height: 1.5; }
   }
 
 /* --- mobile: keep tall overlay panels reachable (2026-11-13) --- */
@@ -242,10 +294,8 @@
 <button id="gfxBtn" title="Graphics quality">gfx: auto</button>
 <div id="banner"><h2 id="bannerTitle"></h2><p id="bannerSub"></p></div>
 <div id="menu">
-  <h1 class="menu-title" aria-label="SLIPSTREAM">
-    <span class="lt" style="animation-delay:0s">S</span><span class="lt" style="animation-delay:.05s">L</span><span class="lt" style="animation-delay:.10s">I</span><span class="lt" style="animation-delay:.15s">P</span><span class="lt" style="animation-delay:.20s">S</span><span class="lt" style="animation-delay:.25s">T</span><span class="lt" style="animation-delay:.30s">R</span><span class="lt" style="animation-delay:.35s">E</span><span class="lt" style="animation-delay:.40s">A</span><span class="lt" style="animation-delay:.45s">M</span>
-  </h1>
-  <p class="menu-tag">BURNOUT-STYLE HIGHWAY DRAFT · FASTEST TO THE FLAG · DSDA GAMES</p>
+  <h1 class="menu-title" id="menuTitle" aria-label="SLIPSTREAM"></h1>
+  <p class="menu-tag"><b>SLIPSTREAM</b> — DRAFT YOUR WAY TO THE TOP OF THE LEADERBOARD</p>
   <div class="menu-btns">
     <button id="menuStart" class="mbtn primary sel">START RACE</button>
     <button id="menuScores" class="mbtn">HIGH SCORES</button>
@@ -2014,6 +2064,29 @@ function showFinish() {
   elInitials.focus();
 }
 function resetGame() { startRace(); }
+// ---- the SLIPSTREAM wordmark: one span per letter, each carrying its own bevel + stagger ----
+const TITLE_TEXT = 'SLIPSTREAM';
+function buildTitle() {
+  const h = $('menuTitle');
+  if (!h) return;
+  h.innerHTML = '';
+  for (let i = 0; i < TITLE_TEXT.length; i++) {
+    const s = document.createElement('span');
+    s.className = 'lt';
+    s.dataset.c = TITLE_TEXT[i];
+    s.textContent = TITLE_TEXT[i];
+    s.style.setProperty('--d', (i * 0.034).toFixed(3) + 's');
+    h.appendChild(s);
+  }
+}
+function playTitleIntro() {
+  const h = $('menuTitle');
+  if (!h) return;
+  h.classList.remove('intro');
+  void h.offsetWidth;            // force a reflow so the animation restarts
+  h.classList.add('intro');
+}
+
 function backToMenu() {
   elOverlay.classList.add('hidden');
   elScores.classList.add('hidden');
@@ -2023,6 +2096,7 @@ function backToMenu() {
   hideBanner();
   setMenuSel(0);
   elMenu.classList.remove('hidden');
+  playTitleIntro();
 }
 
 // ---------------- menu & high scores ----------------
@@ -2883,6 +2957,8 @@ function boot() {
     ml.appendChild(d);
   }
 
+  buildTitle();
+  playTitleIntro();
   renderTopList(elHudTop, loadScores().slice(0, 10));
   updateHud();
   setMenuSel(0);
@@ -2914,6 +2990,7 @@ window.__tl = {
   setX(x) { carX = clamp(x, CAR_MIN_X, CAR_MAX_X); carVX = 0; steerTargetX = null; return 'ok'; },
   gfx(p) { if (p) setGfxPref(p); return { pref: GFX.pref, tier: GFX.tier, scale: GFX.scale, post: Post.ok }; },
   info() { const i = renderer.info; i.autoReset = false; i.reset(); renderFrame(); const o = { calls: i.render.calls, tris: i.render.triangles, geos: i.memory.geometries, tex: i.memory.textures }; i.autoReset = true; return o; },
+  intro() { playTitleIntro(); return 'ok'; },
   drive() { return { gear: drive.gear, rpm: Math.round(drive.rpm), load: +drive.load.toFixed(2) }; },
   audio() { return { ctx: sfx.ctx ? sfx.ctx.state : null, engine: !!sfx.eng, on: sfx.on }; },
   hooks: { get traffic() { return traffic; }, get walls() { return walls; }, get peds() { return peds; }, get boosts() { return boosts; }, get dirt() { return dirt; }, sfx },
