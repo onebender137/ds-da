@@ -2,11 +2,11 @@
   "name": "Jungle Massive FM 88.3",
   "tagline": "jungle, DnB & heavy breaks",
   "type": "broadcast",
-  "musicCredit": "Avaren (CC BY) + Alex Morgan (CC BY 4.0)",
+  "musicCredit": "1000 Handz (CC BY 4.0) + Avaren (CC BY) + Alex Morgan (CC BY 4.0)",
   "hostVoice": "Kokoro am_puck (local)",
-  "epoch": 1794888628.716,
-  "totalDuration": 1309.6,
-  "note": "2 music tracks (cycled) + 5 host announcements. More tracks pending \u2014 FMA DnB genre is mostly CC BY-NC.",
+  "epoch": 1794889171.537,
+  "totalDuration": 2855.4,
+  "note": "15 music tracks + 5 host announcements, interleaved (no back-to-back, ends on music).",
   "program": [
     {
       "type": "announcement",
@@ -23,6 +23,22 @@
       "credit": "FMA CC BY"
     },
     {
+      "type": "music",
+      "title": "Drum and Bass Jungle With Fast Breaks",
+      "artist": "Alex Morgan",
+      "url": "music/alexmorgan-dnb-jungle-fast-breaks.mp3",
+      "duration": 198.8,
+      "credit": "FMA CC BY 4.0"
+    },
+    {
+      "type": "music",
+      "title": "Devotion",
+      "artist": "1000 Handz",
+      "url": "music/1000handz-devotion.mp3",
+      "duration": 161.8,
+      "credit": "FMA CC BY 4.0"
+    },
+    {
       "type": "announcement",
       "title": "Jungle Massive \u2014 Heavy Bass",
       "url": "ads/on-air-2.mp3",
@@ -30,10 +46,26 @@
     },
     {
       "type": "music",
-      "title": "Drum and Bass Jungle With Fast Breaks",
-      "artist": "Alex Morgan",
-      "url": "music/alexmorgan-dnb-jungle-fast-breaks.mp3",
-      "duration": 198.8,
+      "title": "Garage Baker",
+      "artist": "1000 Handz",
+      "url": "music/1000handz-garage-baker.mp3",
+      "duration": 121.8,
+      "credit": "FMA CC BY 4.0"
+    },
+    {
+      "type": "music",
+      "title": "Inspire Blvd",
+      "artist": "1000 Handz",
+      "url": "music/1000handz-inspire-blvd.mp3",
+      "duration": 120.0,
+      "credit": "FMA CC BY 4.0"
+    },
+    {
+      "type": "music",
+      "title": "Long Distance",
+      "artist": "1000 Handz",
+      "url": "music/1000handz-long-distance.mp3",
+      "duration": 238.7,
       "credit": "FMA CC BY 4.0"
     },
     {
@@ -44,11 +76,27 @@
     },
     {
       "type": "music",
-      "title": "Jumpstyle",
-      "artist": "Avaren",
-      "url": "music/avaren-jumpstyle.mp3",
-      "duration": 285.5,
-      "credit": "FMA CC BY"
+      "title": "M Series",
+      "artist": "1000 Handz",
+      "url": "music/1000handz-m-series.mp3",
+      "duration": 158.1,
+      "credit": "FMA CC BY 4.0"
+    },
+    {
+      "type": "music",
+      "title": "Master Key",
+      "artist": "1000 Handz",
+      "url": "music/1000handz-master-key.mp3",
+      "duration": 209.2,
+      "credit": "FMA CC BY 4.0"
+    },
+    {
+      "type": "music",
+      "title": "Ok Today",
+      "artist": "1000 Handz",
+      "url": "music/1000handz-ok-today.mp3",
+      "duration": 176.5,
+      "credit": "FMA CC BY 4.0"
     },
     {
       "type": "announcement",
@@ -58,10 +106,26 @@
     },
     {
       "type": "music",
-      "title": "Drum and Bass Jungle With Fast Breaks",
-      "artist": "Alex Morgan",
-      "url": "music/alexmorgan-dnb-jungle-fast-breaks.mp3",
-      "duration": 198.8,
+      "title": "Overpower",
+      "artist": "1000 Handz",
+      "url": "music/1000handz-overpower.mp3",
+      "duration": 180.7,
+      "credit": "FMA CC BY 4.0"
+    },
+    {
+      "type": "music",
+      "title": "Relativity",
+      "artist": "1000 Handz",
+      "url": "music/1000handz-relativity.mp3",
+      "duration": 199.5,
+      "credit": "FMA CC BY 4.0"
+    },
+    {
+      "type": "music",
+      "title": "Special Forces",
+      "artist": "1000 Handz",
+      "url": "music/1000handz-special-forces.mp3",
+      "duration": 163.7,
       "credit": "FMA CC BY 4.0"
     },
     {
@@ -72,11 +136,27 @@
     },
     {
       "type": "music",
-      "title": "Jumpstyle",
-      "artist": "Avaren",
-      "url": "music/avaren-jumpstyle.mp3",
-      "duration": 285.5,
-      "credit": "FMA CC BY"
+      "title": "Superwave",
+      "artist": "1000 Handz",
+      "url": "music/1000handz-superwave.mp3",
+      "duration": 205.0,
+      "credit": "FMA CC BY 4.0"
+    },
+    {
+      "type": "music",
+      "title": "Unity",
+      "artist": "1000 Handz",
+      "url": "music/1000handz-unity.mp3",
+      "duration": 208.0,
+      "credit": "FMA CC BY 4.0"
+    },
+    {
+      "type": "music",
+      "title": "Vows",
+      "artist": "1000 Handz",
+      "url": "music/1000handz-vows.mp3",
+      "duration": 172.6,
+      "credit": "FMA CC BY 4.0"
     }
   ],
   "station": "jungle-massive",
