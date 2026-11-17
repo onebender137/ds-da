@@ -12,7 +12,8 @@
 // Static assets are cache-first, so a returning player keeps serving the old
 // copy out of the cache until the version changes — activate() deletes every
 // cache whose key isn't this one. v2: the gapless DSDA Radio (radio/radio.js).
-const CACHE = 'dsda-arcade-v2';
+// v3: new TappyCat screenshot (v2 six-world overhaul).
+const CACHE = 'dsda-arcade-v3';
 const CORE = [
   './',
   './manifest.webmanifest',
