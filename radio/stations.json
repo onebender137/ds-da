@@ -1,8 +1,8 @@
 {
-  "version": 5,
+  "version": 6,
   "network": "DSDA Radio",
-  "updated": "2026-11-15",
-  "note": "Cross-game radio manifest — the shared dial. 6 DSDA Radio broadcast shows: Most Pit FM 73.7 (death/doom metal, CC0), Easy Mellow FM 92.5 (bossa/lounge, CC BY 4.0), 103.7 Chip FM (8-bit chiptunes, CC0), Z107.7 Classic Rock (CC BY 4.0), Tripped Up FM 127.5 (jazz/triphop, CC0), Mental FM 137.7 (electronic). Stations are sorted by frequency so the tuning dial reads low->high. Polkahole + the game originals come back to THIS manifest as we build them out. Station types: 'broadcast' (live clock — tune in mid-song, everyone on the same second; points at a manifest.json with a program), 'stream' (Polkahole), 'seamless' (the games' own 1-track originals).",
+  "updated": "2026-11-16",
+  "note": "Cross-game radio manifest — the shared dial. 7 DSDA Radio broadcast shows: Most Pit FM 73.7 (death/doom metal, CC0), Jungle Massive FM 88.3 (jungle/DnB, CC BY), Easy Mellow FM 92.5 (bossa/lounge, CC BY 4.0), 103.7 Chip FM (8-bit chiptunes, CC0), Z107.7 Classic Rock (CC BY 4.0), Tripped Up FM 127.5 (jazz/triphop, CC0), Mental FM 137.7 (electronic). Stations are sorted by frequency so the tuning dial reads low->high. Station types: 'broadcast' (live clock — tune in mid-song, everyone on the same second; points at a manifest.json with a program), 'stream' (Polkahole), 'seamless' (the games' own 1-track originals).",
   "stations": [
     {
       "id": "most-pit",
@@ -12,6 +12,15 @@
       "tagline": "Death metal, doom & heavy riffs — CC0",
       "accent": "#ff3b30",
       "manifest": "/radio/stations/most-pit/manifest.json"
+    },
+    {
+      "id": "jungle-massive",
+      "name": "Jungle Massive FM 88.3",
+      "type": "broadcast",
+      "frequency": "88.3",
+      "tagline": "Jungle, DnB & heavy breaks — CC BY",
+      "accent": "#3bff5c",
+      "manifest": "/radio/stations/jungle-massive/manifest.json"
     },
     {
       "id": "easy-mellow",

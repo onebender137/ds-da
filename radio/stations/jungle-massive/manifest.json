@@ -1,0 +1,89 @@
+{
+  "name": "Jungle Massive FM 88.3",
+  "tagline": "jungle, DnB & heavy breaks",
+  "type": "broadcast",
+  "musicCredit": "Avaren (CC BY) + Alex Morgan (CC BY 4.0)",
+  "hostVoice": "Kokoro am_puck (local)",
+  "epoch": 1794888628.716,
+  "totalDuration": 1309.6,
+  "note": "2 music tracks (cycled) + 5 host announcements. More tracks pending \u2014 FMA DnB genre is mostly CC BY-NC.",
+  "program": [
+    {
+      "type": "announcement",
+      "title": "Jungle Massive \u2014 On Air",
+      "url": "ads/on-air-1.mp3",
+      "duration": 11.0
+    },
+    {
+      "type": "music",
+      "title": "Jumpstyle",
+      "artist": "Avaren",
+      "url": "music/avaren-jumpstyle.mp3",
+      "duration": 285.5,
+      "credit": "FMA CC BY"
+    },
+    {
+      "type": "announcement",
+      "title": "Jungle Massive \u2014 Heavy Bass",
+      "url": "ads/on-air-2.mp3",
+      "duration": 11.1
+    },
+    {
+      "type": "music",
+      "title": "Drum and Bass Jungle With Fast Breaks",
+      "artist": "Alex Morgan",
+      "url": "music/alexmorgan-dnb-jungle-fast-breaks.mp3",
+      "duration": 198.8,
+      "credit": "FMA CC BY 4.0"
+    },
+    {
+      "type": "announcement",
+      "title": "DSDA Arcade \u2014 Promo",
+      "url": "ads/promo-1.mp3",
+      "duration": 11.2
+    },
+    {
+      "type": "music",
+      "title": "Jumpstyle",
+      "artist": "Avaren",
+      "url": "music/avaren-jumpstyle.mp3",
+      "duration": 285.5,
+      "credit": "FMA CC BY"
+    },
+    {
+      "type": "announcement",
+      "title": "Jungle Massive \u2014 The Jungle Doesn't Sleep",
+      "url": "ads/on-air-3.mp3",
+      "duration": 10.5
+    },
+    {
+      "type": "music",
+      "title": "Drum and Bass Jungle With Fast Breaks",
+      "artist": "Alex Morgan",
+      "url": "music/alexmorgan-dnb-jungle-fast-breaks.mp3",
+      "duration": 198.8,
+      "credit": "FMA CC BY 4.0"
+    },
+    {
+      "type": "announcement",
+      "title": "Jungle Massive \u2014 Signing Off",
+      "url": "ads/on-air-4.mp3",
+      "duration": 11.7
+    },
+    {
+      "type": "music",
+      "title": "Jumpstyle",
+      "artist": "Avaren",
+      "url": "music/avaren-jumpstyle.mp3",
+      "duration": 285.5,
+      "credit": "FMA CC BY"
+    }
+  ],
+  "station": "jungle-massive",
+  "frequency": "88.3",
+  "callSign": "Jungle Massive FM",
+  "network": "DSDA Radio",
+  "host": "am_puck",
+  "license": "CC BY 4.0 (attribution shown on-screen)",
+  "updated": "2026-11-16"
+}

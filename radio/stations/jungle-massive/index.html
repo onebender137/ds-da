@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>88.3 JUNGLE MASSIVE FM — JUNGLE · DNB · HEAVY BREAKS</title>
+<!-- GA4: track this station page + radio events (see track()) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-M9D0GNYMWJ"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-M9D0GNYMWJ', { page_title: 'Jungle Massive FM 88.3', page_path: '/radio/stations/jungle-massive/' });
+</script>
+
+<meta property="og:title" content="Jungle Massive FM 88.3 — DSDA Radio">
+<meta property="og:description" content="Jungle, DnB & heavy breaks, live off the DSDA Radio network. The jungle is calling.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ds-da.ca/radio/stations/jungle-massive/">
+<meta property="og:image" content="https://ds-da.ca/radio/stations/jungle-massive/station-og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Jungle Massive FM 88.3 — DSDA Radio">
+<meta name="twitter:description" content="Jungle, DnB & heavy breaks, live off the DSDA Radio network. The jungle is calling.">
+<meta name="twitter:image" content="https://ds-da.ca/radio/stations/jungle-massive/station-og.png">
+
+<style>
+
+  :root{ --bg:#040a04;--panel:#0a160a;--acc:#3bff5c;--acc-dim:#1a8a2a;--glow:rgba(59,255,92,.42);--ink:#d5f5da;--muted:#60a068;--cred:#a0e8a8; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:'Arial Black',Impact,system-ui,sans-serif;
+    display:flex; align-items:center; justify-content:center;
+    padding:20px; overflow:hidden;
+    background-image:radial-gradient(circle at 50% 0%, var(--glow), transparent 55%), repeating-linear-gradient(115deg, rgba(59,255,92,.05) 0 2px, transparent 2px 9px);
+  }
+  .card{
+    width:min(440px,100%); background:var(--panel);
+    border:2px solid var(--acc-dim); border-radius:14px;
+    box-shadow:0 0 40px var(--glow), inset 0 0 60px rgba(0,0,0,.55);
+    padding:26px 24px 22px; position:relative;
+  }
+  .top{display:flex; align-items:center; gap:12px; margin-bottom:18px}
+  .logo{width:46px;height:46px;flex:0 0 auto;filter:drop-shadow(0 0 8px var(--glow))}
+  .titles{flex:1;min-width:0}
+  .freq{font-size:12px;letter-spacing:3px;color:var(--muted)}
+  h1{font-size:26px;letter-spacing:2px;color:var(--acc);text-shadow:0 0 12px var(--glow);line-height:1.05}
+  .tagline{font-size:11px;color:var(--muted);letter-spacing:1px;margin-top:3px}
+  .live{display:flex;align-items:center;gap:6px;font-size:11px;letter-spacing:2px;color:var(--acc);
+    border:1px solid var(--acc-dim);border-radius:6px;padding:5px 9px;flex:0 0 auto}
+  .live .dot{width:8px;height:8px;border-radius:50%;background:var(--acc);box-shadow:0 0 8px var(--acc);animation:pulse 1.4s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+  .vis{width:100%;height:64px;border-radius:8px;background:rgba(0,0,0,.35);border:1px solid var(--acc-dim);margin-bottom:14px;overflow:hidden}
+  .vis canvas{width:100%;height:100%;display:block}
+
+  .ctrl{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .btn{width:44px;height:44px;border-radius:50%;border:2px solid var(--acc-dim);background:rgba(59,255,92,.08);
+    color:var(--acc);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+  .btn:hover{background:rgba(59,255,92,.18);box-shadow:0 0 12px var(--glow)}
+  .btn.play{width:54px;height:54px;font-size:22px;background:rgba(59,255,92,.15)}
+  .time{font-size:12px;color:var(--muted);letter-spacing:1px;flex:1;text-align:center}
+
+  .now{background:rgba(0,0,0,.3);border:1px solid var(--acc-dim);border-radius:8px;padding:10px 14px;margin-bottom:12px}
+  .now .label{font-size:10px;letter-spacing:2px;color:var(--muted);margin-bottom:4px}
+  .now .track{font-size:14px;color:var(--acc);letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .now .artist{font-size:11px;color:var(--muted);margin-top:2px}
+
+  .credit{font-size:10px;color:var(--cred);letter-spacing:.5px;line-height:1.5;text-align:center;padding-top:8px;border-top:1px solid rgba(59,255,92,.15)}
+  .credit a{color:var(--acc);text-decoration:none}
+  .credit a:hover{text-decoration:underline}
+
+  .share{display:flex;justify-content:center;gap:8px;margin-top:10px}
+  .share button{background:rgba(59,255,92,.08);border:1px solid var(--acc-dim);border-radius:6px;
+    color:var(--muted);font-size:11px;padding:5px 12px;cursor:pointer;letter-spacing:1px;transition:all .15s}
+  .share button:hover{color:var(--acc);background:rgba(59,255,92,.15)}
+
+  .gate{position:absolute;inset:0;background:rgba(4,10,4,.92);display:flex;flex-direction:column;
+    align-items:center;justify-content:center;z-index:10;border-radius:12px;cursor:pointer}
+  .gate .big{font-size:22px;color:var(--acc);letter-spacing:3px;text-shadow:0 0 16px var(--glow);margin-bottom:8px}
+  .gate .sub{font-size:11px;color:var(--muted);letter-spacing:2px}
+  .gate.hidden{display:none}
+</style>
+</head>
+<body>
+<script src="/radio/site-bar.js?v=1"></script>
+
+<div class="card">
+  <div class="gate" id="gate">
+    <div class="big">TAP TO TUNE IN</div>
+    <div class="sub">88.3 JUNGLE MASSIVE FM</div>
+  </div>
+
+  <div class="top">
+    <svg class="logo" viewBox="0 0 46 46" fill="none">
+      <circle cx="23" cy="23" r="20" stroke="#3bff5c" stroke-width="2" fill="rgba(59,255,92,.08)"/>
+      <path d="M12 30 L18 18 L23 26 L28 14 L34 30" stroke="#3bff5c" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="23" cy="23" r="3" fill="#3bff5c"/>
+    </svg>
+    <div class="titles">
+      <div class="freq">88.3 FM</div>
+      <h1>JUNGLE MASSIVE</h1>
+      <div class="tagline">jungle · dnb · heavy breaks</div>
+    </div>
+    <div class="live"><span class="dot"></span>LIVE</div>
+  </div>
+
+  <div class="vis"><canvas id="visCanvas"></canvas></div>
+
+  <div class="ctrl">
+    <button class="btn" id="btnPrev" title="Previous station">&#9198;</button>
+    <button class="btn play" id="btnPlay" title="Play/Pause">&#9654;</button>
+    <button class="btn" id="btnNext" title="Next station">&#9197;</button>
+    <div class="time" id="timeDisplay">--:--</div>
+  </div>
+
+  <div class="now">
+    <div class="label">NOW PLAYING</div>
+    <div class="track" id="nowTrack">Tuning in...</div>
+    <div class="artist" id="nowArtist"></div>
+  </div>
+
+  <div class="credit" id="creditBox">
+    Music: Avaren (CC BY) + Alex Morgan (CC BY 4.0) via Free Music Archive<br>
+    Host: am_puck (Kokoro TTS) &middot; DSDA Radio Network
+  </div>
+
+  <div class="share">
+    <button id="btnShare">SHARE STATION</button>
+  </div>
+</div>
+
+<audio id="audio" preload="auto"></audio>
+
+<script>
+(function(){
+  const audio = document.getElementById('audio');
+  const gate = document.getElementById('gate');
+  const btnPlay = document.getElementById('btnPlay');
+  const btnPrev = document.getElementById('btnPrev');
+  const btnNext = document.getElementById('btnNext');
+  const nowTrack = document.getElementById('nowTrack');
+  const nowArtist = document.getElementById('nowArtist');
+  const timeDisplay = document.getElementById('timeDisplay');
+  const creditBox = document.getElementById('creditBox');
+  const btnShare = document.getElementById('btnShare');
+  const canvas = document.getElementById('visCanvas');
+  const ctx = canvas.getContext('2d');
+
+  let manifest = null;
+  let curIdx = -1;
+  let playing = false;
+  let audioCtx = null;
+  let analyser = null;
+  let srcNode = null;
+
+  function resizeCanvas(){
+    canvas.width = canvas.offsetWidth * (window.devicePixelRatio || 1);
+    canvas.height = canvas.offsetHeight * (window.devicePixelRatio || 1);
+  }
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+
+  function drawVis(){
+    requestAnimationFrame(drawVis);
+    const w = canvas.width, h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+    if (analyser && playing) {
+      const data = new Uint8Array(analyser.frequencyBinCount);
+      analyser.getByteFrequencyData(data);
+      const bars = 48;
+      const step = Math.floor(data.length / bars);
+      const bw = w / bars;
+      for (let i = 0; i < bars; i++) {
+        const v = data[i * step] / 255;
+        const bh = v * h * 0.9;
+        const g = ctx.createLinearGradient(0, h, 0, h - bh);
+        g.addColorStop(0, 'rgba(59,255,92,.3)');
+        g.addColorStop(1, 'rgba(59,255,92,.9)');
+        ctx.fillStyle = g;
+        ctx.fillRect(i * bw + 1, h - bh, bw - 2, bh);
+      }
+    } else {
+      ctx.fillStyle = 'rgba(59,255,92,.15)';
+      for (let i = 0; i < 48; i++) {
+        const x = i * (w / 48);
+        ctx.fillRect(x + 1, h - 4, w / 48 - 2, 4);
+      }
+    }
+  }
+  drawVis();
+
+  function setupAudioCtx(){
+    if (audioCtx) return;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 128;
+    srcNode = audioCtx.createMediaElementSource(audio);
+    srcNode.connect(analyser);
+    analyser.connect(audioCtx.destination);
+  }
+
+  async function loadManifest(){
+    try {
+      const resp = await fetch('manifest.json', { cache: 'no-store' });
+      manifest = await resp.json();
+      // Seek to broadcast position
+      const elapsed = (Date.now() / 1000 - manifest.epoch) % manifest.totalDuration;
+      let acc = 0;
+      for (let i = 0; i < manifest.program.length; i++) {
+        acc += manifest.program[i].duration;
+        if (elapsed < acc) { curIdx = i; break; }
+      }
+      if (curIdx < 0) curIdx = 0;
+    } catch(e) {
+      console.error('Manifest load failed', e);
+    }
+  }
+
+  function playIdx(idx){
+    if (!manifest) return;
+    curIdx = idx;
+    const item = manifest.program[idx];
+    audio.src = item.url;
+    audio.currentTime = 0;
+    nowTrack.textContent = item.title;
+    nowArtist.textContent = item.artist || (item.type === 'announcement' ? 'Jungle Massive FM' : '');
+    if (item.credit) {
+      creditBox.innerHTML = item.credit + '<br>Host: am_puck (Kokoro TTS) &middot; DSDA Radio Network';
+    }
+    audio.play().then(() => {
+      playing = true;
+      btnPlay.innerHTML = '&#10074;&#10074;';
+      if (window.gtag) gtag('event', 'play', { station: 'jungle-massive', track: item.title });
+    }).catch(e => {
+      console.warn('Play failed', e);
+    });
+  }
+
+  function nextIdx(){
+    if (!manifest) return 0;
+    return (curIdx + 1) % manifest.program.length;
+  }
+  function prevIdx(){
+    if (!manifest) return 0;
+    return (curIdx - 1 + manifest.program.length) % manifest.program.length;
+  }
+
+  audio.addEventListener('ended', () => { playIdx(nextIdx()); });
+
+  audio.addEventListener('timeupdate', () => {
+    const m = Math.floor(audio.currentTime / 60);
+    const s = Math.floor(audio.currentTime % 60);
+    timeDisplay.textContent = `${m}:${s.toString().padStart(2,'0')}`;
+  });
+
+  function togglePlay(){
+    if (!playing) {
+      setupAudioCtx();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      if (!audio.src) { playIdx(curIdx >= 0 ? curIdx : 0); }
+      else { audio.play(); playing = true; btnPlay.innerHTML = '&#10074;&#10074;'; }
+    } else {
+      audio.pause();
+      playing = false;
+      btnPlay.innerHTML = '&#9654;';
+      if (window.gtag) gtag('event', 'pause', { station: 'jungle-massive' });
+    }
+  }
+
+  gate.addEventListener('click', () => {
+    gate.classList.add('hidden');
+    togglePlay();
+  });
+
+  btnPlay.addEventListener('click', togglePlay);
+  btnNext.addEventListener('click', () => { playIdx(nextIdx()); });
+  btnPrev.addEventListener('click', () => { playIdx(prevIdx()); });
+
+  btnShare.addEventListener('click', async () => {
+    const url = window.location.href;
+    const text = '88.3 Jungle Massive FM — DSDA Radio. Jungle, DnB & heavy breaks.';
+    if (navigator.share) {
+      try { await navigator.share({ title: 'Jungle Massive FM 88.3', text, url }); } catch(e){}
+    } else {
+      await navigator.clipboard.writeText(url);
+      btnShare.textContent = 'COPIED!';
+      setTimeout(() => btnShare.textContent = 'SHARE STATION', 1500);
+    }
+    if (window.gtag) gtag('event', 'share', { station: 'jungle-massive' });
+  });
+
+  loadManifest().then(() => {
+    if (window.gtag) gtag('event', 'tune_in', { station: 'jungle-massive', frequency: '88.3' });
+  });
+})();
+</script>
+</body>
+</html>
