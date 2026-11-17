@@ -1,0 +1,185 @@
+{
+  "name": "Artificial Black FM 113.7",
+  "tagline": "dark electronic, glitch & wobble",
+  "type": "broadcast",
+  "musicCredit": "Artificial Black (artist)",
+  "hostVoice": "Kokoro bm_lewis (local)",
+  "epoch": 1794892565.996,
+  "totalDuration": 3060.9,
+  "note": "17 music tracks + 5 host announcements, interleaved (no back-to-back, ends on music).",
+  "program": [
+    {
+      "type": "announcement",
+      "title": "Artificial Black \u2014 On Air",
+      "url": "ads/on-air-1.mp3",
+      "duration": 15.0
+    },
+    {
+      "type": "music",
+      "title": "Electro Concerto",
+      "artist": "Artificial Black",
+      "url": "music/ab-electro-concerto.mp3",
+      "duration": 145.4,
+      "credit": "Artificial Black (artist)"
+    },
+    {
+      "type": "music",
+      "title": "Electro Concerto III",
+      "artist": "Artificial Black",
+      "url": "music/ab-electro-concerto-3.mp3",
+      "duration": 148.2,
+      "credit": "Artificial Black (artist)"
+    },
+    {
+      "type": "music",
+      "title": "Electro Concerto VII",
+      "artist": "Artificial Black",
+      "url": "music/ab-electro-concerto-7.mp3",
+      "duration": 145.7,
+      "credit": "Artificial Black (artist)"
+    },
+    {
+      "type": "announcement",
+      "title": "Artificial Black \u2014 The Artificial Is Alive",
+      "url": "ads/on-air-2.mp3",
+      "duration": 12.0
+    },
+    {
+      "type": "music",
+      "title": "Electro Concerto XII",
+      "artist": "Artificial Black",
+      "url": "music/ab-electro-concerto-12.mp3",
+      "duration": 152.6,
+      "credit": "Artificial Black (artist)"
+    },
+    {
+      "type": "music",
+      "title": "Relentless Tension",
+      "artist": "Artificial Black",
+      "url": "music/ab-relentless-tension.mp3",
+      "duration": 149.6,
+      "credit": "Artificial Black (artist)"
+    },
+    {
+      "type": "music",
+      "title": "Relentless Tension IV",
+      "artist": "Artificial Black",
+      "url": "music/ab-relentless-tension-4.mp3",
+      "duration": 158.8,
+      "credit": "Artificial Black (artist)"
+    },
+    {
+      "type": "announcement",
+      "title": "DSDA Arcade \u2014 Promo",
+      "url": "ads/promo-1.mp3",
+      "duration": 12.8
+    },
+    {
+      "type": "music",
+      "title": "Relentless Tension VIII",
+      "artist": "Artificial Black",
+      "url": "music/ab-relentless-tension-8.mp3",
+      "duration": 176.7,
+      "credit": "Artificial Black (artist)"
+    },
+    {
+      "type": "music",
+      "title": "Relentless Tension XII",
+      "artist": "Artificial Black",
+      "url": "music/ab-relentless-tension-12.mp3",
+      "duration": 175.2,
+      "credit": "Artificial Black (artist)"
+    },
+    {
+      "type": "music",
+      "title": "Untitled Add",
+      "artist": "Artificial Black",
+      "url": "music/ab-untitled-add.mp3",
+      "duration": 137.8,
+      "credit": "Artificial Black (artist)"
+    },
+    {
+      "type": "announcement",
+      "title": "Artificial Black \u2014 The Glitch Plays On",
+      "url": "ads/on-air-3.mp3",
+      "duration": 14.1
+    },
+    {
+      "type": "music",
+      "title": "Untitled Add II",
+      "artist": "Artificial Black",
+      "url": "music/ab-untitled-add-2.mp3",
+      "duration": 211.7,
+      "credit": "Artificial Black (artist)"
+    },
+    {
+      "type": "music",
+      "title": "Victorian Glitch",
+      "artist": "Artificial Black",
+      "url": "music/ab-victorian-glitch.mp3",
+      "duration": 163.2,
+      "credit": "Artificial Black (artist)"
+    },
+    {
+      "type": "music",
+      "title": "Victorian Glitch III",
+      "artist": "Artificial Black",
+      "url": "music/ab-victorian-glitch-3.mp3",
+      "duration": 191.6,
+      "credit": "Artificial Black (artist)"
+    },
+    {
+      "type": "announcement",
+      "title": "Artificial Black \u2014 Going Dark",
+      "url": "ads/on-air-4.mp3",
+      "duration": 12.8
+    },
+    {
+      "type": "music",
+      "title": "Victorian Glitch VII",
+      "artist": "Artificial Black",
+      "url": "music/ab-victorian-glitch-7.mp3",
+      "duration": 269.8,
+      "credit": "Artificial Black (artist)"
+    },
+    {
+      "type": "music",
+      "title": "Victorian Glitch XI",
+      "artist": "Artificial Black",
+      "url": "music/ab-victorian-glitch-11.mp3",
+      "duration": 269.8,
+      "credit": "Artificial Black (artist)"
+    },
+    {
+      "type": "music",
+      "title": "Victorian Wobble",
+      "artist": "Artificial Black",
+      "url": "music/ab-victorian-wobble.mp3",
+      "duration": 268.2,
+      "credit": "Artificial Black (artist)"
+    },
+    {
+      "type": "music",
+      "title": "Victorian Wobble II",
+      "artist": "Artificial Black",
+      "url": "music/ab-victorian-wobble-2.mp3",
+      "duration": 152.1,
+      "credit": "Artificial Black (artist)"
+    },
+    {
+      "type": "music",
+      "title": "Victorian Wobble V",
+      "artist": "Artificial Black",
+      "url": "music/ab-victorian-wobble-5.mp3",
+      "duration": 77.8,
+      "credit": "Artificial Black (artist)"
+    }
+  ],
+  "station": "artificial-black",
+  "frequency": "113.7",
+  "callSign": "Artificial Black FM",
+  "network": "DSDA Radio",
+  "host": "bm_lewis",
+  "license": "Artist-provided tracks",
+  "updated": "2026-11-17"
+}
