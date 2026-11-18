@@ -2042,6 +2042,7 @@ function finish() {
   sfx.stopEngine(2.2);       // lift off and coast through the gate
   showBanner('FINISH!', fmtClock(finishTime));
   track('race_finish', { time_ms: Math.round(finishTime) });
+  track('game_over', { time_ms: Math.round(finishTime), no_share: true }); // arcade passport + analytics; Slipstream has its own share
   // best time
   if (bestTime === null || finishTime < bestTime) bestTime = finishTime;
   elBest.textContent = (bestTime / 1000).toFixed(2);
@@ -3018,6 +3019,7 @@ try {
 
   <!-- DSDA Radio network widget (shared 6-station dial) -->
   <div id="radioBox"></div>
+  <script src="../arcade-social.js?v=2"></script>
   <script src="../../radio/radio.js?v=11"></script>
   <script>
     // DSDA Radio — shared cross-game dial (6 stations). The radio is the music source;

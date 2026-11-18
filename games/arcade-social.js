@@ -1,5 +1,5 @@
 /* DSDA Arcade — social layer (games/arcade-social.js)
-   One drop-in for every cabinet: <script src="../arcade-social.js?v=1"></script>
+   One drop-in for every cabinet: <script src="../arcade-social.js?v=2"></script>
    Zero per-game wiring needed for the basics, because it listens to the
    gtag('event','game_start'|'game_over',…) calls every cabinet already makes:
 
@@ -116,7 +116,7 @@
     '.dsda-x-toast{font:700 13px/1.3 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.04em;color:#1d1200;background:linear-gradient(90deg,#ffd54a,#ffb02e);border-radius:14px;padding:10px 14px;box-shadow:0 8px 28px rgba(0,0,0,.45),0 0 22px rgba(255,200,60,.35);display:flex;gap:10px;align-items:center;opacity:0;transform:translateY(-10px);transition:opacity .3s,transform .3s;pointer-events:auto}' +
     '.dsda-x-toast.on{opacity:1;transform:none}.dsda-x-toast .i{font-size:22px}.dsda-x-toast small{display:block;font-weight:600;opacity:.75;letter-spacing:.02em}' +
     '.dsda-x-toast.cool{color:#e9fff6;background:linear-gradient(90deg,#123d33,#0d2b3d);border:1px solid rgba(108,255,178,.45);box-shadow:0 8px 28px rgba(0,0,0,.5),0 0 18px rgba(108,255,178,.2)}' +
-    '.dsda-x-bar{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom));transform:translate(-50%,140%);z-index:2147482000;display:flex;gap:8px;padding:8px;border-radius:18px;background:rgba(8,14,20,.88);border:1px solid rgba(255,213,74,.4);box-shadow:0 10px 30px rgba(0,0,0,.5);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:transform .35s cubic-bezier(.2,.9,.3,1.2)}' +
+    '.dsda-x-bar{position:fixed;left:50%;bottom:calc(74px + env(safe-area-inset-bottom));transform:translate(-50%,240%);z-index:2147482000;display:flex;gap:8px;padding:8px;border-radius:18px;background:rgba(8,14,20,.88);border:1px solid rgba(255,213,74,.4);box-shadow:0 10px 30px rgba(0,0,0,.5);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:transform .35s cubic-bezier(.2,.9,.3,1.2)}' +
     '.dsda-x-bar.on{transform:translate(-50%,0)}' +
     '.dsda-x-bar button{font:800 13px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.05em;border:0;border-radius:12px;padding:12px 14px;cursor:pointer;white-space:nowrap;touch-action:manipulation}' +
     '.dsda-x-bar .s{color:#1d1200;background:linear-gradient(90deg,#ffd54a,#ffb02e)}' +
@@ -137,7 +137,7 @@
       t.innerHTML = '<span class="i"></span><span><b></b><small></small></span>';
       t.querySelector('.i').textContent = icon; t.querySelector('b').textContent = title; t.querySelector('small').textContent = sub || '';
       toastBox.appendChild(t);
-      requestAnimationFrame(function () { requestAnimationFrame(function () { t.classList.add('on'); }); });
+      void t.offsetWidth; setTimeout(function () { t.classList.add('on'); }, 20);
       setTimeout(function () { t.classList.remove('on'); setTimeout(function () { t.remove(); }, 400); }, ms || 3800);
     } catch (e) {}
   }
@@ -292,7 +292,7 @@
         share({ title: name, challenge: true, text: em + ' Beat my ' + fmt(score) + ' on ' + name + (daily ? ' (Daily #' + dayNumber(daily) + ')' : '') + ' 👀',
           url: challengeLink(game, score, daily ? { day: daily } : null) });
       };
-      requestAnimationFrame(function () { bar.classList.add('on'); });
+      void bar.offsetWidth; setTimeout(function () { bar.classList.add('on'); }, 20);
       clearTimeout(barTimer); barTimer = setTimeout(hideBar, 30000);
     } catch (e) {}
   }

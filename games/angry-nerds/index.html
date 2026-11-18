@@ -5,6 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#2b1b5e">
 <title>ANGRY NERDS 😤 — Smash the Bullies!</title>
+<!-- GA4: same property as every other cabinet; game events via nerdTrack() -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-M9D0GNYMWJ"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-M9D0GNYMWJ', { page_title: 'Angry Nerds', page_path: '/games/angry-nerds/' });
+  function nerdTrack(ev, p){ try { gtag('event', ev, Object.assign({ game: 'angry-nerds' }, p || {})); } catch (e) {} }
+</script>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤓</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -963,6 +972,7 @@ function beginLevel(L,pill){
 }
 function loadLevel(i,skipIntro=false){
   mode=MODE.CAMPAIGN;hpScale=1;levelIdx=i;
+  nerdTrack('game_start',{mode:'campaign',level:i+1});
   beginLevel(LEVELS[i],`L${i+1} · <span class="lvname">${LEVELS[i].name}</span>`);
   if(i===0&&!save.tut)$('tutHand').classList.remove('hidden');
 }
@@ -970,6 +980,7 @@ function loadLevel(i,skipIntro=false){
 let runSeed=0;
 function startEndless(){
   mode=MODE.ENDLESS;wave=0;runScore=0;banked=[];runComboBest=0;
+  nerdTrack('game_start',{mode:'endless'});
   runSeed=(Math.random()*0xffffffff)>>>0;
   loadWave();
 }
@@ -985,6 +996,7 @@ function loadWave(){
 /* ---------- DAILY ---------- */
 function startDaily(){
   mode=MODE.DAILY;hpScale=1;dailyDate=utcDayStamp();
+  nerdTrack('game_start',{mode:'daily'});
   dailySeed=hashStr('angrynerds-daily-'+dailyDate);
   beginLevel(genLevel(dailySeed,7),`DAILY · <span class="lvname">${dailyDate}</span>`);
 }
@@ -1180,6 +1192,8 @@ function finishWin(){
 }
 function showWin(){
   const daily=mode===MODE.DAILY;
+  nerdTrack('game_over',{mode:daily?'daily':'campaign',result:'win',final_score:score,level_reached:daily?undefined:levelIdx+1});
+  if(daily&&window.DSDA&&DSDA.daily)DSDA.daily.finish('angry-nerds',score);
   const L=LEVELS[levelIdx],stars=daily?0:(score>=L.stars[1]?3:score>=L.stars[0]?2:1);
   const isBest=daily?(!save.daily||save.daily.date!==dailyDate||score>(save.daily.score||0)):score>=(save.best[levelIdx]||0);
   $('winTitle').textContent=daily?'DAILY CLEARED! 📅':(levelIdx===LEVELS.length-1?'YOU GRADUATED! 🎓':['LEVEL CLEARED!','BULLIES DELETED!','LAB LIBERATED!'][levelIdx%3]);
@@ -1208,6 +1222,7 @@ function showWin(){
 }
 function showLose(){
   state='lost';S.lose();
+  if(mode!==MODE.ENDLESS)nerdTrack('game_over',{mode:mode===MODE.DAILY?'daily':'campaign',result:'loss',final_score:score,level_reached:mode===MODE.DAILY?undefined:levelIdx+1,no_share:true});
   if(mode===MODE.ENDLESS){endRun();return;}
   $('loseTitle').textContent=mode===MODE.DAILY?'DAILY FAILED!':'STUFFED IN A LOCKER!';
   $('loseQuote').textContent='"'+LOSE_QUOTES[Math.floor(Math.random()*LOSE_QUOTES.length)]+'"';
@@ -1215,6 +1230,7 @@ function showLose(){
 }
 function endRun(){
   state='lost';
+  nerdTrack('game_over',{mode:'endless',result:'run_end',final_score:score,level_reached:wave+1});
   const best=save.endlessBest||0,isBest=score>best;
   if(isBest){save.endlessBest=score;persist();}
   $('runWave').textContent=wave+1;
@@ -1578,6 +1594,7 @@ setTimeout(()=>loaderEl.classList.add('hidden'),350);
 
   <!-- DSDA Radio network widget (shared 6-station dial) -->
   <div id="radioBox"></div>
+  <script src="../arcade-social.js?v=2"></script>
   <script src="../../radio/radio.js?v=11"></script>
   <script>
     // DSDA Radio — shared cross-game dial (6 stations). The radio is the music source;

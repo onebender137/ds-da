@@ -82,6 +82,34 @@
       .arcade-stat b { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 700; color: #c9a227; line-height: 1; }
       .arcade-stat span { font-size: 0.76rem; letter-spacing: 2.5px; color: #94a3b8; text-transform: uppercase; }
       .arcade-div { width: 1px; height: 28px; background: rgba(201, 162, 39, 0.3); }
+      /* passport + daily pills: second row of the record strip */
+      .arcade-stats { flex-wrap: wrap; justify-content: center; row-gap: 8px; width: max-content; max-width: 96vw; }
+      .arcade-pass { flex-basis: 100%; display: flex; justify-content: center; gap: 8px; }
+      .arcade-pass button, .arcade-pass a {
+        font: 600 0.7rem/1 'Inter', system-ui, sans-serif; letter-spacing: 1.6px; text-transform: uppercase; text-decoration: none;
+        color: #fafaf8; background: rgba(201, 162, 39, 0.12); border: 1px solid rgba(201, 162, 39, 0.45);
+        border-radius: 999px; padding: 7px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+      }
+      .arcade-pass button:hover, .arcade-pass a:hover { background: rgba(201, 162, 39, 0.25); }
+      .arcade-pass b { color: #c9a227; }
+      #passOv { position: fixed; inset: 0; z-index: 2000; display: none; align-items: center; justify-content: center; padding: 16px;
+        background: rgba(4, 10, 20, 0.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+      #passOv.on { display: flex; }
+      #passOv .pp { width: min(560px, 100%); max-height: 88vh; overflow: auto; background: #0d1a2e; border: 1px solid rgba(201, 162, 39, 0.4);
+        border-radius: 14px; padding: 20px 18px; font-family: 'Inter', system-ui, sans-serif; color: #fafaf8; box-shadow: 0 20px 60px rgba(0,0,0,.6); }
+      #passOv h2 { font-family: 'Playfair Display', serif; margin: 0 0 4px; font-size: 1.5rem; }
+      #passOv .sub { color: #94a3b8; font-size: 0.8rem; margin-bottom: 14px; }
+      #passOv h3 { font-size: 0.68rem; letter-spacing: 2.5px; color: #c9a227; text-transform: uppercase; margin: 16px 0 8px; }
+      .pp-badges { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+      .pp-b { display: flex; gap: 9px; align-items: center; padding: 8px 10px; border-radius: 10px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); }
+      .pp-b .i { font-size: 1.35rem; } .pp-b b { display: block; font-size: 0.78rem; } .pp-b small { color: #94a3b8; font-size: 0.66rem; line-height: 1.25; display: block; }
+      .pp-b.got { background: rgba(201, 162, 39, 0.12); border-color: rgba(201, 162, 39, 0.45); }
+      .pp-b:not(.got) .i { filter: grayscale(1); opacity: 0.35; }
+      .pp-games { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+      .pp-games td { padding: 6px 4px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+      .pp-games td.n { text-align: right; color: #c9a227; font-variant-numeric: tabular-nums; }
+      .pp-games tr.no td { color: #5b6b80; }
+      .pp-close { margin-top: 16px; width: 100%; padding: 11px; border-radius: 10px; border: 1px solid rgba(201,162,39,.45); background: transparent; color: #fafaf8; font: 600 0.8rem 'Inter', sans-serif; letter-spacing: 2px; cursor: pointer; }
       /* the record strip slides down while the install banner is open */
       .arcade-stats { transition: opacity 0.45s ease, top 0.45s ease; }
       body.banner-open .arcade-stats { top: 108px; }
@@ -187,9 +215,56 @@
             <div class="arcade-stat"><b id="statGames">—</b><span>games played</span></div>
             <div class="arcade-div"></div>
             <div class="arcade-stat"><b id="statPlayers">—</b><span>players on the record</span></div>
+            <div class="arcade-pass" id="arcadePass" hidden>
+                <button id="passBtn">🏅 Passport <b id="passCount">0</b></button>
+                <a id="dailyLink" href="cookie-frog/?daily=1">📅 <span id="dailyTxt">Daily</span></a>
+            </div>
         </div>
     </section>
 
+    <div id="passOv" role="dialog" aria-modal="true" aria-label="Your arcade passport"><div class="pp" id="passPanel"></div></div>
+    <script src="arcade-social.js?v=2"></script>
+    <script>
+      // ---------- Arcade passport (games/arcade-social.js keeps the data) ----------
+      (function () {
+        if (!window.DSDA || !DSDA.passport) return;
+        var wrap = document.getElementById('arcadePass'); wrap.hidden = false;
+        var ov = document.getElementById('passOv'), panel = document.getElementById('passPanel');
+        function esc(t) { var d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+        function refresh() {
+          var p = DSDA.passport(), got = Object.keys(p.badges).length;
+          document.getElementById('passCount').textContent = got + '/' + DSDA.BADGES.length;
+          var k = DSDA.daily.key(), n = DSDA.daily.number(k), st = DSDA.daily.streak();
+          document.getElementById('dailyTxt').textContent = 'Daily #' + n + (st > 1 ? ' · 🔥' + st : '');
+        }
+        function open() {
+          var p = DSDA.passport(), ids = Object.keys(DSDA.CABINETS);
+          var played = ids.filter(function (g) { return p.games[g]; }).length;
+          var st = DSDA.daily.streak();
+          var h = '<h2>Arcade Passport</h2><div class="sub">' + p.plays + ' games · ' + played + '/' + ids.length + ' cabinets' +
+            (st ? ' · 🔥 ' + st + '-day Daily streak' : '') + ' · saved on this device</div>';
+          h += '<h3>Badges · ' + Object.keys(p.badges).length + '/' + DSDA.BADGES.length + '</h3><div class="pp-badges">';
+          DSDA.BADGES.forEach(function (b) {
+            h += '<div class="pp-b' + (p.badges[b.id] ? ' got' : '') + '"><span class="i">' + b.icon + '</span><span><b>' + esc(b.name) + '</b><small>' + esc(b.desc) + '</small></span></div>';
+          });
+          h += '</div><h3>Cabinets</h3><table class="pp-games">';
+          ids.forEach(function (g) {
+            var r = p.games[g];
+            h += '<tr' + (r ? '' : ' class="no"') + '><td><a href="' + g + '/" style="color:inherit">' + esc(DSDA.CABINETS[g]) + '</a></td><td class="n">' +
+              (r ? r.plays + ' play' + (r.plays > 1 ? 's' : '') : 'not yet') + '</td><td class="n">' + (r && r.best ? 'best ' + DSDA.fmt(r.best) : '') + '</td></tr>';
+          });
+          h += '</table><button class="pp-close" id="passClose">Close</button>';
+          panel.innerHTML = h; ov.classList.add('on');
+          document.getElementById('passClose').onclick = close;
+        }
+        function close() { ov.classList.remove('on'); }
+        ov.addEventListener('click', function (e) { if (e.target === ov) close(); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+        document.getElementById('passBtn').addEventListener('click', open);
+        refresh();
+        window.addEventListener('pageshow', refresh);
+      })();
+    </script>
     <script src="../theme.js?v=1"></script>
     <script>
       // Live play counters — totals aggregated from each game's leaderboard
