@@ -116,6 +116,8 @@ body.designating #stage canvas{cursor:crosshair}
 #globalBar .pill:hover{filter:brightness(1.25);transform:translateY(-1px)}
 #btnSound.muted{color:var(--dim)}
 #btnSound.muted #soundIco{filter:grayscale(1)}
+#gfxBtn{position:fixed;bottom:12px;left:12px;z-index:60;padding:7px 13px;font-weight:900;font-size:13px;color:var(--amber-hi);cursor:pointer;transition:filter .12s,transform .12s}
+#gfxBtn:hover{filter:brightness(1.25);transform:translateY(-1px)}
 
 /* ============================ SCREENS ============================ */
 .screen{position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;padding:20px;
@@ -491,6 +493,7 @@ body.touch #deskHint{display:none}
   <button class="pill" id="btnSound" title="Mute sound effects (M) — music is on the DSDA Radio"><span id="soundIco">🔊</span><span id="soundTxt">SFX ON</span></button>
   <button class="pill" id="btnHelp" title="How to play (H)"><span>❓</span><span>HOW TO</span></button>
 </div>
+<button id="gfxBtn" class="pill" title="Graphics quality — cycles auto → high → med → low">gfx: auto</button>
 
 <!-- TITLE -->
 <div class="screen" id="titleScreen">
@@ -771,12 +774,6 @@ body.touch #deskHint{display:none}
   </div>
 </div>
 
-<script type="importmap">
-{ "imports": {
-  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-} }
-</script>
 <script type="module">
 /* ================================================================
    BEAVERZ — Dam Warfare
@@ -789,13 +786,10 @@ let bootMi=0; const bootInt=setInterval(()=>{bootMi=(bootMi+1)%bootMsgs.length;c
 $("bootRetry").addEventListener("click",()=>location.reload());
 function bootFail(msg){clearInterval(bootInt);$("bootScreen").classList.remove("fadeout");$("bootScreen").classList.add("error");if(msg)$("bootErrMsg").textContent=msg;}
 
-let THREE,EffectComposer,RenderPass,UnrealBloomPass,OutputPass;
+let THREE;
 try{
-  THREE=await import("three");
-  ({EffectComposer}=await import("three/addons/postprocessing/EffectComposer.js"));
-  ({RenderPass}=await import("three/addons/postprocessing/RenderPass.js"));
-  ({UnrealBloomPass}=await import("three/addons/postprocessing/UnrealBloomPass.js"));
-  ({OutputPass}=await import("three/addons/postprocessing/OutputPass.js"));
+  // Vendored three (precached by ../sw.js) with a CDN fallback — no importmap, no addons.
+  THREE=await import("../three.module.js").catch(()=>import("https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"));
 }catch(e){bootFail("Couldn't load the 3D engine (three.js). Check your connection and retry — the beavers are waiting.");throw e;}
 
 /* ============================ UTILS ============================ */
@@ -1074,12 +1068,11 @@ const G={screen:"boot",demo:true,paused:false,mode:"ai",diff:"crafty",turnTime:4
 let mask=new Uint8Array(MW*MH);
 
 /* ============================ THREE SETUP ============================ */
-let renderer,scene,camera,composer,bloomPass;
+let renderer,scene,camera;
 try{
   renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:"high-performance"});
 }catch(e){bootFail("WebGL isn't available on this device/browser — the beavers need it to render their dam.");throw e;}
-const PR_CAP=1.75;let pixelRatio=Math.min(devicePixelRatio||1,PR_CAP);
-renderer.setPixelRatio(pixelRatio);renderer.setSize(innerWidth,innerHeight);
+renderer.setSize(innerWidth,innerHeight);
 renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.08;
 $("stage").appendChild(renderer.domElement);
 scene=new THREE.Scene();
@@ -1087,16 +1080,160 @@ const FOV=38;
 camera=new THREE.PerspectiveCamera(FOV,innerWidth/innerHeight,10,6000);
 const FIT_DIST=(H*1.06/2)/Math.tan(FOV/2*DEG);
 camera.position.set(W/2,H/2,FIT_DIST);
-composer=new EffectComposer(renderer);
-composer.setPixelRatio(pixelRatio);
-composer.addPass(new RenderPass(scene,camera));
-bloomPass=new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),.55,.6,.82);
-composer.addPass(bloomPass);
-composer.addPass(new OutputPass());
 const hemi=new THREE.HemisphereLight(0xbfe4ff,0x5b3520,.85);scene.add(hemi);
 const keyL=new THREE.DirectionalLight(0xfff2d8,1.5);keyL.position.set(600,1500,1000);scene.add(keyL);
 const rimL=new THREE.DirectionalLight(0x7fd8ff,.8);rimL.position.set(-900,500,-700);scene.add(rimL);
 const fillL=new THREE.DirectionalLight(0xffe0c0,.35);fillL.position.set(-500,300,900);scene.add(fillL);
+
+/* ============================ GRAPHICS TIERS + POST ============================
+   Hand-rolled pipeline (no three addons): HDR target -> bloom mips -> radial motion
+   blur + ACES + grade/vignette/grain. Tiers: high = MSAA + full pipeline ·
+   med = same pipeline, lighter · low = no post, plain render. Auto = med on touch /
+   high on desktop, then adapts to frame time — sheds resolution first, then a whole
+   tier; claws back when there's headroom. "gfx:" button bottom-left, saved in
+   localStorage "beaverz_gfx", override with ?gfx=high|med|low|auto. */
+const GFX_KEY="beaverz_gfx";
+const GFX={pref:"auto",tier:"high",scale:1,ups:0};
+function gq(){
+  switch(GFX.tier){
+    case "high": return {dpr:1.75,msaa:4,mips:5,taps:6,post:true};
+    case "med":  return {dpr:1.25,msaa:0,mips:4,taps:4,post:true};
+    default:     return {dpr:1,   msaa:0,mips:0,taps:0,post:false};
+  }
+}
+const Post={
+  ok:false,scene:null,cam:null,quad:null,rt:null,mips:[],w:0,h:0,
+  motion:0,flash:0,
+  init(){
+    this.ok=false;
+    if(!renderer||!gq().post||!renderer.capabilities.isWebGL2)return;
+    try{
+      const VS="varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }";
+      const g=new THREE.BufferGeometry();
+      g.setAttribute("position",new THREE.Float32BufferAttribute([-1,-1,0,3,-1,0,-1,3,0],3));
+      g.setAttribute("uv",new THREE.Float32BufferAttribute([0,0,2,0,0,2],2));
+      const mk=(fs,uniforms,extra)=>new THREE.ShaderMaterial(Object.assign({vertexShader:VS,fragmentShader:fs,uniforms,depthTest:false,depthWrite:false},extra||{}));
+      this.matDown=mk(`precision highp float; varying vec2 vUv; uniform sampler2D tSrc; uniform vec2 texel; uniform float thresh;
+        void main(){ vec3 c = (texture2D(tSrc, vUv + texel * vec2(-1.0, -1.0)).rgb + texture2D(tSrc, vUv + texel * vec2(1.0, -1.0)).rgb + texture2D(tSrc, vUv + texel * vec2(-1.0, 1.0)).rgb + texture2D(tSrc, vUv + texel * vec2(1.0, 1.0)).rgb) * 0.25;
+          if (thresh > 0.0) { float l = max(c.r, max(c.g, c.b)); c *= smoothstep(thresh, thresh * 2.2, l); c = min(c, vec3(14.0)); }
+          gl_FragColor = vec4(c, 1.0); }`,{tSrc:{value:null},texel:{value:new THREE.Vector2()},thresh:{value:0}});
+      this.matUp=mk(`precision highp float; varying vec2 vUv; uniform sampler2D tSrc; uniform vec2 texel; uniform float gain;
+        void main(){ vec3 c = (texture2D(tSrc, vUv + texel * vec2(-1.0, -1.0)).rgb + texture2D(tSrc, vUv + texel * vec2(1.0, -1.0)).rgb + texture2D(tSrc, vUv + texel * vec2(-1.0, 1.0)).rgb + texture2D(tSrc, vUv + texel * vec2(1.0, 1.0)).rgb) * 0.25;
+          gl_FragColor = vec4(c * gain, 1.0); }`,{tSrc:{value:null},texel:{value:new THREE.Vector2()},gain:{value:1}},
+        {blending:THREE.AdditiveBlending,transparent:true});
+      this.matFinal=mk(`precision highp float; varying vec2 vUv;
+        uniform sampler2D tScene; uniform sampler2D tBloom; uniform vec2 res; uniform vec2 center;
+        uniform float motion; uniform float time; uniform float bloomK; uniform float exposure; uniform float flash; uniform vec3 tint;
+        float hash(vec2 p){ p = fract(p * vec2(443.897, 441.423)); p += dot(p, p.yx + 19.19); return fract((p.x + p.y) * p.x); }
+        // same ACES fit three.js uses, so the post path and the no-post fallback grade alike
+        vec3 rrt(vec3 v){ vec3 a = v * (v + 0.0245786) - 0.000090537; vec3 b = v * (0.983729 * v + 0.4329510) + 0.238081; return a / b; }
+        vec3 aces(vec3 c){ c *= 1.0 / 0.6;
+          c = mat3(0.59719, 0.07600, 0.02840, 0.35458, 0.90834, 0.13383, 0.04823, 0.01566, 0.83777) * c; c = rrt(c);
+          c = mat3(1.60475, -0.10208, -0.00327, -0.53108, 1.10813, -0.07276, -0.07367, -0.00605, 1.07602) * c; return clamp(c, 0.0, 1.0); }
+        void main(){
+          vec2 d = vUv - center; float asp = res.x / res.y;
+          float r = length(d * vec2(asp, 1.0));
+          // radial streak, strongest at the frame edge — explosions push it, turn idle leaves it calm
+          float mb = motion * smoothstep(0.12, 0.85, r);
+          float j = hash(vUv * res + time);
+          vec3 col = vec3(0.0);
+          for (int i = 0; i < TAPS; i++) { float t = (float(i) + j) / float(TAPS); col += texture2D(tScene, vUv - d * mb * t).rgb; }
+          col /= float(TAPS);
+          #ifdef CHROMA
+            float ca = 0.0016 + motion * 0.02; col.r = mix(col.r, texture2D(tScene, vUv - d * (mb + ca * r)).r, 0.5); col.b = mix(col.b, texture2D(tScene, vUv + d * ca * r).b, 0.5);
+          #endif
+          col += texture2D(tBloom, vUv).rgb * bloomK;
+          col *= exposure;
+          col = aces(col);
+          // grade: a little contrast, warm highs / cool lows, then the explosion wash
+          float l = dot(col, vec3(0.2126, 0.7152, 0.0722));
+          col = mix(vec3(l), col, 1.06);
+          col = mix(col, col * col * (3.0 - 2.0 * col), 0.12);
+          col *= mix(vec3(0.94, 0.98, 1.07), vec3(1.05, 1.0, 0.94), l);
+          col += tint * flash * (0.25 + 0.75 * smoothstep(0.25, 0.95, r));
+          col *= 1.0 - 0.42 * smoothstep(0.35, 1.15, r);
+          col = pow(max(col, 0.0), vec3(1.0 / 2.2));
+          col += (hash(vUv * res * 0.5 + time * 7.3) - 0.5) * 0.03;
+          gl_FragColor = vec4(col, 1.0);
+        }`,{tScene:{value:null},tBloom:{value:null},res:{value:new THREE.Vector2()},center:{value:new THREE.Vector2(0.5,0.56)},
+          motion:{value:0},time:{value:0},bloomK:{value:0.06},exposure:{value:1.0},flash:{value:0},tint:{value:new THREE.Color(0.9,0.55,0.2)}},
+        {defines:Object.assign({TAPS:gq().taps},GFX.tier==="high"?{CHROMA:1}:{})});
+      this.scene=new THREE.Scene();this.cam=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
+      this.quad=new THREE.Mesh(g,this.matFinal);this.quad.frustumCulled=false;this.scene.add(this.quad);
+      this.ok=true;
+      this.resize();
+    }catch(e){this.ok=false;}
+  },
+  dispose(){if(this.rt)this.rt.dispose();for(const m of this.mips)m.dispose();this.rt=null;this.mips=[];},
+  resize(){
+    if(!this.ok)return;
+    const sz=renderer.getDrawingBufferSize(new THREE.Vector2());
+    const w=Math.max(64,Math.round(sz.x*GFX.scale)),h=Math.max(64,Math.round(sz.y*GFX.scale));
+    if(w===this.w&&h===this.h&&this.rt)return;
+    this.dispose();this.w=w;this.h=h;
+    const q=gq();
+    this.rt=new THREE.WebGLRenderTarget(w,h,{type:THREE.HalfFloatType,samples:q.msaa,depthBuffer:true,minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter});
+    let mw=w,mh=h;
+    for(let i=0;i<q.mips;i++){
+      mw=Math.max(2,mw>>1);mh=Math.max(2,mh>>1);
+      this.mips.push(new THREE.WebGLRenderTarget(mw,mh,{type:THREE.HalfFloatType,depthBuffer:false,minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter}));
+    }
+    this.matFinal.uniforms.res.value.set(w,h);
+  },
+  pass(mat,target){this.quad.material=mat;renderer.setRenderTarget(target);renderer.render(this.scene,this.cam);},
+  render(time){
+    renderer.setRenderTarget(this.rt);renderer.render(scene,camera);
+    const M=this.mips,d=this.matDown.uniforms,u=this.matUp.uniforms;
+    let src=this.rt;
+    for(let i=0;i<M.length;i++){
+      d.tSrc.value=src.texture;d.texel.value.set(1/src.width,1/src.height);d.thresh.value=i===0?1.15:0;
+      this.pass(this.matDown,M[i]);src=M[i];
+    }
+    const ac=renderer.autoClear;renderer.autoClear=false;
+    for(let i=M.length-1;i>0;i--){
+      u.tSrc.value=M[i].texture;u.texel.value.set(0.5/M[i].width,0.5/M[i].height);u.gain.value=1.0;
+      this.pass(this.matUp,M[i-1]);
+    }
+    renderer.autoClear=ac;
+    const f=this.matFinal.uniforms;
+    f.tScene.value=this.rt.texture;f.tBloom.value=M[0].texture;f.motion.value=this.motion;f.time.value=time%100;f.flash.value=this.flash;
+    this.pass(this.matFinal,null);
+  },
+};
+function applyGfxTier(tier){
+  GFX.tier=tier;
+  const q=gq();
+  if(!renderer)return;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,q.dpr));
+  scene.traverse(o=>{if(o.material){const ms=Array.isArray(o.material)?o.material:[o.material];for(const m of ms)m.needsUpdate=true;}});
+  Post.dispose();Post.w=0;Post.init();
+  renderer.toneMapping=Post.ok?THREE.NoToneMapping:THREE.ACESFilmicToneMapping;
+  // the post pipeline does its own vignette — hide the CSS one to avoid double-darkening
+  $("vignette").style.display=Post.ok?"none":"";
+}
+function gfxLabel(){const b=$("gfxBtn");if(b)b.textContent="gfx: "+GFX.pref;}
+function setGfxPref(pref){
+  GFX.pref=pref;GFX.scale=1;GFX.ups=0;
+  try{localStorage.setItem(GFX_KEY,pref);}catch(e){}
+  const canPost=renderer.capabilities.isWebGL2;
+  let tier=pref==="auto"?((/mobile|android|iphone|ipad|touch/i.test(navigator.userAgent)||Math.min(innerWidth,innerHeight)<560)?"med":"high"):pref;
+  if(!canPost)tier="low";
+  applyGfxTier(tier);
+  gfxLabel();
+}
+let _ft=0,_fn=0,_fq=0;
+function adaptQuality(nowMs){
+  const dtms=nowMs-_fq;_fq=nowMs;
+  if(GFX.pref!=="auto"||dtms>250||dtms<=0||document.hidden)return;
+  _ft+=dtms;_fn++;
+  if(_fn<75)return;
+  const avg=_ft/_fn;_ft=0;_fn=0;
+  if(avg>25){
+    if(Post.ok&&GFX.scale>0.62){GFX.scale=Math.max(0.6,GFX.scale-0.14);Post.resize();}
+    else if(GFX.tier==="high"){GFX.scale=0.85;applyGfxTier("med");}
+    else if(GFX.tier==="med"){GFX.scale=1;applyGfxTier("low");}
+  }else if(avg<12.5&&Post.ok&&GFX.scale<1&&GFX.ups<3){GFX.ups++;GFX.scale=Math.min(1,GFX.scale+0.1);Post.resize();}
+}
 
 /* shared caches */
 const GEO={},MATS={};
@@ -1279,12 +1416,30 @@ function addGirderRect(x,y,w=170,h=22){
 }
 
 /* ============================ BACKGROUND ============================ */
-let water=null,skyMesh=null,sunSpr=null,stars=null,clouds=[],mtns=[],leaves=[],fireflies=[],bgGroup=null;
+let water=null,skyMesh=null,sunSpr=null,stars=null,clouds=[],mtns=[],leaves=[],fireflies=[],bgGroup=null,envRT=null;
 function buildBackground(theme){
   const T=THEMES[theme];bgGroup=new THREE.Group();scene.add(bgGroup);
   scene.fog=new THREE.Fog(new THREE.Color(T.fog),2200,3600);
   hemi.color.set(T.hemiSky);hemi.groundColor.set(T.hemiGnd);
   keyL.color.set(T.key);keyL.intensity=T.keyI;rimL.color.set(T.rim);
+  // PMREM env: bake the themed sky into an env map so the Standard materials
+  // (beavers, logs, crates, terrain) pick up real sky light + soft reflections.
+  if(envRT){envRT.dispose();envRT=null;}
+  {
+    const pmrem=new THREE.PMREMGenerator(renderer);
+    const envScene=new THREE.Scene();
+    const sunDir=new THREE.Vector3(T.sunPos[0]-W/2,T.sunPos[1]-H/2,-2000).normalize();
+    const envMat=new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,
+      uniforms:{cTop:{value:new THREE.Color(T.skyTop)},cMid:{value:new THREE.Color(T.skyMid)},cBot:{value:new THREE.Color(T.skyBot)},sunDir:{value:sunDir},sunCol:{value:new THREE.Color(T.sun)},str:{value:0.5}},
+      vertexShader:"varying vec3 vDir;void main(){vDir=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}",
+      fragmentShader:"uniform vec3 cTop,cMid,cBot,sunCol,sunDir;uniform float str;varying vec3 vDir;\n        void main(){vec3 d=normalize(vDir);float h=d.y*0.5+0.5;\n        vec3 sky=mix(cBot,cMid,smoothstep(0.0,0.45,h));sky=mix(sky,cTop,smoothstep(0.45,1.0,h));\n        float sd=max(0.0,dot(d,sunDir));sky+=sunCol*(pow(sd,24.0)*0.35+pow(sd,256.0)*1.4);\n        gl_FragColor=vec4(sky*str,1.0);}" });
+    const envGeo=new THREE.SphereGeometry(60,16,12);
+    envScene.add(new THREE.Mesh(envGeo,envMat));
+    envRT=pmrem.fromScene(envScene,0.06);
+    pmrem.dispose();envGeo.dispose();envMat.dispose();
+    scene.environment=envRT.texture;
+    worldDisposables.push(envRT);
+  }
   const skyT=canvasTex(64,512,(x)=>{const g=x.createLinearGradient(0,0,0,512);g.addColorStop(0,T.skyTop);g.addColorStop(.55,T.skyMid);g.addColorStop(1,T.skyBot);x.fillStyle=g;x.fillRect(0,0,64,512);});
   worldDisposables.push(skyT);
   const skyM=new THREE.MeshBasicMaterial({map:skyT,fog:false});worldDisposables.push(skyM);
@@ -1328,11 +1483,11 @@ function buildBackground(theme){
   }
   const wg=new THREE.PlaneGeometry(W+500,330,72,6);worldDisposables.push(wg);
   const wm=new THREE.ShaderMaterial({transparent:true,depthWrite:false,fog:false,
-    uniforms:{t:{value:0},cDeep:{value:new THREE.Color(T.waterDeep)},cShal:{value:new THREE.Color(T.water)},cFoam:{value:new THREE.Color(T.foam)},sunX:{value:T.sunPos[0]},night:{value:T.stars?1:0}},
+    uniforms:{t:{value:0},cDeep:{value:new THREE.Color(T.waterDeep)},cShal:{value:new THREE.Color(T.water)},cFoam:{value:new THREE.Color(T.foam)},cSky:{value:new THREE.Color(T.skyMid)},sunX:{value:T.sunPos[0]},night:{value:T.stars?1:0}},
     vertexShader:`uniform float t;varying vec2 vUv;varying float vX;
       void main(){vUv=uv;vec3 p=position;p.y+=sin(p.x*0.014+t*2.1)*5.0*pow(uv.y,3.0)+sin(p.x*0.031+t*3.3)*2.5*pow(uv.y,4.0);vX=p.x;
       gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.0);}`,
-    fragmentShader:`uniform float t;uniform vec3 cDeep;uniform vec3 cShal;uniform vec3 cFoam;uniform float sunX;uniform float night;
+    fragmentShader:`uniform float t;uniform vec3 cDeep;uniform vec3 cShal;uniform vec3 cFoam;uniform vec3 cSky;uniform float sunX;uniform float night;
       varying vec2 vUv;varying float vX;
       void main(){
         vec3 col=mix(cDeep,cShal,pow(vUv.y,1.4));
@@ -1342,6 +1497,9 @@ function buildBackground(theme){
         col+=cFoam*sp*0.7;
         float streak=exp(-abs(vX+960.0-sunX)*0.004)*vUv.y;
         col+=cFoam*streak*(0.22+0.1*sin(t*2.0+vUv.y*20.0));
+        // sky reflection: the far edge mirrors the sky, fading into the near water
+        vec3 skyR=mix(cSky*0.35,cSky,pow(vUv.y,1.5));
+        col=mix(col,skyR,0.30*pow(vUv.y,1.3));
         float foam=smoothstep(0.955,0.995,vUv.y+sin(vX*0.04+t*3.0)*0.012);
         col=mix(col,cFoam,foam*0.85);
         col*=1.0-night*0.15;
@@ -3045,6 +3203,11 @@ $("btnScores").addEventListener("click",()=>{SFX.click();showScores();});
 $("btnScoresClose").addEventListener("click",()=>{SFX.click();closeScores();});
 $("initsInput").addEventListener("input",e=>{setInits(e.target.value);});
 $("tglShake").addEventListener("click",()=>{G.shakeOn=!G.shakeOn;SAVE.shake=G.shakeOn;persist();$("tglShake").classList.toggle("on",G.shakeOn);SFX.click();});
+$("gfxBtn").addEventListener("click",()=>{
+  const order=["auto","high","med","low"];
+  setGfxPref(order[(order.indexOf(GFX.pref)+1)%4]);
+  SFX.click();
+});
 $("tglTouch").addEventListener("click",()=>{
   G.touchForced=!G.touchForced;
   document.body.classList.toggle("touch",G.touchForced||matchMedia("(pointer:coarse)").matches);
@@ -3061,7 +3224,7 @@ document.addEventListener("visibilitychange",()=>{
 });
 window.addEventListener("resize",()=>{
   camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth,innerHeight);composer.setSize(innerWidth,innerHeight);
+  renderer.setSize(innerWidth,innerHeight);Post.resize();
   updateRotateHint();
 });
 matchMedia("(pointer:coarse)").addEventListener?.("change",m=>{
@@ -3071,18 +3234,13 @@ if(matchMedia("(pointer:coarse)").matches)document.body.classList.add("touch");
 
 /* ============================ MAIN LOOP ============================ */
 const STEP=1/120;
-let acc=0,lastT=performance.now(),emaDt=16,perfChecked=0;
+let acc=0,lastT=performance.now(),emaDt=16;
 function frame(nowMs){
   requestAnimationFrame(frame);
   let dt=(nowMs-lastT)/1000;lastT=nowMs;
   if(dt>.05)dt=.05;
   emaDt=emaDt*.95+dt*1000*.05;
-  if(emaDt>30&&perfChecked<2&&nowMs>8000){
-    perfChecked++;
-    if(pixelRatio>1.2){pixelRatio=1.2;renderer.setPixelRatio(pixelRatio);composer.setPixelRatio(pixelRatio);}
-    else bloomPass.enabled=false;
-    emaDt=16;
-  }
+  adaptQuality(nowMs);
   const realDt=dt;
   if(G.slowT>0){G.slowT-=realDt;dt*=.32;}
   G.time+=realDt;
@@ -3117,7 +3275,9 @@ function frame(nowMs){
   updateReticle(animT);updateGhost(animT);
   updateCamera(realDt,animT);
   syncHUD();
-  composer.render();
+  Post.motion=clamp(G.shake/55,0,1)*0.055;
+  Post.flash=clamp(G.shake/55,0,1)*0.4;
+  if(Post.ok)Post.render(G.time);else renderer.render(scene,camera);
 }
 /* logo letters */
 (()=>{const w=$("logoWord");"BEAVERZ".split("").forEach((ch,i)=>{const s=document.createElement("span");s.textContent=ch;s.style.animationDelay=(-i*.35)+"s";w.appendChild(s);});})();
@@ -3125,6 +3285,11 @@ setMute(AU.muted);
 buildArsenal();
 updateCareerUI();
 buildDemo();
+// gfx pref: ?gfx= override > localStorage > auto
+(()=>{const q=new URLSearchParams(location.search).get("gfx");
+  if(q&&["auto","high","med","low"].includes(q))setGfxPref(q);
+  else{let s=null;try{s=localStorage.getItem(GFX_KEY);}catch(e){}
+    setGfxPref(s&&["auto","high","med","low"].includes(s)?s:"auto");}})();
 showScreen("title");
 clearInterval(bootInt);
 $("bootScreen").classList.add("fadeout");
