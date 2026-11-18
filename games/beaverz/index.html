@@ -943,6 +943,7 @@ function auInit(){
   const len=ctx.sampleRate*2,buf=ctx.createBuffer(1,len,ctx.sampleRate),d=buf.getChannelData(0);
   for(let i=0;i<len;i++)d[i]=Math.random()*2-1;
   AU.noise=buf;AU.ready=true;
+  if(G.teams&&G.teams.length)voxPrep();
 }
 function auResume(){if(AU.ctx&&AU.ctx.state==="suspended")AU.ctx.resume();}
 function setMute(m){
@@ -1020,6 +1021,66 @@ const SFX={
   cricket(){if(!this.ok())return;const t=now();for(let i=0;i<4;i++)noiseHit(t+i*.05,.02,.02,"highpass",5200,undefined,4);},
   owl(){if(!this.ok())return;const t=now();osc("sine",395,t,.22,.05,340);osc("sine",395,t+.3,.3,.05,320);},
 };
+/* ============================ VOICES ============================
+   Six beaver characters (voices/*.mp3 — one sprite per character, offsets in
+   voices/voices.json). Generated with Kokoro TTS, pitched up into beaver range.
+   Each beaver is handed a character at match start; say() picks a line from a
+   category, plays it through the SFX bus (so mute + volume apply), panned by
+   where the beaver stands, and returns the text so callers can subtitle it. */
+const VOICE_IDS=["bruiser","squeak","gnawsalot","rascal","hoser","sass"];
+const VOX_PRI={ko:3,drown:3,win:3,hurt:2,big:2,oops:2,turn:1,fire:1,gloat:1};
+const VOX={map:null,buf:{},loading:{},active:0};
+function voxManifest(){
+  if(VOX.map||VOX.mapP)return VOX.mapP;
+  VOX.mapP=fetch("voices/voices.json?v=1").then(r=>r.json()).then(m=>{VOX.map=m;}).catch(()=>{VOX.mapP=null;});
+  return VOX.mapP;
+}
+function voxLoad(id){
+  if(!AU.ctx||VOX.buf[id]||VOX.loading[id])return;
+  VOX.loading[id]=fetch(`voices/${id}.mp3?v=1`).then(r=>r.arrayBuffer())
+    .then(ab=>new Promise((res,rej)=>AU.ctx.decodeAudioData(ab,res,rej)))
+    .then(b=>{VOX.buf[id]=b;}).catch(()=>{VOX.loading[id]=null;});
+}
+function voxPrep(){voxManifest();if(!AU.ctx)return;for(const tm of G.teams)for(const b of tm.beavers)if(b.voice)voxLoad(b.voice.id);}
+function assignVoices(){
+  /* interleave the teams so both sides get distinct characters first; a repeat
+     character gets pitched up/down so it still sounds like a different beaver */
+  const pool=[...VOICE_IDS].sort(()=>Math.random()-.5);let vi=0;
+  const most=Math.max(...G.teams.map(t=>t.beavers.length));
+  for(let i=0;i<most;i++)for(const tm of G.teams){const b=tm.beavers[i];if(!b)continue;
+    const rep=Math.floor(vi/pool.length);
+    b.voice={id:pool[vi%pool.length],rate:(rep?(vi%2?.89:1.12):1)*rand(.97,1.03)};vi++;}
+  voxPrep();
+}
+function say(b,cat,o={}){
+  if(!b||!b.voice||G.demo||!VOX.map)return null;
+  const lines=(VOX.map[b.voice.id]||{})[cat];if(!lines||!lines.length)return null;
+  const pri=VOX_PRI[cat]||1,ctx=AU.ctx,t=ctx?ctx.currentTime:0,cur=b._vox;
+  if(cur&&cur.end>t&&cur.pri>=pri&&!(pri===3&&cur.pri<3))return null;  // don't talk over yourself unless it's more important
+  if(VOX.active>=2&&pri<3)return null;                                  // two voices at once, max — KOs always get through
+  b._voxLast=b._voxLast||{};
+  let i=randi(0,lines.length-1);if(lines.length>1&&i===b._voxLast[cat])i=(i+1)%lines.length;
+  b._voxLast[cat]=i;
+  const[st,dur,text]=lines[i],buf=VOX.buf[b.voice.id];
+  if(buf&&AU.ready){
+    if(cur&&cur.end>t&&cur.src){try{cur.src.stop();}catch(e){}}
+    const src=ctx.createBufferSource();src.buffer=buf;src.playbackRate.value=b.voice.rate;
+    const g=ctx.createGain();g.gain.value=1.15;src.connect(g);let out=g;
+    if(ctx.createStereoPanner){const p=ctx.createStereoPanner();p.pan.value=clamp((b.x-G.camX)/900,-.65,.65);g.connect(p);out=p;}
+    out.connect(AU.sfxG);
+    const when=t+(o.delay||0),off=Math.max(0,st-.03),len=dur+.09;
+    src.start(when,off,len);VOX.active++;
+    let done=false;src.onended=()=>{if(!done){done=true;VOX.active=Math.max(0,VOX.active-1);}};
+    b._vox={src,end:when+len/b.voice.rate,pri};
+  }
+  return text;
+}
+/* speech subtitle over the beaver (small popup, so long lines fit) */
+function sayPop(b,text,col,delay){
+  if(!text)return;
+  const f=()=>{if(b.gone&&!b.dead)return;popup(b.x+rand(-8,8),b.y+134,text.toUpperCase(),col||"#fff6e4",false,true);};
+  delay?setTimeout(f,delay*1000):f();
+}
 function track(ev,params){try{if(typeof gtag==="function")gtag("event",ev,Object.assign({game:"beaverz"},params||{}));}catch(e){}}
 
 /* ============================ DATA ============================ */
@@ -1364,27 +1425,28 @@ function updateRings(dt){for(const R of RINGS){if(!R.on)continue;R.t+=dt;const k
   if(k>=1){R.on=false;R.r.visible=false;continue;}
   const s=lerp(R.s0,R.s1,easeOut(k));R.r.scale.set(s,s,1);R.m.opacity=.9*(1-k);}}
 const POPUPS=[];
-for(let i=0;i<14;i++){const c=document.createElement("canvas");c.width=256;c.height=96;
+/* fixed 720px canvases: texture size never changes after first upload — each popup crops to its text via UV repeat */
+for(let i=0;i<18;i++){const c=document.createElement("canvas");c.width=720;c.height=96;
   const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;
   const m=new THREE.SpriteMaterial({map:t,transparent:true,depthTest:false,depthWrite:false,toneMapped:false});
   const s=new THREE.Sprite(m);s.visible=false;s.renderOrder=40;s.scale.set(150,56,1);scene.add(s);
   POPUPS.push({s,m,c,t,on:false,tt:0,life:1.15,x:0,y:0,vy:70});}
-function popup(x,y,text,col="#fff6e4",big=false){
-  for(const p of POPUPS){if(p.on)continue;p.on=true;p.tt=0;p.x=x;p.y=y;p.vy=big?90:70;p.life=big?1.5:1.1;
+function popup(x,y,text,col="#fff6e4",big=false,small=false){
+  for(const p of POPUPS){if(p.on)continue;p.on=true;p.tt=0;p.x=x;p.y=y;p.vy=big?90:small?45:70;p.life=big?1.5:small?1.7:1.1;
     const cx=p.c.getContext("2d");
-    const fs=big?52:44;
+    const fs=big?52:small?36:44;p.small=small;
     cx.font=`900 ${fs}px Nunito, sans-serif`;
-    const tw=Math.min(512,Math.ceil(cx.measureText(text).width)+24);p.ar=tw/96;
-    p.c.width=tw;p.c.height=96;
-    cx.clearRect(0,0,tw,96);
+    const tw=Math.min(720,Math.ceil(cx.measureText(text).width)+24);p.ar=tw/96;
+    cx.clearRect(0,0,720,96);
     cx.font=`900 ${fs}px Nunito, sans-serif`;cx.textAlign="center";cx.textBaseline="middle";
-    cx.lineWidth=9;cx.strokeStyle="rgba(20,10,5,.92)";cx.strokeText(text,tw/2,48);cx.fillStyle=col;cx.fillText(text,tw/2,48);
+    cx.lineWidth=9;cx.strokeStyle="rgba(20,10,5,.92)";cx.strokeText(text,360,48,696);cx.fillStyle=col;cx.fillText(text,360,48,696);
+    p.t.repeat.set(tw/720,1);p.t.offset.set((1-tw/720)/2,0);
     p.t.needsUpdate=true;p.s.visible=true;p.s.position.set(x,y,80);p.m.opacity=1;p.s.scale.set(0,0,1);return;}
 }
 function updatePopups(dt){for(const p of POPUPS){if(!p.on)continue;p.tt+=dt;const k=p.tt/p.life;
   if(k>=1){p.on=false;p.s.visible=false;continue;}
   p.y+=p.vy*dt;p.vy*=Math.pow(.94,dt*60);p.s.position.set(p.x,p.y,80);
-  const pop=k<.15?easeOut(k/.15):1,hh=(p.life>1.2?71:56)*pop;p.s.scale.set(hh*p.ar,hh,1);
+  const pop=k<.15?easeOut(k/.15):1,hh=(p.life>1.2?71:p.small?48:56)*pop;p.s.scale.set(hh*p.ar,hh,1);
   p.m.opacity=k>.6?1-(k-.6)/.4:1;}}
 
 /* ============================ TERRAIN ============================ */
@@ -1859,7 +1921,8 @@ function animateBeaver(b,dt,t){
   if(b.angryT>0)b.angryT=Math.max(0,b.angryT-dt);
   /* knocked into the air? the daze + the one-liner wait until they're back on their feet */
   if(ground&&!b.knocked&&!b.dead){
-    if(b.dazePend>0){b.dazeT=Math.max(b.dazeT,b.dazePend);b.dazePend=0;}
+    if(b.dazePend>0){b.dazeT=Math.max(b.dazeT,b.dazePend);b.dazePend=0;
+      if(b.voxBig){b.voxBig=false;sayPop(b,say(b,"big",{delay:.35}),"#ffe9b0",.35);}}
     if(b.quipPend&&b.hurtT<b.hurtDur*.5){const q=b.quipPend;b.quipPend=null;beaverQuip(b,q.list,q.col);}
   }
   const hurtK=b.hurtT>0?b.hurtT/b.hurtDur:0;        // 1 → 0 over the flinch
@@ -2282,7 +2345,7 @@ function explode(x,y,r,dmg,credit){
   /* near misses: everyone in the splash zone ducks; on a clean miss someone gloats */
   for(const b of near){b.cowerT=Math.max(b.cowerT,.75);b.idleAct=null;}
   if(!hitB&&near.length&&!G.demo&&Math.random()<.55){const nb=pick(near);
-    if(!(credit&&credit.beaver===nb))setTimeout(()=>beaverQuip(nb,QUIPS_MISS,"#cfe9ff"),650);}
+    if(!(credit&&credit.beaver===nb))setTimeout(()=>{const l=say(nb,"gloat");l?sayPop(nb,l,"#cfe9ff"):beaverQuip(nb,QUIPS_MISS,"#cfe9ff");},650);}
   /* camera holds on the enemy that got hit (or the impact point on a miss) so you can see the damage */
   G.lastHit={x:hitB?hitB.x:x,y:hitB?hitB.y:y,b:hitB};
   if(!G.demo&&(G.phase==="resolve"||G.phase==="aim"))G.hitHold=Math.max(G.hitHold||0,hitB?.9:.55);
@@ -2305,7 +2368,10 @@ function damageBeaver(b,dmg,credit){
   b.dazePend=Math.max(b.dazePend,dmg>=18?1+sev*.9:.05);b.plateBump=1;b.idleAct=null;
   const shooter=credit&&credit.beaver;
   b.angryAt=(shooter&&shooter!==b&&!shooter.dead)?shooter.x:null;
-  if(dmg>=10&&b.hp>0&&Math.random()<.7)
+  let spoke=null;
+  if(dmg>=5&&b.hp>0){spoke=say(b,shooter===b?"oops":"hurt");sayPop(b,spoke,shooter===b?"#ffd76a":"#fff6e4");
+    if(spoke&&dmg>=30&&Math.random()<.55)b.voxBig=true;}   // follow-up groan once they're down and dazed
+  if(!spoke&&dmg>=10&&b.hp>0&&Math.random()<.7)
     b.quipPend=shooter===b?{list:QUIPS_SELF,col:"#ffd76a"}:b.hp<35?{list:QUIPS_LOW,col:"#ffb0b8"}:{list:QUIPS_HIT,col:"#fff6e4"};
   /* hit-cam: the camera holds on everyone hurt this volley until their HP bars finish draining */
   if(!G.demo&&(G.phase==="resolve"||G.phase==="aim")){if(!G.hitSet.includes(b))G.hitSet.push(b);G.hitHold=Math.max(G.hitHold||0,1.2);}
@@ -2320,7 +2386,7 @@ function damageBeaver(b,dmg,credit){
 function killBeaver(b,credit){
   if(b.dead)return;
   b.dead=true;b.hp=0;drawPlate(b);dirtyRosters();
-  SFX.death();
+  SFX.death();b.voxBig=false;sayPop(b,say(b,"ko"),"#ffb0b8");
   G.deathQueue.push({b,t:.55,credit:b.lastCredit||credit});
   if(!G.demo&&(G.phase==="resolve"||G.phase==="aim"))G.hitHold=Math.max(G.hitHold||0,1.3);
   if(b.model)b.model.arrow.visible=false;
@@ -2346,6 +2412,7 @@ function drownBeaver(b){
   if(b.dead)return;
   splashFX(b.x,G.waterY,1.3);SFX.splash();
   popup(b.x,G.waterY+60,"SWEPT AWAY!","#9fd8ff",true);
+  {const l=say(b,"drown");if(l)popup(b.x,G.waterY+120,l.toUpperCase(),"#cfe9ff",false,true);}
   b.dead=true;b.hp=0;dirtyRosters();
   if(b.lastCredit&&b.lastCredit.team&&b.lastCredit.team!==G.teams[b.teamIdx])b.lastCredit.team.stats.kos++;
   removeBeaverModel(b);b.gone=true;
@@ -2566,6 +2633,7 @@ function fireWeapon(wid,power,aiOpts={}){
   if(w.ammo!==Infinity){tm.ammo[wid]--;refreshArsenal();}
   const credit={team:tm,beaver:b,counted:false};
   b.recoilT=1;  // arm-kick recoil animation
+  if(["bazooka","grenade","mortar","log","airstrike","uzi"].includes(wid)&&Math.random()<.42)sayPop(b,say(b,"fire"),"#ffd76a");
   const a=b.angle*DEG,fx=b.facing,mz=muzzlePos(b,6);
   const spd=launchSpeed(power);
   const vx=Math.cos(a)*fx*spd,vy=Math.sin(a)*spd;
@@ -2816,6 +2884,7 @@ function checkEnd(){
   if(alive.length<=1){
     G.winner=alive.length===1?G.teams.indexOf(alive[0]):-1;
     G.phase="over";G.overT=1.8;G.slowT=.85;
+    if(alive.length===1){const w=pick(alive[0].beavers.filter(b=>!b.dead));if(w)setTimeout(()=>sayPop(w,say(w,"win"),alive[0].color),700);}
     G.charging=false;$("btnFire").classList.remove("charging");
   }
 }
@@ -2855,6 +2924,7 @@ function startTurn(){
   G.phase="start";G.phaseT=1.05;
   showBanner(`${G.active.name.toUpperCase()}'S TURN`,tm.color);
   SFX.sting(G.teamIdx);
+  {const who=G.active,line=say(who,"turn",{delay:.45});sayPop(who,line,tm.color,.45);}
   if(G.mode==="local")toast(`🎮 Pass to ${tm.name}!`);
   syncWind();refreshArsenal();dirtyRosters();
   if(G.arsenalHint&&G.teamIdx===0&&!tm.isAI){G.arsenalHint=false;$("btnArsenal").classList.add("attn");
@@ -3011,6 +3081,7 @@ function startMatch(seed){
     }
     G.teams.push(tm);
   }
+  assignVoices();
   G.teamIdx=0;G.turnCount=0;G.sdShown=false;G.winner=-2;G.active=null;
   G.phase="idle";G.shake=0;G.punch=0;G.slowT=0;G.arsenalHint=true;
   $("roundPill").classList.remove("sd");
@@ -3647,6 +3718,7 @@ setMute(AU.muted);
 buildArsenal();
 updateCareerUI();
 buildDemo();
+voxManifest();
 // gfx pref: ?gfx= override > localStorage > auto
 (()=>{const q=new URLSearchParams(location.search).get("gfx");
   if(q&&["auto","high","med","low"].includes(q))setGfxPref(q);
