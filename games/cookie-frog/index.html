@@ -962,7 +962,7 @@ function buildBackground(){
 
 /* ---------- frog ---------- */
 const frog={
-  g:null,tile:{x:9,y:13},from:{x:9,y:13},to:{x:9,y:13},t:0,dir:null,desired:null,
+  g:null,tile:{x:9,y:13},from:{x:9,y:13},to:{x:9,y:13},t:0,dir:null,queue:[],
   rx:9,ry:13,face:Math.PI/2,blinkT:2,tongueT:0,idleTongue:4,light:null,aura:null,shadow:null,
   pupils:[],tongue:null,body:null,speed:6.3
 };
@@ -1378,14 +1378,20 @@ function wrapDist(ax,ay,bx,by){
 /* ---------- frog logic ---------- */
 function frogDecide(e){
   const mode='frog';
-  if(e.desired!=null&&walkable(e.tile.x+DIRS[e.desired].x,e.tile.y+DIRS[e.desired].y,mode))return e.desired;
-  if(e.dir!=null&&walkable(e.tile.x+DIRS[e.dir].x,e.tile.y+DIRS[e.dir].y,mode))return e.dir;
+  const q=e.queue;
+  const open=di=>walkable(e.tile.x+DIRS[di].x,e.tile.y+DIRS[di].y,mode);
+  // Turn queue (2 deep): the front turn is taken at the first tile where it's
+  // open. A zigzag swiped fast (right, down) no longer loses the first turn.
+  if(q.length&&open(q[0]))return q.shift();
+  // Stopped against a wall with a dead front turn: let the newer swipe win.
+  if(e.dir==null&&q.length>1&&open(q[1])){const d=q[1];q.length=0;return d;}
+  if(e.dir!=null&&open(e.dir))return e.dir;
   // Mobile auto-run: the frog hops on its own from a COMPLETE stop (level
   // start / after death) so a swipe is only ever for STEERING. Once it has a
   // direction, a wall STOPS it (Pac-Man style) — no auto-turn, or it would
   // clear the whole board by itself. Desktop keeps precise stop-at-wall too.
-  if(TOUCH&&G.state==='play'&&e.dir==null&&e.desired==null){
-    for(const di of [0,2,3,1]){if(walkable(e.tile.x+DIRS[di].x,e.tile.y+DIRS[di].y,mode))return di;}
+  if(TOUCH&&G.state==='play'&&e.dir==null&&!q.length){
+    for(const di of [0,2,3,1]){if(open(di))return di;}
   }
   return null;
 }
@@ -1415,9 +1421,27 @@ function frogArrive(e){
     if(G.remaining<=0)levelCleared();
   }
 }
-function setDesired(di){
-  frog.desired=di;
-  if(G.state==='play'&&!G.paused&&frog.dir!=null&&di===(frog.dir^2))reverseEntity(frog);
+const TURN_GRACE=0.32; // fraction of a tile a late turn may still cut back to
+function setDesired(di,replace){
+  const q=frog.queue,now=performance.now();
+  // Keyboard is latest-key-wins (you press in time). A swipe more than
+  // ~0.45s after the queued one means you changed your mind, not a zigzag.
+  if(replace||(q.length&&now-frog.qT>450))q.length=0;
+  frog.qT=now;
+  const live=G.state==='play'&&!G.paused;
+  if(live&&frog.dir!=null&&di===(frog.dir^2)){
+    // reversing is always instant and cancels anything queued
+    q.length=0;reverseEntity(frog);
+  }else if(q[q.length-1]!==di){
+    if(q.length>=2)q[1]=di;else q.push(di);
+  }
+  // Late-swipe grace: the frog just left a tile where this turn was open —
+  // cut the corner instead of punishing a swipe that landed ~50ms late.
+  if(live&&q.length===1&&q[0]===di&&frog.dir!=null&&di!==frog.dir&&di!==(frog.dir^2)&&frog.t<TURN_GRACE&&
+     walkable(frog.from.x+DIRS[di].x,frog.from.y+DIRS[di].y,'frog')){
+    q.length=0;
+    frog.dir=di;frog.to=nb(frog.from,di);frog.t*=0.5;
+  }
   if(!G.swiped&&TOUCH){G.swiped=true;$('swipeHint').classList.remove('on');}
 }
 function updateFrog(dt){
@@ -1619,7 +1643,7 @@ function levelCleared(){
 /* ---------- flow ---------- */
 function resetPositions(shortRelease){
   frog.tile={...LV.frogStart};frog.from={...LV.frogStart};frog.to={...LV.frogStart};
-  frog.t=0;frog.dir=null;frog.desired=null;frog.rx=LV.frogStart.x;frog.ry=LV.frogStart.y;
+  frog.t=0;frog.dir=null;frog.queue.length=0;frog.rx=LV.frogStart.x;frog.ry=LV.frogStart.y;
   frog.face=Math.PI/2;frog.tongueT=0;frog.g.visible=true;frog.g.scale.set(1,1,1);frog.g.rotation.set(0,Math.PI/2,0);
   resetFoxPositions(shortRelease);
   G.modeIdx=0;G.modeT=0;G.freeze=0;G.chain=0;
@@ -1987,7 +2011,7 @@ window.addEventListener('keydown',e=>{
   A.init();A.resume();
   const di=KEYMAP[e.code];
   if(di!=null){
-    if(G.state==='play'||G.state==='ready')setDesired(di);
+    if(G.state==='play'||G.state==='ready')setDesired(di,true);
     return;
   }
   if(e.code==='Enter'||e.code==='Space'){
@@ -2002,21 +2026,28 @@ window.addEventListener('keydown',e=>{
   if(e.code==='KeyM'){setMuted(!A.muted);return;}
   if(e.code==='KeyR'){if(G.state==='over'||G.paused)restartRun();return;}
 });
-// touch swipes
+// touch swipes — first swipe needs 22px, chained swipes (finger still down,
+// "drawing" the path) only 18px. Diagonal-ish swipes resolve to the axis
+// perpendicular to travel: moving up + swipe down-right = you meant RIGHT.
 let tS=null;
 const stage=$('stage');
 stage.addEventListener('touchstart',e=>{
   A.init();A.resume();
-  const t=e.touches[0];tS={x:t.clientX,y:t.clientY};
+  const t=e.touches[0];tS={x:t.clientX,y:t.clientY,chain:false};
 },{passive:true});
 stage.addEventListener('touchmove',e=>{
   e.preventDefault();
   if(!tS)return;
   const t=e.touches[0],dx=t.clientX-tS.x,dy=t.clientY-tS.y;
-  if(Math.max(Math.abs(dx),Math.abs(dy))>26){
-    const di=Math.abs(dx)>Math.abs(dy)?(dx>0?3:1):(dy>0?2:0);
+  const ax=Math.abs(dx),ay=Math.abs(dy),big=Math.max(ax,ay);
+  if(big>(tS.chain?18:22)){
+    const ambiguous=Math.min(ax,ay)/big>0.6;
+    if(tS.chain&&ambiguous)return; // curling finger mid-drag: wait for intent
+    let horiz=ax>ay;
+    if(ambiguous&&frog.dir!=null)horiz=(frog.dir===0||frog.dir===2);
+    const di=horiz?(dx>0?3:1):(dy>0?2:0);
     if(G.state==='play'||G.state==='ready')setDesired(di);
-    tS={x:t.clientX,y:t.clientY};
+    tS={x:t.clientX,y:t.clientY,chain:true};
   }
 },{passive:false});
 stage.addEventListener('touchend',()=>{tS=null;},{passive:true});
@@ -2153,6 +2184,7 @@ window.__tl = {
   state: () => ({ state: G.state, score: G.score, level: G.level, lives: G.lives, best: G.best, diff: G.diff, remaining: G.remaining, paused: G.paused }),
   start: () => { startGame(); return 'started'; },
   dir: (di) => { setDesired(di); return 'dir ' + di; },
+  frog: () => ({ x: frog.tile.x, y: frog.tile.y, dir: frog.dir, t: +frog.t.toFixed(2), queue: frog.queue.slice() }),
   skipCard: () => { skipCard(); return 'skip'; },
   gameOver: () => { gameOver(); return 'gameover'; },
   toMenu: () => { toMenu(); return 'menu'; },
