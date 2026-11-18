@@ -2780,7 +2780,8 @@ function clearWorld(){
   G.trees=[];G.graves=[];G.crates=[];G.deathQueue=[];G.projectiles=[];G.burst=null;
   G.phase="idle";G.active=null;G.ai=null;G.fuseRun=false;G.multiLeft=0;G.charging=false;G.power=0;
   clearGhost();
-  for(const p of PARTS){p.on=false;p.s.visible=false;}
+  for(const p of PARTS){p.on=false;}
+  partAlpha.fill(0);partSize.fill(0);partGeo.attributes.aAlpha.needsUpdate=true;partGeo.attributes.aSize.needsUpdate=true;
   for(let i=0;i<DEB_N;i++){DEBS[i].on=false;_dm.makeScale(0,0,0);debMesh.setMatrixAt(i,_dm);}
   debMesh.instanceMatrix.needsUpdate=true;
   for(const R of RINGS){R.on=false;R.r.visible=false;}
