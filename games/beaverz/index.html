@@ -85,7 +85,7 @@ body.designating #stage canvas{cursor:crosshair}
    radial-gradient(circle 4px at calc(100% - 14px) 14px,#1a0f07 40%,#c99b52 45%,transparent 60%),
    radial-gradient(circle 4px at 14px calc(100% - 14px),#1a0f07 40%,#c99b52 45%,transparent 60%),
    radial-gradient(circle 4px at calc(100% - 14px) calc(100% - 14px),#1a0f07 40%,#c99b52 45%,transparent 60%);}
-.wbtn{display:flex;align-items:center;justify-content:center;gap:10px;font-weight:900;font-size:17px;letter-spacing:.4px;
+.wbtn{display:flex;align-items:center;justify-content:center;gap:10px;font-weight:900;font-size:17px;letter-spacing:.4px;text-decoration:none;
   padding:13px 22px;border-radius:14px;background:var(--btn-grad);border:2px solid var(--edge);color:var(--amber-hi);
   box-shadow:0 5px 0 #140b05,0 10px 24px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,230,170,.2);
   transition:transform .12s ease,filter .12s ease,box-shadow .12s ease;position:relative;user-select:none}
@@ -455,7 +455,6 @@ body.touch #deskHint{display:none}
   #overBtns{grid-template-columns:1fr}
   #titleMenu .menuRow{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   #titleMenu .menuRow .wbtn{white-space:normal;font-size:13px;padding:10px 6px}
-  #titleMenu .menuRow .wbtn:last-child{grid-column:1/-1}
 }
 @media (max-height:480px){
   #rosters{transform:scale(.72);top:64px}
@@ -471,6 +470,7 @@ body.touch #deskHint{display:none}
   #titleMenu{width:min(600px,92vw);display:grid;grid-template-columns:1fr 1fr;gap:8px}
   #titleMenu .wbtn.big{font-size:19px;padding:12px 14px}
   #titleMenu .menuRow{grid-column:1/-1}
+  #titleMenu #btnArcade{grid-column:1/-1}
   #logoPlank{width:min(300px,60vw)}
   #tagline{margin-top:6px}
   #titleFoot{display:none}
@@ -615,8 +615,8 @@ body.touch #deskHint{display:none}
     <div class="menuRow">
       <button class="wbtn" id="btnHowTitle">📖 HOW TO PLAY</button>
       <button class="wbtn" id="btnScores">🏆 TOP BEAVERZ</button>
-      <a class="wbtn" id="btnArcade" href="../">🕹 DSDA ARCADE</a>
     </div>
+    <a class="wbtn" id="btnArcade" href="../">🕹 DSDA ARCADE</a>
   </div>
   <div class="panel" id="careerCard"><span id="careerTag">SERVICE RECORD</span>
     <div class="rank">
