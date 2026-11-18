@@ -944,8 +944,6 @@ function auResume(){if(AU.ctx&&AU.ctx.state==="suspended")AU.ctx.resume();}
 function setMute(m){
   AU.muted=m;SAVE.mute=m;persist();
   if(AU.ctx)AU.master.gain.setTargetAtTime(m?0:1,AU.ctx.currentTime,.04);
-  const b=$("btnSound");b.classList.toggle("muted",m);
-  $("soundIco").textContent=m?"🔇":"🔊";$("soundTxt").textContent=m?"SFX OFF":"SFX ON";
 }
 function env(g,t,a,peak,dec,end=.0001){g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(peak,t+a);g.gain.exponentialRampToValueAtTime(end,t+a+dec);}
 function osc(type,f0,t,dur,peak,f1,dest,detune=0){
