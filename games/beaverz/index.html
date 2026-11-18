@@ -1403,22 +1403,24 @@ function carve(x,y,r){
   const cx=terrain.cx,cy=H-y,SC=strataCols(THEMES[G.theme]);
   cx.save();
   cx.globalCompositeOperation="source-atop";
-  // Layered bowl: concentric stops from the rim (topsoil) to the floor (bedrock) reveal the strata
-  const g=cx.createRadialGradient(x,cy,r*.04,x,cy,r);
-  g.addColorStop(0,SC.bed);g.addColorStop(.34,SC.gravel);g.addColorStop(.58,SC.clay);
-  g.addColorStop(.78,SC.sub);g.addColorStop(.9,SC.top);g.addColorStop(1,"rgba(0,0,0,0)");
+  // Strata walls: concentric stops from the deepest layer (inner) to topsoil (rim) — exposed on the crater edge
+  const g=cx.createRadialGradient(x,cy,r*.4,x,cy,r);
+  g.addColorStop(0,SC.bed);g.addColorStop(.3,SC.gravel);g.addColorStop(.55,SC.clay);
+  g.addColorStop(.78,SC.sub);g.addColorStop(.92,SC.top);g.addColorStop(1,"rgba(0,0,0,0)");
   cx.fillStyle=g;cx.beginPath();cx.arc(x,cy,r,0,7);cx.fill();
-  // Dark inner-bowl shadow: the dug-out interior is in shadow so it reads as depth, not a flat patch
-  const inner=cx.createRadialGradient(x,cy,r*.05,x,cy,r*.72);
-  inner.addColorStop(0,"rgba(10,5,2,.62)");inner.addColorStop(.6,"rgba(10,5,2,.3)");inner.addColorStop(1,"rgba(10,5,2,0)");
-  cx.fillStyle=inner;cx.beginPath();cx.arc(x,cy,r*.74,0,7);cx.fill();
+  // The missing-terrain hole: erase the center so the ground is actually GONE (see-through), not a filled circle
+  cx.globalCompositeOperation="destination-out";
+  const hole=cx.createRadialGradient(x,cy,r*.15,x,cy,r*.5);
+  hole.addColorStop(0,"rgba(0,0,0,1)");hole.addColorStop(.75,"rgba(0,0,0,1)");hole.addColorStop(1,"rgba(0,0,0,0)");
+  cx.fillStyle=hole;cx.beginPath();cx.arc(x,cy,r*.5,0,7);cx.fill();
   // Dark rim shadow sells the depth
+  cx.globalCompositeOperation="source-atop";
   const rim=cx.createRadialGradient(x,cy,r*.8,x,cy,r*1.14);
   rim.addColorStop(0,"rgba(0,0,0,0)");rim.addColorStop(.72,"rgba(15,8,4,.5)");rim.addColorStop(1,"rgba(15,8,4,0)");
   cx.fillStyle=rim;cx.beginPath();cx.arc(x,cy,r*1.16,0,7);cx.fill();
   // Debris flecks on the rim
   cx.globalAlpha=.85;
-  for(let i=0;i<26;i++){const a=rand(0,7),d=r*rand(.72,1.04);
+  for(let i=0;i<26;i++){const a=rand(0,7),d=r*rand(.6,1.04);
     cx.fillStyle=Math.random()<.5?SC.top:THEMES[G.theme].rock;
     cx.fillRect(x+Math.cos(a)*d,cy+Math.sin(a)*d,rand(2,4),rand(2,4));}
   cx.globalAlpha=1;
