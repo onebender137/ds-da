@@ -1,0 +1,3 @@
+# FMA download staging area — tracks get placed into radio/stations/<id>/music/
+# (committed) and stay here as a scratch copy. Keep out of git: 250MB of duplicates.
+radio/fma-tracks/

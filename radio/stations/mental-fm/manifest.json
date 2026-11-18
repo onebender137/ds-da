@@ -142,16 +142,16 @@
       "duration": 140.308
     },
     {
-      "type": "music",
-      "title": "Ruller — Chica",
-      "url": "music/ruller-chica.mp3",
-      "duration": 81.778
-    },
-    {
       "type": "announce",
       "title": "Polkahole — Promo",
       "url": "announcements/promo_polkahole.mp3",
       "duration": 14.1
+    },
+    {
+      "type": "music",
+      "title": "Ruller — Chica",
+      "url": "music/ruller-chica.mp3",
+      "duration": 81.778
     }
   ]
 }
