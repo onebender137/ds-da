@@ -116,8 +116,9 @@ body.designating #stage canvas{cursor:crosshair}
 #globalBar .pill:hover{filter:brightness(1.25);transform:translateY(-1px)}
 #btnSound.muted{color:var(--dim)}
 #btnSound.muted #soundIco{filter:grayscale(1)}
-#gfxBtn{position:fixed;bottom:12px;left:12px;z-index:60;padding:7px 13px;font-weight:900;font-size:13px;color:var(--amber-hi);cursor:pointer;transition:filter .12s,transform .12s}
-#gfxBtn:hover{filter:brightness(1.25);transform:translateY(-1px)}
+.gfxRow{display:flex;align-items:center;justify-content:space-between;gap:12px;background:rgba(0,0,0,.25);border:1.5px solid rgba(255,205,120,.18);border-radius:12px;padding:9px 14px;font-weight:900;font-size:13px;color:var(--muted)}
+.gfxRow .seg{flex:1;max-width:340px}
+.gfxRow .seg button{min-width:52px;padding:7px 4px;font-size:12.5px}
 
 /* ============================ SCREENS ============================ */
 .screen{position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;padding:20px;
@@ -495,7 +496,6 @@ body.touch #deskHint{display:none}
   <button class="pill" id="btnSound" title="Mute sound effects (M) — music is on the DSDA Radio"><span id="soundIco">🔊</span><span id="soundTxt">SFX ON</span></button>
   <button class="pill" id="btnHelp" title="How to play (H)"><span>❓</span><span>HOW TO</span></button>
 </div>
-<button id="gfxBtn" class="pill" title="Graphics quality — cycles auto → high → med → low">gfx: auto</button>
 
 <!-- TITLE -->
 <div class="screen" id="titleScreen">
@@ -580,6 +580,14 @@ body.touch #deskHint{display:none}
           <div class="themeChip river sel" data-v="river"><div class="sky"></div><b>Riverday</b></div>
           <div class="themeChip autumn" data-v="autumn"><div class="sky"></div><b>Autumn Gorge</b></div>
           <div class="themeChip night" data-v="night"><div class="sky"></div><b>Moonlit Dam</b></div>
+        </div>
+      </div>
+      <div class="rule"><h4>GRAPHICS</h4>
+        <div class="seg" data-gfx id="segGfx">
+          <button data-v="auto" class="sel">🔮 Auto</button>
+          <button data-v="high">✨ High</button>
+          <button data-v="med">🔋 Med</button>
+          <button data-v="low">🪶 Low</button>
         </div>
       </div>
     </div>
@@ -673,6 +681,11 @@ body.touch #deskHint{display:none}
     <button class="wbtn" id="btnRestartMatch">🔁 &nbsp;RESTART MATCH</button>
     <div class="tglRow"><span>📳 Camera shake</span><button class="tgl on" id="tglShake"></button></div>
     <div class="tglRow"><span>👆 Touch controls</span><button class="tgl" id="tglTouch"></button></div>
+    <div class="gfxRow"><span>🎮 Graphics</span>
+      <div class="seg" data-gfx id="segGfxPause">
+        <button data-v="auto" class="sel">Auto</button><button data-v="high">High</button><button data-v="med">Med</button><button data-v="low">Low</button>
+      </div>
+    </div>
     <button class="wbtn danger" id="btnQuitTitle">🚪 &nbsp;QUIT TO TITLE</button>
   </div>
 </div>
@@ -1213,7 +1226,11 @@ function applyGfxTier(tier){
   // the post pipeline does its own vignette — hide the CSS one to avoid double-darkening
   $("vignette").style.display=Post.ok?"none":"";
 }
-function gfxLabel(){const b=$("gfxBtn");if(b)b.textContent="gfx: "+GFX.pref;}
+function syncGfxUI(){
+  document.querySelectorAll(".seg[data-gfx]").forEach(seg=>{
+    seg.querySelectorAll("button").forEach(b=>b.classList.toggle("sel",b.dataset.v===GFX.pref));
+  });
+}
 function setGfxPref(pref){
   GFX.pref=pref;GFX.scale=1;GFX.ups=0;
   try{localStorage.setItem(GFX_KEY,pref);}catch(e){}
@@ -1221,7 +1238,7 @@ function setGfxPref(pref){
   let tier=pref==="auto"?((/mobile|android|iphone|ipad|touch/i.test(navigator.userAgent)||Math.min(innerWidth,innerHeight)<560)?"med":"high"):pref;
   if(!canPost)tier="low";
   applyGfxTier(tier);
-  gfxLabel();
+  syncGfxUI();
 }
 let _ft=0,_fn=0,_fq=0;
 function adaptQuality(nowMs){
@@ -1333,6 +1350,7 @@ function updatePopups(dt){for(const p of POPUPS){if(!p.on)continue;p.tt+=dt;cons
 
 /* ============================ TERRAIN ============================ */
 let terrain=null,worldGroup=null,worldDisposables=[];
+
 function solid(x,y){if(x<0||x>=W||y<=0||y>=H)return false;const mx=(x/CELL)|0,my=((H-y)/CELL)|0;return mask[my*MW+mx]===1;}
 function surfaceY(x){if(x<0||x>=W)return null;const mx=clamp((x/CELL)|0,0,MW-1);
   for(let my=0;my<MH;my++)if(mask[my*MW+mx])return H-my*CELL;return null;}
@@ -2043,6 +2061,7 @@ function addShake(amp,x,y){
 function explode(x,y,r,dmg,credit){
   carve(x,y,r*.92);
   explosionFX(x,y,r);SFX.boom(r/55);
+  let hitB=null,maxDm=0;
   for(const tm of G.teams)for(const b of tm.beavers){
     if(b.dead||b.gone)continue;
     const dx=b.x-x,dy=(b.y+28)-y,d=Math.hypot(dx,dy);
@@ -2050,12 +2069,15 @@ function explode(x,y,r,dmg,credit){
       const fall=clamp(1-d/(r*1.3),0,1);
       const dm=Math.round(dmg*(.35+.65*fall));
       damageBeaver(b,dm,credit);
+      if(dm>maxDm){maxDm=dm;hitB=b;}
       const k=(250+dmg*5)*fall+140;
       const nl=Math.max(d,1);
       b.vx+=dx/nl*k;b.vy+=dy/nl*k+150;
       b.state="air";b.knocked=true;b.apex=b.y;b.flip=false;
     }
   }
+  /* camera holds on the enemy that got hit (or the impact point on a miss) so you can see the damage */
+  G.lastHit={x:hitB?hitB.x:x,y:hitB?hitB.y:y,b:hitB};
   for(let i=G.crates.length-1;i>=0;i--){const c=G.crates[i];
     if(Math.hypot(c.x-x,c.y-y)<r){spawnPart({x:c.x,y:c.y,z:50,tex:smokeTex,col:"#a8743f",s0:20,s1:40,life:.5,a0:.7});removeCrate(c);}}
 }
@@ -2591,7 +2613,7 @@ function startTurn(){
   if(!G.active){checkEnd();return;}
   G.active.facing=G.active.facing||1;
   G.wind=rand(-1,1);
-  G.timer=G.turnTime;G.multiLeft=0;G.burst=null;G.lockInput=false;G.ai=null;G.fuseRun=false;
+  G.timer=G.turnTime;G.multiLeft=0;G.burst=null;G.lockInput=false;G.ai=null;G.fuseRun=false;G.lastHit=null;
   G.power=0;G.charging=false;$("btnFire").classList.remove("charging");
   G.designate=null;clearGhost();document.body.classList.remove("designating");
   const round=Math.floor((G.turnCount-1)/G.teams.length)+1;
@@ -2773,11 +2795,27 @@ function updateCamera(dt,t){
   let tx=W/2,ty=H/2+60,zoom=1;
   if(G.screen==="game"&&!G.demo){
     if(G.phase==="aim"||G.phase==="start"||G.phase==="retreat"){
-      if(G.active&&!G.active.gone){tx=G.active.x;ty=G.active.y+130;zoom=1.14;}
+      if(G.designate==="airstrike"){
+        /* Air Squirrel: swing the camera across to the enemy side so you can call the drop on them */
+        const etm=G.teams[(G.teamIdx+1)%G.teams.length];
+        const alive=etm?etm.beavers.filter(b=>!b.dead&&!b.gone):[];
+        if(alive.length){
+          tx=alive.reduce((s,b)=>s+b.x,0)/alive.length;
+          ty=alive.reduce((s,b)=>s+b.y,0)/alive.length+110;
+          zoom=1.02;
+        }else if(G.active&&!G.active.gone){tx=G.active.x;ty=G.active.y+130;zoom=1.14;}
+      }else if(G.active&&!G.active.gone){tx=G.active.x;ty=G.active.y+130;zoom=1.14;}
     }else if(G.phase==="resolve"){
       const lead=G.projectiles[0];
       if(lead){tx=lead.x+lead.vx*.12;ty=lead.y+lead.vy*.12;zoom=1.0;}
       else if(G.plane){tx=G.plane.x;ty=800;zoom=.95;}
+      else if(G.lastHit){
+        /* hold on the enemy that got hit through the damage animation, then pan back to your beaver */
+        const lh=G.lastHit;
+        if(lh.b&&!lh.b.gone){tx=lh.b.x;ty=lh.b.y+110;}
+        else{tx=lh.x;ty=lh.y;}
+        zoom=1.08;
+      }
       else if(G.active&&!G.active.gone){tx=G.active.x;ty=G.active.y+130;zoom=1.05;}
     }else if(G.phase==="over"){zoom=.92;ty=H/2;}
   }else{
@@ -3276,10 +3314,11 @@ $("btnScores").addEventListener("click",()=>{SFX.click();showScores();});
 $("btnScoresClose").addEventListener("click",()=>{SFX.click();closeScores();});
 $("initsInput").addEventListener("input",e=>{setInits(e.target.value);});
 $("tglShake").addEventListener("click",()=>{G.shakeOn=!G.shakeOn;SAVE.shake=G.shakeOn;persist();$("tglShake").classList.toggle("on",G.shakeOn);SFX.click();});
-$("gfxBtn").addEventListener("click",()=>{
-  const order=["auto","high","med","low"];
-  setGfxPref(order[(order.indexOf(GFX.pref)+1)%4]);
-  SFX.click();
+document.querySelectorAll(".seg[data-gfx]").forEach(seg=>{
+  seg.addEventListener("click",e=>{
+    const b=e.target.closest("button");if(!b)return;
+    setGfxPref(b.dataset.v);SFX.click();
+  });
 });
 $("tglTouch").addEventListener("click",()=>{
   G.touchForced=!G.touchForced;
