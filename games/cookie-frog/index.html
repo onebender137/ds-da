@@ -1869,7 +1869,8 @@ function togglePause(){
   }
 }
 function restartRun(){
-  G.paused=false;hideOverlays();startGame(!!G.daily);
+  // straight back in: skip the level card on a retry (title → card is for fresh runs)
+  G.paused=false;hideOverlays();startGame(!!G.daily);skipCard();
 }
 function shareText(challenge){
   const dn=G.daily?' Daily #'+SOC.daily.number(G.daily):'';
