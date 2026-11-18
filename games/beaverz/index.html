@@ -305,6 +305,8 @@ body.designating #stage canvas{cursor:crosshair}
 #btnFire.charging{animation:firePulse .5s ease-in-out infinite}
 @keyframes firePulse{50%{box-shadow:0 6px 0 #140b05,0 12px 26px rgba(0,0,0,.5),0 0 34px rgba(255,176,32,.8)}}
 #btnFire.disabled{filter:grayscale(.8) brightness(.6);pointer-events:none}
+/* Suppress the mobile long-press copy/paste callout on hold-controls (it was firing pointercancel and releasing the charge early) */
+#btnFire,#fireInner,.tbtn{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:none}
 body:not(.touch) #touchMove{display:none}
 body.touch #deskHint{display:none}
 
@@ -1338,6 +1340,14 @@ function groundNear(x,y){for(let yy=y+18;yy>y-110;yy-=2)if(solid(x,yy))return yy
 function normalAt(x,y){let nx=0,ny=0;
   nx=(solid(x-5,y)?1:0)-(solid(x+5,y)?1:0);ny=(solid(x,y-5)?1:0)-(solid(x,y+5)?1:0);
   if(nx===0&&ny===0)return{x:0,y:1};const l=Math.hypot(nx,ny);return{x:nx/l,y:ny/l};}
+/* Subsurface strata palette (theme-aware) — pre-baked into the terrain and revealed by craters. */
+function strataCols(T){
+  const mix=(a,b,t)=>{const pa=parseInt(a.slice(1),16),pb=parseInt(b.slice(1),16);
+    const r=(pa>>16&255)*(1-t)+(pb>>16&255)*t|0,g=(pa>>8&255)*(1-t)+(pb>>8&255)*t|0,bl=(pa&255)*(1-t)+(pb&255)*t|0;
+    return `rgb(${r},${g},${bl})`;};
+  return {top:mix(T.dirt,"#000000",.3),sub:mix(T.dirt,"#a03020",.42),clay:mix(T.dirt,"#d8a860",.45),
+    gravel:mix(T.rock,"#9a9a9a",.35),bed:mix(T.rock,"#000000",.38)};
+}
 function genTerrain(seed,theme){
   const rng=mulberry(seed),T=THEMES[theme];
   const ph1=rng()*9,ph2=rng()*9,ph3=rng()*9,f1=.0022+rng()*.0012,f2=.006+rng()*.003,f3=.017+rng()*.008;
@@ -1356,9 +1366,18 @@ function genTerrain(seed,theme){
     for(let my=topMy;my<MH;my++)mask[my*MW+mx]=1;}
   const c=document.createElement("canvas");c.width=W;c.height=H;const cx=c.getContext("2d");
   const grd=(y0,y1,c0,c1)=>{const g=cx.createLinearGradient(0,y0,0,y1);g.addColorStop(0,c0);g.addColorStop(1,c1);return g;};
+  const SC=strataCols(T);
+  const bands=[{d0:12,d1:44,c:SC.top,ph:0,amp:4},{d0:44,d1:86,c:SC.sub,ph:2.1,amp:5},
+    {d0:86,d1:152,c:SC.clay,ph:4.2,amp:6},{d0:152,d1:224,c:SC.gravel,ph:1.3,amp:6},
+    {d0:224,d1:9999,c:SC.bed,ph:3.1,amp:5}];
   for(let x=0;x<W;x++){
     const h=hfn(x),sy=H-h;
     cx.fillStyle=grd(sy,H,T.dirt,T.dirtDeep);cx.fillRect(x,sy,1,h);
+    for(const bd of bands){  // subsurface strata (wavy boundaries), revealed when craters carve through
+      const w=Math.sin(x*.012+bd.ph)*bd.amp;
+      const y0=sy+bd.d0+w,y1=sy+Math.min(bd.d1,h)+w;
+      if(y1>y0&&y1<=H){cx.fillStyle=bd.c;cx.fillRect(x,y0,1,y1-y0);}
+    }
     cx.fillStyle=grd(sy,sy+12,T.grassHi,T.grass);cx.fillRect(x,sy,1,12);
     if(h>150){cx.fillStyle=T.rock;cx.globalAlpha=.5;cx.fillRect(x,H-110+Math.sin(x*.02)*14,1,120);cx.globalAlpha=1;}
   }
@@ -1381,14 +1400,28 @@ function genTerrain(seed,theme){
 }
 function carve(x,y,r){
   if(!terrain)return;
-  const cx=terrain.cx;
+  const cx=terrain.cx,cy=H-y,SC=strataCols(THEMES[G.theme]);
   cx.save();
   cx.globalCompositeOperation="source-atop";
-  const g=cx.createRadialGradient(x,H-y,r*.4,x,H-y,r*1.45);
-  g.addColorStop(0,"rgba(24,12,6,.9)");g.addColorStop(.75,"rgba(24,12,6,.55)");g.addColorStop(1,"rgba(24,12,6,0)");
-  cx.fillStyle=g;cx.beginPath();cx.arc(x,H-y,r*1.5,0,7);cx.fill();
-  cx.globalCompositeOperation="destination-out";
-  cx.beginPath();cx.arc(x,H-y,r,0,7);cx.fill();
+  // Layered bowl: concentric stops from the rim (topsoil) to the floor (bedrock) reveal the strata
+  const g=cx.createRadialGradient(x,cy,r*.04,x,cy,r);
+  g.addColorStop(0,SC.bed);g.addColorStop(.34,SC.gravel);g.addColorStop(.58,SC.clay);
+  g.addColorStop(.78,SC.sub);g.addColorStop(.9,SC.top);g.addColorStop(1,"rgba(0,0,0,0)");
+  cx.fillStyle=g;cx.beginPath();cx.arc(x,cy,r,0,7);cx.fill();
+  // Dark inner-bowl shadow: the dug-out interior is in shadow so it reads as depth, not a flat patch
+  const inner=cx.createRadialGradient(x,cy,r*.05,x,cy,r*.72);
+  inner.addColorStop(0,"rgba(10,5,2,.62)");inner.addColorStop(.6,"rgba(10,5,2,.3)");inner.addColorStop(1,"rgba(10,5,2,0)");
+  cx.fillStyle=inner;cx.beginPath();cx.arc(x,cy,r*.74,0,7);cx.fill();
+  // Dark rim shadow sells the depth
+  const rim=cx.createRadialGradient(x,cy,r*.8,x,cy,r*1.14);
+  rim.addColorStop(0,"rgba(0,0,0,0)");rim.addColorStop(.72,"rgba(15,8,4,.5)");rim.addColorStop(1,"rgba(15,8,4,0)");
+  cx.fillStyle=rim;cx.beginPath();cx.arc(x,cy,r*1.16,0,7);cx.fill();
+  // Debris flecks on the rim
+  cx.globalAlpha=.85;
+  for(let i=0;i<26;i++){const a=rand(0,7),d=r*rand(.72,1.04);
+    cx.fillStyle=Math.random()<.5?SC.top:THEMES[G.theme].rock;
+    cx.fillRect(x+Math.cos(a)*d,cy+Math.sin(a)*d,rand(2,4),rand(2,4));}
+  cx.globalAlpha=1;
   cx.restore();
   terrain.tex.needsUpdate=true;
   const mr=r/CELL,mx0=x/CELL,my0=(H-y)/CELL;
@@ -1572,6 +1605,39 @@ function placeGrave(x,y,name){
 }
 
 /* ============================ BEAVERS ============================ */
+// Loft a symmetric solid from cross-sections (port of Slipstream's loftGeo).
+// Each section: {z: spinePos, p:[[x0,y0],...[xN,yN]]} — K points on the +x half, mirrored to -x.
+function loftGeo(secs){
+  const K=secs[0].p.length,R=2*K-2,S=secs.length,pos=[],idx=[];
+  for(const s of secs)for(let i=0;i<R;i++){const q=i<K?s.p[i]:s.p[R-i];pos.push(i<K?q[0]:-q[0],q[1],s.z);}
+  for(let s=0;s<S-1;s++)for(let i=0;i<R;i++){
+    const a=s*R+i,b=s*R+(i+1)%R,c=(s+1)*R+i,d=(s+1)*R+(i+1)%R;
+    idx.push(a,b,c,b,d,c);
+  }
+  for(const s of[0,S-1]){            // end caps (own vertices so the edge stays crisp)
+    const base=pos.length/3;let cy=0;
+    for(let i=0;i<R;i++){pos.push(pos[(s*R+i)*3],pos[(s*R+i)*3+1],secs[s].z);cy+=pos[(s*R+i)*3+1];}
+    pos.push(0,cy/R,secs[s].z);
+    for(let i=0;i<R;i++){const a=base+i,b=base+(i+1)%R,c=base+R;if(s===0)idx.push(a,c,b);else idx.push(a,b,c);}
+  }
+  const g=new THREE.BufferGeometry();
+  g.setAttribute("position",new THREE.Float32BufferAttribute(pos,3));
+  g.setIndex(idx);g.computeVertexNormals();
+  return g;
+}
+// Beaver body silhouette: one smooth torso+head+snout lofted from cross-sections.
+// Section z = spine position (tail -30 → snout +28); p = [halfDepth, height] bottom-center → top-center.
+// After the mesh is rotated y=+90°, the loft spine (local +Z) points world +X (beaver's forward).
+const BEAVER_SECS=[
+  {z:-30,p:[[0,6],[4,7],[7,9],[8,11],[6,14],[0,16]]},   // tail tip (low, flat)
+  {z:-24,p:[[0,5],[6,7],[11,10],[15,16],[12,22],[0,27]]},// haunch rise
+  {z:-15,p:[[0,4],[8,8],[16,13],[19,22],[15,31],[0,36]]},// haunch peak (big rounded rear)
+  {z:-3, p:[[0,4],[9,8],[18,14],[20,23],[16,31],[0,36]]},// mid belly
+  {z:9,  p:[[0,5],[8,9],[15,14],[17,23],[13,30],[0,35]]},// front shoulder
+  {z:17, p:[[0,12],[6,15],[12,20],[13,30],[9,40],[0,45]]},// neck (rises)
+  {z:23, p:[[0,27],[5,30],[10,34],[11,43],[7,51],[0,54]]},// head
+  {z:28, p:[[0,33],[3,35],[6,38],[5,44],[3,47],[0,48]]},  // snout
+];
 function makeBeaverModel(colorHex){
   const group=new THREE.Group();const inner=new THREE.Group();group.add(inner);
   const bodyM=new THREE.MeshStandardMaterial({color:"#8a5a33",roughness:.85,flatShading:true});
@@ -1579,36 +1645,39 @@ function makeBeaverModel(colorHex){
   const darkM=new THREE.MeshStandardMaterial({color:"#4a2c17",roughness:.9,flatShading:true});
   const bandM=new THREE.MeshStandardMaterial({color:colorHex,roughness:.6,flatShading:true,emissive:colorHex,emissiveIntensity:.28});
   const sph=geo("sph",()=>new THREE.SphereGeometry(1,10,8));
-  const body=new THREE.Mesh(sph,bodyM);body.scale.set(22,20,18);body.position.y=25;inner.add(body);
-  const belly=new THREE.Mesh(sph,bellyM);belly.scale.set(14,14,9);belly.position.set(4,21,11);inner.add(belly);
-  const head=new THREE.Mesh(sph,bodyM);head.scale.setScalar(15);head.position.set(5,48,0);inner.add(head);
-  const snout=new THREE.Mesh(sph,bellyM);snout.scale.set(9,7,8);snout.position.set(15,44,4);inner.add(snout);
-  const nose=new THREE.Mesh(sph,darkM);nose.scale.setScalar(3.2);nose.position.set(22,47,5);inner.add(nose);
-  const toothG=geo("tooth",()=>new THREE.BoxGeometry(3.6,7,3));const toothM=stdMat("#fff6e4",{roughness:.4});
-  const t1=new THREE.Mesh(toothG,toothM);t1.position.set(17,37.5,7);inner.add(t1);
-  const t2=new THREE.Mesh(toothG,toothM);t2.position.set(17,37.5,3);inner.add(t2);
-  const eyeWG=geo("eyeW",()=>new THREE.SphereGeometry(4.4,8,6));const eyeWMat=stdMat("#fffdf5",{roughness:.3});
-  const pupG=geo("pup",()=>new THREE.SphereGeometry(2.1,6,5));const pupM=basMat("#1a0f05");
-  const e1=new THREE.Mesh(eyeWG,eyeWMat);e1.position.set(11,52,10);inner.add(e1);
-  const e2=new THREE.Mesh(eyeWG,eyeWMat);e2.position.set(11,52,-2);inner.add(e2);
-  const p1=new THREE.Mesh(pupG,pupM);p1.position.set(13.4,52,11.5);inner.add(p1);
-  const p2=new THREE.Mesh(pupG,pupM);p2.position.set(13.4,52,-3.5);inner.add(p2);
+  // Lofted torso+head+snout: one smooth mesh (baked at final size, base scale 1).
+  const body=new THREE.Mesh(geo("beavBody",()=>loftGeo(BEAVER_SECS)),bodyM);
+  body.rotation.y=Math.PI/2;inner.add(body);
+  // Chest patch (soft tan sphere on the lower front — the classic two-tone)
+  const belly=new THREE.Mesh(sph,bellyM);belly.scale.set(11,12,7);belly.position.set(6,17,9);inner.add(belly);
+  // Muzzle: tan snout patch + nose on the lofted head's front (head ~x:17..28, y:27..54)
+  const snout=new THREE.Mesh(sph,bellyM);snout.scale.set(6,5,5);snout.position.set(27,40,0);inner.add(snout);
+  const nose=new THREE.Mesh(sph,darkM);nose.scale.setScalar(3);nose.position.set(30,42,0);inner.add(nose);
+  const toothG=geo("tooth",()=>new THREE.BoxGeometry(3.4,6.5,2.6));const toothM=stdMat("#fff6e4",{roughness:.4});
+  const t1=new THREE.Mesh(toothG,toothM);t1.position.set(27,34,4);inner.add(t1);
+  const t2=new THREE.Mesh(toothG,toothM);t2.position.set(27,34,0.5);inner.add(t2);
+  const eyeWG=geo("eyeW",()=>new THREE.SphereGeometry(4.2,8,6));const eyeWMat=stdMat("#fffdf5",{roughness:.3});
+  const pupG=geo("pup",()=>new THREE.SphereGeometry(2,6,5));const pupM=basMat("#1a0f05");
+  const e1=new THREE.Mesh(eyeWG,eyeWMat);e1.position.set(25,46,8);inner.add(e1);
+  const e2=new THREE.Mesh(eyeWG,eyeWMat);e2.position.set(25,46,-8);inner.add(e2);
+  const p1=new THREE.Mesh(pupG,pupM);p1.position.set(27.5,46,9);inner.add(p1);
+  const p2=new THREE.Mesh(pupG,pupM);p2.position.set(27.5,46,-9);inner.add(p2);
   const earG=geo("ear",()=>new THREE.SphereGeometry(4,7,5));
-  const ear1=new THREE.Mesh(earG,darkM);ear1.position.set(-2,60,8);inner.add(ear1);
-  const ear2=new THREE.Mesh(earG,darkM);ear2.position.set(-2,60,-8);inner.add(ear2);
-  const band=new THREE.Mesh(geo("band",()=>new THREE.TorusGeometry(14.5,3.4,6,14)),bandM);
-  band.position.set(5,55,0);band.rotation.x=Math.PI/2;inner.add(band);
-  const knot=new THREE.Mesh(geo("knot",()=>new THREE.BoxGeometry(6,9,4)),bandM);knot.position.set(-11,53,0);knot.rotation.z=.5;inner.add(knot);
-  const armPivot=new THREE.Group();armPivot.position.set(10,34,13);inner.add(armPivot);
+  const ear1=new THREE.Mesh(earG,darkM);ear1.position.set(18,55,7);inner.add(ear1);
+  const ear2=new THREE.Mesh(earG,darkM);ear2.position.set(18,55,-7);inner.add(ear2);
+  const band=new THREE.Mesh(geo("band",()=>new THREE.TorusGeometry(13,3.2,6,14)),bandM);
+  band.position.set(20,50,0);band.rotation.x=Math.PI/2;inner.add(band);
+  const knot=new THREE.Mesh(geo("knot",()=>new THREE.BoxGeometry(6,9,4)),bandM);knot.position.set(6,48,0);knot.rotation.z=.5;inner.add(knot);
+  const armPivot=new THREE.Group();armPivot.position.set(14,30,12);inner.add(armPivot);
   const arm=new THREE.Mesh(geo("arm",()=>new THREE.CapsuleGeometry(4.5,10,3,6)),bodyM);
   arm.rotation.z=Math.PI/2;arm.position.x=7;armPivot.add(arm);
   const arm2=new THREE.Mesh(geo("arm",()=>new THREE.CapsuleGeometry(4.5,10,3,6)),bodyM);
-  arm2.rotation.z=.9;arm2.position.set(-4,30,-13);inner.add(arm2);
+  arm2.rotation.z=.9;arm2.position.set(-4,26,-12);inner.add(arm2);
   const footG=geo("foot",()=>new THREE.SphereGeometry(7,7,5));
-  const f1=new THREE.Mesh(footG,darkM);f1.scale.set(1.3,.55,1);f1.position.set(9,4,8);inner.add(f1);
-  const f2=new THREE.Mesh(footG,darkM);f2.scale.set(1.3,.55,1);f2.position.set(-7,4,-6);inner.add(f2);
+  const f1=new THREE.Mesh(footG,darkM);f1.scale.set(1.3,.55,1);f1.position.set(10,4,8);inner.add(f1);
+  const f2=new THREE.Mesh(footG,darkM);f2.scale.set(1.3,.55,1);f2.position.set(-8,4,-6);inner.add(f2);
   const tailM=new THREE.MeshStandardMaterial({map:tailTex,color:"#ffffff",roughness:.9,flatShading:true});
-  const tail=new THREE.Mesh(sph,tailM);tail.scale.set(20,5.5,12);tail.position.set(-26,9,-3);tail.rotation.z=.28;inner.add(tail);
+  const tail=new THREE.Mesh(sph,tailM);tail.scale.set(16,5,11);tail.position.set(-31,9,-2);tail.rotation.z=.28;inner.add(tail);
   const prop=new THREE.Group();prop.position.set(16,2,0);armPivot.add(prop);
   const plateC=document.createElement("canvas");plateC.width=256;plateC.height=96;
   const plateT=new THREE.CanvasTexture(plateC);plateT.colorSpace=THREE.SRGBColorSpace;
@@ -1619,7 +1688,7 @@ function makeBeaverModel(colorHex){
   arrow.rotation.z=Math.PI;arrow.position.set(0,128,20);arrow.visible=false;group.add(arrow);
   const shM=new THREE.SpriteMaterial({map:glowTex,color:"#000000",transparent:true,opacity:.34,depthWrite:false});
   const shadow=new THREE.Sprite(shM);shadow.scale.set(52,14,1);shadow.renderOrder=4;scene.add(shadow);
-  return{group,inner,body,head,armPivot,arm2,prop,f1,f2,tail,p1,p2,band,bandM,arrow,plateC,plateT,plateM,plateS,shadow,shM,
+  return{group,inner,body,head:body,armPivot,arm2,prop,f1,f2,tail,p1,p2,band,bandM,arrow,plateC,plateT,plateM,plateS,shadow,shM,
     cloneMats:[bodyM,bellyM,darkM,bandM,tailM,arrowM],ownTex:[plateT],ownMat:[plateM,shM]};
 }
 function setProp(model,wid){
@@ -1673,7 +1742,7 @@ function animateBeaver(b,dt,t){
   m.arrow.visible=active&&!b.dead;
   if(active)m.arrow.position.y=128+Math.sin(t*5)*7;
   const breathe=1+Math.sin(t*2.4+b.x)*.02;
-  m.body.scale.set(22*breathe,20*(2-breathe),18);
+  m.body.scale.set(breathe,1+(breathe-1)*.5,breathe);
   b.blinkT-=dt;if(b.blinkT<0){b.blinkT=rand(2.2,5);}
   const blink=b.blinkT<.12?.12:1;m.p1.scale.y=blink;m.p2.scale.y=blink;
   if(b.state==="ground"&&Math.abs(b.vx)>1){
@@ -1704,7 +1773,7 @@ function animateBeaver(b,dt,t){
     m.inner.rotation.z+=b.hitDir*wobble;
     m.inner.position.y+=Math.abs(Math.sin(h*30))*6*(h/.45);
     m.p1.scale.set(1.4,1.4,1);m.p2.scale.set(1.4,1.4,1);  // wide eyes
-    m.body.scale.set(22*(1-h*.15),20*(1+h*.1),18);  // squash + stretch
+    m.body.scale.set(1-h*.15,1+h*.1,1-h*.05);  // squash + stretch (lofted body, base scale 1)
   }else{m.p1.scale.set(1,blink,1);m.p2.scale.set(1,blink,1);}
   const gs=surfaceY(b.x);
   if(gs!==null&&gs>G.waterY){m.shadow.visible=true;
@@ -3039,6 +3108,8 @@ renderer.domElement.addEventListener("contextmenu",e=>{
   e.preventDefault();
   if(G.designate){selectWeapon(G.prevWeapon);}
 });
+// Block the native context/copy-paste menu on the in-game control bar (mobile long-press was cancelling the FIRE charge)
+$("bottomBar").addEventListener("contextmenu",e=>e.preventDefault());
 renderer.domElement.addEventListener("wheel",e=>{
   e.preventDefault();
   G.zoomUser=clamp(G.zoomUser*(e.deltaY>0?.92:1.08),.55,2.3);
