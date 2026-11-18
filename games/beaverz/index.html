@@ -34,7 +34,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦫</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Titan+One&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Titan+One&family=Black+Ops+One&family=Alfa+Slab+One&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <style>
 /* ============================ BEAVERZ TOKENS ============================ */
 :root{
@@ -475,6 +475,96 @@ body.touch #deskHint{display:none}
   #tagline{margin-top:6px}
   #titleFoot{display:none}
 }
+/* ============================ POSTER SKIN ============================
+   Title + menus restyled after the Beaverz poster: wood-plank logo letters
+   with bolts and a steel Z, beaver tails, hanging grenades, embers, stencil
+   military type, olive riveted plates and nailed wood planks. */
+:root{--mil:'Black Ops One','Titan One',system-ui,sans-serif;--slab:'Alfa Slab One','Titan One',serif;
+  --olive-grad:linear-gradient(180deg,#86934a 0%,#66733a 50%,#4d5828 100%);}
+#titleScreen{background:
+  radial-gradient(ellipse 70% 45% at 50% 108%,rgba(255,118,30,.42),transparent 70%),
+  radial-gradient(ellipse at 50% 38%,rgba(10,14,10,.02) 25%,rgba(8,10,7,.62) 100%)}
+#embers{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0}
+#embers i{position:absolute;bottom:-12px;width:4px;height:4px;border-radius:50%;background:#ffb347;
+  box-shadow:0 0 6px 2px rgba(255,140,40,.8);opacity:0;animation:emberRise linear infinite}
+@keyframes emberRise{0%{transform:translate(0,0);opacity:0}10%{opacity:1}100%{transform:translate(var(--dx,30px),-92vh);opacity:0}}
+#logoWrap,#titleMenu,#careerCard{position:relative;z-index:1}
+/* ---- the hero logo ---- */
+#logoHero{position:relative;display:inline-block;font-size:clamp(58px,11.5vw,138px);padding:0 .62em}
+#logoWord{font-family:var(--slab);font-size:1em;line-height:1.08;letter-spacing:0;gap:.015em;
+  filter:drop-shadow(0 .1em .14em rgba(0,0,0,.6))}
+#logoWord span{position:relative;display:inline-block;color:#2b1607;background:none;-webkit-text-stroke:.05em #170b03;
+  text-shadow:0 .018em 0 #3e230e,0 .036em 0 #38200c,0 .054em 0 #311b0a,0 .072em 0 #291608,0 .09em 0 #201106,0 .11em .03em rgba(0,0,0,.55);
+  transform:rotate(var(--r,0deg));animation:plankBob 3.4s ease-in-out infinite;transform-origin:50% 85%}
+@keyframes plankBob{0%,100%{transform:rotate(var(--r,0deg)) translateY(0)}50%{transform:rotate(calc(var(--r,0deg)*-.4)) translateY(-.04em)}}
+#logoWord span::after{content:attr(data-ch);position:absolute;left:0;top:0;color:transparent;text-shadow:none;-webkit-text-stroke:.03em #241205;
+  background:
+    radial-gradient(circle at 30% 20%,#efe8d8 0 .02em,#7b7262 .03em,#221508 .045em,transparent .055em),
+    radial-gradient(circle at 68% 82%,#efe8d8 0 .02em,#7b7262 .03em,#221508 .045em,transparent .055em),
+    linear-gradient(180deg,rgba(255,226,170,.38),rgba(255,226,170,0) 38%,rgba(0,0,0,0) 62%,rgba(0,0,0,.32)),
+    repeating-linear-gradient(94deg,transparent 0 .055em,rgba(45,22,6,.5) .055em .066em,transparent .066em .15em),
+    repeating-linear-gradient(91deg,#9c663a 0 .04em,#b57b46 .04em .085em,#8b5631 .085em .11em,#c68c55 .11em .17em,#a36c3c .17em .23em);
+  -webkit-background-clip:text;background-clip:text}
+#logoWord span.z{color:#25282c;text-shadow:0 .018em 0 #3a3e43,0 .036em 0 #33373b,0 .054em 0 #2c2f33,0 .072em 0 #24272a,0 .09em 0 #1c1e21,0 .11em .03em rgba(0,0,0,.55)}
+#logoWord span.z::after{-webkit-text-stroke-color:#1b1d20;background:
+    radial-gradient(circle at 22% 16%,#fafafa 0 .018em,#8d9399 .028em,#2a2d31 .042em,transparent .052em),
+    radial-gradient(circle at 80% 86%,#fafafa 0 .018em,#8d9399 .028em,#2a2d31 .042em,transparent .052em),
+    radial-gradient(circle at 78% 16%,#fafafa 0 .018em,#8d9399 .028em,#2a2d31 .042em,transparent .052em),
+    repeating-linear-gradient(28deg,transparent 0 .09em,rgba(255,255,255,.18) .09em .095em,transparent .095em .21em),
+    radial-gradient(ellipse at 60% 60%,rgba(120,60,20,.35),transparent 30%),
+    linear-gradient(158deg,#e3e6e9 0%,#9aa1a7 30%,#cfd3d6 48%,#6f767c 72%,#aeb3b8 100%);
+  -webkit-background-clip:text;background-clip:text}
+/* a nailed cross-plank over the A, like the poster */
+#logoWord span.a::before{content:"";position:absolute;z-index:2;left:-.06em;right:-.08em;top:54%;height:.15em;border-radius:.02em;
+  transform:rotate(-13deg);border:.016em solid #170b03;box-shadow:0 .03em 0 #170b03;
+  background:radial-gradient(circle at 12% 50%,#e8e1d2 0 .016em,#2a1d10 .03em,transparent .04em),
+    radial-gradient(circle at 88% 50%,#e8e1d2 0 .016em,#2a1d10 .03em,transparent .04em),
+    repeating-linear-gradient(2deg,#b07642 0 .03em,#8f5a32 .03em .05em,#c48a55 .05em .09em)}
+.ltail{position:absolute;top:.02em;width:.78em;height:1.08em;z-index:-1;filter:drop-shadow(0 .05em .06em rgba(0,0,0,.5))}
+.ltail.l{left:.02em;transform:rotate(-24deg);animation:tailWag 2.8s ease-in-out infinite}
+.ltail.r{right:.02em;transform:rotate(24deg) scaleX(-1);animation:tailWagR 2.8s ease-in-out infinite}
+@keyframes tailWag{0%,100%{transform:rotate(-24deg)}50%{transform:rotate(-17deg)}}
+@keyframes tailWagR{0%,100%{transform:rotate(24deg) scaleX(-1)}50%{transform:rotate(17deg) scaleX(-1)}}
+.nade{position:absolute;top:.8em;width:.26em;transform-origin:50% 0;animation:nadeSwing 2.2s ease-in-out infinite;z-index:3}
+.nade svg{display:block;width:100%;filter:drop-shadow(0 .03em .03em rgba(0,0,0,.5))}
+.nade.n1{left:17%;animation-delay:-.4s}.nade.n2{left:48%;top:.9em;animation-delay:-1.3s;width:.22em}.nade.n3{left:76%;animation-delay:-.9s}
+@keyframes nadeSwing{0%,100%{transform:rotate(9deg)}50%{transform:rotate(-9deg)}}
+#ammoBelt{display:block;margin:.34em auto 0;width:min(470px,76vw);filter:drop-shadow(0 6px 8px rgba(0,0,0,.55))}
+#logoPlank{display:none}
+#tagline{font-family:var(--mil);font-size:clamp(16px,2.6vw,25px);letter-spacing:6px;margin-top:10px;color:transparent;text-shadow:none;
+  background:linear-gradient(180deg,#fbf3df 0%,#d9c9a4 46%,#a89474 54%,#efe2c3 100%);-webkit-background-clip:text;background-clip:text;
+  filter:drop-shadow(0 3px 0 #1d1309) drop-shadow(0 0 10px rgba(0,0,0,.6))}
+#titleFoot{font-family:var(--mil);font-weight:400;letter-spacing:1.5px}
+/* ---- buttons: nailed wood planks; primary is an olive riveted plate ---- */
+.wbtn{font-family:var(--mil);font-weight:400;letter-spacing:1.2px;color:#f2e3bf;text-shadow:0 2px 0 rgba(15,8,2,.75);
+  background:
+    radial-gradient(circle at 12px 50%,#e9dfc8 0 2px,#5d4a35 3px,#1a0e05 4.5px,transparent 5.5px),
+    radial-gradient(circle at calc(100% - 12px) 50%,#e9dfc8 0 2px,#5d4a35 3px,#1a0e05 4.5px,transparent 5.5px),
+    linear-gradient(180deg,rgba(255,226,170,.16),transparent 40%,rgba(0,0,0,.22)),
+    repeating-linear-gradient(1.5deg,transparent 0 6px,rgba(30,14,4,.3) 6px 7px,transparent 7px 15px),
+    linear-gradient(180deg,#7a4e2a,#5e3a1e 60%,#4a2d16)}
+.wbtn.primary{color:#fbf3d9;text-shadow:0 2px 0 rgba(18,22,4,.8);border-color:rgba(230,240,170,.45);
+  background:
+    radial-gradient(circle at 11px 11px,#f1f3dc 0 1.6px,#59612f 2.6px,#1c200a 3.8px,transparent 4.6px),
+    radial-gradient(circle at calc(100% - 11px) 11px,#f1f3dc 0 1.6px,#59612f 2.6px,#1c200a 3.8px,transparent 4.6px),
+    radial-gradient(circle at 11px calc(100% - 11px),#f1f3dc 0 1.6px,#59612f 2.6px,#1c200a 3.8px,transparent 4.6px),
+    radial-gradient(circle at calc(100% - 11px) calc(100% - 11px),#f1f3dc 0 1.6px,#59612f 2.6px,#1c200a 3.8px,transparent 4.6px),
+    linear-gradient(180deg,rgba(255,255,220,.22),transparent 45%),var(--olive-grad);
+  box-shadow:0 6px 0 #262c10,0 12px 30px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,220,.35)}
+.wbtn.primary:hover{box-shadow:0 8px 0 #262c10,0 16px 40px rgba(0,0,0,.5),0 0 34px rgba(255,140,40,.55),inset 0 1px 0 rgba(255,255,220,.35)}
+.wbtn.primary:active{box-shadow:0 2px 0 #262c10,0 6px 14px rgba(0,0,0,.4)}
+.wbtn.big{font-family:var(--mil);font-size:23px;letter-spacing:2px}
+.wbtn.danger{color:#ffb0a8}
+#titleMenu .menuRow .wbtn{font-size:13px;letter-spacing:.6px;padding-left:22px;padding-right:22px}
+/* ---- headings & cards in stencil ---- */
+#setupHead h2,#pausePanel h2,#howHead h2,#scoresPanel h2,#overTitle,#bannerTxt,#rankTitle,.cstat b{font-family:var(--mil);font-weight:400}
+#setupHead h2,#pausePanel h2,#howHead h2,#scoresPanel h2{color:#efe2c3;letter-spacing:2px}
+#overKicker,#careerCard .cstat i{font-family:var(--mil);font-weight:400;letter-spacing:3px}
+#careerCard{padding-top:20px}
+.seg button.sel{background:linear-gradient(180deg,rgba(255,255,220,.22),transparent 45%),var(--olive-grad);color:#fbf3d9;border-color:rgba(230,240,170,.55);text-shadow:0 1px 0 rgba(18,22,4,.8);box-shadow:0 0 14px rgba(170,190,90,.35)}
+#careerTag{position:absolute;z-index:2;top:-11px;left:18px;font-family:var(--mil);font-size:11px;letter-spacing:2.5px;
+  color:#fbf3d9;background:var(--olive-grad);border:1.5px solid rgba(230,240,170,.45);border-radius:6px;padding:3px 10px;box-shadow:0 3px 0 #262c10}
+@media (max-height:480px){#logoHero{font-size:clamp(48px,15vh,84px)}#ammoBelt{width:min(320px,60vw)}.nade{display:none}}
 /* ============================ DSDA RADIO ============================ */
 /* Shared arcade dial (radio/radio.js). Same skin as the other cabinets, but
    docked top-right under the sound/help pills: bottom-left belongs to the
@@ -501,8 +591,15 @@ body.touch #deskHint{display:none}
 
 <!-- TITLE -->
 <div class="screen" id="titleScreen">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <pattern id="bzTailTex" width="13" height="13" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="13" height="13" fill="#5e3c22"/><path d="M0 0H13M0 0V13" stroke="#2b180a" stroke-width="2.6"/><circle cx="6.5" cy="6.5" r="2" fill="#6e4a2c"/></pattern>
+  <radialGradient id="bzTailSh" cx=".35" cy=".28" r=".85"><stop offset="0" stop-color="#ffe2b0" stop-opacity=".32"/><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".5"/></radialGradient>
+  <radialGradient id="bzNade" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#8f9a55"/><stop offset=".6" stop-color="#596331"/><stop offset="1" stop-color="#363d1a"/></radialGradient>
+</defs></svg>
+  <div id="embers"></div>
   <div id="logoWrap">
-    <div id="logoWord"></div>
+    <div id="logoHero"><svg class="ltail l" viewBox="0 0 100 140"><path d="M50 4C82 4 96 34 96 70C96 108 76 136 50 136C24 136 4 108 4 70C4 34 18 4 50 4Z" fill="url(#bzTailTex)" stroke="#1d1007" stroke-width="5"/><path d="M50 4C82 4 96 34 96 70C96 108 76 136 50 136C24 136 4 108 4 70C4 34 18 4 50 4Z" fill="url(#bzTailSh)"/></svg><div id="logoWord"></div><svg class="ltail r" viewBox="0 0 100 140"><path d="M50 4C82 4 96 34 96 70C96 108 76 136 50 136C24 136 4 108 4 70C4 34 18 4 50 4Z" fill="url(#bzTailTex)" stroke="#1d1007" stroke-width="5"/><path d="M50 4C82 4 96 34 96 70C96 108 76 136 50 136C24 136 4 108 4 70C4 34 18 4 50 4Z" fill="url(#bzTailSh)"/></svg><div class="nade n1"><svg viewBox="0 0 40 74"><path d="M20 0V10" stroke="#2a1a0c" stroke-width="2"/><rect x="13" y="9" width="14" height="9" rx="2" fill="#5d6438" stroke="#1d200c" stroke-width="2"/><path d="M27 12C36 12 37 28 31 40" stroke="#8b8f7a" stroke-width="3.4" fill="none" stroke-linecap="round"/><circle cx="9" cy="14" r="5" fill="none" stroke="#c9b26a" stroke-width="2.4"/><ellipse cx="20" cy="45" rx="16" ry="25" fill="url(#bzNade)" stroke="#1d200c" stroke-width="2.4"/><path d="M5 37H35M4 47H36M6 57H34M14 22V68M26 22V68" stroke="#2c3212" stroke-width="2" opacity=".75"/></svg></div><div class="nade n2"><svg viewBox="0 0 40 74"><path d="M20 0V10" stroke="#2a1a0c" stroke-width="2"/><rect x="13" y="9" width="14" height="9" rx="2" fill="#5d6438" stroke="#1d200c" stroke-width="2"/><path d="M27 12C36 12 37 28 31 40" stroke="#8b8f7a" stroke-width="3.4" fill="none" stroke-linecap="round"/><circle cx="9" cy="14" r="5" fill="none" stroke="#c9b26a" stroke-width="2.4"/><ellipse cx="20" cy="45" rx="16" ry="25" fill="url(#bzNade)" stroke="#1d200c" stroke-width="2.4"/><path d="M5 37H35M4 47H36M6 57H34M14 22V68M26 22V68" stroke="#2c3212" stroke-width="2" opacity=".75"/></svg></div><div class="nade n3"><svg viewBox="0 0 40 74"><path d="M20 0V10" stroke="#2a1a0c" stroke-width="2"/><rect x="13" y="9" width="14" height="9" rx="2" fill="#5d6438" stroke="#1d200c" stroke-width="2"/><path d="M27 12C36 12 37 28 31 40" stroke="#8b8f7a" stroke-width="3.4" fill="none" stroke-linecap="round"/><circle cx="9" cy="14" r="5" fill="none" stroke="#c9b26a" stroke-width="2.4"/><ellipse cx="20" cy="45" rx="16" ry="25" fill="url(#bzNade)" stroke="#1d200c" stroke-width="2.4"/><path d="M5 37H35M4 47H36M6 57H34M14 22V68M26 22V68" stroke="#2c3212" stroke-width="2" opacity=".75"/></svg></div></div>
+    <svg id="ammoBelt" viewBox="0 0 470 46"></svg>
     <svg id="logoPlank" viewBox="0 0 420 34" fill="none">
       <path d="M6 8 Q4 4 10 4 L318 4 L330 10 L342 4 L354 11 L366 4 L410 4 Q416 4 414 10 L412 26 Q412 30 406 30 L12 30 Q6 30 6 24 Z" fill="#6b4423" stroke="#2a1505" stroke-width="3"/>
       <path d="M14 12 L330 12 M14 20 L360 20" stroke="#8a5a33" stroke-width="2.5" stroke-linecap="round"/>
@@ -521,7 +618,7 @@ body.touch #deskHint{display:none}
       <a class="wbtn" id="btnArcade" href="../">🕹 DSDA ARCADE</a>
     </div>
   </div>
-  <div class="panel" id="careerCard">
+  <div class="panel" id="careerCard"><span id="careerTag">SERVICE RECORD</span>
     <div class="rank">
       <div id="rankTitle">LODGE KIT</div>
       <div class="rankbar"><i id="rankFill" style="width:0%"></i></div>
@@ -1041,7 +1138,7 @@ function voxLoad(id){
     .then(ab=>new Promise((res,rej)=>AU.ctx.decodeAudioData(ab,res,rej)))
     .then(b=>{VOX.buf[id]=b;}).catch(()=>{VOX.loading[id]=null;});
 }
-function voxPrep(){voxManifest();if(!AU.ctx)return;for(const tm of G.teams)for(const b of tm.beavers)if(b.voice)voxLoad(b.voice.id);}
+function voxPrep(){voxManifest();if(!AU.ctx)return;voxLoad("squirrel");for(const tm of G.teams)for(const b of tm.beavers)if(b.voice)voxLoad(b.voice.id);}
 function assignVoices(){
   /* interleave the teams so both sides get distinct characters first; a repeat
      character gets pitched up/down so it still sounds like a different beaver */
@@ -2142,8 +2239,37 @@ function makeProjMesh(type){
     add(geo("plEnd",()=>new THREE.CircleGeometry(16,10)),mat("logEnd",()=>new THREE.MeshStandardMaterial({map:logEndTex,roughness:.9})),0,0,22.5);
     const e2=add(geo("plEnd",()=>new THREE.CircleGeometry(16,10)),mat("logEnd",()=>new THREE.MeshStandardMaterial({map:logEndTex,roughness:.9})),0,0,-22.5);e2.rotation.y=Math.PI;
   }else if(type==="bomb"){
-    add(geo("pbBody",()=>new THREE.SphereGeometry(8,8,6)),stdMat("#3a4450"));
-    add(geo("pbFin",()=>new THREE.BoxGeometry(4,14,2)),stdMat("#5a6672"),0,10);
+    /* kamikaze squirrel (Air Squirrel drop): built nose-first along +x, helmet + goggles,
+       clutching a lit acorn, tail streaming. updateProjectiles aims it down its flight path. */
+    const sph=geo("sph",()=>new THREE.SphereGeometry(1,10,8));
+    const fur=stdMat("#b8692c"),cream=stdMat("#f0d2a0"),olive=stdMat("#56632e",{roughness:.7}),dark=stdMat("#231a12");
+    const sc=(m,x,y,z)=>{m.scale.set(x,y,z);return m;};
+    sc(add(sph,fur,0,0,0),9.5,6.5,6.2);                        // body
+    sc(add(sph,cream,1.5,-2.8,0),7,3.6,4.6);                   // belly
+    sc(add(sph,fur,11,1.2,0),6.8,6.3,6.1);                     // head
+    sc(add(sph,cream,16,-.6,0),3.8,3,3.6);                     // muzzle
+    sc(add(sph,dark,19.4,.2,0),1.3,1.1,1.3);                   // nose
+    add(geo("sqTooth",()=>new THREE.BoxGeometry(1.6,2.6,2.2)),stdMat("#fff6e4"),17.6,-3,0);
+    for(const z of[3.2,-3.2]){const e=add(geo("sqEar",()=>new THREE.ConeGeometry(1.8,4.2,5)),fur,8.6,6.6,z);e.rotation.z=.35;}
+    const hel=add(geo("sqHelm",()=>new THREE.SphereGeometry(7.6,12,6,0,Math.PI*2,0,Math.PI/2)),olive,10,2.4,0);hel.rotation.z=-.45;
+    sc(add(sph,olive,4.6,1.2,0),1.6,.8,6.4);                   // helmet rim at the back
+    const gogG=geo("sqGog",()=>new THREE.TorusGeometry(2.1,.75,6,10)),lens=stdMat("#7fe3ff",{emissive:"#2aa8d8",emissiveIntensity:.8,roughness:.2});
+    for(const z of[2.7,-2.7]){const r=add(gogG,dark,14.6,4.6,z);r.rotation.y=Math.PI/2;r.rotation.x=.25;
+      sc(add(sph,lens,14.9,4.6,z),.5,1.6,1.6);}
+    add(geo("sqStrap",()=>new THREE.BoxGeometry(1,1.2,12)),dark,13.6,4.6,0);
+    add(geo("sqPack",()=>new THREE.BoxGeometry(8,4,7)),olive,-1,6.4,0);        // chute pack (cut loose — no chute, all guts)
+    for(const z of[3.8,-3.8]){const a=add(geo("sqArm",()=>new THREE.CapsuleGeometry(1.4,5,3,5)),fur,15,-5,z);a.rotation.z=1.1;}
+    sc(add(sph,stdMat("#8a5a33"),19.5,-7.5,0),4.4,5,4.4);      // the acorn
+    const cap=add(geo("pgCap",()=>new THREE.SphereGeometry(9.5,8,4,0,Math.PI*2,0,1.1)),stdMat("#4a2c17"),22.2,-7.5,0);
+    cap.scale.setScalar(.5);cap.rotation.z=-Math.PI/2;
+    const tail=new THREE.Group();tail.position.set(-8,1.5,0);g.add(tail);
+    [[-3,1.2,3.8],[-7,4,4.4],[-9.5,8,4.8],[-9,12.5,4.4],[-6.6,15.5,3.4]].forEach(([x,y,r],i)=>{
+      const m=new THREE.Mesh(sph,i%2?stdMat("#c97a3a"):fur);m.position.set(x,y,0);m.scale.set(r,r,r*.85);tail.add(m);});
+    const scarf=new THREE.Group();scarf.position.set(6,4.6,0);g.add(scarf);
+    const sf=new THREE.Mesh(geo("sqScarf",()=>new THREE.BoxGeometry(11,1.6,.6)),stdMat("#d3332d"));sf.position.x=-5.5;scarf.add(sf);
+    const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:sparkTex,color:"#ffd76a",transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));
+    sp.position.set(25,-6,0);sp.scale.set(9,9,1);g.add(sp);g.userData.spark=sp;g.userData.ownMat=[sp.material];
+    g.userData.tail=tail;g.userData.scarf=scarf;g.userData.squirrel=true;g.scale.setScalar(1.6);
   }
   return g;
 }
@@ -2204,6 +2330,9 @@ function updateProjectiles(dt){
       spawnPart({x:p.x-Math.sign(p.vx)*18,y:p.y-12,z:40,tex:smokeTex,col:"#a8743f",s0:10,s1:22,life:.4,a0:.4,vx:-p.vx*.1,vy:rand(10,40)});}
     if(p.type==="rocket"||p.type==="shell"||p.type==="log")p.mesh.rotation.z=p.type==="log"?p.mesh.rotation.z-p.vx/16*dt:Math.atan2(p.vy,p.vx);
     if(p.type==="grenade"||p.type==="bomblet")p.mesh.rotation.z+=p.vx*.02*dt;
+    if(p.mesh.userData.squirrel){const u=p.mesh.userData,left=p.vx<0;
+      p.mesh.rotation.z=Math.atan2(p.vy,p.vx)+(left?Math.PI:0);p.mesh.scale.set(left?-1.6:1.6,1.6,1.6);
+      u.tail.rotation.z=Math.sin(p.t*26)*.28-.15;u.scarf.rotation.z=Math.sin(p.t*34)*.25;u.scarf.rotation.y=Math.sin(p.t*21)*.3;}
     p.mesh.position.set(p.x,p.y,44);
     if(p.x<-160||p.x>W+160||p.y>H+2600){removeProj(p);continue;}
     if(p.y<G.waterY+2&&p.vy<0){splashFX(p.x,G.waterY,p.type==="log"?1.4:1);SFX.splash();
@@ -2262,6 +2391,9 @@ function updateProjectiles(dt){
       const dx=pl.drops.shift();
       const fallT=Math.sqrt(2*Math.max(80,pl.y-(surfaceY(dx)||G.waterY))/GRAV);
       spawnProj({type:"bomb",x:dx,y:pl.y-20,vx:pl.vx*.22,vy:-40,r:48,dmg:30,windK:.8,credit:pl.credit,fallTime:fallT});
+      if(!pl.cries)pl.cries=0;
+      if(pl.cries<2&&Math.random()<.5){const sq={voice:{id:"squirrel",rate:rand(.93,1.12)},x:dx,y:pl.y};const l=say(sq,"drop");
+        if(l){pl.cries++;popup(dx,pl.y-70,l.toUpperCase(),"#ffd76a",false,true);}}
     }
     if(pl.x<-250||pl.x>W+250){
       if(pl.buzz)pl.buzz.stop();
@@ -3713,7 +3845,24 @@ function frame(nowMs){
   if(Post.ok)Post.render(G.time);else renderer.render(scene,camera);
 }
 /* logo letters */
-(()=>{const w=$("logoWord");"BEAVERZ".split("").forEach((ch,i)=>{const s=document.createElement("span");s.textContent=ch;s.style.animationDelay=(-i*.35)+"s";w.appendChild(s);});})();
+(()=>{const w=$("logoWord"),tilt=[-4,3,-2,2.5,-3,1.5,4];
+  "BEAVERZ".split("").forEach((ch,i)=>{const s=document.createElement("span");s.textContent=ch;s.dataset.ch=ch;
+    s.style.setProperty("--r",tilt[i]+"deg");s.style.animationDelay=(-i*.45)+"s";
+    if(i===2)s.className="a";if(i===6)s.className="z";w.appendChild(s);});
+  /* brass ammo belt under the logo */
+  let b='<defs><linearGradient id="bzBrass" x1="0" x2="1"><stop offset="0" stop-color="#8a5f1c"/><stop offset=".35" stop-color="#f4d27a"/><stop offset=".6" stop-color="#c8962f"/><stop offset="1" stop-color="#6e4810"/></linearGradient>'+
+    '<linearGradient id="bzTip" x1="0" x2="1"><stop offset="0" stop-color="#7a3d1a"/><stop offset=".4" stop-color="#e09a62"/><stop offset="1" stop-color="#5e2c10"/></linearGradient></defs>'+
+    '<path d="M4 30Q235 40 466 30" stroke="#2a2a22" stroke-width="12" fill="none" stroke-linecap="round"/><path d="M4 30Q235 40 466 30" stroke="#4d4d3e" stroke-width="5" fill="none" stroke-dasharray="3 11"/>';
+  for(let i=0;i<19;i++){const x=22+i*23.7,t=x/470,y=30+Math.sin(t*Math.PI)*7.5-29,rot=(t-.5)*7;
+    b+=`<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${rot.toFixed(1)})"><path d="M-6 9C-6 2-3-3 0-6C3-3 6 2 6 9Z" fill="url(#bzTip)" stroke="#2a1405" stroke-width="1.4"/>`+
+      `<rect x="-6.5" y="9" width="13" height="25" rx="1.6" fill="url(#bzBrass)" stroke="#3a2606" stroke-width="1.4"/><rect x="-7.5" y="31" width="15" height="4" rx="1" fill="#b48428" stroke="#3a2606" stroke-width="1.2"/></g>`;}
+  $("ammoBelt").innerHTML=b;
+  /* rising embers */
+  const em=$("embers");for(let i=0;i<26;i++){const e=document.createElement("i");
+    e.style.left=(Math.random()*100)+"%";e.style.setProperty("--dx",(Math.random()*120-60)+"px");
+    e.style.animationDuration=(6+Math.random()*7)+"s";e.style.animationDelay=(-Math.random()*12)+"s";
+    const s=2+Math.random()*3.5;e.style.width=e.style.height=s+"px";em.appendChild(e);}
+})();
 setMute(AU.muted);
 buildArsenal();
 updateCareerUI();
