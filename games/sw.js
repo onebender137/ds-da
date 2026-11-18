@@ -13,7 +13,10 @@
 // copy out of the cache until the version changes — activate() deletes every
 // cache whose key isn't this one. v2: the gapless DSDA Radio (radio/radio.js).
 // v3: new TappyCat screenshot (v2 six-world overhaul).
-const CACHE = 'dsda-arcade-v3';
+// v4: Beaverz pass 4 (particles/look/HP) — bust cache so a stale/corrupt
+//     three.module.js entry (e.g. a cached Cloudflare challenge page) is
+//     dropped and re-fetched; fixes players stuck on the loading screen.
+const CACHE = 'dsda-arcade-v4';
 const CORE = [
   './',
   './manifest.webmanifest',

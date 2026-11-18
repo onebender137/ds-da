@@ -1380,7 +1380,7 @@ function updatePopups(dt){for(const p of POPUPS){if(!p.on)continue;p.tt+=dt;cons
   p.m.opacity=k>.6?1-(k-.6)/.4:1;}}
 
 /* ============================ TERRAIN ============================ */
-let terrain=null,worldGroup=null,worldDisposables=[];window.__g=()=>G;window.__beav=()=>G.active?{hp:G.active.hp,disp:Math.round(G.active.dispHp),ghost:Math.round(G.active.ghostHp),recoil:Math.round(G.active.recoilT*100)/100}:null;window.__parts=()=>({active:PARTS.filter(p=>p.on).length,draws:1});  // TEMP
+let terrain=null,worldGroup=null,worldDisposables=[];
 
 
 function solid(x,y){if(x<0||x>=W||y<=0||y>=H)return false;const mx=(x/CELL)|0,my=((H-y)/CELL)|0;return mask[my*MW+mx]===1;}
