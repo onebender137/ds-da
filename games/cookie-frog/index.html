@@ -913,7 +913,7 @@ const camTarget=new THREE.Vector3(0,0,-0.35);
 const lookCur=new THREE.Vector3(0,0,-0.35);
 let shakeAmp=0,parX=0,parY=0,parTX=0,parTY=0;
 let hemi,keyLight,rimLight,denLight;
-let levelGroup=null,wallCapMat=null,wallBodyMat=null,floorMesh=null,floorTex=null;
+let levelGroup=null,wallCapMat=null,wallBodyMat=null,wallInnerMat=null,floorMesh=null,floorTex=null;
 let denWater,denHalo,gateMesh;
 let themeCols={};
 const GEO={
@@ -1064,6 +1064,11 @@ function buildFrog(){
   frog.shadow=makeBlobShadow(1.05);g.add(frog.shadow);
   frog.light=new THREE.PointLight(C('#6cffb2'),1.05,7,2);frog.light.position.set(0,1.5,0);g.add(frog.light);
   frog.g=g;scene.add(g);
+  // queued-turn chevron: shows the swipe registered and where the frog will turn
+  const sh=new THREE.Shape();
+  sh.moveTo(0,0.2);sh.lineTo(0.26,-0.08);sh.lineTo(0.13,-0.08);sh.lineTo(0,0.06);sh.lineTo(-0.13,-0.08);sh.lineTo(-0.26,-0.08);sh.closePath();
+  frog.chev=new THREE.Mesh(new THREE.ShapeGeometry(sh),new THREE.MeshBasicMaterial({color:C('#ffffff'),transparent:true,opacity:0,depthWrite:false,depthTest:false}));
+  frog.chev.scale.setScalar(1.9);frog.chev.renderOrder=9;scene.add(frog.chev);
 }
 
 /* ---------- foxes ---------- */
@@ -1306,18 +1311,21 @@ function buildLevel(n){
   if(levelGroup){
     levelGroup.traverse(o=>{if(o.isMesh&&o.geometry&&o.geometry!==GEO.plane&&o.geometry!==GEO.box)o.geometry.dispose();});
     scene.remove(levelGroup);
-    if(wallBodyMat)wallBodyMat.dispose();if(wallCapMat)wallCapMat.dispose();
+    if(wallBodyMat)wallBodyMat.dispose();if(wallCapMat)wallCapMat.dispose();if(wallInnerMat)wallInnerMat.dispose();
     if(floorMesh){floorMesh.material.dispose();}
     if(floorTex)floorTex.dispose();
   }
   levelGroup=new THREE.Group();
   // walls
-  const bodies=[],caps=[];
+  const bodies=[],caps=[],inners=[];
   for(const r of LV.rects){
     const w=r.x1-r.x0+1,d=r.y1-r.y0+1;
     const cx=(r.x0+r.x1)/2-(COLS-1)/2, cz=(r.y0+r.y1)/2-(ROWS-1)/2;
     const b=new THREE.BoxGeometry(w,0.62,d);b.translate(cx,0.31,cz);bodies.push(b);
     const c=new THREE.BoxGeometry(Math.max(0.25,w-0.16),0.1,Math.max(0.25,d-0.16));c.translate(cx,0.67,cz);caps.push(c);
+    // dark glass inset on top: leaves the neon cap as a glowing rim/tube
+    const iw=Math.max(0.3,w-0.5),id=Math.max(0.3,d-0.5);
+    const ib=new THREE.BoxGeometry(iw,0.05,id);ib.translate(cx,0.735,cz);inners.push(ib);
   }
   wallBodyMat=std(theme.wall,{roughness:0.6,metalness:0.2});
   wallCapMat=bas(theme.neon,1.45);
@@ -1325,6 +1333,11 @@ function buildLevel(n){
   const cg=mergeGeoms(caps);caps.forEach(g=>g.dispose());
   levelGroup.add(new THREE.Mesh(bg,wallBodyMat));
   levelGroup.add(new THREE.Mesh(cg,wallCapMat));
+  const innerCol=C(theme.wall).lerp(C(theme.fog),0.35);
+  wallInnerMat=std('#000000',{roughness:0.25,metalness:0.55});
+  wallInnerMat.color.copy(innerCol);wallInnerMat.emissive=C(theme.neon).multiplyScalar(0.07);
+  const ig=mergeGeoms(inners);inners.forEach(g=>g.dispose());
+  levelGroup.add(new THREE.Mesh(ig,wallInnerMat));
   // floor
   floorTex=floorTexture(theme,LV.rects);
   floorMesh=new THREE.Mesh(new THREE.PlaneGeometry(COLS,ROWS),new THREE.MeshStandardMaterial({map:floorTex,roughness:0.95,metalness:0}));
@@ -1849,6 +1862,11 @@ function animFrog(t,dt){
     frog.face=angleLerp(frog.face,Math.atan2(v.x,v.y),Math.min(1,dt*14));
   }
   g.rotation.y=frog.face;
+  {const q=frog.queue,cv=frog.chev,show=q.length&&q[0]!==frog.dir&&G.state==='play';
+   cv.material.opacity=lerp(cv.material.opacity,show?0.7+0.25*Math.sin(t*12):0,Math.min(1,dt*18));
+   if(show){const v=DIRS[q[0]];cv.position.set(x+v.x*0.66,0.85,z+v.y*0.66);cv.rotation.set(-Math.PI/2,0,q[0]*Math.PI/2);
+     cv.material.color.copy(G.huntT>0?themeCols.gold:themeCols.neon);}
+   cv.visible=cv.material.opacity>0.02;}
   frog.shadow.material.opacity=0.5-hop*0.25;
   const shS=1.05-hop*0.3;frog.shadow.scale.set(shS,shS,1);
   frog.shadow.position.y=-g.position.y+0.02;
@@ -1980,7 +1998,7 @@ function fitCamera(){
   camera.aspect=w/h;
   const tanV=Math.tan(FOV*Math.PI/360);
   const vHalf=(ROWS*Math.cos(TILT))/2+2.3;
-  const hHalf=COLS/2+1.0;
+  const hHalf=COLS/2+(w<h?0.7:1.0); // portrait phones: tighter side margin = bigger tiles
   camDist=Math.max(vHalf/tanV,hHalf/(tanV*camera.aspect));
   camera.near=0.1;camera.far=camDist*3+90;
   camera.updateProjectionMatrix();
@@ -2255,7 +2273,7 @@ window.__tl = {
   state: () => ({ state: G.state, score: G.score, level: G.level, lives: G.lives, best: G.best, diff: G.diff, remaining: G.remaining, paused: G.paused }),
   start: () => { startGame(); return 'started'; },
   dir: (di) => { setDesired(di); return 'dir ' + di; },
-  frog: () => ({ x: frog.tile.x, y: frog.tile.y, dir: frog.dir, t: +frog.t.toFixed(2), queue: frog.queue.slice() }),
+  frog: () => ({ x: frog.tile.x, y: frog.tile.y, dir: frog.dir, t: +frog.t.toFixed(2), queue: frog.queue.slice(), chev: +frog.chev.material.opacity.toFixed(2) }),
   skipCard: () => { skipCard(); return 'skip'; },
   level: (n) => { G.level=n; buildLevel(n); resetPositions(false); showCard(); return 'level ' + n; },
   gameOver: () => { gameOver(); return 'gameover'; },
