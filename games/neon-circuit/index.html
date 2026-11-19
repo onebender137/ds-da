@@ -94,6 +94,13 @@ body[data-state="race"] #hud,body[data-state="countdown"] #hud,body[data-state="
 #pending{font-size:11px;color:var(--green);text-align:right;min-height:14px}
 #trackLabel{font-size:9px;letter-spacing:.26em;color:var(--faint);text-align:right;margin-top:5px}
 #radioName{font-size:9px;letter-spacing:.2em;text-align:right;margin-top:4px;color:var(--mag)}
+/* corner tidy: in a race only camera + pause sit top-right (mute/radio live in the pause menu
+   and on M / [ ]), and the money/track block keeps clear of them */
+body[data-state="race"] #radioBtn,body[data-state="race"] #muteBtn,body[data-state="countdown"] #radioBtn,body[data-state="countdown"] #muteBtn,body[data-state="finish"] #radioBtn,body[data-state="finish"] #muteBtn{display:none}
+#hudTop>div:last-child{margin-right:calc(100px + var(--safeR))}
+/* DSDA Radio: off the steering pad while racing — top-left under the standings */
+body[data-state="race"] #radioBox.dsda-radio,body[data-state="countdown"] #radioBox.dsda-radio,body[data-state="finish"] #radioBox.dsda-radio{top:calc(244px + var(--safeT));bottom:auto;left:calc(10px + var(--safeL))}
+body[data-state="title"] .foot{left:auto;right:calc(30px + var(--safeR));bottom:calc(12px + var(--safeB))}
 #speedBox{position:absolute;left:50%;top:calc(8px + var(--safeT));transform:translateX(-50%);text-align:center;background:rgba(8,3,24,.6);padding:7px 16px;clip-path:var(--cut);border:1px solid rgba(0,229,255,.25)}
 #speed{font-size:clamp(22px,4vmin,32px);font-weight:900}#speedUnit{font-size:8px;letter-spacing:.3em;color:var(--faint)}
 #minimap{position:absolute;right:calc(10px + var(--safeR));top:calc(118px + var(--safeT));width:132px;height:132px;background:rgba(8,3,24,.68);border:1px solid rgba(0,229,255,.3);clip-path:var(--cut)}
@@ -215,6 +222,7 @@ body[data-steer="slide"] #pBrake{left:calc(14px + var(--safeL));bottom:calc(16px
 #boot.gone{opacity:0;pointer-events:none}.spinner{width:52px;height:52px;border-radius:50%;border:3px solid rgba(0,229,255,.15);border-top-color:var(--cyan);border-right-color:var(--mag);animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
 #bootMsg{font-family:Orbitron,Impact,Haettenschweiler,Anton,sans-serif;font-size:11px;letter-spacing:.3em;color:var(--cyan);text-align:center;line-height:2}
 @media(max-width:720px){
+  body[data-state="race"] #radioBox.dsda-radio,body[data-state="countdown"] #radioBox.dsda-radio,body[data-state="finish"] #radioBox.dsda-radio{top:calc(86px + var(--safeT))}
   #minimap{width:96px;height:96px;top:calc(112px + var(--safeT))}
   #standings{display:none}
   #weaponChips{display:none}
@@ -222,6 +230,8 @@ body[data-steer="slide"] #pBrake{left:calc(14px + var(--safeL));bottom:calc(16px
   .panel{padding:20px}
 }
 @media(max-height:470px) and (orientation:landscape){
+  body[data-state="race"] #radioBox.dsda-radio,body[data-state="countdown"] #radioBox.dsda-radio,body[data-state="finish"] #radioBox.dsda-radio{top:calc(82px + var(--safeT))}
+  #standings{display:none}
   #minimap{width:84px;height:84px;top:calc(58px + var(--safeT))}
   #inputDebug{top:calc(58px + var(--safeT))}
   #toasts{top:calc(96px + var(--safeT))}
@@ -376,6 +386,7 @@ body[data-steer="slide"] #pBrake{left:calc(14px + var(--safeL));bottom:calc(16px
   <div class="panel" style="text-align:center;width:min(460px,94vw)">
     <div class="brand">RACE SUSPENDED</div><h2 style="font-family:Orbitron,Impact,Haettenschweiler,Anton,sans-serif;font-size:30px;margin:10px 0 16px">PAUSED</h2>
     <div class="row" style="justify-content:center"><button class="btn cy" id="resumeBtn">▶ Resume</button><button class="btn warn" id="restartBtn">↻ Restart</button><button class="btn ghost" id="quitBtn">Quit</button></div>
+    <div class="row" style="justify-content:center;margin-top:10px"><button class="btn ghost" id="pMute">🔊 SOUND ON</button><button class="btn ghost" id="pRadio">📻 NEXT STATION</button></div>
     <div class="small" style="margin-top:16px">The on-screen pad remains live whenever the race is active.</div>
   </div>
 </div>
@@ -610,7 +621,7 @@ bindPad();bindSteer();applySteerMode(); // bound once, at parse time — NOT aga
    not a V8; the two nearest rivals get their own motors, panned and Doppler-
    shifted, so you hear them come up on you. Music is the arcade's DSDA Radio.
    ============================================================ */
-const R_RADIO=()=>window.DSDARadio&&window.DSDARadio.manifest?window.DSDARadio:null;
+const R_RADIO=()=>{try{return typeof DSDARadio!=="undefined"&&DSDARadio.manifest?DSDARadio:null}catch(e){return null}};   // script-scope const: not on window
 const AudioSys={ctx:null,master:null,sfx:null,rev:null,noise:null,eng:null,riv:[],scr:null,scrape:null,wind:null,
 unlock(){if(this.ctx){if(this.ctx.state==="suspended")this.ctx.resume();return}
  try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;const c=this.ctx=new C();
@@ -721,7 +732,7 @@ record(){[1568,2093,2637,3136].forEach((f,i)=>this.tone({f,type:"sine",d:.4,g:.0
 // legacy entry point some older call sites still use
 sfxTone(f,d,g=.15,type="square",slide){this.tone({f,f1:slide||null,type,d,g})},
 /* radio controls drive the arcade-wide DSDA Radio */
-nextStation(d){const r=R_RADIO();if(!r)return;try{if(!r.playing)r.play();else(d<0?r.prevStation():r.nextStation())}catch(e){}}
+nextStation(d){const r=R_RADIO();if(!r)return;try{if(!r.playing)r.play();else(d<0?r.prevStation():r.nextStation());setTimeout(renderRadio,500)}catch(e){}}
 };
 function toggleMute(){AudioSys.unlock();AudioSys.setMute(!save.muted);}
 function radioToast(){}
@@ -2047,7 +2058,7 @@ function updateHUD(dt,t){
  setTxt("speed",String(Math.round(Math.abs(p.speed)*4.2)));
  if($("inputDebug").classList.contains("on")){const sv=steerValue();
   $("dbgLeft").classList.toggle("on",sv<0);$("dbgRight").classList.toggle("on",sv>0);$("dbgGas").classList.toggle("on",gasValue());$("dbgBrake").classList.toggle("on",brakeValue());$("dbgTurbo").classList.toggle("on",p.turbo>0);}
- hudTick-=dt;if(hudTick<=0){hudTick=.2;renderStandings()}drawMini(t);$("boostfx").classList.toggle("on",p.turbo>0&&!reduced&&Game.state==="race");
+ hudTick-=dt;if(hudTick<=0){hudTick=.2;renderStandings();renderRadio()}drawMini(t);$("boostfx").classList.toggle("on",p.turbo>0&&!reduced&&Game.state==="race");
 }
 
 /* ---------- screens ---------- */
@@ -2096,7 +2107,7 @@ function placeShowroom(){if(!Track)return;const D=Track.data,N=D.N;
 function poseShowroom(dt,t){const p=cars[0];showroomSpin=Math.max(0,showroomSpin-dt);
  p.h+=dt*(.32+showroomSpin*2.2);cars.forEach(c=>{const pr=c.pr||project(c.x,c.z,null);carVisual(c,dt,t,surfaceY(Track.data,pr),0,0)})}
 function enterTitle(){clearInput();Game.paused=false;if(Track&&Game.built!==0){}if(Track)placeShowroom();renderTitle();setState("title");setTimeout(()=>{const b=$(hasRun()?"contBtn":"startBtn");if(b&&!coarse)b.focus({preventScroll:true})},50)}
-function pause(){if(Game.paused||!["race","countdown"].includes(Game.state))return;Game.paused=true;clearInput();setState("pause");AudioSys.click()}
+function pause(){if(Game.paused||!["race","countdown"].includes(Game.state))return;Game.paused=true;clearInput();setState("pause");$("pMute").textContent=save.muted?"🔇 SOUND OFF":"🔊 SOUND ON";AudioSys.click()}
 function resume(){if(!Game.paused)return;Game.paused=false;clearInput();setState("race");AudioSys.click();focusCanvas()}
 function newGame(){save=Object.assign(freshSave(),{diff:save.diff,autoGas:save.autoGas,muted:save.muted,cam:save.cam,gfx:save.gfx,steer:save.steer,bestScore:save.bestScore});persist();renderGarage();setState("garage")}
 
@@ -2127,7 +2138,8 @@ $("nextBtn").onclick=nextRace;$("postBtn").onclick=()=>{AudioSys.click();postSco
 $("initsInput").addEventListener("keydown",e=>{e.stopPropagation();if(e.key==="Enter"){e.preventDefault();$("postBtn").click()}});
 $("initsInput").addEventListener("input",e=>{e.target.value=cleanInits(e.target.value)});$("retryBtn").onclick=()=>{if(save.lives<=0)newGame();else startRace(Game.track)};
 $("ngBtn").onclick=()=>{renderGarage();setState("garage")};$("champTitle").onclick=enterTitle;
-$("resumeBtn").onclick=resume;$("restartBtn").onclick=()=>{Game.paused=false;startRace(Game.track)};$("quitBtn").onclick=()=>{Game.paused=false;enterTitle()};
+$("resumeBtn").onclick=resume;
+$("pMute").onclick=()=>{toggleMute();$("pMute").textContent=save.muted?"🔇 SOUND OFF":"🔊 SOUND ON"};$("pRadio").onclick=()=>{AudioSys.unlock();AudioSys.nextStation(1)};$("restartBtn").onclick=()=>{Game.paused=false;startRace(Game.track)};$("quitBtn").onclick=()=>{Game.paused=false;enterTitle()};
 addEventListener("resize",()=>{renderer.setSize(innerWidth,innerHeight);if(composer)composer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()});
 // phones drop the GL context on backgrounding / thermal throttle — don't leave a black canvas
 $("gl").addEventListener("webglcontextlost",e=>{e.preventDefault();if(["race","countdown"].includes(Game.state))pause();
@@ -2180,6 +2192,17 @@ if(/[?&]test=1/.test(location.search))window.__G={
     // DSDA Radio — shared cross-game dial (6 stations). The radio is the music source;
     // the game's own procedural music is disabled.
     DSDARadio.init({ mount: 'radioBox', manifest: '../../radio/stations.json' });
+    // first tap on the radio resumes its AudioContext + nudges play() synchronously (iOS/Android)
+    (function(){
+      var box = document.getElementById('radioBox');
+      if (!box) return;
+      box.addEventListener('pointerdown', function(){
+        try {
+          if (DSDARadio._actx) { var ctx = DSDARadio._actx(); if (ctx && ctx.state === 'suspended') ctx.resume(); }
+          if (DSDARadio.audio && DSDARadio.audio.paused && DSDARadio._bcast) { DSDARadio.audio.play().catch(function(){}); }
+        } catch(e) {}
+      }, { passive: true });
+    })();
   </script>
 </body>
 </html>
