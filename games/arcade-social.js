@@ -31,12 +31,12 @@
     'slipstream': 'Slipstream', 'stunts': 'STUNTS', 'blockcrush': 'BlockCrush',
     'plumber-bob': 'Plumber Bob', 'dragon-slalom': 'Dragon Slalom', 'tappycat': 'TappyCat',
     'angry-nerds': 'Angry Nerds', 'neon-circuit': 'Neon Circuit', 'cookie-frog': 'Cookie Frog',
-    'beaverz': 'Beaverz'
+    'beaverz': 'Beaverz', 'poke-it': 'Poke It'
   };
   var EMOJI = {
     'dropblock': '🧱', 'shatterblock': '💥', 'popper': '🍄', 'slipstream': '🏎️', 'stunts': '🚲',
     'blockcrush': '🍬', 'plumber-bob': '🪠', 'dragon-slalom': '🐉', 'tappycat': '🐱',
-    'angry-nerds': '🤓', 'neon-circuit': '🏁', 'cookie-frog': '🐸', 'beaverz': '🦫'
+    'angry-nerds': '🤓', 'neon-circuit': '🏁', 'cookie-frog': '🐸', 'beaverz': '🦫', 'poke-it': '🎈'
   };
 
   /* ---------------- badges ---------------- */

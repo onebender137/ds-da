@@ -17,7 +17,8 @@
 //     three.module.js entry (e.g. a cached Cloudflare challenge page) is
 //     dropped and re-fetched; fixes players stuck on the loading screen.
 // v5: Neon Circuit v2 — new cabinet screenshot/og image.
-const CACHE = 'dsda-arcade-v5';
+// v6: Poke It cabinet — new screenshot/og art + arcade-social.js learns 'poke-it'.
+const CACHE = 'dsda-arcade-v6';
 const CORE = [
   './',
   './manifest.webmanifest',
