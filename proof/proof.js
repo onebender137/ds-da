@@ -685,9 +685,35 @@ function initLogin() {
             const nonce = nonceRes.nonce;
 
             let sigAddress, signature;
+            let cwiPublicKey = null;
 
-            // Method 1: Wallet extension (preferred — no WIF needed)
-            if (window.bsv && typeof window.bsv.sign === 'function') {
+            // Method 0: BRC-100 / BSV Browser (window.CWI) — preferred when present
+            if (window.CWI && typeof window.CWI.getPublicKey === 'function'
+                    && typeof window.CWI.createSignature === 'function') {
+                try {
+                    status.textContent = '🔐 Approve the signature request in BSV Browser…';
+                    // Fixed protocolID + keyID => a stable login key/address per wallet.
+                    const proto = { protocolID: [0, 'dsda ca login'], keyID: 'login', counterparty: 'anyone' };
+                    // forSelf:true is REQUIRED: createSignature signs with the
+                    // for-self derivation; without it getPublicKey returns a
+                    // different key and the server can't verify.
+                    const { publicKey } = await window.CWI.getPublicKey({ ...proto, forSelf: true });
+                    const { signature: derSig } = await window.CWI.createSignature({
+                        data: Array.from(BSV.deps.Buffer.from(nonce, 'utf8')), ...proto
+                    });
+                    // createSignature returns a byte array; hex-encode for JSON.
+                    signature = Array.from(derSig).map(b => b.toString(16).padStart(2, '0')).join('');
+                    cwiPublicKey = publicKey;
+                    sigAddress = BSV.Address.fromPublicKey(publicKey).toString();
+                } catch (walletErr) {
+                    status.textContent = '❌ Signature request rejected in BSV Browser.';
+                    loginSubmit.disabled = false;
+                    loginSubmit.textContent = 'Sign + Login';
+                    return;
+                }
+            }
+            // Method 1: Wallet extension (Unstoppable/Green)
+            else if (window.bsv && typeof window.bsv.sign === 'function') {
                 try {
                     status.textContent = '🔐 Approve the signature request in your wallet…';
                     const result = await window.bsv.sign(nonce);
@@ -748,7 +774,8 @@ function initLogin() {
 
             // Send the signature to the server
             const { ok, j } = await apiPost('/api/login', {
-                nonce, address: sigAddress, signature, display_name: name
+                nonce, address: sigAddress, signature, display_name: name,
+                ...(cwiPublicKey ? { publicKey: cwiPublicKey } : {})
             });
 
             if (ok) {
