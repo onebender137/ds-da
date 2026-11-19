@@ -16,7 +16,8 @@
 // v4: Beaverz pass 4 (particles/look/HP) — bust cache so a stale/corrupt
 //     three.module.js entry (e.g. a cached Cloudflare challenge page) is
 //     dropped and re-fetched; fixes players stuck on the loading screen.
-const CACHE = 'dsda-arcade-v4';
+// v5: Neon Circuit v2 — new cabinet screenshot/og image.
+const CACHE = 'dsda-arcade-v5';
 const CORE = [
   './',
   './manifest.webmanifest',
