@@ -1531,10 +1531,12 @@ function project(x,z,hint){
 }
 /* Player car numbers. The AI uses the same physics with its own top speed and grip,
    so a rival can never do anything the player's car cannot. */
-function stats(){const u=save.up;return{max:27+u.motor*2.2,accel:15+u.tires*2.2,turn:2.45+u.tires*.1,grip:9+u.tires*1.1,lat:19+u.tires*1.3,dlat:30+u.tires*1.2,turboDur:1.5+u.turbo*.3,turboMult:1.32+u.turbo*.05,startMiss:save.up.motor>=2?1:0}}
-const AI_SKILL=[{lat:15,max:.94,drift:.35,item:.6},{lat:17.3,max:1,drift:.7,item:.85},{lat:18.6,max:1.04,drift:.95,item:1}];
+/* PACE scales the whole field: player and AI share it, so the racing stays close */
+const PACE=1.15;
+function stats(){const u=save.up;return{max:(27+u.motor*2.2)*PACE,accel:(15+u.tires*2.2)*1.2,turn:2.45+u.tires*.1,grip:9.5+u.tires*1.1,lat:20.5+u.tires*1.3,dlat:32+u.tires*1.2,turboDur:1.5+u.turbo*.3,turboMult:1.32+u.turbo*.05,startMiss:save.up.motor>=2?1:0}}
+const AI_SKILL=[{lat:16.2,max:.94,drift:.35,item:.6},{lat:18.7,max:1,drift:.7,item:.85},{lat:20.1,max:1.04,drift:.95,item:1}];
 function aiStats(c){const sk=AI_SKILL[save.diff],ng=1+save.ng*.04,rd=1+(Game.round||0)*.02;
- return{max:27*sk.max*ng*rd*c.pers.pace,accel:15,turn:2.45,grip:10,lat:19,dlat:30,turboDur:1.5,turboMult:1.32}}
+ return{max:27*PACE*sk.max*ng*rd*c.pers.pace,accel:18,turn:2.45,grip:10.5,lat:20.5,dlat:32,turboDur:1.5,turboMult:1.32}}
 const DRIFT_LV=[.85,1.75,2.8],MT_TIME=[0,.45,.85,1.3],MT_KICK=[0,3,4.5,6],SPARK=[0xd8e4ff,0x3fb6ff,0xff8a1a,0xff3df0];
 function spinCar(c){if(c.inv>0||c.spin>0)return;c.spin=.95;c.spinA=0;c.inv=2.1;if(!c.air){c.vx*=.25;c.vz*=.25}   // shot mid-jump keeps its arc: no dropping people into the gap
  c.turbo=0;c.boost=0;endDrift(c,false);Particles.burst(c.x,c.y+1.2,c.z,0xffe25e,14,5,.9,.8,6,4);if(c.player)AudioSys.spin();if(c.player&&Game.state==="race"){toast("SPUN OUT!","bad");hitFlash();Game.shake=Math.max(Game.shake,reduced?0:.5);vibe([60,40,60])}}
@@ -1627,7 +1629,7 @@ function driveCar(c,ctl,st,dt,t){
    // inward is toward -drift on the lat axis (a turn of +drift bends toward -lat)
    c.dLane=clamp(c.dLane+(into-.5)*2*-c.drift*7*dt,-lim,lim);
    const n={x:-c.pr.tan.z,z:c.pr.tan.x},latV=c.vx*n.x+c.vz*n.z;
-   const road=kL*spd,hold=-(c.dLane-lat)*.32+latV*.11;
+   const road=kL*spd,hold=-(c.dLane-lat)*.42+latV*.15;
    w=clamp(road+hold,-st.turn*1.4,st.turn*1.4);
    if(Math.sign(w)===-c.drift)w*=.6;                       // never whip the other way mid-drift
    c.driftRate=clamp(Math.abs(kL)*spd,0,1);
@@ -1851,7 +1853,7 @@ function carBumps(){const n=cars.length;for(let i=0;i<n;i++)for(let j=i+1;j<n;j+
   const rv=(a.vx-b.vx)*nx+(a.vz-b.vz)*nz;
   if(rv<0){const j2=-.75*rv;a.vx+=nx*j2;a.vz+=nz*j2;b.vx-=nx*j2;b.vz-=nz*j2;
    if(-rv>3&&(a.player||b.player)){AudioSys.thud(clamp(-rv/14,.1,.7));Game.shake=Math.max(Game.shake,reduced?0:.12)}}}}}
-function updateMissiles(dt){for(const m of missiles){if(!m.active)continue;m.life-=dt;if(m.life<=0){m.active=false;m.g.visible=false;continue}let target=null,best=1e9;const f0=forward(m.h);for(const c of cars){if(c===m.owner||c.inv>0)continue;const dx=c.x-m.x,dz=c.z-m.z,dd=dx*dx+dz*dz;if(dd<1600&&(f0.x*dx+f0.z*dz)/Math.sqrt(dd)>.5&&dd<best){best=dd;target=c}}if(target)m.h=angLerp(m.h,Math.atan2(target.x-m.x,target.z-m.z),clamp(2.1*dt,0,1));const f=forward(m.h);m.x+=f.x*55*dt;m.z+=f.z*55*dt;const pr=project(m.x,m.z,m.idx);m.idx=pr.i;m.y=surfaceY(Track.data,pr)+.55;m.g.position.set(m.x,m.y,m.z);m.g.rotation.y=m.h;Particles.spawn(m.x,m.y,m.z,rand(-1,1),rand(-1,1),rand(-1,1),0xff66b3,.9,.25);let hit=Math.abs(pr.lat)>Track.data.hw-.1;if(!hit)for(const c of cars){if(c===m.owner||c.inv>0)continue;if(d2(m.x,m.z,c.x,c.z)<2.89&&Math.abs(c.y-m.y)<2.5){spinCar(c);hit=true;break}}if(hit){m.active=false;m.g.visible=false;Particles.burst(m.x,m.y,m.z,0xff8a3d,22,10,1.6,.7,4,3);AudioSys.boom(m.x,m.z);if(d2(m.x,m.z,cars[0].x,cars[0].z)<784&&!reduced)Game.shake=Math.max(Game.shake,.4)}}}
+function updateMissiles(dt){for(const m of missiles){if(!m.active)continue;m.life-=dt;if(m.life<=0){m.active=false;m.g.visible=false;continue}let target=null,best=1e9;const f0=forward(m.h);for(const c of cars){if(c===m.owner||c.inv>0)continue;const dx=c.x-m.x,dz=c.z-m.z,dd=dx*dx+dz*dz;if(dd<1600&&(f0.x*dx+f0.z*dz)/Math.sqrt(dd)>.5&&dd<best){best=dd;target=c}}if(target)m.h=angLerp(m.h,Math.atan2(target.x-m.x,target.z-m.z),clamp(2.1*dt,0,1));const f=forward(m.h);m.x+=f.x*62*dt;m.z+=f.z*62*dt;const pr=project(m.x,m.z,m.idx);m.idx=pr.i;m.y=surfaceY(Track.data,pr)+.55;m.g.position.set(m.x,m.y,m.z);m.g.rotation.y=m.h;Particles.spawn(m.x,m.y,m.z,rand(-1,1),rand(-1,1),rand(-1,1),0xff66b3,.9,.25);let hit=Math.abs(pr.lat)>Track.data.hw-.1;if(!hit)for(const c of cars){if(c===m.owner||c.inv>0)continue;if(d2(m.x,m.z,c.x,c.z)<2.89&&Math.abs(c.y-m.y)<2.5){spinCar(c);hit=true;break}}if(hit){m.active=false;m.g.visible=false;Particles.burst(m.x,m.y,m.z,0xff8a3d,22,10,1.6,.7,4,3);AudioSys.boom(m.x,m.z);if(d2(m.x,m.z,cars[0].x,cars[0].z)<784&&!reduced)Game.shake=Math.max(Game.shake,.4)}}}
 function updateWorld(dt,t){for(const p of Track.pickups){if(!p.active){p.respawn-=dt;if(p.respawn<=0){p.active=true;p.g.visible=true;p.pop=0}continue}const ch=p.g.children[0];p.pop=Math.min(1,(p.pop??1)+dt*4);const sc=p.pop<1?p.pop*(1.25-.25*p.pop):1;
   if(p.type==="box"){ch.position.y=1.1+Math.sin(t*2.4+p.phase)*.18;ch.rotation.set(t*.9+p.phase,t*1.3+p.phase,0);ch.scale.setScalar(sc)}else{ch.rotation.y+=dt*3;ch.position.y=1+Math.sin(t*3+p.phase)*.12;ch.scale.setScalar(sc)}}for(const c of Track.cones)if(!c.alive){c.t-=dt;if(c.t<=0){c.alive=true;c.g.visible=true}}for(const d of drops){if(!d.active)continue;d.life-=dt;d.grace-=dt;d.g.children[0].material.opacity=clamp(d.life/2,0,1)*.9;if(d.life<=0){d.active=false;d.g.visible=false}}updateTraffic(dt);Particles.update(dt)}
 
@@ -2014,11 +2016,11 @@ function updateCamera(dt,t){
    // follow where the car is GOING more than where it points, so a drift reads as a slide
    const sp=Math.hypot(p.vx,p.vz),vh=sp>4?Math.atan2(p.vx,p.vz):p.h,aim=p.spin>0?camHeading:angLerp(p.h,vh,.55);
    camHeading=angLerp(camHeading,aim,1-Math.exp(-(p.drift?3.2:5)*dt));
-   const f=forward(camHeading),back=7.6+sp*.07,up=3.5+sp*.03,side=forward(camHeading+Math.PI/2),sw=-(p.yawFx||0)*2.2;
+   const f=forward(camHeading),back=7.2+sp*.06,up=3.2+sp*.025,side=forward(camHeading+Math.PI/2),sw=-(p.yawFx||0)*2.2;
    tmpV.set(p.x-f.x*back+side.x*sw,p.y+up,p.z-f.z*back+side.z*sw);camPos.lerp(tmpV,1-Math.exp(-7*dt));
    if(camPos.y<p.y+1.6)camPos.y=p.y+1.6;
    tmpV.set(p.x+f.x*(7+sp*.2),p.y+1.2,p.z+f.z*(7+sp*.2));camLook.lerp(tmpV,1-Math.exp(-9*dt));
-   fov=64+clamp(sp/30,0,1)*6+((p.turbo>0||p.boost>0)&&!reduced?10:0);
+   fov=64+clamp((sp-8)/26,0,1)*11+((p.turbo>0||p.boost>0)&&!reduced?10:0);
   }else if(save.cam===1){
    // PRO-AM: high three-quarter view on a fixed compass bearing, like the NES original
    const sp=Math.hypot(p.vx,p.vz),lead=forward(Math.atan2(p.vx,p.vz)),la=clamp(sp*.28,0,8);
@@ -2064,7 +2066,7 @@ function updateHUD(dt,t){
 /* ---------- screens ---------- */
 const STYLE_NAME={buggy:"BUGGY",truck:"STADIUM TRUCK",touring:"TOURING"};
 function statBarsHTML(){const st=stats(),bar=(n,v)=>`<div class="bar"><span>${n}</span><i><b style="width:${Math.round(clamp(v,0,1)*100)}%"></b></i></div>`;
- return bar("TOP SPEED",(st.max-24)/10)+bar("ACCEL",(st.accel-12)/10)+bar("GRIP",(st.lat-17)/6)+bar("BOOST",(st.turboDur-1.2)/1.2)}
+ return bar("TOP SPEED",(st.max-28)/11)+bar("ACCEL",(st.accel-14)/12)+bar("GRIP",(st.lat-18)/6)+bar("BOOST",(st.turboDur-1.2)/1.2)}
 function renderTitle(){
  $("muteBtn").textContent=save.muted?"🔇":"🔊";renderRadio();renderOptions();
  $("titleTag").textContent="Six RC machines. Drift for mini-turbos, raid the item boxes, fly the gaps — "+TRACKS.length+" circuits across "+CUPS.length+" cups. Finish top three or lose a chassis.";
