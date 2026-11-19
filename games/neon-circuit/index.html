@@ -317,6 +317,7 @@ body[data-steer="slide"] #pBrake{left:calc(14px + var(--safeL));bottom:calc(16px
     <div class="optRow"><span>DIFFICULTY</span><div class="seg" id="diffSeg"><button data-d="0">ROOKIE</button><button data-d="1">PRO</button><button data-d="2">LEGEND</button></div></div>
     <div class="optRow"><span>THROTTLE</span><button class="btn ghost" id="autoBtn">AUTO-GAS: ON</button></div>
     <div class="optRow"><span>TOUCH STEERING</span><button class="btn ghost" id="steerBtn">STEER: SLIDE</button></div>
+    <div class="optRow"><span>DRIFT ASSIST</span><button class="btn ghost" id="dassistBtn">ON</button></div>
     <div class="optRow"><span>CAMERA</span><button class="btn ghost" id="camOptBtn">CHASE</button></div>
     <div class="optRow"><span>GRAPHICS</span><button class="btn ghost" id="gfxBtn">HIGH</button></div>
     <div class="optRow"><span>SOUND</span><button class="btn ghost" id="muteOptBtn">ON</button></div>
@@ -1553,12 +1554,13 @@ function oil(c){if(c.oilN<=0){if(c.player)AudioSys.empty();return}const d=drops.
 
 /* ---- drift ---- */
 function startDrift(c,dir){
- c.drift=dir;c.driftT=0;c.driftLv=0;
+ c.drift=dir;c.driftT=0;c.driftLv=0;c.dLane=null;
  c.hopV=3.4;                                      // the little hop that commits you to it (visual only — grip stays on)
  if(c.player)AudioSys.hop();
 }
 function endDrift(c,award){
- if(!c.drift)return;const lv=c.driftLv;c.drift=0;c.driftT=0;c.driftLv=0;
+ if(!c.drift)return;const lv=c.driftLv;c.drift=0;c.driftT=0;c.driftLv=0;c.dLane=null;
+ if(Math.hypot(c.vx,c.vz)>4&&(c.ai||save.dassist!==false)){const vh=Math.atan2(c.vx,c.vz);c.h=vh+wrap(c.h-vh)*.35}
  if(award&&lv>0){
   c.boost=Math.max(c.boost,MT_TIME[lv]);
   const f=forward(c.h);c.vx+=f.x*MT_KICK[lv];c.vz+=f.z*MT_KICK[lv];
@@ -1595,7 +1597,7 @@ function driveCar(c,ctl,st,dt,t){
   if(spd>cap){const k=lerp(spd,cap,1-Math.exp(-3.2*dt))/spd;c.vx*=k;c.vz*=k;spd*=k}
  }
  /* ---- drift state ---- */
- const steer=clamp(ctl.steer,-1,1);
+ const steer=clamp(ctl.steer,-1,1);c.assistD=!!ctl.assist;
  if(!c.drift&&ctl.drift&&(ctl.driftDir||Math.abs(steer)>.3)&&spd>11&&!c.air&&c.spin<=0)startDrift(c,ctl.driftDir||Math.sign(steer));
  if(c.drift&&(!ctl.drift||spd<7||c.spin>0))endDrift(c,!ctl.drift&&spd>=7);
  /* ---- yaw ---- */
@@ -1603,8 +1605,23 @@ function driveCar(c,ctl,st,dt,t){
  let w;
  if(c.drift){const into=(steer*c.drift+1)/2;          // 0 = counter-steer (wide), 1 = into it (tight)
   // yaw is grip-limited: a drift holds ~3 g where normal steering holds ~1.9 g
-  w=c.drift*Math.min(st.turn*1.3,st.dlat/Math.max(spd,8))*(.3+.85*into);
-  if(!c.air){c.driftT+=dt*(.65+.7*into);const lv=c.driftT>DRIFT_LV[2]?3:c.driftT>DRIFT_LV[1]?2:c.driftT>DRIFT_LV[0]?1:0;
+  const cap=st.dlat/Math.max(spd,8);
+  if(ctl.assist&&c.pr){
+   /* DRIFT ASSIST — a lane-hold drift. The lane you start the drift in is locked; the
+      drift turns exactly as hard as the road bends where you are, and a small controller
+      keeps you on that lane. Steering IN slides the lane toward the apex, steering OUT
+      slides it wide — never past a safe margin from either wall. */
+   const S=D.samples,N=D.N,kL=(S[(c.idx+1)%N].k+S[(c.idx+2)%N].k)/2,lat=c.lat||0,lim=D.hw-2.3;
+   if(c.dLane==null)c.dLane=clamp(lat,-lim,lim);
+   // inward is toward -drift on the lat axis (a turn of +drift bends toward -lat)
+   c.dLane=clamp(c.dLane+(into-.5)*2*-c.drift*7*dt,-lim,lim);
+   const n={x:-c.pr.tan.z,z:c.pr.tan.x},latV=c.vx*n.x+c.vz*n.z;
+   const road=kL*spd,hold=-(c.dLane-lat)*.32+latV*.11;
+   w=clamp(road+hold,-st.turn*1.4,st.turn*1.4);
+   if(Math.sign(w)===-c.drift)w*=.6;                       // never whip the other way mid-drift
+   c.driftRate=clamp(Math.abs(kL)*spd,0,1);
+  }else w=c.drift*Math.min(st.turn*1.3,cap)*(.3+.85*into);
+  if(!c.air){c.driftT+=dt*(c.assistD?(.3+1.05*(c.driftRate||0)):(.65+.7*into));const lv=c.driftT>DRIFT_LV[2]?3:c.driftT>DRIFT_LV[1]?2:c.driftT>DRIFT_LV[0]?1:0;
    if(lv>c.driftLv){c.driftLv=lv;if(c.player){AudioSys.driftTick(lv);vibe(12)}}}
  }else w=steer*Math.min(st.turn,st.lat/Math.max(Math.abs(vf),1))*lowSpd;
  if(c.air)w*=c.hop?.9:.3;
@@ -1614,7 +1631,7 @@ function driveCar(c,ctl,st,dt,t){
   f=forward(c.h);
   const back=(c.vx*f.x+c.vz*f.z)<0&&!c.drift;
   const vh=Math.atan2(c.vx,c.vz),target=back?c.h+Math.PI:c.h,slip=wrap(target-vh);
-  let grip=c.drift?3.4:st.grip;
+  let grip=c.drift?(ctl.assist?16:3.4):st.grip;
   if(c.wet)grip*=.45;
   const nh=vh+slip*(1-Math.exp(-grip*dt));
   const scrub=(c.drift?.08:.35)*Math.abs(Math.sin(slip));   // speed lost to the tyres
@@ -1714,7 +1731,7 @@ function carVisual(c,dt,t,sy,steer,spd){
  const m=c.mesh;
  if(c.hopV!=null){c.hopY=(c.hopY||0)+c.hopV*dt;c.hopV-=28*dt;if(c.hopY<=0){c.hopY=0;c.hopV=null}}
  m.root.position.set(c.x,c.y+(c.hopY||0),c.z);
- c.yawFx=lerp(c.yawFx||0,c.drift?c.drift*.32:0,1-Math.exp(-8*dt));
+ c.yawFx=lerp(c.yawFx||0,c.drift?c.drift*(c.assistD?.46:.32):0,1-Math.exp(-8*dt));
  m.root.rotation.y=c.h+c.spinA+c.yawFx;
  const eff=clamp(spd/10,0,1);
  /* sprung shell: squat under power, dive on the brakes, roll out of corners, bounce on landings */
@@ -1758,7 +1775,7 @@ function playerStep(dt,t){
  c.steerIn=lerp(c.steerIn||0,-steerValue(),1-Math.exp(-12*dt));
  if(Input.turbo){Input.turbo=false;useTurbo(c)}if(Input.fire){Input.fire=false;fire(c)}if(Input.oil){Input.oil=false;oil(c)}
  if(Input.reset){Input.reset=false;if(Game.state==="race"&&c.pit<=0)respawnAt(c,c.idx,8)}
- driveCar(c,{thr,steer:c.steerIn,drift},st,dt,t);
+ driveCar(c,{thr,steer:c.steerIn,drift,assist:save.dassist!==false},st,dt,t);
  if(c.speed>3&&c.pr){const f=forward(c.h),tn=c.pr.tan,dot=f.x*tn.x+f.z*tn.z;Game.wrong=dot<-.3?Game.wrong+dt:0}else Game.wrong=0;
  $("wrong").classList.toggle("show",Game.wrong>1.1);
  $("driftMeter").className=c.drift&&c.driftLv?"lv"+c.driftLv:c.drift?"on":"";
@@ -1798,8 +1815,10 @@ function aiStep(c,dt,t){
  c.aiDriftCd=(c.aiDriftCd||0)-dt;const kS=S[(c.idx+Math.round(14/sp))%N].k;
  if(!c.drift&&!c.aiDrift&&c.aiDriftCd<=0&&c.pers.drifts&&soonK>1/48&&spd>15&&Math.random()<sk.drift*dt*8){c.aiDrift=true;c.aiDriftDir=Math.sign(kS)}
  const kN=S[c.idx].k,outward=c.drift&&Math.sign(c.lat)===Math.sign(kN)&&Math.abs(c.lat)>D.hw-2.4;
- if(c.aiDrift&&(nowK<1/85&&soonK<1/85||spd<10||outward||(c.drift&&Math.sign(kN)===-c.drift&&Math.abs(kN)>1/80))){c.aiDrift=false;c.aiDriftCd=.9}
+ if(c.aiDrift&&(nowK<1/85&&soonK<1/85||spd<10||(outward&&!(c.player&&window.__botMode))||(c.drift&&Math.sign(kN)===-c.drift&&Math.abs(kN)>1/80))){c.aiDrift=false;c.aiDriftCd=.9}
  if(c.drift)thr=1;
+ if(c.player&&window.__botMode&&c.drift){steer=window.__botMode==='neutral'?0:c.drift*1}
+ if(c.player&&window.__botMode){c.pers.drifts=true}
  if(title&&spd<target)thr=1;
  // items
  if(Game.state==="race"||title){
@@ -1811,7 +1830,7 @@ function aiStep(c,dt,t){
   if(c.oilN>0&&c.aiOil<=0){const f=forward(c.h);let behind=false;for(const o of cars){if(o===c)continue;const dx=o.x-c.x,dz=o.z-c.z,dd=dx*dx+dz*dz;if(dd<200&&(f.x*dx+f.z*dz)<0){behind=true;break}}
    if(behind&&Math.random()<.5*c.pers.aggro){oil(c);c.aiOil=rand(6,12)}else c.aiOil=.6}
  }
- driveCar(c,{thr,steer,drift:!!c.aiDrift,driftDir:c.aiDrift?c.aiDriftDir:0},st,dt,t);
+ driveCar(c,{thr,steer,drift:!!c.aiDrift,driftDir:c.aiDrift?c.aiDriftDir:0,assist:c.player&&window.__botMode?save.dassist!==false:true},st,dt,t);
 }
 /* Car-on-car: separate them and trade some of the closing speed, so a bump is a shove
    both drivers feel instead of two cars sliding through each other. */
@@ -2057,6 +2076,7 @@ function renderOptions(){
  $("camOptBtn").textContent=["CHASE","PRO-AM (NES)","CINEMA"][save.cam|0];
  $("gfxBtn").textContent=save.gfx===0?"LOW · no bloom, faster":"HIGH · bloom + full res";
  $("muteOptBtn").textContent=save.muted?"OFF":"ON";
+ $("dassistBtn").textContent=save.dassist===false?"OFF · raw drift, your line":"ON · follows the bend, steer to tighten/widen";
 }
 function applyGfx(){const hi=save.gfx!==0;if(bloomPass)bloomPass.enabled=hi;const pr=hi?DPR:1;renderer.setPixelRatio(pr);if(composer){composer.setPixelRatio(pr);composer.setSize(innerWidth,innerHeight)}}
 function renderGarage(){
@@ -2101,7 +2121,8 @@ $("optBtn").onclick=()=>{AudioSys.confirm();renderOptions();setState("options");
 $("optBack").onclick=()=>{AudioSys.back();renderTitle();setState("title")};
 $("camOptBtn").onclick=()=>{save.cam=((save.cam|0)+1)%3;persist();renderOptions();AudioSys.click()};
 $("gfxBtn").onclick=()=>{save.gfx=save.gfx===0?1:0;persist();applyGfx();renderOptions();AudioSys.click()};
-$("muteOptBtn").onclick=()=>{toggleMute();renderOptions()};$("raceBtn").onclick=()=>startRace(globalTrack());
+$("muteOptBtn").onclick=()=>{toggleMute();renderOptions()};
+$("dassistBtn").onclick=()=>{save.dassist=save.dassist===false;persist();renderOptions();AudioSys.click()};$("raceBtn").onclick=()=>startRace(globalTrack());
 $("nextBtn").onclick=nextRace;$("postBtn").onclick=()=>{AudioSys.click();postScore(Game.results&&Game.results.score)};
 $("initsInput").addEventListener("keydown",e=>{e.stopPropagation();if(e.key==="Enter"){e.preventDefault();$("postBtn").click()}});
 $("initsInput").addEventListener("input",e=>{e.target.value=cleanInits(e.target.value)});$("retryBtn").onclick=()=>{if(save.lives<=0)newGame();else startRace(Game.track)};
@@ -2144,7 +2165,7 @@ if(/[?&]test=1/.test(location.search))window.__G={
   return{state:Game.state,time:+Game.raceTime.toFixed(1),len:Math.round(Track.data.len),N:Track.data.N,
    cars:cars.map(c=>({n:c.name,lap:c.lap,fin:c.finished,ft:+(c.finishTime||0).toFixed(1),pits:c.nPit,stuck:c.nStuck,walls:c.nWall,best:c.best})),order:Game.order.map(i=>cars[i].name),driftLvUps:drifts}},
  trace(ci,secs){const c=cars[ci],D=Track.data,out=[];let t=0;
-  for(let k=0;k<secs*60;k++){t+=1/60;simulate(1/60,t);if(k%6==0)out.push([+t.toFixed(1),c.idx,+(1/Math.max(1e-4,Math.abs(D.samples[c.idx].k))).toFixed(0)*Math.sign(D.samples[c.idx].k),+c.lat.toFixed(1),+Math.hypot(c.vx,c.vz).toFixed(1),c.drift,c.driftLv,c.air?1:0,+(c.slip||0).toFixed(2),c.nWall||0,+D.line[c.idx].toFixed(1),c.aiDrift?1:0])}
+  for(let k=0;k<secs*60;k++){t+=1/60;simulate(1/60,t);if(k%6==0)out.push([+t.toFixed(1),c.idx,+(1/Math.max(1e-4,Math.abs(D.samples[c.idx].k))).toFixed(0)*Math.sign(D.samples[c.idx].k),+c.lat.toFixed(1),+Math.hypot(c.vx,c.vz).toFixed(1),c.drift,c.driftLv,c.air?1:0,+(c.slip||0).toFixed(2),c.nWall||0,+D.line[c.idx].toFixed(1),c.aiDrift?1:0,JSON.stringify(c.dbg||[])])}
   return out},
  set(code){return eval(code)},
  render(){updateCamera(1/60,1);composer.render()}
