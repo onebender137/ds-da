@@ -697,15 +697,21 @@ function initLogin() {
                     // forSelf:true is REQUIRED: createSignature signs with the
                     // for-self derivation; without it getPublicKey returns a
                     // different key and the server can't verify.
-                    const { publicKey } = await window.CWI.getPublicKey({ ...proto, forSelf: true });
-                    const { signature: derSig } = await window.CWI.createSignature({
+                    const pkResult = await window.CWI.getPublicKey({ ...proto, forSelf: true });
+                    console.log('[dsda-login] CWI.getPublicKey ->', JSON.stringify(pkResult));
+                    const publicKey = pkResult.publicKey;
+                    const sigResult = await window.CWI.createSignature({
                         data: Array.from(BSV.deps.Buffer.from(nonce, 'utf8')), ...proto
                     });
+                    console.log('[dsda-login] CWI.createSignature ->', JSON.stringify(sigResult));
                     // createSignature returns a byte array; hex-encode for JSON.
+                    const derSig = sigResult.signature;
                     signature = Array.from(derSig).map(b => b.toString(16).padStart(2, '0')).join('');
                     cwiPublicKey = publicKey;
                     sigAddress = BSV.Address.fromPublicKey(publicKey).toString();
+                    console.log('[dsda-login] derived address=' + sigAddress + ' pk=' + cwiPublicKey + ' sigLen=' + signature.length);
                 } catch (walletErr) {
+                    console.error('[dsda-login] CWI ERROR:', (walletErr && walletErr.message) ? walletErr.message : walletErr, walletErr);
                     status.textContent = '❌ Signature request rejected in BSV Browser.';
                     loginSubmit.disabled = false;
                     loginSubmit.textContent = 'Sign + Login';
