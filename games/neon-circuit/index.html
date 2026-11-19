@@ -59,7 +59,8 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
 #hitfx.flash{animation:hit .42s ease-out}
 @keyframes hit{0%{opacity:1}100%{opacity:0}}
 .screen{position:fixed;inset:0;z-index:20;display:none;overflow:auto;padding:calc(18px + var(--safeT)) 16px calc(18px + var(--safeB));background:linear-gradient(180deg,rgba(7,2,20,.36),rgba(7,2,20,.86))}
-.screen.show{display:flex;align-items:center;justify-content:center}
+.screen.show{display:flex;align-items:flex-start;justify-content:center}
+.screen>.panel{margin:auto}   /* centred when it fits, scrolls from the top when it does not */
 .panel{width:min(760px,96vw);background:linear-gradient(155deg,rgba(35,16,72,.96),rgba(10,4,28,.97));border:1px solid rgba(255,45,149,.45);box-shadow:0 0 0 1px rgba(0,229,255,.15),0 26px 90px rgba(0,0,0,.75),inset 0 0 70px rgba(122,43,255,.1);clip-path:var(--cut);padding:26px}
 .brand{font-family:Orbitron,Impact,Haettenschweiler,Anton,sans-serif;font-size:10px;letter-spacing:.34em;color:var(--cyan);border:1px solid rgba(0,229,255,.45);padding:7px 13px;display:inline-block;clip-path:var(--cut);background:rgba(6,2,20,.6)}
 .logo{font-family:Orbitron,Impact,Haettenschweiler,Anton,sans-serif;font-weight:900;font-style:italic;font-size:clamp(32px,8.4vmin,72px);letter-spacing:-.015em;line-height:.94;margin:14px 0 4px;background:linear-gradient(180deg,#fff,#d9ddff 35%,#7180ff 50%,#fff 55%,#8d97ff 80%,#41308f);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(3px 0 rgba(255,45,149,.8)) drop-shadow(-3px 0 rgba(0,229,255,.8)) drop-shadow(0 12px 26px rgba(0,0,0,.8))}
@@ -221,6 +222,53 @@ body[data-steer="slide"] #pBrake{left:calc(14px + var(--safeL));bottom:calc(16px
 .podium .nm{font-size:12px;font-weight:900;letter-spacing:.08em}.podium .you .nm{color:var(--mag)}
 @media(max-width:720px){.menuCol{left:4vw;right:4vw;width:auto;top:auto;bottom:calc(10px + var(--safeB));transform:none;max-height:88vh}#titleScreen{background:linear-gradient(0deg,rgba(5,2,15,.95) 0,rgba(5,2,15,.75) 60%,rgba(5,2,15,.2))}.carCard,.foot{display:none}.garagePanel{right:3vw;left:3vw;width:auto}#garageScreen{background:rgba(5,2,15,.82)}.mbtn{padding:11px 14px;font-size:13px}}
 @media(max-height:520px) and (orientation:landscape){.menuCol .tag,.menuCol .sub{display:none}.menuCol .logo{font-size:30px;margin-top:6px}.mbtn{padding:8px 14px;font-size:12px}.carCard{display:none}}
+
+/* ===== PHONES ===== */
+#rotate{position:fixed;inset:0;z-index:90;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:30px;text-align:center;background:radial-gradient(100% 80% at 50% 40%,#2b0a4e,#070313)}
+#rotate .rt{font-family:Orbitron,Impact,sans-serif;font-weight:900;font-size:22px;letter-spacing:.08em;color:#fff;text-shadow:0 0 18px rgba(0,229,255,.8)}
+#rotate .small{max-width:300px;font-size:13px}
+#rotate .phone{width:62px;height:104px;border:4px solid var(--cyan);border-radius:12px;box-shadow:0 0 22px rgba(0,229,255,.6);position:relative;animation:rot 2.2s ease-in-out infinite}
+#rotate .phone::after{content:"";position:absolute;left:50%;bottom:6px;width:14px;height:4px;margin-left:-7px;border-radius:2px;background:var(--cyan)}
+@keyframes rot{0%,20%{transform:rotate(0)}50%,80%{transform:rotate(-90deg)}100%{transform:rotate(0)}}
+@media(orientation:portrait) and (max-width:720px){body.touch:not(.rotOk) #rotate{display:flex}}
+/* portrait, if they play anyway: compact car picker up top */
+@media(max-width:720px) and (orientation:portrait){
+  #titleScreen .carCard{display:block;top:calc(64px + var(--safeT));bottom:auto;left:4vw;right:4vw;width:auto;padding:10px 12px}
+  #titleScreen .carCard .blurb,#titleScreen .carCard .bar:nth-child(n+5){display:none}
+  .panel{padding:16px}
+}
+/* short landscape phones */
+@media(max-height:520px) and (orientation:landscape){
+  .resPanel{width:min(900px,97vw);display:grid;grid-template-columns:1.1fr 1fr;column-gap:16px;text-align:left!important;align-items:start}
+  .resPanel>.brand{grid-column:1/-1;grid-row:1;justify-self:start}.resPanel>#resultTitle{grid-column:1/-1;grid-row:2}.resPanel>#resultMsg{grid-column:1/-1;grid-row:3}.resPanel>#podium{grid-row:4}.resPanel>#resultRows{grid-column:1;grid-row:5}.resPanel>#scoreBox{grid-column:2;grid-row:5/span 2}.resPanel>.bankBox{grid-column:1;grid-row:6}.resPanel>.row{grid-column:1/-1;grid-row:7}
+  .screen{padding:calc(6px + var(--safeT)) calc(10px + var(--safeR)) calc(6px + var(--safeB)) calc(10px + var(--safeL))}
+  .panel{padding:12px 14px}.h2{font-size:18px;margin-top:4px}.brand{font-size:8px;padding:5px 9px}
+  .menuCol{left:calc(14px + var(--safeL));width:min(330px,46vw);top:50%;max-height:98vh;padding:2px}
+  .menuCol .brand,.menuCol .tag,.menuCol .sub,#cupTag{display:none}.menuCol .logo{font-size:26px;margin:2px 0 4px}
+  .mmenu{gap:4px;margin:4px 0 6px}.mbtn{padding:7px 12px;font-size:12px}.mbtn small{font-size:9px}
+  .cupRow button{padding:5px 7px;font-size:9px}.cupRow button b{display:none}
+  .carCard{display:block;right:calc(12px + var(--safeR));bottom:calc(10px + var(--safeB));width:min(270px,40vw);padding:10px 12px}
+  .carCard .blurb{display:none}.bar{margin:2px 0;font-size:8px;grid-template-columns:70px 1fr}.pick .nm{font-size:16px}.pk{height:32px;font-size:16px}
+  .foot{display:none}
+  .optRow{grid-template-columns:120px 1fr;padding:4px 0;font-size:9px}.optRow .btn,#optionsScreen .btn{padding:7px 11px;font-size:10px}
+  #optionsScreen .seg button{padding:7px 4px}#controlHelp{font-size:11px;line-height:1.5}
+  .garagePanel{width:min(860px,96vw);right:2vw;max-height:96vh}
+  .garageGrid{grid-template-columns:1fr 1.25fr;gap:10px;margin-top:8px}
+  #preview,#nextDesc{display:none}.trackCard{padding:10px}.trackCard h3{font-size:14px}
+  .up{padding:6px;margin-bottom:5px;grid-template-columns:32px 1fr auto}.upIcon{width:32px;height:32px;font-size:16px}.upName{font-size:10px}.upDesc{font-size:10px}.buy{padding:7px 9px;font-size:10px}
+  .carPick{padding:8px}.blurb{min-height:0;margin:4px 0;font-size:11px}
+  #garageScreen .btn,#resultScreen .btn{padding:9px 14px;font-size:11px}
+  #resultTitle{font-size:20px!important;margin:4px 0!important}.podium{display:none}
+  .rRow{padding:4px 10px;margin-bottom:3px;font-size:12px}.results{margin:8px 0}.cash{padding:3px 10px}.cash.total{font-size:13px}
+  .topList li{padding:4px 8px}
+  .bankBox .cash{font-size:12px;padding:2px 10px}.bankBox .cash.total{font-size:13px;padding-top:5px}#resultScreen .row{margin-top:8px!important}
+  /* radio docks top-centre in menus so it never sits on a button */
+  body[data-state="title"] #radioBox.dsda-radio{top:calc(6px + var(--safeT));bottom:auto;left:50%;transform:translateX(-50%)}
+  /* full-height panels own the screen: no radio or corner icons on top of them */
+  body[data-state="garage"] #radioBox,body[data-state="options"] #radioBox,body[data-state="results"] #radioBox,body[data-state="board"] #radioBox,body[data-state="pause"] #radioBox,body[data-state="champion"] #radioBox,
+  body[data-state="garage"] #topButtons,body[data-state="options"] #topButtons,body[data-state="results"] #topButtons,body[data-state="board"] #topButtons,body[data-state="champion"] #topButtons{display:none!important}
+  #garageScreen .blurb{display:none}.topList li:nth-child(n+4){display:none}
+}
 .statGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0}.statGrid div{background:rgba(12,5,30,.6);padding:9px 12px;border:1px solid rgba(122,43,255,.25);font-size:12px;color:var(--dim)}.statGrid b{display:block;font-family:Orbitron,Impact,Haettenschweiler,Anton,sans-serif;color:#fff;margin-top:3px}
 #boot{position:fixed;inset:0;z-index:100;background:radial-gradient(100% 100% at 50% 30%,#2b0a4e,#070313);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;transition:opacity .5s}
 #boot.gone{opacity:0;pointer-events:none}.spinner{width:52px;height:52px;border-radius:50%;border:3px solid rgba(0,229,255,.15);border-top-color:var(--cyan);border-right-color:var(--mag);animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
@@ -357,15 +405,17 @@ body[data-steer="slide"] #pBrake{left:calc(14px + var(--safeL));bottom:calc(16px
 </div>
 
 <div class="screen" id="resultScreen">
-  <div class="panel" style="text-align:center">
+  <div class="panel resPanel" style="text-align:center">
     <div class="brand" id="resultTrack"></div><h2 id="resultTitle" style="font-family:Orbitron,Impact,Haettenschweiler,Anton,sans-serif;font-size:30px;margin:10px 0">RACE COMPLETE</h2>
     <div class="small" id="resultMsg"></div><div class="podium" id="podium"></div><div class="results" id="resultRows"></div>
     <div id="scoreBox"><div class="cash total"><span>RACE SCORE</span><b id="raceScore" style="color:var(--cyan)">—</b></div><div class="small" id="scoreWhy" style="text-align:right;margin:-2px 10px 6px"></div>
      <div class="row" style="justify-content:center;margin:8px 0"><input id="initsInput" type="text" maxlength="3" placeholder="ABC" autocomplete="off" spellcheck="false" aria-label="Your initials"><button class="btn cy" id="postBtn">POST SCORE</button></div>
      <div class="small" id="saveMsg" style="text-align:center">ARCADE BOARD</div><ol class="topList" id="resultTop"></ol></div>
+<div class="bankBox">
     <div class="cash"><span>FINISH BONUS</span><b id="bonusCash" style="color:var(--amber)">$0</b></div>
     <div class="cash"><span>TRACK COINS</span><b id="coinCash" style="color:var(--amber)">$0</b></div>
     <div class="cash total"><span>BANK</span><b id="resultBank" style="color:var(--amber)">$0</b></div>
+    </div>
     <div class="row" style="justify-content:center;margin-top:18px"><button class="btn pulse" id="nextBtn">Garage ▸</button><button class="btn warn" id="retryBtn">↻ Retry</button></div>
   </div>
 </div>
@@ -396,6 +446,7 @@ body[data-steer="slide"] #pBrake{left:calc(14px + var(--safeL));bottom:calc(16px
   </div>
 </div>
 
+<div id="rotate"><div class="phone"></div><div class="rt">TURN YOUR PHONE SIDEWAYS</div><div class="small">Neon Circuit is built for landscape — the pad, the track and the menus all fit properly that way.</div><button class="btn ghost" id="rotDismiss">Play anyway ▸</button></div>
 <div id="boot"><div class="spinner"></div><div id="bootMsg">BOOTING NEON CIRCUIT<br><span style="color:var(--mag)">DS-DA.CA</span></div></div>
 
 <script>
@@ -527,7 +578,8 @@ const CD_TIME=3.0;            // countdown seconds — ceil() of this is the fir
 let lastCd=CD_TIME+1;         // reset per race, or race 2+ flashes a bogus extra digit
 let hudCache={};              // last value written to each HUD node, to avoid per-frame DOM writes
 const Game={state:"boot",track:0,built:-1,paused:false,count:CD_TIME,raceTime:0,coins:0,finishDelay:0,shake:0,wrong:0,order:[0,1,2,3,4,5],pos:6,results:null,quick:false};
-function setState(s){Game.state=s;document.body.dataset.state=s;document.querySelectorAll(".screen").forEach(e=>e.classList.remove("show"));const map={title:"titleScreen",garage:"garageScreen",results:"resultScreen",champion:"championScreen",pause:"pauseScreen",board:"boardScreen",options:"optionsScreen"};if(map[s])$(map[s]).classList.add("show");$("pauseBtn").style.display=(s==="race"||s==="countdown")?"grid":"none";}
+document.body.classList.toggle("touch",coarse);try{if(sessionStorage.getItem('nc-rotok'))document.body.classList.add('rotOk')}catch(e){}
+function setState(s){Game.state=s;document.body.dataset.state=s;document.querySelectorAll(".screen").forEach(e=>e.classList.remove("show"));const map={title:"titleScreen",garage:"garageScreen",results:"resultScreen",champion:"championScreen",pause:"pauseScreen",board:"boardScreen",options:"optionsScreen"};if(map[s]){$(map[s]).classList.add("show");$(map[s]).scrollTop=0}$("pauseBtn").style.display=(s==="race"||s==="countdown")?"grid":"none";}
 
 /* ============================================================
    INPUT — dead-simple, bulletproof, attached immediately.
@@ -1940,7 +1992,7 @@ function showResults(){
  $("raceScore").textContent=sc?sc.toLocaleString():"—";
  $("scoreWhy").textContent=sc?ord(pos)+" · avg "+Math.round(raceScore(pos,cars[0].finishTime).avg)+" km/h · "+DIFFS[save.diff]+(save.ng?" · NG+"+save.ng:"")+(pb?" · PERSONAL BEST":""):"";
  if(pb){save.bestScore=sc;persist()}
- $("initsInput").value=getInits();$("postBtn").disabled=!sc;$("saveMsg").classList.remove("ok");
+ $("initsInput").value=getInits();setTimeout(()=>{$("resultScreen").scrollTop=0},30);$("postBtn").disabled=!sc;$("saveMsg").classList.remove("ok");
  $("saveMsg").textContent=sc?(getInits()?(pb?"NEW BEST — POSTING…":"ARCADE BOARD"):"ENTER INITIALS TO POST"):"FINISH THE RACE TO SCORE";
  $("resultTop").innerHTML='<li class="empty">LOADING…</li>';refreshTop($("resultTop"),5);
  if(sc&&pb&&getInits())postScore(sc);
@@ -2192,6 +2244,7 @@ $("initsInput").addEventListener("keydown",e=>{e.stopPropagation();if(e.key==="E
 $("initsInput").addEventListener("input",e=>{e.target.value=cleanInits(e.target.value)});$("retryBtn").onclick=()=>{if(Game.challenge){startChallenge();return}if(save.lives<=0)newGame();else startRace(Game.track)};
 $("ngBtn").onclick=()=>{renderGarage();setState("garage")};$("champTitle").onclick=enterTitle;
 $("resumeBtn").onclick=resume;
+$("rotDismiss").onclick=()=>{document.body.classList.add("rotOk");try{sessionStorage.setItem("nc-rotok","1")}catch(e){}AudioSys.unlock();AudioSys.click()};
 $("pMute").onclick=()=>{toggleMute();$("pMute").textContent=save.muted?"🔇 SOUND OFF":"🔊 SOUND ON"};$("pRadio").onclick=()=>{AudioSys.unlock();AudioSys.nextStation(1)};$("restartBtn").onclick=()=>{Game.paused=false;startRace(Game.track)};$("quitBtn").onclick=()=>{Game.paused=false;enterTitle()};
 addEventListener("resize",()=>{renderer.setSize(innerWidth,innerHeight);if(composer)composer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()});
 // phones drop the GL context on backgrounding / thermal throttle — don't leave a black canvas
