@@ -1,9 +1,22 @@
 {
-  "updated": 0,
-  "top": [],
+  "updated": 1795116833025,
+  "top": [
+    {
+      "n": "CJR",
+      "s": 4564,
+      "d": 1795116424791
+    },
+    {
+      "n": "CJR",
+      "s": 3461,
+      "d": 1795116833025
+    }
+  ],
   "stats": {
-    "saves": 0,
-    "initials": [],
-    "players": 0
+    "saves": 2,
+    "initials": [
+      "CJR"
+    ],
+    "players": 1
   }
 }
