@@ -3099,7 +3099,11 @@ function onWindowBlur() {
 const IS_TOUCH = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
 const buzz = ms => { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} };
 let tId = null, tDownT = 0, tMoved = false, tStartX = 0, tStartAim = Math.PI / 2;
-const TOUCH_AIM_SENS = 2.0;  // mobile drag sensitivity (higher = more dramatic; 2.0 = half-screen swipe spans full aim range)
+const TOUCH_AIM_SENS = 1.5;  // drag sensitivity (higher = more dramatic; 1.5 = ~2/3-screen swipe spans full aim range)
+// release lock: a finger (or mouse) rolls a few px as it lifts, and that last move used to
+// nudge the shot. On release we fire at the aim that was held RELEASE_LOCK_MS before lift-off.
+const RELEASE_LOCK_MS = 90;
+let aimHist = [];
 function screenToWorld(clientX, clientY) {
   const r = sceneEl.getBoundingClientRect();
   const nx = ((clientX - r.left) / r.width) * 2 - 1;
@@ -3122,6 +3126,7 @@ function touchStart(e) {
   sfx.ensure();
   MusicSys.tryStart();
   charging = true; power = 0;
+  aimHist = [{ t: e.timeStamp, a: aim }];
   updateWandTip();
   buzz(6);
 }
@@ -3134,12 +3139,23 @@ function touchMove(e) {
   const na = Math.max(AIM_MIN, Math.min(AIM_MAX, tStartAim + aimDelta));
   if (Math.abs(na - aim) > 0.01) tMoved = true;
   aim = na;
+  const now = e.timeStamp;  // event time, not handler time — stays honest when a frame janks
+  aimHist.push({ t: now, a: na });
+  while (aimHist.length > 2 && aimHist[1].t < now - 400) aimHist.shift();
   updateWandTip();
 }
 function touchEnd(e) {
   if (e.pointerId !== tId) return;
   tId = null;
-  if (charging && phase === 'play') { fire(); }
+  if (charging && phase === 'play') {
+    // roll back to the aim held just before lift-off (ignores release wobble)
+    const cutoff = e.timeStamp - RELEASE_LOCK_MS;
+    let locked = null;
+    for (const s of aimHist) { if (s.t <= cutoff) locked = s.a; else break; }
+    if (locked !== null) { aim = locked; updateWandTip(); }
+    fire();
+  }
+  aimHist = [];
   charging = false; power = 0;
   updateWandTip();
 }
