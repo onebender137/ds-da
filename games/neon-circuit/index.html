@@ -204,9 +204,12 @@ body[data-steer="slide"] #pBrake{left:calc(14px + var(--safeL));bottom:calc(16px
 .cupRow button b{display:block;font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;letter-spacing:.06em;margin-top:3px;color:var(--faint)}
 .cupRow button.on{color:#03242c;background:linear-gradient(120deg,#078aa8,var(--cyan));box-shadow:0 0 16px rgba(0,229,255,.45)}.cupRow button.on b{color:#06323c}
 #cupTag{margin-top:6px}
-.carCard{position:absolute;right:calc(26px + var(--safeR));bottom:calc(26px + var(--safeB));width:min(300px,40vw);padding:14px 16px;background:rgba(8,3,24,.72);border:1px solid rgba(0,229,255,.3);clip-path:var(--cut);font-family:Orbitron,Impact,sans-serif}
+.carCard{position:absolute;right:calc(26px + var(--safeR));bottom:calc(26px + var(--safeB));width:min(320px,40vw);padding:14px 16px;background:rgba(8,3,24,.72);border:1px solid rgba(0,229,255,.3);clip-path:var(--cut);font-family:Orbitron,Impact,sans-serif}
 .carCard .nm{font-size:20px;font-weight:900;font-style:italic;letter-spacing:.04em}.carCard .ty{font-size:10px;letter-spacing:.24em;color:var(--cyan);margin:2px 0 10px}
-.statBars{margin-top:10px}.bar{display:grid;grid-template-columns:86px 1fr;gap:8px;align-items:center;font-family:Orbitron,Impact,sans-serif;font-size:9px;letter-spacing:.16em;color:var(--dim);margin:5px 0}
+.statBars{margin-top:10px}
+.pick{display:grid;grid-template-columns:38px 1fr 38px;gap:8px;align-items:center;text-align:center}.pick .nm{font-family:Orbitron,Impact,sans-serif;font-size:20px;font-weight:900;font-style:italic}.pick .ty{font-family:Orbitron,Impact,sans-serif;font-size:10px;letter-spacing:.24em;color:var(--cyan);margin-top:2px}
+.pk{height:38px;font-size:20px;color:var(--cyan);background:rgba(16,8,40,.85);border:1px solid rgba(0,229,255,.45);clip-path:var(--cut)}.pk:hover{background:rgba(0,229,255,.2);color:#fff}
+.blurb{text-align:center;margin:8px 0 4px;min-height:34px}.carPick{background:rgba(8,3,24,.55);border:1px solid rgba(0,229,255,.3);padding:12px;clip-path:var(--cut)}.bar{display:grid;grid-template-columns:86px 1fr;gap:8px;align-items:center;font-family:Orbitron,Impact,sans-serif;font-size:9px;letter-spacing:.16em;color:var(--dim);margin:5px 0}
 .bar i{height:7px;background:#241245;position:relative;overflow:hidden}.bar i b{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,var(--cyan),var(--mag));box-shadow:0 0 10px rgba(0,229,255,.6)}
 .foot{position:absolute;left:calc(30px + var(--safeL));bottom:calc(12px + var(--safeB));font-size:10px}
 .garagePanel{position:absolute;right:calc(22px + var(--safeR));top:50%;transform:translateY(-50%);width:min(640px,94vw);max-height:94vh;overflow:auto}
@@ -347,7 +350,7 @@ body[data-steer="slide"] #pBrake{left:calc(14px + var(--safeL));bottom:calc(16px
     <div class="row" style="justify-content:space-between"><div><div class="brand" id="roundLabel">ROUND 1/4</div><h2 class="h2">TEAM GARAGE</h2></div><div style="text-align:right"><div class="small">BANK</div><div id="garageMoney" style="font-family:Orbitron,Impact,Haettenschweiler,Anton,sans-serif;font-size:26px;color:var(--amber)">$0</div></div></div>
     <div class="garageGrid">
       <div class="trackCard"><div class="small">NEXT CIRCUIT</div><h3 id="nextName"></h3><div class="small" id="nextDesc"></div><canvas id="preview" width="260" height="260"></canvas><div class="small" id="nextMeta"></div></div>
-      <div><div class="small" style="margin-bottom:8px">UPGRADES · finish top 3 to advance</div><div id="upgrades"></div><div class="statBars" id="statBars"></div><div class="small" id="loadout" style="margin-top:10px"></div></div>
+      <div><div class="carPick" id="carPick"></div><div class="small" style="margin:10px 0 8px">UPGRADES · finish top 3 to advance</div><div id="upgrades"></div><div class="statBars" id="statBars"></div><div class="small" id="loadout" style="margin-top:10px"></div></div>
     </div>
     <div class="row" style="justify-content:space-between;margin-top:18px"><button class="btn ghost" id="garageBack">◂ Title</button><button class="btn pulse" id="raceBtn">Start Race ▸</button></div>
   </div>
@@ -573,6 +576,7 @@ document.addEventListener("keydown",e=>{
   // first real key press on a fine-pointer device dims the touch pad out of the way
   if(!coarse)document.body.classList.add("kbd");
   if(MENU_NAV.includes(Game.state)&&(a==="up"||a==="down")){menuMove(a==="up"?-1:1);return}
+  if((Game.state==="garage"||Game.state==="title")&&(a==="left"||a==="right")&&!e.repeat){cycleCar(a==="left"?-1:1);return}
   if(["up","down","left","right","drift"].includes(a))Input.keys[a]=true;
   else if(!e.repeat)doAction(a);
 },{passive:false});
@@ -1359,6 +1363,11 @@ function carMesh(color,style,num,seed){
  if(S.wing==="tall"){stockWing.push(add(CG.strut,CARMAT.alu,.42,S.ride+.95,-1.55),add(CG.strut,CARMAT.alu,-.42,S.ride+.95,-1.55),add(CG.wingTall,paint,0,S.ride+1.22,-1.62,null,-.12),add(CG.endplate,CARMAT.black,.85,S.ride+1.14,-1.62),add(CG.endplate,CARMAT.black,-.85,S.ride+1.14,-1.62))}
  else if(S.wing==="roof")stockWing.push(add(CG.wingRoof,paint,0,S.ride+1.34,-.55,null,-.1));
  else stockWing.push(add(CG.wingLip,paint,0,S.ride+.78,-1.98,null,-.25));
+ // pickup flavour: roll bar over the bed, light bar on the cab roof, bed rails
+ if(style==="truck"){const tube=new THREE.CylinderGeometry(.05,.05,1,8),bar=(x1,y1,z1,x2,y2,z2)=>{const m=new THREE.Mesh(tube,CARMAT.alu),dx=x2-x1,dy=y2-y1,dz=z2-z1,L=Math.hypot(dx,dy,dz);m.scale.y=L;m.position.set((x1+x2)/2,(y1+y2)/2,(z1+z2)/2);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),new THREE.Vector3(dx/L,dy/L,dz/L));m.castShadow=true;body.add(m)};
+  const by=S.ride+.12+.70,top=S.ride+.12+1.32;bar(.78,by,-.78,.78,top,-.78);bar(-.78,by,-.78,-.78,top,-.78);bar(.78,top,-.78,-.78,top,-.78);bar(.78,top,-.78,.78,by,-1.35);bar(-.78,top,-.78,-.78,by,-1.35);
+  bar(.88,by+.12,-.8,.88,by+.12,-1.95);bar(-.88,by+.12,-.8,-.88,by+.12,-1.95);
+  for(let k=0;k<4;k++)add(new THREE.BoxGeometry(.2,.14,.12),CARMAT.white,-.33+k*.22,S.ride+.12+1.12,.22)}
  // thruster glows (turbo/boost) — artistic licence for an electric car
  const noz=[add(CG.nozzle,CARMAT.black,.32,S.ride+.34,S.prof[S.prof.length-1][0]+.02),add(CG.nozzle,CARMAT.black,-.32,S.ride+.34,S.prof[S.prof.length-1][0]+.02)];
  const flame=noz.map(n=>{const s=new THREE.Sprite(new THREE.SpriteMaterial({map:TEX.soft,color:0x8fe6ff,blending:THREE.AdditiveBlending,depthWrite:false,transparent:true}));
@@ -1381,11 +1390,20 @@ function carMesh(color,style,num,seed){
  return{root,body,chassis,wheels,front,arms,shocks,ant,flag,under,flame,blob,up,paint,glowPaint,stockWing,S,susp:{y:0,vy:0,p:0,vp:0,r:0,vr:0},lastV:0,lastH:0};
 }
 
+function playerExtras(mesh,color){const spot=new THREE.SpotLight(0xcfe8ff,240,38,.55,.6,2);spot.position.set(0,1.2,.8);const target=new THREE.Object3D();target.position.set(0,.2,14);mesh.root.add(target);spot.target=target;mesh.root.add(spot)}
+/* swap the player's car on the turntable */
+function setPlayerCar(style){if(!VEH[style])return;save.car=style;persist();const c=cars[0],old=c.mesh;
+ scene.remove(old.root);old.root.traverse(o=>{if(o.material&&o.material.map&&o.material.map!==TEX.soft&&o.material.map.isCanvasTexture&&o.material===old.paint)o.material.map.dispose()});
+ c.mesh=carMesh(RACERS[0].color,style,RACERS[0].num,0);playerExtras(c.mesh,RACERS[0].color);scene.add(c.mesh.root);c.style=style;
+ c.mesh.root.position.set(c.x,c.y,c.z);c.mesh.root.rotation.y=c.h;applyUpgradeLook(c);showroomSpin=1.4;AudioSys.confirm()}
+function cycleCar(d){const i=VEH_ORDER.indexOf(save.car||"buggy");setPlayerCar(VEH_ORDER[(i+d+VEH_ORDER.length)%VEH_ORDER.length]);renderCarPick()}
+function carPickHTML(){const V=VEH[save.car||"buggy"],r=RACERS[0];
+ return `<div class="pick"><button class="pk" data-d="-1" aria-label="previous car">◂</button><div><div class="nm" style="color:${r.css}">${V.name} <span style="opacity:.6">#${r.num}</span></div><div class="ty">${V.kind}</div></div><button class="pk" data-d="1" aria-label="next car">▸</button></div><div class="small blurb">${V.blurb}</div>`+statBarsHTML()}
+function renderCarPick(){["carCard","carPick"].forEach(id=>{const el=$(id);if(!el)return;el.innerHTML=carPickHTML();el.querySelectorAll(".pk").forEach(b=>b.onclick=()=>cycleCar(+b.dataset.d))});const ld=$("loadout");if(ld&&Game.state==="garage")ld.textContent="Loadout: ⚡×1 · 🚀×"+stats().startMiss+" · 🛢×1 · top speed "+Math.round(stats().max*4.2)+" km/h · grip "+stats().lat.toFixed(1)}
 function initCars(){
- RACERS.forEach((r,i)=>{const mesh=carMesh(r.color,r.style,r.num,i);scene.add(mesh.root);
-  if(i===0){const spot=new THREE.SpotLight(0xcfe8ff,240,38,.55,.6,2);spot.position.set(0,1.2,.8);const target=new THREE.Object3D();target.position.set(0,.2,14);mesh.root.add(target);spot.target=target;mesh.root.add(spot);
-   const marker=new THREE.Mesh(new THREE.ConeGeometry(.5,1.1,4),new THREE.MeshBasicMaterial({color:r.color}));marker.rotation.x=Math.PI;marker.position.y=3.4;marker.visible=false;mesh.root.add(marker);}
-  cars.push({i,name:r.name,color:r.color,css:r.css,player:i===0,pers:r.pers||{pace:1,lat:1,line:1,wander:1,aggro:1,drifts:true},mesh,x:0,y:0,z:0,h:0,vx:0,vz:0,speed:0,vy:0,air:false,hop:false,pit:0,pitTo:0,idx:0,prog:0,total:0,lat:0,lap:-1,half:false,spin:0,spinA:0,inv:0,turbo:0,boost:0,drift:0,driftT:0,driftLv:0,turboN:1,missN:0,oilN:1,fireCd:0,aiTurbo:rand(4,9),aiFire:rand(3,7),aiOil:rand(5,9),laneT:0,laneBias:0,stuck:0,wallCd:0,lapStart:0,best:null,finished:false,finishTime:0,wet:false,seed:rand(100),ai:true});
+ RACERS.forEach((r,i)=>{const mesh=carMesh(r.color,i===0?(save.car||"buggy"):r.style,r.num,i);scene.add(mesh.root);
+  if(i===0)playerExtras(mesh,r.color);
+  cars.push({i,name:r.name,color:r.color,css:r.css,player:i===0,style:i===0?(save.car||"buggy"):r.style,pers:r.pers||{pace:1,lat:1,line:1,wander:1,aggro:1,drifts:true},mesh,x:0,y:0,z:0,h:0,vx:0,vz:0,speed:0,vy:0,air:false,hop:false,pit:0,pitTo:0,idx:0,prog:0,total:0,lat:0,lap:-1,half:false,spin:0,spinA:0,inv:0,turbo:0,boost:0,drift:0,driftT:0,driftLv:0,turboN:1,missN:0,oilN:1,fireCd:0,aiTurbo:rand(4,9),aiFire:rand(3,7),aiOil:rand(5,9),laneT:0,laneBias:0,stuck:0,wallCd:0,lapStart:0,best:null,finished:false,finishTime:0,wet:false,seed:rand(100),ai:true});
  });
 }
 
@@ -1535,10 +1553,19 @@ function project(x,z,hint){
    so a rival can never do anything the player's car cannot. */
 /* PACE scales the whole field: player and AI share it, so the racing stays close */
 const PACE=1.15;
-function stats(){const u=save.up;return{max:(27+u.motor*2.2)*PACE,accel:(15+u.tires*2.2)*1.2,turn:2.45+u.tires*.1,grip:9.5+u.tires*1.1,lat:20.5+u.tires*1.3,dlat:32+u.tires*1.2,turboDur:1.5+u.turbo*.3,turboMult:1.32+u.turbo*.05,startMiss:save.up.motor>=2?1:0}}
+/* Vehicle classes. Multipliers on the shared base, so upgrades help every car the same way.
+   Balanced by measurement: a bot laps all three on all 12 circuits (see __G.solo). */
+const VEH={
+ buggy:  {name:"VIPER",  kind:"BUGGY",       max:1,    accel:1.04, turn:1.04, grip:1.02, lat:1.02, dlat:1.08, mass:1,   blurb:"The all-rounder, and the best drifter. Quick, nimble, never out of place."},
+ touring:{name:"PHANTOM",kind:"TOURING CAR", max:1.022,accel:.9,   turn:.92,  grip:.84,  lat:.84,  dlat:.8,  mass:.95, blurb:"Highest top speed. Slides more and needs room — a speedway king."},
+ truck:  {name:"MULE",   kind:"PICKUP TRUCK",max:.985, accel:1.25, turn:1.2,  grip:1.25, lat:1.28, dlat:1.28,  mass:1.45,blurb:"Lower top end, huge grip and punch out of corners. Heavy — it shoves."}
+};
+const VEH_ORDER=["buggy","touring","truck"];
+const veh=c=>VEH[(c&&c.style)||save.car||"buggy"]||VEH.buggy;
+function stats(){const u=save.up,V=VEH[save.car]||VEH.buggy;return{max:(27+u.motor*2.2)*PACE*V.max,accel:(15+u.tires*2.2)*1.2*V.accel,turn:(2.45+u.tires*.1)*V.turn,grip:(9.5+u.tires*1.1)*V.grip,lat:(20.5+u.tires*1.3)*V.lat,dlat:(32+u.tires*1.2)*V.dlat,turboDur:1.5+u.turbo*.3,turboMult:1.32+u.turbo*.05,startMiss:save.up.motor>=2?1:0}}
 const AI_SKILL=[{lat:16.2,max:.94,drift:.35,item:.6},{lat:18.7,max:1,drift:.7,item:.85},{lat:20.1,max:1.04,drift:.95,item:1}];
 function aiStats(c){const sk=AI_SKILL[save.diff],ng=1+save.ng*.04,rd=1+(Game.round||0)*.02;
- return{max:27*PACE*sk.max*ng*rd*c.pers.pace,accel:18,turn:2.45,grip:10.5,lat:20.5,dlat:32,turboDur:1.5,turboMult:1.32}}
+ const V=veh(c);return{max:27*PACE*sk.max*ng*rd*c.pers.pace*V.max,accel:18*V.accel,turn:2.45*V.turn,grip:10.5*V.grip,lat:20.5*V.lat,dlat:32*V.dlat,turboDur:1.5,turboMult:1.32}}
 const DRIFT_LV=[.85,1.75,2.8],MT_TIME=[0,.45,.85,1.3],MT_KICK=[0,3,4.5,6],SPARK=[0xd8e4ff,0x3fb6ff,0xff8a1a,0xff3df0];
 function spinCar(c){if(c.inv>0||c.spin>0)return;c.spin=.95;c.spinA=0;c.inv=2.1;if(!c.air){c.vx*=.25;c.vz*=.25}   // shot mid-jump keeps its arc: no dropping people into the gap
  c.turbo=0;c.boost=0;endDrift(c,false);Particles.burst(c.x,c.y+1.2,c.z,0xffe25e,14,5,.9,.8,6,4);if(c.player)AudioSys.spin();if(c.player&&Game.state==="race"){toast("SPUN OUT!","bad");hitFlash();Game.shake=Math.max(Game.shake,reduced?0:.5);vibe([60,40,60])}}
@@ -1604,7 +1631,7 @@ function driveCar(c,ctl,st,dt,t){
   if(ctl.thr>0){const r=clamp(vf/st.max,0,1.2);acc+=st.accel*ctl.thr*Math.max(0,1-r*r)}
   else if(ctl.thr<0){acc+=vf>.5?-34:-9}
   else acc-=Math.sign(vf)*Math.min(Math.abs(vf),4)*1.2;   // engine braking
-  if(turboOn||boostOn)acc+=26;
+  if((turboOn||boostOn)&&ctl.thr>=0)acc+=26;           // braking overrides the boost
   acc-=vf*.06;                                    // air drag
   if(ctl.thr<0&&vf<=.5&&vf<-9)acc=0;              // reverse speed limit
   c.vx+=f.x*acc*dt;c.vz+=f.z*acc*dt;
@@ -1632,7 +1659,8 @@ function driveCar(c,ctl,st,dt,t){
    c.dLane=clamp(c.dLane+(into-.5)*2*-c.drift*7*dt,-lim,lim);
    const n={x:-c.pr.tan.z,z:c.pr.tan.x},latV=c.vx*n.x+c.vz*n.z;
    const road=kL*spd,hold=-(c.dLane-lat)*.42+latV*.15;
-   w=clamp(road+hold,-st.turn*1.4,st.turn*1.4);
+   // the car's own drift grip is the limit: too fast for this bend and you run wide, so lift
+   const gcap=st.dlat/Math.max(spd,6);w=clamp(road+hold,-Math.min(st.turn*1.4,gcap),Math.min(st.turn*1.4,gcap));
    if(Math.sign(w)===-c.drift)w*=.6;                       // never whip the other way mid-drift
    c.driftRate=clamp(Math.abs(kL)*spd,0,1);
   }else w=c.drift*Math.min(st.turn*1.3,cap)*(.3+.85*into);
@@ -1821,14 +1849,17 @@ function aiStep(c,dt,t){
  // speed plan: the slowest corner in braking range sets the target
  let target=st.max,worst=0,dir=0;
  for(let j=2,n=Math.round(90/sp);j<n;j+=2){const k=S[(c.idx+j)%N].k,ak=Math.abs(k);if(ak>worst){worst=ak;dir=Math.sign(k)}
-  const useD=c.pers.drifts&&ak>1/48&&sk.drift>.5,vlim=Math.sqrt((useD?27*sk.drift:sk.lat)*c.pers.lat/Math.max(ak,1e-4)),dist=j*sp,allowed=Math.sqrt(vlim*vlim+2*22*dist);
+  const useD=c.pers.drifts&&ak>1/48&&sk.drift>.5,vV=veh(c),vg=Math.min(vV.lat,vV.grip),vlim=Math.sqrt((useD?27*sk.drift:sk.lat)*c.pers.lat*(vg<1?vg*vg:vV.lat)/Math.max(ak,1e-4)),dist=j*sp,allowed=Math.sqrt(vlim*vlim+2*22*dist);
   if(allowed<target)target=allowed}
  let thr=spd<target-.5?1:spd>target+2.5?-1:.25;
+ // don't power out of a bend faster than this car's grip can hold (slidey cars kissed the exit wall)
+ {const vV=veh(c),vg=Math.min(vV.lat,vV.grip),kN2=Math.abs(S[(c.idx+Math.round(4/sp))%N].k);if(kN2*spd*spd>sk.lat*c.pers.lat*vg*1.02)thr=Math.min(thr,0)}
  // drift the tight ones: commit on the way in, release when the corner opens up
  const nowK=Math.abs(S[(c.idx+Math.round(6/sp))%N].k);
  const soonK=Math.abs(S[(c.idx+Math.round(14/sp))%N].k);
  c.aiDriftCd=(c.aiDriftCd||0)-dt;const kS=S[(c.idx+Math.round(14/sp))%N].k;
- if(!c.drift&&!c.aiDrift&&c.aiDriftCd<=0&&c.pers.drifts&&soonK>1/48&&spd>15&&Math.random()<sk.drift*dt*8){c.aiDrift=true;c.aiDriftDir=Math.sign(kS)}
+ const dThr=1/75;
+ if(!c.drift&&!c.aiDrift&&c.aiDriftCd<=0&&c.pers.drifts&&soonK>dThr&&spd>15&&Math.random()<sk.drift*dt*12){c.aiDrift=true;c.aiDriftDir=Math.sign(kS)}
  const kN=S[c.idx].k,outward=c.drift&&Math.sign(c.lat)===Math.sign(kN)&&Math.abs(c.lat)>D.hw-2.4;
  if(c.aiDrift&&(nowK<1/85&&soonK<1/85||spd<10||(outward&&!(c.player&&window.__botMode))||(c.drift&&Math.sign(kN)===-c.drift&&Math.abs(kN)>1/80))){c.aiDrift=false;c.aiDriftCd=.9}
  if(c.drift)thr=1;
@@ -1839,7 +1870,8 @@ function aiStep(c,dt,t){
  if(Game.state==="race"||title){
   c.aiTurbo-=dt;c.aiFire-=dt;c.aiOil-=dt;
   let rampSoon=false;for(const r of Track.ramps){if(((r.a-c.idx+N)%N)*sp<60){rampSoon=true;break}}
-  if(c.turboN>0&&c.turbo<=0&&c.aiTurbo<=0&&(rampSoon||worst<1/120)&&Math.random()<sk.item){useTurbo(c);c.aiTurbo=rand(5,10)}
+  let clear=true;for(let j=2,n=Math.round(150/sp);j<n;j+=3)if(Math.abs(S[(c.idx+j)%N].k)>1/110){clear=false;break}
+  if(c.turboN>0&&c.turbo<=0&&c.aiTurbo<=0&&(rampSoon||clear)&&Math.random()<sk.item){useTurbo(c);c.aiTurbo=rand(5,10)}
   if(c.missN>0&&c.aiFire<=0){const f=forward(c.h);let shoot=false;for(const o of cars){if(o===c||o.inv>0)continue;const dx=o.x-c.x,dz=o.z-c.z,dd=dx*dx+dz*dz;if(dd<900&&(f.x*dx+f.z*dz)/Math.sqrt(dd)>.88){shoot=true;break}}
    if(shoot&&Math.random()<sk.item*c.pers.aggro){fire(c);c.aiFire=rand(3,6)}else c.aiFire=.4}
   if(c.oilN>0&&c.aiOil<=0){const f=forward(c.h);let behind=false;for(const o of cars){if(o===c)continue;const dx=o.x-c.x,dz=o.z-c.z,dd=dx*dx+dz*dz;if(dd<200&&(f.x*dx+f.z*dz)<0){behind=true;break}}
@@ -1853,7 +1885,7 @@ function carBumps(){const n=cars.length;for(let i=0;i<n;i++)for(let j=i+1;j<n;j+
  if(dd<4.4&&dd>.001&&Math.abs(a.y-b.y)<1.6&&a.pit<=0&&b.pit<=0){const d=Math.sqrt(dd),nx=(a.x-b.x)/d,nz=(a.z-b.z)/d,p=(2.1-d)/2;
   a.x+=nx*p;a.z+=nz*p;b.x-=nx*p;b.z-=nz*p;
   const rv=(a.vx-b.vx)*nx+(a.vz-b.vz)*nz;
-  if(rv<0){const j2=-.75*rv;a.vx+=nx*j2;a.vz+=nz*j2;b.vx-=nx*j2;b.vz-=nz*j2;
+  if(rv<0){const ma=veh(a).mass,mb=veh(b).mass,J=-1.5*rv/(1/ma+1/mb);a.vx+=nx*J/ma;a.vz+=nz*J/ma;b.vx-=nx*J/mb;b.vz-=nz*J/mb;
    if(-rv>3&&(a.player||b.player)){AudioSys.thud(clamp(-rv/14,.1,.7));Game.shake=Math.max(Game.shake,reduced?0:.12)}}}}}
 function updateMissiles(dt){for(const m of missiles){if(!m.active)continue;m.life-=dt;if(m.life<=0){m.active=false;m.g.visible=false;continue}let target=null,best=1e9;const f0=forward(m.h);for(const c of cars){if(c===m.owner||c.inv>0)continue;const dx=c.x-m.x,dz=c.z-m.z,dd=dx*dx+dz*dz;if(dd<1600&&(f0.x*dx+f0.z*dz)/Math.sqrt(dd)>.5&&dd<best){best=dd;target=c}}if(target)m.h=angLerp(m.h,Math.atan2(target.x-m.x,target.z-m.z),clamp(2.1*dt,0,1));const f=forward(m.h);m.x+=f.x*62*dt;m.z+=f.z*62*dt;const pr=project(m.x,m.z,m.idx);m.idx=pr.i;m.y=surfaceY(Track.data,pr)+.55;m.g.position.set(m.x,m.y,m.z);m.g.rotation.y=m.h;Particles.spawn(m.x,m.y,m.z,rand(-1,1),rand(-1,1),rand(-1,1),0xff66b3,.9,.25);let hit=Math.abs(pr.lat)>Track.data.hw-.1;if(!hit)for(const c of cars){if(c===m.owner||c.inv>0)continue;if(d2(m.x,m.z,c.x,c.z)<2.89&&Math.abs(c.y-m.y)<2.5){spinCar(c);hit=true;break}}if(hit){m.active=false;m.g.visible=false;Particles.burst(m.x,m.y,m.z,0xff8a3d,22,10,1.6,.7,4,3);AudioSys.boom(m.x,m.z);if(d2(m.x,m.z,cars[0].x,cars[0].z)<784&&!reduced)Game.shake=Math.max(Game.shake,.4)}}}
 function updateWorld(dt,t){for(const p of Track.pickups){if(!p.active){p.respawn-=dt;if(p.respawn<=0){p.active=true;p.g.visible=true;p.pop=0}continue}const ch=p.g.children[0];p.pop=Math.min(1,(p.pop??1)+dt*4);const sc=p.pop<1?p.pop*(1.25-.25*p.pop):1;
@@ -2033,7 +2065,7 @@ function updateCamera(dt,t){
    tmpV.set(p.x+lead.x*la-13,p.y+27,p.z+lead.z*la-13);camPos.lerp(tmpV,1-Math.exp(-5*dt));
    tmpV.set(p.x+lead.x*la,p.y,p.z+lead.z*la);camLook.lerp(tmpV,1-Math.exp(-6*dt));fov=48;
   }else{const a=t*.18;tmpV.set(p.x+Math.sin(a)*14,p.y+7+Math.sin(t*.1)*2,p.z+Math.cos(a)*14);camPos.lerp(tmpV,1-Math.exp(-3*dt));tmpV.set(p.x,p.y+1,p.z);camLook.lerp(tmpV,1-Math.exp(-5*dt));fov=55}}
- else if(SHOWROOM.includes(st)){const a=(p.showA||0)+Math.PI*.78+Math.sin(t*.12)*.35,r=st==="garage"?6.2:6.8,cx=p.x,cz=p.z;
+ else if(SHOWROOM.includes(st)){const a=(p.showA||0)+Math.PI*.78+Math.sin(t*.12)*.35,r=st==="garage"?7.6:7.2,cx=p.x,cz=p.z;
   tmpV.set(cx+Math.sin(a)*r,p.y+1.9+Math.sin(t*.2)*.2,cz+Math.cos(a)*r);if(Game.snapCam)camPos.copy(tmpV);else camPos.lerp(tmpV,1-Math.exp(-2.5*dt));
   // shift the aim sideways so the car sits in the space the menu leaves free
   const narrow=innerWidth<720,side=narrow?0:(st==="garage"?1:-1)*2.3,rx=Math.cos(a),rz=-Math.sin(a);
@@ -2072,7 +2104,7 @@ function updateHUD(dt,t){
 /* ---------- screens ---------- */
 const STYLE_NAME={buggy:"BUGGY",truck:"STADIUM TRUCK",touring:"TOURING"};
 function statBarsHTML(){const st=stats(),bar=(n,v)=>`<div class="bar"><span>${n}</span><i><b style="width:${Math.round(clamp(v,0,1)*100)}%"></b></i></div>`;
- return bar("TOP SPEED",(st.max-28)/11)+bar("ACCEL",(st.accel-14)/12)+bar("GRIP",(st.lat-18)/6)+bar("BOOST",(st.turboDur-1.2)/1.2)}
+ return bar("TOP SPEED",(st.max-24)/15)+bar("ACCEL",(st.accel-14)/14)+bar("GRIP",(st.lat-17)/10)+bar("HANDLING",(st.turn*st.grip-20)/16)+bar("BOOST",(st.turboDur-1.2)/1.2)}
 /* ---- friend challenges: ?vs=CJR-5663&t=9&df=1 lands you on that exact race ---- */
 function incomingChallenge(){const C=window.DSDA&&window.DSDA.challenge;if(!C||!C.q)return null;const t=+C.q.t,df=+C.q.df;
  if(!(t>=0&&t<TRACKS.length))return null;return{n:C.n,s:C.s,t,df:df>=0&&df<=2?df:1}}
@@ -2098,7 +2130,7 @@ function renderTitle(){
  $("contTag").textContent=run?CUPS[cu].name+" · round "+((save.track|0)+1)+"/4 · "+money(save.money):"";
  $("startBtn").innerHTML=(run?"⟲ NEW CHAMPIONSHIP":"▶ CHAMPIONSHIP")+"<small>"+(run?"wipes this run":"3 cups · 12 circuits")+"</small>";
  $("optTag").textContent=DIFFS[save.diff]+" · "+["CHASE","PRO-AM","CINEMA"][save.cam|0];
- const r=RACERS[0];$("carCard").innerHTML=`<div class="nm" style="color:${r.css}">${r.name} #${r.num}</div><div class="ty">${STYLE_NAME[r.style]} · NEON CIRCUIT RC</div>`+statBarsHTML();
+ renderCarPick();
 }
 function renderOptions(){
  $("autoBtn").textContent="AUTO-GAS: "+(save.autoGas?"ON":"OFF");
@@ -2112,7 +2144,7 @@ function renderOptions(){
 function applyGfx(){const hi=save.gfx!==0;if(bloomPass)bloomPass.enabled=hi;const pr=hi?DPR:1;renderer.setPixelRatio(pr);if(composer){composer.setPixelRatio(pr);composer.setSize(innerWidth,innerHeight)}}
 function renderGarage(){
  const idx=globalTrack(),d=trackData(idx),def=TRACKS[idx],cup=CUPS[clamp(save.cup|0,0,CUPS.length-1)];
- if(Game.built!==idx)buildTrack(idx);placeShowroom();$("statBars").innerHTML=statBarsHTML();
+ if(Game.built!==idx)buildTrack(idx);placeShowroom();$("statBars").innerHTML="";renderCarPick();
  $("roundLabel").textContent=cup.name+" · ROUND "+((save.track|0)+1)+"/4"+(save.ng?" · NG+"+save.ng:"")+" · CHASSIS "+("◆".repeat(Math.max(0,save.lives))||"—");$("garageMoney").textContent=money(save.money);$("nextName").textContent=def.name;$("nextDesc").textContent=def.desc;$("nextMeta").textContent=def.laps+" laps · "+(d.len/1000).toFixed(2)+" km · record "+timef(save.best[idx]);
  const x=$("preview").getContext("2d"),W=260,H=260;x.clearRect(0,0,W,H);const sx=(W-40)/(d.maxx-d.minx),sz=(H-40)/(d.maxz-d.minz),s=Math.min(sx,sz),ox=(W-(d.maxx-d.minx)*s)/2-d.minx*s,oz=(H-(d.maxz-d.minz)*s)/2-d.minz*s;x.lineJoin=x.lineCap="round";x.beginPath();d.samples.forEach((q,i)=>{const px=q.p.x*s+ox,pz=q.p.z*s+oz;i?x.lineTo(px,pz):x.moveTo(px,pz)});x.closePath();x.strokeStyle="#241448";x.lineWidth=14;x.stroke();x.strokeStyle="#3a2a6e";x.lineWidth=9;x.stroke();x.strokeStyle="#"+new THREE.Color(def.theme.edge).getHexString();x.lineWidth=2;x.stroke();
  $("upgrades").innerHTML=UPGRADES.map(u=>{const lvl=save.up[u.key],max=lvl>=3,cost=max?0:u.cost[lvl];let pips="";for(let i=0;i<4;i++)pips+=`<i class="${i<=lvl?"on":""}"></i>`;return `<div class="up"><div class="upIcon">${u.icon}</div><div><div class="upName">${u.name}</div><div class="upDesc">${u.desc}</div><div class="pips">${pips}</div></div><button class="buy ${max?"max":""}" data-u="${u.key}" ${max||save.money<cost?"disabled":""}>${max?"MAXED":"BUY "+money(cost)}</button></div>`}).join("");
@@ -2129,7 +2161,7 @@ function poseShowroom(dt,t){const p=cars[0];showroomSpin=Math.max(0,showroomSpin
 function enterTitle(){endChallenge();clearInput();Game.paused=false;if(Track&&Game.built!==0){}if(Track)placeShowroom();renderTitle();setState("title");setTimeout(()=>{const b=$(incomingChallenge()?"chalBtn":hasRun()?"contBtn":"startBtn");if(b&&!coarse)b.focus({preventScroll:true})},50)}
 function pause(){if(Game.paused||!["race","countdown"].includes(Game.state))return;Game.paused=true;clearInput();setState("pause");$("pMute").textContent=save.muted?"🔇 SOUND OFF":"🔊 SOUND ON";AudioSys.click()}
 function resume(){if(!Game.paused)return;Game.paused=false;clearInput();setState("race");AudioSys.click();focusCanvas()}
-function newGame(){save=Object.assign(freshSave(),{diff:save.diff,autoGas:save.autoGas,muted:save.muted,cam:save.cam,gfx:save.gfx,steer:save.steer,bestScore:save.bestScore});persist();renderGarage();setState("garage")}
+function newGame(){save=Object.assign(freshSave(),{car:save.car,diff:save.diff,autoGas:save.autoGas,muted:save.muted,cam:save.cam,gfx:save.gfx,steer:save.steer,bestScore:save.bestScore});persist();renderGarage();setState("garage")}
 
 /* ---------- UI bindings ---------- */
 $("muteBtn").onclick=toggleMute;$("camBtn").onclick=cycleCamera;$("pauseBtn").onclick=pause;
@@ -2177,7 +2209,7 @@ function simulate(dt,t){
  if(st==="race")Game.raceTime+=dt;
  if(st==="finish"){Game.finishDelay-=dt;if(Game.finishDelay<=0)showResults()}
  if(SHOWROOM.includes(st))poseShowroom(dt,t);
- else if(st!=="countdown"){cars.forEach(c=>{if(st==="race"&&c.player&&!window.__auto)playerStep(dt,t);else aiStep(c,dt,t)});carBumps();updateMissiles(dt)}
+ else if(st!=="countdown"){cars.forEach(c=>{if(c.parked)return;if(st==="race"&&c.player&&!window.__auto)playerStep(dt,t);else aiStep(c,dt,t)});carBumps();updateMissiles(dt)}
  updateWorld(dt,t);
 }
 function loop(){requestAnimationFrame(loop);if(window.__noLoop)return;const dt=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;if(skyUni)skyUni.time.value=t;if(!Game.paused)simulate(dt,t);updateCamera(dt,t);updateHUD(dt,t);AudioSys.frame();composer.render()}
@@ -2201,6 +2233,10 @@ if(/[?&]test=1/.test(location.search))window.__G={
   for(let k=0;k<secs*60;k++){t+=1/60;simulate(1/60,t);if(k%6==0)out.push([+t.toFixed(1),c.idx,+(1/Math.max(1e-4,Math.abs(D.samples[c.idx].k))).toFixed(0)*Math.sign(D.samples[c.idx].k),+c.lat.toFixed(1),+Math.hypot(c.vx,c.vz).toFixed(1),c.drift,c.driftLv,c.air?1:0,+(c.slip||0).toFixed(2),c.nWall||0,+D.line[c.idx].toFixed(1),c.aiDrift?1:0,JSON.stringify(c.dbg||[])])}
   return out},
  set(code){return eval(code)},
+ solo(ti,style,secs){window.__auto=true;save.car=style;cars[0].style=style;this.quickTrack(ti);
+  cars.forEach((c,i)=>{if(i){c.parked=true;c.x+=9999;c.y=-500;c.finished=true}});
+  const dt=1/60;let t=0;for(let k=0;k<secs*60&&!cars[0].finished;k++){t+=dt;simulate(dt,t)}
+  cars.forEach(c=>c.parked=false);return{ft:+(cars[0].finished?cars[0].finishTime:-1).toFixed(2),walls:cars[0].nWall,best:cars[0].best}},
  render(){updateCamera(1/60,1);composer.render()}
 };
 </script>
