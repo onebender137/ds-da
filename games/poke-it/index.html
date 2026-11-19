@@ -1536,7 +1536,7 @@ function applyGravity(){
 function rebuildRayTargets(){rayTargets=boardOrbs.filter(o=>o.alive&&!o.popping).map(o=>o.mesh);}
 function clearHover(){hoverOrb=null;hoverSet=new Set();hoverSolo=false;els.hoverchip.classList.remove('show');hoverChipCache='';}
 function clearBoard(){
-  killTweens('level');
+  killTweens('level');pendingTap=null;
   boardOrbs.forEach(releaseOrb);boardOrbs=[];grid=[];rayTargets=[];
   clearHover();pressSet=new Set();hintSet=null;largestGroup=null;
   resetPools();
@@ -1883,11 +1883,30 @@ function exitMenuOrbs(){
 }
 
 /* ============================== input ============================== */
+const tapPlane=new Map(),tapHit={x:0,y:0,z:0};
 function pickOrb(cx,cy){
   pointerN.x=(cx/innerWidth)*2-1;pointerN.y=-(cy/innerHeight)*2+1;
   raycaster.setFromCamera(pointerN,camera);
   const hits=raycaster.intersectObjects(rayTargets,false);
-  return hits.length?hits[0].object.userData.orb:null;
+  if(hits.length)return hits[0].object.userData.orb;
+  // forgiving touch: a tap in the gap between balloons (or on a string) snaps to the
+  // nearest live balloon within ~2/3 of a cell, measured on the board plane
+  const ray=raycaster.ray;if(Math.abs(ray.direction.z)<1e-4)return null;
+  const k=-ray.origin.z/ray.direction.z;if(k<0)return null;
+  const px=ray.origin.x+ray.direction.x*k,py=ray.origin.y+ray.direction.y*k;
+  let best=null,bd=(SPACING*.68)*(SPACING*.68);
+  for(const m of rayTargets){const p=m.position,dx=p.x-px,dy=p.y-py,d=dx*dx+dy*dy;if(d<bd){bd=d;best=m.userData.orb;}}
+  return best;
+}
+// a tap that lands while the sky is still floating up is held and fired the moment it settles
+let pendingTap=null;
+function flushPendingTap(){
+  if(!pendingTap||state!=='play')return;
+  const pt=pendingTap;pendingTap=null;
+  if(t-pt.t>2.2)return; // game-time, so a slow phone's long settle doesn't eat it
+  const o=pt.orb;
+  if(o&&o.alive&&!o.popping){const g=collectGroup(o);if(g.size>=2){popGroup(g,o);return;}}
+  handleTap(pt.x,pt.y);
 }
 function pressAt(cx,cy){
   if(state!=='play')return;
@@ -1897,6 +1916,9 @@ function pressAt(cx,cy){
 function releasePress(){if(pressSet.size)pressSet=new Set();}
 function handleTap(cx,cy){
   AudioSys.ensure();
+  if(state==='settling'||(state==='intro'&&boardOrbs.length)){
+    const o=pickOrb(cx,cy);pendingTap={x:cx,y:cy,t,orb:o&&o.alive&&!o.popping?o:null};return;
+  }
   if(state!=='play')return;
   const o=pickOrb(cx,cy);
   if(!o||!o.alive||o.popping)return;
@@ -1943,19 +1965,17 @@ function initInput(){
   },{passive:true});
   cv.addEventListener('pointerdown',e=>{
     AudioSys.ensure();
+    if(e.pointerType!=='mouse'){
+      // touch/pen pokes on contact — no waiting for lift-off, no movement/duration
+      // thresholds to fail, and every finger counts (multi-touch friendly)
+      suppressClickUntil=performance.now()+800;
+      handleTap(e.clientX,e.clientY);
+      return;
+    }
     downInfo={x:e.clientX,y:e.clientY,t:performance.now()};
     pressAt(e.clientX,e.clientY);
   },{passive:true});
-  cv.addEventListener('pointerup',e=>{
-    releasePress();
-    if(!downInfo)return;
-    const d=Math.hypot(e.clientX-downInfo.x,e.clientY-downInfo.y),dur=performance.now()-downInfo.t;
-    downInfo=null;
-    if(e.pointerType!=='mouse'&&d<20&&dur<900){
-      suppressClickUntil=performance.now()+700;
-      handleTap(e.clientX,e.clientY);
-    }
-  },{passive:true});
+  cv.addEventListener('pointerup',()=>{releasePress();downInfo=null;},{passive:true});
   cv.addEventListener('pointercancel',()=>{downInfo=null;releasePress();},{passive:true});
   cv.addEventListener('click',e=>{
     if(performance.now()<suppressClickUntil)return;
@@ -2337,6 +2357,7 @@ function loop(){
       const gs=allGroups();largestGroup=gs.length?gs.reduce((a,b)=>b.size>a.size?b:a):null;
     }else onSettle();
   }
+  if(pendingTap&&state==='play')flushPendingTap();
   if(state==='menu')updateMenuOrbs(dt);
   if(state==='play'&&gdt>0){comboT=Math.max(0,comboT-gdt);if(comboT===0)combo=0;}
   updateHint(gdt);
