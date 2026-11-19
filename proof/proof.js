@@ -708,7 +708,9 @@ function initLogin() {
                     const derSig = sigResult.signature;
                     signature = Array.from(derSig).map(b => b.toString(16).padStart(2, '0')).join('');
                     cwiPublicKey = publicKey;
-                    sigAddress = BSV.Address.fromPublicKey(publicKey).toString();
+                    // Address.fromPublicKey() needs a PublicKey *instance*, not a hex string.
+                    const pub = new BSV.PublicKey(publicKey);
+                    sigAddress = BSV.Address.fromPublicKey(pub).toString();
                     console.log('[dsda-login] derived address=' + sigAddress + ' pk=' + cwiPublicKey + ' sigLen=' + signature.length);
                 } catch (walletErr) {
                     console.error('[dsda-login] CWI ERROR:', (walletErr && walletErr.message) ? walletErr.message : walletErr, walletErr);
