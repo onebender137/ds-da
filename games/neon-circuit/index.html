@@ -452,12 +452,12 @@ const UPGRADES=[
 {key:"turbo",icon:"⚡",name:"TURBO CORE",desc:"Boost power & duration",cost:[140,280,480]}
 ];
 const RACERS=[
-{name:"VIPER",color:0xff2d95,css:"#ff2d95",player:true},
-{name:"COBALT",color:0x00e5ff,css:"#00e5ff",pers:{pace:1.01,lat:1.02,line:1,wander:.6,aggro:.6,drifts:true}},
-{name:"VENOM",color:0xb6ff2e,css:"#b6ff2e",pers:{pace:.99,lat:.97,line:.8,wander:1.4,aggro:1.3,drifts:true}},
-{name:"SOLAR",color:0xffb300,css:"#ffb300",pers:{pace:1,lat:1,line:1,wander:.8,aggro:.9,drifts:false}},
-{name:"RAZOR",color:0xe8ecff,css:"#e8ecff",pers:{pace:1.02,lat:1.04,line:1.1,wander:.4,aggro:.5,drifts:true}},
-{name:"JINX",color:0x9b5cff,css:"#9b5cff",pers:{pace:.97,lat:.98,line:.7,wander:1.6,aggro:1.5,drifts:true}}
+{name:"VIPER",color:0xff2d95,style:"buggy",num:"7",css:"#ff2d95",player:true},
+{name:"COBALT",color:0x00e5ff,style:"touring",num:"22",css:"#00e5ff",pers:{pace:1.01,lat:1.02,line:1,wander:.6,aggro:.6,drifts:true}},
+{name:"VENOM",color:0xb6ff2e,style:"truck",num:"13",css:"#b6ff2e",pers:{pace:.99,lat:.97,line:.8,wander:1.4,aggro:1.3,drifts:true}},
+{name:"SOLAR",color:0xffb300,style:"buggy",num:"5",css:"#ffb300",pers:{pace:1,lat:1,line:1,wander:.8,aggro:.9,drifts:false}},
+{name:"RAZOR",color:0xe8ecff,style:"touring",num:"88",css:"#e8ecff",pers:{pace:1.02,lat:1.04,line:1.1,wander:.4,aggro:.5,drifts:true}},
+{name:"JINX",color:0x9b5cff,style:"truck",num:"66",css:"#9b5cff",pers:{pace:.97,lat:.98,line:.7,wander:1.6,aggro:1.5,drifts:true}}
 ];
 
 /* ---------- game state ---------- */
@@ -1029,137 +1029,193 @@ function makeParticles(){
  };
 }
 
-/* ---------- cars ---------- */
+/* ---------- cars ----------
+   Real RC proportions: a thin carbon chassis plate carrying the running gear (A-arms,
+   coil-over shocks, big knobby tyres on spoked rims, a motor can), and a painted
+   polycarbonate shell riding on top. Wheels live on the root so they stay planted;
+   the shell lives on `body`, which sits on a spring-damper (see carVisual) — it
+   squats, dives, rolls and bounces on landings like the real thing.
+   Every geometry is built once and shared; only paint/livery is per car. */
 const cars=[];
-/* Every geometry below is built ONCE and shared by all four cars. The old code
-   newed a BoxGeometry per box per car, so the same shapes existed four times. */
-const CG={};
-// box with its top face pulled in, for cockpits and pods — reads as a moulded panel, not a brick
-function taperBox(w,h,d,tx,tz){
- const g=new THREE.BoxGeometry(w,h,d),p=g.attributes.position;
- for(let i=0;i<p.count;i++)if(p.getY(i)>0){p.setX(i,p.getX(i)*tx);p.setZ(i,p.getZ(i)*(tz==null?tx:tz))}
- p.needsUpdate=true;g.computeVertexNormals();return g;
-}
-const BOXMAT={};
+const CG={},BOXMAT={};
+const STYLES={
+ // wheelbase (z of axles), track (x of wheels), tyre radii/width, shell profile
+ buggy:  {zf:1.12,zr:-1.12,xf:.98,xr:1.02,rf:.38,rr:.46,wf:.3,wr:.4,ride:.30,n:2.4,
+          prof:[[2.05,.32,.14],[1.75,.56,.30],[1.25,.70,.40],[.55,.78,.52],[.10,.80,.78],[-.45,.78,.84],[-.95,.76,.66],[-1.45,.72,.52],[-1.85,.56,.36],[-2.0,.36,.22]],
+          cab:[[.55,.36,.0],[.25,.44,.26],[-.15,.45,.38],[-.55,.40,.30],[-.85,.28,.0]],cabY:1.1,wing:"tall"},
+ truck:  {zf:1.15,zr:-1.15,xf:1.08,xr:1.08,rf:.52,rr:.52,wf:.44,wr:.44,ride:.52,n:3.6,
+          prof:[[2.0,.62,.30],[1.75,.86,.62],[1.0,.92,.70],[.35,.92,1.05],[-.35,.92,1.10],[-.7,.92,.74],[-1.85,.92,.70],[-2.02,.80,.52]],
+          cab:[[.37,.935,0],[.30,.945,.42],[-.30,.945,.46],[-.37,.935,0]],cabY:1.26,wing:"roof"},
+ touring:{zf:1.20,zr:-1.20,xf:.94,xr:.94,rf:.34,rr:.34,wf:.32,wr:.34,ride:.22,n:3.0,
+          prof:[[2.1,.66,.22],[1.9,.86,.40],[1.3,.92,.50],[.7,.92,.56],[.30,.90,.92],[-.6,.88,.96],[-1.1,.90,.64],[-1.8,.90,.58],[-2.08,.82,.42]],
+          cab:[[.34,.925,0],[.22,.925,.42],[-.62,.915,.44],[-.98,.915,0]],cabY:.84,wing:"lip"}
+};
+/* a smooth shell lofted through superellipse cross-sections: |x/w|^n + |y/h|^n = 1, top half.
+   UV: u runs around the section (0 = left sill, .5 = roof centre, 1 = right sill), v along the car. */
+function shellGeo(prof,n,y0,segA=20){
+ const P=[],U=[],I=[],S=prof.length,z0=prof[0][0],z1=prof[S-1][0];
+ for(let s=0;s<S;s++){const [z,w,h]=prof[s];
+  for(let a=0;a<=segA;a++){const th=Math.PI*(1-a/segA),c=Math.cos(th),sn=Math.sin(th);
+   const x=w*Math.sign(c)*Math.pow(Math.abs(c),2/n),y=h*Math.pow(Math.abs(sn),2/n);
+   P.push(x,y0+y,z);U.push(a/segA,(z-z1)/(z0-z1))}}
+ for(let s=0;s<S-1;s++)for(let a=0;a<segA;a++){const i=s*(segA+1)+a,j=i+segA+1;I.push(i,i+1,j,i+1,j+1,j)}
+ // nose and tail caps so the shell is closed when you see it end-on
+ const cap=(s,flip)=>{const base=s*(segA+1),c=P.length/3;P.push(0,y0+.02,prof[s][0]);U.push(.5,s?0:1);for(let a=0;a<segA;a++)flip?I.push(c,base+a+1,base+a):I.push(c,base+a,base+a+1)};
+ cap(0,true);cap(S-1,false);
+ const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(P,3));g.setAttribute("uv",new THREE.Float32BufferAttribute(U,2));g.setIndex(I);g.computeVertexNormals();return g}
+function mergePlain(list){let n=0;const parts=list.map(g=>{const ng=g.index?g.toNonIndexed():g;n+=ng.attributes.position.count;return ng});
+ const P=new Float32Array(n*3),Nn=new Float32Array(n*3),Uv=new Float32Array(n*2);let o=0;
+ for(const g of parts){if(!g.attributes.normal)g.computeVertexNormals();P.set(g.attributes.position.array,o*3);Nn.set(g.attributes.normal.array,o*3);if(g.attributes.uv)Uv.set(g.attributes.uv.array,o*2);o+=g.attributes.position.count}
+ const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(P,3));g.setAttribute("normal",new THREE.BufferAttribute(Nn,3));g.setAttribute("uv",new THREE.BufferAttribute(Uv,2));return g}
+/* knobby tyre: a rounded carcass plus two staggered rows of tread blocks */
+function tyreGeo(r,w){
+ const pts=[];const rr=w*.42;for(let i=0;i<=10;i++){const a=-Math.PI/2+Math.PI*i/10;pts.push(new THREE.Vector2(r-rr+Math.cos(a)*rr,Math.sin(a)*w*.5))}
+ pts.unshift(new THREE.Vector2(r*.62,-w*.5));pts.push(new THREE.Vector2(r*.62,w*.5));
+ const car=new THREE.LatheGeometry(pts,28);car.rotateZ(Math.PI/2);       // lathe axis Y -> axle X
+ const parts=[car],K=18;
+ for(let k=0;k<K;k++)for(const row of [-1,1]){const a=(k+(row>0?.5:0))/K*TAU,b=new THREE.BoxGeometry(w*.34,r*.12,r*.2);
+  b.translate(row*w*.2,r-.01,0);b.rotateX(a);parts.push(b)}
+ return mergePlain(parts)}
+/* dished rim: hub, six spokes, outer lip */
+function rimGeo(r,w){const parts=[];const hub=new THREE.CylinderGeometry(r*.2,r*.2,w*.9,12);hub.rotateZ(Math.PI/2);parts.push(hub);
+ const lip=new THREE.TorusGeometry(r*.56,r*.06,6,20);lip.rotateY(Math.PI/2);lip.translate(w*.32,0,0);parts.push(lip);
+ for(let k=0;k<6;k++){const s=new THREE.BoxGeometry(w*.12,r*.5,r*.12);s.translate(w*.34,r*.3,0);s.rotateX(k/6*TAU);parts.push(s)}
+ const face=new THREE.CylinderGeometry(r*.58,r*.58,w*.08,20);face.rotateZ(Math.PI/2);face.translate(w*.25,0,0);parts.push(face);
+ return mergePlain(parts)}
+/* coil-over shock: body + spring coils + top eye */
+function shockGeo(L){const parts=[],body=new THREE.CylinderGeometry(.055,.055,L*.62,8);body.translate(0,L*.31,0);parts.push(body);
+ for(let k=0;k<7;k++){const c=new THREE.TorusGeometry(.085,.016,4,10);c.rotateX(Math.PI/2);c.translate(0,L*.3+k*L*.085,0);parts.push(c)}
+ const rod=new THREE.CylinderGeometry(.025,.025,L*.5,6);rod.translate(0,L*.75,0);parts.push(rod);return mergePlain(parts)}
 function buildCarGeo(){
  CG.box=new THREE.BoxGeometry(1.25,1.25,1.25);CG.boxCore=new THREE.OctahedronGeometry(.42,0);
- // Chassis: a real side profile (wedge nose, cowl, cockpit hump, tapered tail)
- // extruded across the width with a bevel, so every edge is chamfered.
- const W=1.80,BT=.065,prof=new THREE.Shape();
- const pts=[[-1.50,.17],[1.58,.15],[1.90,.38],[1.34,.48],[.56,.54],[.36,.96],[-.46,1.00],[-.70,.58],[-1.44,.54]];
- prof.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)prof.lineTo(pts[i][0],pts[i][1]);prof.closePath();
- const body=new THREE.ExtrudeGeometry(prof,{depth:W-BT*2,bevelEnabled:true,bevelThickness:BT,bevelSize:BT,bevelSegments:2,steps:1,curveSegments:1});
- body.rotateY(-Math.PI/2);                      // profile axis -> world Z (the car faces +Z)
- body.computeBoundingBox();const bb=body.boundingBox;
- body.translate(-(bb.min.x+bb.max.x)/2,0,-(bb.min.z+bb.max.z)/2);
- body.computeVertexNormals();CG.body=body;
-
- CG.canopy=taperBox(1.16,.40,1.18,.62,.78);
- CG.pod=taperBox(.30,.34,1.66,.74,.94);
- CG.splitter=new THREE.BoxGeometry(1.66,.06,.44);
- CG.wing=new THREE.BoxGeometry(1.94,.07,.46);
- CG.endplate=new THREE.BoxGeometry(.05,.30,.46);
- CG.strut=new THREE.BoxGeometry(.08,.34,.09);
- CG.lightBar=new THREE.BoxGeometry(1.30,.11,.07);
- CG.tailBar=new THREE.BoxGeometry(1.42,.10,.07);
- CG.rod=new THREE.CylinderGeometry(.018,.018,1.5,5);
- CG.tip=new THREE.SphereGeometry(.055,6,6);
- CG.nozzle=new THREE.CylinderGeometry(.13,.16,.12,10);CG.nozzle.rotateX(Math.PI/2);
- // tires: rear taller and wider than front, buggy proportions
- const tire=(r,w)=>{const g=new THREE.CylinderGeometry(r,r,w,20,1,false);g.rotateZ(Math.PI/2);return g};
- CG.tireF=tire(.34,.26);CG.tireR=tire(.42,.34);
- const rim=(r,w)=>{const g=new THREE.CylinderGeometry(r,r,w,12,1,false);g.rotateZ(Math.PI/2);return g};
- CG.rimF=rim(.185,.272);CG.rimR=rim(.225,.352);
- CG.under=new THREE.PlaneGeometry(2.9,4.3);
- CG.blob=new THREE.PlaneGeometry(3.4,4.6);
- // ---- bolt-on parts that appear as upgrades are bought ----
- CG.scoop=taperBox(.62,.26,.82,.66,.8);          // motor: hood intake
- CG.bigNozzle=new THREE.CylinderGeometry(.17,.21,.16,10);CG.bigNozzle.rotateX(Math.PI/2);
- CG.wingHi=new THREE.BoxGeometry(2.08,.08,.54);  // turbo: taller, wider wing
- CG.wingPost=new THREE.BoxGeometry(.09,.62,.1);
- CG.vent=new THREE.BoxGeometry(.1,.2,.78);       // turbo: glowing intercooler vents
- CG.fender=taperBox(.2,.2,1.0,.7);               // tires: arch flares
+ for(const [k,S] of Object.entries(STYLES)){
+  S.shell=shellGeo(S.prof,S.n,S.ride+.12);
+  S.cabGeo=shellGeo(S.cab,2.2,S.cabY,14);
+  S.tyreF=tyreGeo(S.rf,S.wf);S.tyreR=S.rf===S.rr&&S.wf===S.wr?S.tyreF:tyreGeo(S.rr,S.wr);
+  S.rimF=rimGeo(S.rf,S.wf);S.rimR=S.rf===S.rr&&S.wf===S.wr?S.rimF:rimGeo(S.rr,S.wr);
+  S.shock=shockGeo(S.ride+.16);
+ }
+ CG.plate=new THREE.BoxGeometry(1.05,.06,3.5);
+ CG.arm=new THREE.BoxGeometry(1,.05,.16);
+ CG.tower=new THREE.BoxGeometry(1.5,.38,.06);
+ CG.bumper=new THREE.BoxGeometry(1.2,.12,.26);
+ CG.can=new THREE.CylinderGeometry(.17,.17,.42,14);CG.can.rotateZ(Math.PI/2);
+ CG.fins=new THREE.CylinderGeometry(.2,.2,.3,14,1,true);CG.fins.rotateZ(Math.PI/2);
+ CG.helmet=new THREE.SphereGeometry(.17,12,10);
+ CG.wingTall=new THREE.BoxGeometry(1.7,.05,.6);CG.wingRoof=new THREE.BoxGeometry(1.5,.05,.42);CG.wingLip=new THREE.BoxGeometry(1.7,.06,.26);
+ CG.endplate=new THREE.BoxGeometry(.04,.32,.62);
+ CG.strut=new THREE.BoxGeometry(.05,.5,.08);
+ CG.lightBar=new THREE.BoxGeometry(.9,.07,.06);CG.tailBar=new THREE.BoxGeometry(1.1,.07,.05);CG.lamp=new THREE.CircleGeometry(.09,10);
+ CG.rod=new THREE.CylinderGeometry(.012,.012,1.6,5);CG.tip=new THREE.SphereGeometry(.05,6,6);CG.flag=new THREE.PlaneGeometry(.22,.14);
+ CG.nozzle=new THREE.CylinderGeometry(.1,.13,.12,10);CG.nozzle.rotateX(Math.PI/2);
+ CG.under=new THREE.PlaneGeometry(2.9,4.3);CG.blob=new THREE.PlaneGeometry(3.2,4.4);
+ // upgrade bolt-ons
+ CG.scoop=new THREE.BoxGeometry(.5,.16,.6);CG.bigNozzle=new THREE.CylinderGeometry(.15,.19,.16,10);CG.bigNozzle.rotateX(Math.PI/2);
+ CG.wingHi=new THREE.BoxGeometry(2.0,.06,.66);CG.wingPost=new THREE.BoxGeometry(.06,.6,.09);CG.vent=new THREE.BoxGeometry(.06,.14,.6);
+ CG.fender=new THREE.BoxGeometry(.18,.1,.8);
 }
-/* Show the player's bolt-ons for whatever they've actually bought. Called whenever the
-   garage changes or a race starts, so the car on track always matches the receipts. */
+/* per-car livery painted onto the shell: base colour, a stripe set, race number, DSDA decal */
+function liveryTex(color,num,style,seed){
+ const base="#"+new THREE.Color(color).getHexString(),dark="#"+new THREE.Color(color).multiplyScalar(.35).getHexString();
+ const alt=["#ffffff","#0d0d14","#ffd400","#00e5ff","#ff2d95"][(seed*7)%5];
+ return canvasTex(512,512,(x,W,H)=>{
+  const g=x.createLinearGradient(0,0,W,0);g.addColorStop(0,dark);g.addColorStop(.25,base);g.addColorStop(.5,base);g.addColorStop(.75,base);g.addColorStop(1,dark);x.fillStyle=g;x.fillRect(0,0,W,H);
+  // twin racing stripes over the roof (u .5), or a side flash
+  x.fillStyle=alt;if(seed%2===0){x.fillRect(W*.43,0,W*.05,H);x.fillRect(W*.52,0,W*.05,H)}else{x.beginPath();x.moveTo(0,H*.55);x.lineTo(W*.3,H*.2);x.lineTo(W*.36,H*.2);x.lineTo(W*.06,H*.55);x.fill();x.beginPath();x.moveTo(W,H*.55);x.lineTo(W*.7,H*.2);x.lineTo(W*.64,H*.2);x.lineTo(W*.94,H*.55);x.fill()}
+  // pinstripe along the sills
+  x.fillStyle="rgba(255,255,255,.6)";x.fillRect(W*.06,0,3,H);x.fillRect(W*.94-3,0,3,H);
+  // number roundels on both flanks and the hood
+  const roundel=(cx,cy,r)=>{x.fillStyle="#fff";x.beginPath();x.arc(cx,cy,r,0,TAU);x.fill();x.fillStyle="#111";x.font="900 "+(r*1.25|0)+"px Orbitron,Impact,sans-serif";x.textAlign="center";x.textBaseline="middle";x.fillText(num,cx,cy+r*.06)};
+  roundel(W*.16,H*.5,34);roundel(W*.84,H*.5,34);roundel(W*.5,H*.82,30);
+  // sponsor decals
+  x.font="900 30px Orbitron,Impact,sans-serif";x.textAlign="center";x.textBaseline="middle";x.fillStyle="rgba(255,255,255,.88)";
+  x.save();x.translate(W*.2,H*.22);x.rotate(-Math.PI/2);x.fillText("DSDA",0,0);x.restore();x.save();x.translate(W*.8,H*.22);x.rotate(Math.PI/2);x.fillText("DSDA",0,0);x.restore();
+  x.font="700 18px Rajdhani,sans-serif";x.fillStyle="rgba(0,0,0,.55)";x.fillText("NEON·CIRCUIT·RC",W*.5,H*.06);
+ })}
 function applyUpgradeLook(c){
  const m=c.mesh;if(!m||!m.up)return;
  const lv=c.player?{motor:save.up.motor|0,tires:save.up.tires|0,turbo:save.up.turbo|0}:{motor:0,tires:0,turbo:0};
- m.up.motor.forEach((o,i)=>o.visible=lv.motor>=(i===0?1:2));        // scoop at 1, big pipes at 2
+ m.up.motor.forEach((o,i)=>o.visible=lv.motor>=(i===0?1:2));
  m.up.tires.forEach(o=>o.visible=lv.tires>=1);
- m.up.turbo.forEach((o,i)=>o.visible=lv.turbo>=(i<3?1:2));          // wing at 1, vents at 2
- // wider rubber and a hotter rim finish as grip goes up
- const tw=1+lv.tires*.14;m.wheels.forEach(w=>w.scale.set(tw,1,1));
- if(m.up.turbo[3])m.up.turbo.slice(3).forEach(o=>o.material=m.glowPaint);
- // thrusters run hotter with the motor
+ m.up.turbo.forEach((o,i)=>o.visible=lv.turbo>=(i<3?1:2));
+ m.stockWing.forEach(o=>o.visible=lv.turbo<1);
+ const tw=1+lv.tires*.12;m.wheels.forEach(w=>w.scale.set(tw,1,1));
  if(m.flame)m.flame.forEach(s=>s.material.color.setHex(lv.motor>=3?0xffc46a:lv.motor>=2?0xbfe9ff:0x8fe6ff));
- if(m.ant)m.ant.visible=true;
 }
-const CARMAT={dark:null,white:null,tireM:null,rimM:null,glass:null};
+const CARMAT={};
 function buildCarMats(){
  BOXMAT.shell=new THREE.MeshPhysicalMaterial({map:TEX.qbox,emissiveMap:TEX.qbox,emissive:0xffffff,emissiveIntensity:.55,transparent:true,opacity:.72,roughness:.15,metalness:.1,clearcoat:1,depthWrite:false});
  BOXMAT.core=new THREE.MeshBasicMaterial({color:0xffe9a8});
- CARMAT.dark=new THREE.MeshStandardMaterial({color:0x101322,metalness:.8,roughness:.22});
- CARMAT.white=new THREE.MeshStandardMaterial({color:0xffffff,emissive:0xffffff,emissiveIntensity:2.2});
- CARMAT.tireM=new THREE.MeshStandardMaterial({map:TEX.tire,color:0x6a6a78,roughness:.95,metalness:.05});
- CARMAT.rimM=new THREE.MeshStandardMaterial({color:0xcfd6e8,metalness:.95,roughness:.22});
- CARMAT.glass=new THREE.MeshStandardMaterial({color:0x0a1626,metalness:.9,roughness:.08,emissive:0x0a2742,emissiveIntensity:.6});
+ CARMAT.carbon=new THREE.MeshStandardMaterial({color:0x15161c,metalness:.5,roughness:.35});
+ CARMAT.black=new THREE.MeshStandardMaterial({color:0x0c0c10,metalness:.1,roughness:.7});
+ CARMAT.alu=new THREE.MeshStandardMaterial({color:0x9aa2b4,metalness:.95,roughness:.25});
+ CARMAT.spring=new THREE.MeshStandardMaterial({color:0xd42a3a,metalness:.6,roughness:.3});
+ CARMAT.white=new THREE.MeshBasicMaterial({color:new THREE.Color(1.1,1.1,1.05)});
+ CARMAT.red=new THREE.MeshBasicMaterial({color:new THREE.Color(1.8,.1,.15)});
+ CARMAT.tyre=new THREE.MeshStandardMaterial({color:0x1b1b20,roughness:.92,metalness:0});
+ CARMAT.glass=new THREE.MeshPhysicalMaterial({color:0x0a121e,metalness:.2,roughness:.05,clearcoat:1,opacity:.9,transparent:true,envMapIntensity:1.4,side:THREE.DoubleSide});
+ CARMAT.helmet=new THREE.MeshStandardMaterial({color:0xf2f2f2,metalness:.3,roughness:.3});
 }
-function carMesh(color){
- const root=new THREE.Group(),body=new THREE.Group();root.add(body);
- const paint=new THREE.MeshStandardMaterial({color,metalness:.6,roughness:.28});
- const glowPaint=new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:2.4});
- const add=(g,m,x,y,z,parent)=>{const q=new THREE.Mesh(g,m);q.position.set(x,y,z);(parent||body).add(q);return q};
-
- add(CG.body,paint,0,0,0);
- add(CG.canopy,CARMAT.glass,0,.98,-.04);
- add(CG.pod,paint,.86,.40,.05);add(CG.pod,paint,-.86,.40,.05);
- add(CG.splitter,CARMAT.dark,0,.14,1.72);
- add(CG.lightBar,CARMAT.white,0,.46,1.90);
- add(CG.tailBar,glowPaint,0,.60,-1.46);
- // rear wing on struts, with endplates
- add(CG.strut,CARMAT.dark,.52,1.10,-1.34);add(CG.strut,CARMAT.dark,-.52,1.10,-1.34);
- add(CG.wing,paint,0,1.30,-1.38);
- add(CG.endplate,CARMAT.dark,.97,1.17,-1.38);add(CG.endplate,CARMAT.dark,-.97,1.17,-1.38);
- // thrusters — the cones glow and the sprites bloom while turbo is lit
- const noz=[add(CG.nozzle,CARMAT.dark,.40,.46,-1.56),add(CG.nozzle,CARMAT.dark,-.40,.46,-1.56)];
- const flame=noz.map(n=>{const s=new THREE.Sprite(new THREE.SpriteMaterial({map:TEX.soft,color:0x8fe6ff,blending:THREE.AdditiveBlending,depthWrite:false,transparent:true}));
-  s.scale.set(.9,.9,1);s.position.set(n.position.x,n.position.y,-1.85);s.material.opacity=0;body.add(s);return s});
-
- const wheels=[],front=[];
- [[.93,1.06,1],[-.93,1.06,1],[.97,-1.08,0],[-.97,-1.08,0]].forEach(([x,z,f])=>{
-  // piv steers on Y; spin rolls on X. One group can't do both cleanly, and the rim
-  // has to roll with its tire, so the tire+rim live in their own child group.
-  const piv=new THREE.Group();piv.position.set(x,f?.34:.42,z);body.add(piv);
+function carMesh(color,style,num,seed){
+ const S=STYLES[style||"buggy"],root=new THREE.Group();root.rotation.order="YXZ";const body=new THREE.Group(),chassis=new THREE.Group();root.add(chassis);root.add(body);
+ const liv=liveryTex(color,num,style,seed);liv.wrapS=THREE.RepeatWrapping;liv.repeat.x=-1;liv.offset.x=1;   // shell u runs right-to-left seen from the front
+ const paint=new THREE.MeshPhysicalMaterial({map:liv,metalness:.35,roughness:.22,clearcoat:1,clearcoatRoughness:.08,envMapIntensity:1.2,side:THREE.DoubleSide});
+ const accent=new THREE.MeshStandardMaterial({color,metalness:.8,roughness:.25});
+ const glowPaint=new THREE.MeshBasicMaterial({color:new THREE.Color(color).multiplyScalar(2.4)});
+ const add=(g,m,x,y,z,parent,rx,ry,rz)=>{const q=new THREE.Mesh(g,m);q.position.set(x,y,z);if(rx||ry||rz)q.rotation.set(rx||0,ry||0,rz||0);(parent||body).add(q);q.castShadow=true;return q};
+ /* ---- running gear (stays planted) ---- */
+ add(CG.plate,CARMAT.carbon,0,S.ride-.04,0,chassis);
+ add(CG.bumper,CARMAT.black,0,S.ride,S.zf+.82,chassis);
+ add(CG.can,CARMAT.alu,.2,S.ride+.18,S.zr+.42,chassis);add(CG.fins,accent,.2,S.ride+.18,S.zr+.42,chassis);
+ add(CG.tower,CARMAT.carbon,0,S.ride+.3,S.zf-.08,chassis);add(CG.tower,CARMAT.carbon,0,S.ride+.3,S.zr+.08,chassis);
+ const wheels=[],front=[],arms=[],shocks=[];
+ [[S.xf,S.zf,1],[-S.xf,S.zf,1],[S.xr,S.zr,0],[-S.xr,S.zr,0]].forEach(([x,z,f])=>{
+  const r=f?S.rf:S.rr,sg=Math.sign(x);
+  const piv=new THREE.Group();piv.position.set(x,r,z);chassis.add(piv);
   const spin=new THREE.Group();piv.add(spin);
-  spin.add(new THREE.Mesh(f?CG.tireF:CG.tireR,CARMAT.tireM));
-  spin.add(new THREE.Mesh(f?CG.rimF:CG.rimR,CARMAT.rimM));
-  spin.userData.r=f?.34:.42;
-  wheels.push(spin);if(f)front.push(piv);
+  const ty=new THREE.Mesh(f?S.tyreF:S.tyreR,CARMAT.tyre);ty.castShadow=true;spin.add(ty);
+  const rim=new THREE.Mesh(f?S.rimF:S.rimR,f?CARMAT.alu:accent);rim.scale.x=sg;spin.add(rim);
+  spin.userData.r=r;wheels.push(spin);if(f)front.push(piv);
+  // A-arm from the chassis edge to the hub, and a shock from the tower to the arm
+  const arm=add(CG.arm,CARMAT.black,x*.5,S.ride-.02,z,chassis);arm.scale.x=Math.abs(x);arms.push({m:arm,x,z,r});
+  const sh=add(S.shock,CARMAT.spring,x*.74,S.ride-.04,z+(f?-.22:.22),chassis);shocks.push({m:sh,x,r});
  });
- const ant=new THREE.Group();ant.position.set(-.54,.98,-1.06);body.add(ant);
- add(CG.rod,CARMAT.dark,0,.75,0,ant);add(CG.tip,glowPaint,0,1.5,0,ant);
-
- /* ---- upgrade hardware. Built once, shown/hidden by applyUpgradeLook() so buying
-       something in the garage is visible on the car the moment you hit the track. ---- */
- const up={motor:[],tires:[],turbo:[]};
- up.motor.push(add(CG.scoop,CARMAT.dark,0,1.14,.72));
- up.motor.push(add(CG.bigNozzle,glowPaint,.70,.46,-1.54),add(CG.bigNozzle,glowPaint,-.70,.46,-1.54));
- up.tires.push(add(CG.fender,paint,1.02,.46,1.06),add(CG.fender,paint,-1.02,.46,1.06),
-               add(CG.fender,paint,1.06,.52,-1.08),add(CG.fender,paint,-1.06,.52,-1.08));
- up.turbo.push(add(CG.wingPost,CARMAT.dark,.52,1.42,-1.34),add(CG.wingPost,CARMAT.dark,-.52,1.42,-1.34));
- up.turbo.push(add(CG.wingHi,paint,0,1.74,-1.38));
- up.turbo.push(add(CG.vent,glowPaint,.80,.62,-.30),add(CG.vent,glowPaint,-.80,.62,-.30));
+ /* ---- shell (sprung) ---- */
+ const shell=add(S.shell,paint,0,0,0);
+ add(S.cabGeo,CARMAT.glass,0,.0,0);
+ if(style==="buggy")add(CG.helmet,CARMAT.helmet,0,S.cabY+.1,-.1);
+ add(CG.lightBar,CARMAT.white,0,S.ride+.32,S.prof[0][0]-.05);
+ [-1,1].forEach(sg=>{const l=add(CG.lamp,CARMAT.white,sg*S.prof[1][1]*.62,S.ride+.36,S.prof[1][0]+.02);l.rotation.y=0});
+ add(CG.tailBar,CARMAT.red,0,S.ride+.3+S.prof[S.prof.length-2][2]*.5,S.prof[S.prof.length-1][0]-.02);
+ // stock wing per style; the TURBO upgrade swaps it for the big one
+ const stockWing=[];
+ if(S.wing==="tall"){stockWing.push(add(CG.strut,CARMAT.alu,.42,S.ride+.95,-1.55),add(CG.strut,CARMAT.alu,-.42,S.ride+.95,-1.55),add(CG.wingTall,paint,0,S.ride+1.22,-1.62,null,-.12),add(CG.endplate,CARMAT.black,.85,S.ride+1.14,-1.62),add(CG.endplate,CARMAT.black,-.85,S.ride+1.14,-1.62))}
+ else if(S.wing==="roof")stockWing.push(add(CG.wingRoof,paint,0,S.ride+1.34,-.55,null,-.1));
+ else stockWing.push(add(CG.wingLip,paint,0,S.ride+.78,-1.98,null,-.25));
+ // thruster glows (turbo/boost) — artistic licence for an electric car
+ const noz=[add(CG.nozzle,CARMAT.black,.32,S.ride+.34,S.prof[S.prof.length-1][0]+.02),add(CG.nozzle,CARMAT.black,-.32,S.ride+.34,S.prof[S.prof.length-1][0]+.02)];
+ const flame=noz.map(n=>{const s=new THREE.Sprite(new THREE.SpriteMaterial({map:TEX.soft,color:0x8fe6ff,blending:THREE.AdditiveBlending,depthWrite:false,transparent:true}));
+  s.scale.set(.9,.9,1);s.position.set(n.position.x,n.position.y,n.position.z-.3);s.material.opacity=0;body.add(s);return s});
+ const ant=new THREE.Group();ant.position.set(-.42,S.ride+.5,S.zr+.2);body.add(ant);
+ add(CG.rod,CARMAT.black,0,.8,0,ant);add(CG.tip,glowPaint,0,1.6,0,ant);const flag=add(CG.flag,glowPaint,.12,1.52,0,ant);flag.material=glowPaint;
+ /* ---- upgrades ---- */
+ const up={motor:[],tires:[],turbo:[]},topY=S.ride+.12+S.prof[3][2];
+ up.motor.push(add(CG.scoop,CARMAT.black,0,topY+.04,S.prof[3][0]+.3));
+ up.motor.push(add(CG.bigNozzle,glowPaint,.6,S.ride+.34,S.prof[S.prof.length-1][0]),add(CG.bigNozzle,glowPaint,-.6,S.ride+.34,S.prof[S.prof.length-1][0]));
+ up.tires.push(add(CG.fender,paint,S.xf+.05,S.ride+.25+S.rf*.8,S.zf),add(CG.fender,paint,-S.xf-.05,S.ride+.25+S.rf*.8,S.zf),add(CG.fender,paint,S.xr+.05,S.ride+.25+S.rr*.8,S.zr),add(CG.fender,paint,-S.xr-.05,S.ride+.25+S.rr*.8,S.zr));
+ up.turbo.push(add(CG.wingPost,CARMAT.alu,.45,S.ride+1.1,-1.6),add(CG.wingPost,CARMAT.alu,-.45,S.ride+1.1,-1.6));
+ up.turbo.push(add(CG.wingHi,paint,0,S.ride+1.42,-1.66,null,-.14));
+ up.turbo.push(add(CG.vent,glowPaint,.78,S.ride+.42,-.3),add(CG.vent,glowPaint,-.78,S.ride+.42,-.3));
  Object.values(up).forEach(a=>a.forEach(m=>m.visible=false));
-
  const under=new THREE.Mesh(CG.under,new THREE.MeshBasicMaterial({map:TEX.soft,color,transparent:true,opacity:.12,blending:THREE.AdditiveBlending,depthWrite:false}));
  under.rotation.x=-Math.PI/2;under.position.y=.07;root.add(under);
  const blob=new THREE.Mesh(CG.blob,new THREE.MeshBasicMaterial({map:TEX.soft,color:0x000000,transparent:true,opacity:.45,depthWrite:false}));
  blob.rotation.x=-Math.PI/2;blob.position.y=.02;root.add(blob);
- return{root,body,wheels,front,ant,under,flame,blob,up,paint,glowPaint};
+ return{root,body,chassis,wheels,front,arms,shocks,ant,flag,under,flame,blob,up,paint,glowPaint,stockWing,S,susp:{y:0,vy:0,p:0,vp:0,r:0,vr:0},lastV:0,lastH:0};
 }
+
 function initCars(){
- RACERS.forEach((r,i)=>{const mesh=carMesh(r.color);scene.add(mesh.root);
+ RACERS.forEach((r,i)=>{const mesh=carMesh(r.color,r.style,r.num,i);scene.add(mesh.root);
   if(i===0){const spot=new THREE.SpotLight(0xcfe8ff,240,38,.55,.6,2);spot.position.set(0,1.2,.8);const target=new THREE.Object3D();target.position.set(0,.2,14);mesh.root.add(target);spot.target=target;mesh.root.add(spot);
    const marker=new THREE.Mesh(new THREE.ConeGeometry(.5,1.1,4),new THREE.MeshBasicMaterial({color:r.color}));marker.rotation.x=Math.PI;marker.position.y=3.4;marker.visible=false;mesh.root.add(marker);}
   cars.push({i,name:r.name,color:r.color,css:r.css,player:i===0,pers:r.pers||{pace:1,lat:1,line:1,wander:1,aggro:1,drifts:true},mesh,x:0,y:0,z:0,h:0,vx:0,vz:0,speed:0,vy:0,air:false,hop:false,pit:0,pitTo:0,idx:0,prog:0,total:0,lat:0,lap:-1,half:false,spin:0,spinA:0,inv:0,turbo:0,boost:0,drift:0,driftT:0,driftLv:0,turboN:1,missN:0,oilN:1,fireCd:0,aiTurbo:rand(4,9),aiFire:rand(3,7),aiOil:rand(5,9),laneT:0,laneBias:0,stuck:0,wallCd:0,lapStart:0,best:null,finished:false,finishTime:0,wet:false,seed:rand(100),ai:true});
@@ -1420,7 +1476,7 @@ function driveCar(c,ctl,st,dt,t){
  if(c.pit>0){c.pit-=dt;c.y-=14*dt;c.vx*=.9;c.vz*=.9;if(c.pit<=0)pitRecover(c)}
  else if(c.air){
   c.vy-=(c.hop?30:26)*dt;c.y+=c.vy*dt;
-  if(c.y<=sy){c.y=sy;c.air=false;const impact=-c.vy;c.vy=0;
+  if(c.y<=sy){c.y=sy;c.air=false;const impact=-c.vy;c.vy=0;c.landK=impact;
    if(c.hop){c.hop=false}
    else if(impact>6){const k=impact>16?.9:.97;c.vx*=k;c.vz*=k;
     Particles.burst(c.x,c.y+.2,c.z,0xffd98a,12,6,.9,.4,8);if(c.player)AudioSys.land(clamp(impact/18,.3,1));
@@ -1507,9 +1563,19 @@ function carVisual(c,dt,t,sy,steer,spd){
  m.root.position.set(c.x,c.y+(c.hopY||0),c.z);
  c.yawFx=lerp(c.yawFx||0,c.drift?c.drift*.32:0,1-Math.exp(-8*dt));
  m.root.rotation.y=c.h+c.spinA+c.yawFx;
- const eff=clamp(spd/10,0,1),lean=c.drift?-c.drift*.07:-steer*.05;
- m.body.rotation.z=lerp(m.body.rotation.z,lean*eff,.15);
- const pitch=c.air?clamp(-c.vy*.02,-.25,.25):0;m.body.rotation.x=lerp(m.body.rotation.x,pitch,.1);
+ const eff=clamp(spd/10,0,1);
+ /* sprung shell: squat under power, dive on the brakes, roll out of corners, bounce on landings */
+ {const Q=m.susp,idt=1/Math.max(dt,1e-3),acc=clamp((c.speed-m.lastV)*idt,-60,60),yr=clamp(wrap(c.h-m.lastH)*idt,-4,4);m.lastV=c.speed;m.lastH=c.h;
+  const pT=c.air?0:clamp(-acc*.0045,-.1,.1),rT=c.air?0:clamp(yr*spd*.0042+(c.drift?c.drift*.05:0),-.13,.13),yT=c.air?.06:0;
+  if(c.landK){Q.vy-=Math.min(c.landK,22)*.07;Q.vp+=(Math.random()-.5)*.6;c.landK=0}
+  if(c.hopV>2.5){Q.vy-=.25}
+  const K=140,Dm=11;for(const [x,v,tg] of [["y","vy",yT],["p","vp",pT],["r","vr",rT]]){Q[v]+=(K*(tg-Q[x])-Dm*Q[v])*dt;Q[x]+=Q[v]*dt}
+  Q.y=clamp(Q.y,-.18,.15);m.body.position.y=Q.y;m.body.rotation.x=Q.p;m.body.rotation.z=Q.r;
+  // the whole car noses over in the air
+  m.root.rotation.x=lerp(m.root.rotation.x,c.air&&!c.hopV?clamp(-c.vy*.018,-.3,.3):0,.1);
+  // arms and shocks follow the shell so the suspension reads as moving
+  m.shocks.forEach(s2=>{s2.m.scale.y=1+(Q.y+Q.r*s2.x*.5)*1.4});}
+ if(m.flag)m.flag.rotation.y=Math.sin(t*13+c.seed)*.5*(.3+eff);
  m.wheels.forEach(w=>w.rotation.x+=c.speed*dt/w.userData.r);
  m.front.forEach(p=>p.rotation.y=(c.drift?-c.drift*.25:steer)*.42);
  m.ant.rotation.z=-steer*.2*eff+Math.sin(t*14+c.seed)*.03*eff;
@@ -1528,7 +1594,7 @@ function carVisual(c,dt,t,sy,steer,spd){
   for(let k=0;k<2;k++)Particles.spawn(c.x-f.x*1.8+rand(-.4,.4),c.y+.5,c.z-f.z*1.8+rand(-.4,.4),-f.x*7+rand(-1.5,1.5),rand(.5,2),-f.z*7+rand(-1.5,1.5),col,1.1,.28)}
  if(m.blob&&c.pit<=0){const alt=Math.max(0,c.y-sy);m.blob.position.y=.02-alt;
   const k=clamp(1-alt/10,.2,1);m.blob.material.opacity=.45*k;m.blob.scale.setScalar(1+alt*.05);}
- m.body.visible=c.inv>0&&c.spin<=0?(Math.floor(t*10)%2===0):true;
+ m.body.visible=m.chassis.visible=c.inv>0&&c.spin<=0?(Math.floor(t*10)%2===0):true;
 }
 function playerStep(dt,t){
  const c=cars[0],st=stats();
@@ -1872,7 +1938,7 @@ function simulate(dt,t){
  if(st!=="countdown"){cars.forEach(c=>{if(st==="race"&&c.player&&!window.__auto)playerStep(dt,t);else aiStep(c,dt,t)});carBumps();updateMissiles(dt)}
  updateWorld(dt,t);
 }
-function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;if(skyUni)skyUni.time.value=t;if(!Game.paused)simulate(dt,t);updateCamera(dt,t);updateHUD(dt,t);AudioSys.frame();composer.render()}
+function loop(){requestAnimationFrame(loop);if(window.__noLoop)return;const dt=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;if(skyUni)skyUni.time.value=t;if(!Game.paused)simulate(dt,t);updateCamera(dt,t);updateHUD(dt,t);AudioSys.frame();composer.render()}
 
 /* ---------- boot ---------- */
 function boot(){
