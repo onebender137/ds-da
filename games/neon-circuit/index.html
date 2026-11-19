@@ -199,6 +199,7 @@ body[data-steer="slide"] #pBrake{left:calc(14px + var(--safeL));bottom:calc(16px
 .mbtn:hover,.mbtn:focus-visible,.mbtn.sel{background:linear-gradient(90deg,rgba(255,45,149,.42),rgba(122,43,255,.18));border-left-color:var(--mag);transform:translateX(8px);outline:0}
 .mbtn:hover small,.mbtn:focus-visible small,.mbtn.sel small{color:#ffd1e8}
 .mbtn.hot{border-left-color:var(--mag)}
+.mbtn.chal{background:linear-gradient(90deg,rgba(255,179,0,.38),rgba(255,45,149,.2));border-left-color:var(--amber);animation:pulse 1.6s ease-in-out infinite}.mbtn.chal small{color:#ffe2a8}
 .cupRow{display:flex;gap:6px}.cupRow button{flex:1;text-align:left;padding:9px 10px;font-family:Orbitron,Impact,sans-serif;font-size:10px;font-weight:800;letter-spacing:.1em;color:var(--faint);background:rgba(12,5,30,.75);border:1px solid rgba(122,43,255,.35);clip-path:var(--cut)}
 .cupRow button b{display:block;font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;letter-spacing:.06em;margin-top:3px;color:var(--faint)}
 .cupRow button.on{color:#03242c;background:linear-gradient(120deg,#078aa8,var(--cyan));box-shadow:0 0 16px rgba(0,229,255,.45)}.cupRow button.on b{color:#06323c}
@@ -307,6 +308,7 @@ body[data-steer="slide"] #pBrake{left:calc(14px + var(--safeL));bottom:calc(16px
     <div class="sub">RC COMBAT RACING</div>
     <p class="tag" id="titleTag"></p>
     <nav class="mmenu">
+      <button class="mbtn hot chal" id="chalBtn" style="display:none"></button>
       <button class="mbtn hot" id="contBtn">▶ CONTINUE<small id="contTag"></small></button>
       <button class="mbtn hot" id="startBtn">▶ CHAMPIONSHIP<small>3 cups · 12 circuits</small></button>
       <button class="mbtn" id="quickBtn">⚡ QUICK RACE<small>random circuit</small></button>
@@ -1889,7 +1891,8 @@ function showResults(){
  const sorted=Game.order.slice(),pos=sorted.indexOf(0)+1,qualified=Game.quick||pos<=3,bonus=Game.quick?100:pos===1?300:pos===2?180:pos===3?100:0;
  save.money+=bonus+Game.coins;save.coins+=Game.coins;if(!Game.quick&&pos===1)save.wins++;if(!Game.quick&&!qualified)save.lives--;persist();Game.results={pos,qualified,bonus};
  const fin=cars[0].finished&&cars[0].finishTime>1,rs=fin?raceScore(pos,cars[0].finishTime):{score:0,avg:0};Game.results.score=rs.score;
- track('game_over',{position:pos,qualified,final_score:rs.score,level_reached:(save.cup|0)+1,share_extra:ord(pos)+' · '+TRACKS[Game.track].name});
+ track('game_over',{position:pos,qualified,final_score:rs.score,level_reached:(save.cup|0)+1,share_extra:ord(pos)+' · '+TRACKS[Game.track].name,
+  challenge_q:{t:Game.track,df:save.diff},challenge_label:TRACKS[Game.track].name+' · '+DIFFS[save.diff]});
  const over=!qualified&&save.lives<=0;
  $("resultTrack").textContent=TRACKS[Game.track].name;$("resultTitle").textContent=over?"GAME OVER":qualified?"RACE COMPLETE":"QUALIFY FAILED";$("resultTitle").style.color=qualified?"var(--green)":"var(--red)";
  $("resultMsg").textContent=Game.quick?"Quick race complete — bank your coins and run it back.":qualified?"QUALIFIED · "+ord(pos)+" PLACE":over?"LAST CHASSIS WRECKED · the championship resets from round 1":"TOP 3 REQUIRED · chassis lost ("+save.lives+" left)";
@@ -1909,8 +1912,11 @@ function showResults(){
  $("saveMsg").textContent=sc?(getInits()?(pb?"NEW BEST — POSTING…":"ARCADE BOARD"):"ENTER INITIALS TO POST"):"FINISH THE RACE TO SCORE";
  $("resultTop").innerHTML='<li class="empty">LOADING…</li>';refreshTop($("resultTop"),5);
  if(sc&&pb&&getInits())postScore(sc);
+ const CH=Game.challenge;if(CH){const won=sc>CH.s;$("resultMsg").textContent="🎯 "+(won?"YOU BEAT "+CH.n+"! ":CH.n+" STILL LEADS · ")+sc.toLocaleString()+" vs "+CH.s.toLocaleString()+(won?" — send it back":" — run it back");
+  $("resultMsg").style.color=won?"var(--green)":"var(--amber)";$("retryBtn").style.display="";$("retryBtn").textContent="↻ Run it back"}else $("resultMsg").style.color="";
 }
 function nextRace(){
+ endChallenge();
  if(Game.quick){renderGarage();setState("garage");return}
  if((save.track|0)>=3){                        // cup cleared
   save.cupsDone[save.cup]=true;save.lives=3;save.track=0;
@@ -2067,6 +2073,16 @@ function updateHUD(dt,t){
 const STYLE_NAME={buggy:"BUGGY",truck:"STADIUM TRUCK",touring:"TOURING"};
 function statBarsHTML(){const st=stats(),bar=(n,v)=>`<div class="bar"><span>${n}</span><i><b style="width:${Math.round(clamp(v,0,1)*100)}%"></b></i></div>`;
  return bar("TOP SPEED",(st.max-28)/11)+bar("ACCEL",(st.accel-14)/12)+bar("GRIP",(st.lat-18)/6)+bar("BOOST",(st.turboDur-1.2)/1.2)}
+/* ---- friend challenges: ?vs=CJR-5663&t=9&df=1 lands you on that exact race ---- */
+function incomingChallenge(){const C=window.DSDA&&window.DSDA.challenge;if(!C||!C.q)return null;const t=+C.q.t,df=+C.q.df;
+ if(!(t>=0&&t<TRACKS.length))return null;return{n:C.n,s:C.s,t,df:df>=0&&df<=2?df:1}}
+function startChallenge(){const C=incomingChallenge();if(!C)return;
+ if(Game.chPrevDiff==null)Game.chPrevDiff=save.diff;save.diff=C.df;Game.challenge=C;
+ Game.quick=true;Game.track=C.t;Game.round=1;resetRace(C.t);setState("countdown");$("cdNum").textContent="3";
+ document.querySelectorAll("#lights i").forEach(i=>i.className="");toast("🎯 BEAT "+C.n+" · "+C.s.toLocaleString(),"gold");
+ track('game_start',{mode:'challenge',track:TRACKS[C.t].name});focusCanvas()}
+// a challenge borrows the friend's difficulty for that race only
+function endChallenge(){if(Game.chPrevDiff!=null){save.diff=Game.chPrevDiff;Game.chPrevDiff=null;persist()}Game.challenge=null}
 function renderTitle(){
  $("muteBtn").textContent=save.muted?"🔇":"🔊";renderRadio();renderOptions();
  $("titleTag").textContent="Six RC machines. Drift for mini-turbos, raid the item boxes, fly the gaps — "+TRACKS.length+" circuits across "+CUPS.length+" cups. Finish top three or lose a chassis.";
@@ -2076,6 +2092,8 @@ function renderTitle(){
   b.onclick=()=>{if(!cupUnlocked(+b.dataset.c))return;save.cup=+b.dataset.c;save.track=0;persist();renderTitle();AudioSys.click()}});
  $("cupTag").textContent=CUPS[cu].tracks.map(t=>TRACKS[t].name).join(" · ");
  const run=hasRun();wipeArm=false;
+ const C=incomingChallenge(),cb=$("chalBtn");
+ if(C){cb.style.display="";cb.innerHTML="🎯 BEAT "+C.n+" · "+C.s.toLocaleString()+"<small>"+TRACKS[C.t].name+" · "+DIFFS[C.df]+"</small>"}else cb.style.display="none";
  $("contBtn").style.display=run?"":"none";
  $("contTag").textContent=run?CUPS[cu].name+" · round "+((save.track|0)+1)+"/4 · "+money(save.money):"";
  $("startBtn").innerHTML=(run?"⟲ NEW CHAMPIONSHIP":"▶ CHAMPIONSHIP")+"<small>"+(run?"wipes this run":"3 cups · 12 circuits")+"</small>";
@@ -2108,7 +2126,7 @@ function placeShowroom(){if(!Track)return;const D=Track.data,N=D.N;
   const s=D.samples[si];resetCar(c,s.p.x-s.t.z*lane,s.p.z+s.t.x*lane,s.a,true);applyUpgradeLook(c);c.showA=s.a});Game.snapCam=true}
 function poseShowroom(dt,t){const p=cars[0];showroomSpin=Math.max(0,showroomSpin-dt);
  p.h+=dt*(.32+showroomSpin*2.2);cars.forEach(c=>{const pr=c.pr||project(c.x,c.z,null);carVisual(c,dt,t,surfaceY(Track.data,pr),0,0)})}
-function enterTitle(){clearInput();Game.paused=false;if(Track&&Game.built!==0){}if(Track)placeShowroom();renderTitle();setState("title");setTimeout(()=>{const b=$(hasRun()?"contBtn":"startBtn");if(b&&!coarse)b.focus({preventScroll:true})},50)}
+function enterTitle(){endChallenge();clearInput();Game.paused=false;if(Track&&Game.built!==0){}if(Track)placeShowroom();renderTitle();setState("title");setTimeout(()=>{const b=$(incomingChallenge()?"chalBtn":hasRun()?"contBtn":"startBtn");if(b&&!coarse)b.focus({preventScroll:true})},50)}
 function pause(){if(Game.paused||!["race","countdown"].includes(Game.state))return;Game.paused=true;clearInput();setState("pause");$("pMute").textContent=save.muted?"🔇 SOUND OFF":"🔊 SOUND ON";AudioSys.click()}
 function resume(){if(!Game.paused)return;Game.paused=false;clearInput();setState("race");AudioSys.click();focusCanvas()}
 function newGame(){save=Object.assign(freshSave(),{diff:save.diff,autoGas:save.autoGas,muted:save.muted,cam:save.cam,gfx:save.gfx,steer:save.steer,bestScore:save.bestScore});persist();renderGarage();setState("garage")}
@@ -2123,6 +2141,7 @@ $("startBtn").onclick=()=>{AudioSys.unlock();
  if(hasRun()&&!wipeArm){wipeArm=true;$("startBtn").textContent="⚠ TAP AGAIN TO WIPE";AudioSys.deny();clearTimeout(wipeTimer);wipeTimer=setTimeout(()=>{if(Game.state==="title")renderTitle()},3500);return}
  wipeArm=false;clearTimeout(wipeTimer);newGame()};
 $("quickBtn").onclick=()=>{AudioSys.unlock();AudioSys.confirm();quickRace()};
+$("chalBtn").onclick=()=>{AudioSys.unlock();AudioSys.confirm();startChallenge()};
 $("autoBtn").onclick=()=>{save.autoGas=!save.autoGas;persist();renderOptions();AudioSys.click()};
 $("steerBtn").onclick=()=>{save.steer=steerMode()==="slide"?"buttons":"slide";persist();applySteerMode();renderOptions();AudioSys.click()};$("ctrlBtn").onclick=()=>{$("controlHelp").style.display=$("controlHelp").style.display==="none"?"block":"none";AudioSys.click()};
 document.querySelectorAll("#diffSeg button").forEach(b=>b.onclick=()=>{save.diff=+b.dataset.d;persist();renderOptions();AudioSys.click()});
@@ -2138,7 +2157,7 @@ $("muteOptBtn").onclick=()=>{toggleMute();renderOptions()};
 $("dassistBtn").onclick=()=>{save.dassist=save.dassist===false;persist();renderOptions();AudioSys.click()};$("raceBtn").onclick=()=>startRace(globalTrack());
 $("nextBtn").onclick=nextRace;$("postBtn").onclick=()=>{AudioSys.click();postScore(Game.results&&Game.results.score)};
 $("initsInput").addEventListener("keydown",e=>{e.stopPropagation();if(e.key==="Enter"){e.preventDefault();$("postBtn").click()}});
-$("initsInput").addEventListener("input",e=>{e.target.value=cleanInits(e.target.value)});$("retryBtn").onclick=()=>{if(save.lives<=0)newGame();else startRace(Game.track)};
+$("initsInput").addEventListener("input",e=>{e.target.value=cleanInits(e.target.value)});$("retryBtn").onclick=()=>{if(Game.challenge){startChallenge();return}if(save.lives<=0)newGame();else startRace(Game.track)};
 $("ngBtn").onclick=()=>{renderGarage();setState("garage")};$("champTitle").onclick=enterTitle;
 $("resumeBtn").onclick=resume;
 $("pMute").onclick=()=>{toggleMute();$("pMute").textContent=save.muted?"🔇 SOUND OFF":"🔊 SOUND ON"};$("pRadio").onclick=()=>{AudioSys.unlock();AudioSys.nextStation(1)};$("restartBtn").onclick=()=>{Game.paused=false;startRace(Game.track)};$("quitBtn").onclick=()=>{Game.paused=false;enterTitle()};
@@ -2188,7 +2207,7 @@ if(/[?&]test=1/.test(location.search))window.__G={
 
   <!-- DSDA Radio network widget (shared 6-station dial) -->
   <div id="radioBox"></div>
-  <script src="../arcade-social.js?v=2"></script>
+  <script src="../arcade-social.js?v=3"></script>
   <script src="../../radio/radio.js?v=11"></script>
   <script>
     // DSDA Radio — shared cross-game dial (6 stations). The radio is the music source;

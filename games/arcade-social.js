@@ -200,6 +200,11 @@
       var m = v.toUpperCase().match(/^([A-Z0-9]{1,3})-(\d{1,9})$/); if (!m) return null;
       var c = { n: m[1], s: +m[2] };
       var d = new URLSearchParams(location.search).get('d'); if (d && /^\d{8}$/.test(d)) c.day = d;
+      // optional cabinet-specific details (e.g. Neon Circuit's track + difficulty) and a readable label
+      var sp = new URLSearchParams(location.search), q = {}, any = false;
+      sp.forEach(function (val, key) { if (['vs', 'd', 'daily', 'cl'].indexOf(key) < 0 && /^[a-z]{1,4}$/.test(key) && /^[A-Za-z0-9_-]{1,12}$/.test(val)) { q[key] = val; any = true; } });
+      if (any) c.q = q;
+      var cl = sp.get('cl'); if (cl) c.label = cl.replace(/[<>&"]/g, '').slice(0, 48);
       return c;
     } catch (e) { return null; }
   }
@@ -207,6 +212,8 @@
     var me = inits() || 'YOU';
     var u = cabinetUrl(game) + '?vs=' + me + '-' + Math.round(score);
     if (extra && extra.day) u += '&d=' + extra.day + '&daily=1';
+    if (extra && extra.q) for (var k in extra.q) u += '&' + k + '=' + encodeURIComponent(extra.q[k]);
+    if (extra && extra.label) u += '&cl=' + encodeURIComponent(extra.label);
     return u;
   }
   function fmt(n) { try { return Math.round(n).toLocaleString('en-US'); } catch (e) { return String(n); } }
@@ -236,7 +243,8 @@
     var h = new Date().getHours(); if (h >= 2 && h < 5) badge('night-owl');
     if (game === 'cookie-frog') { if (lvl >= 4) badge('frog-frost'); if (lvl >= 6) badge('frog-marsh'); }
     // challenge verdict
-    if (CH && score != null && game === gameIdFromPath()) {
+    var sameQ = !(CH && CH.q && params.challenge_q) || Object.keys(CH.q).every(function (k) { return String(params.challenge_q[k]) === String(CH.q[k]); });
+    if (CH && score != null && game === gameIdFromPath() && sameQ) {
       if (score > CH.s) { toast('🗡️', 'YOU BEAT ' + CH.n + '!', fmt(score) + ' vs ' + fmt(CH.s) + ' — send it back to them', false, 5200); badge('giant-slayer'); }
       else toast('🎯', CH.n + ' STILL LEADS', 'Short by ' + fmt(CH.s - score) + ' — run it back', true, 4200);
     }
@@ -289,8 +297,10 @@
         (params.level_reached ? ' · LV ' + params.level_reached : '') + (params.share_extra ? ' · ' + params.share_extra : '');
       bar.querySelector('.s').onclick = function () { share({ title: name, text: line, url: daily ? cabinetUrl(game) + '?daily=1' : cabinetUrl(game) }); };
       bar.querySelector('.c').onclick = function () {
-        share({ title: name, challenge: true, text: em + ' Beat my ' + fmt(score) + ' on ' + name + (daily ? ' (Daily #' + dayNumber(daily) + ')' : '') + ' 👀',
-          url: challengeLink(game, score, daily ? { day: daily } : null) });
+        var lab = params.challenge_label ? ' — ' + params.challenge_label : '';
+        var ex = { day: daily || null, q: params.challenge_q || null, label: params.challenge_label || null };
+        share({ title: name, challenge: true, text: em + ' Beat my ' + fmt(score) + ' on ' + name + lab + (daily ? ' (Daily #' + dayNumber(daily) + ')' : '') + ' 👀',
+          url: challengeLink(game, score, ex) });
       };
       void bar.offsetWidth; setTimeout(function () { bar.classList.add('on'); }, 20);
       clearTimeout(barTimer); barTimer = setTimeout(hideBar, 30000);
@@ -301,7 +311,7 @@
   function showChallengeCard() {
     if (!CH) return;
     var game = gameIdFromPath(); if (!CABINETS[game]) return;
-    setTimeout(function () { toast('🎯', CH.n + ' CHALLENGED YOU', 'Beat ' + fmt(CH.s) + ' on ' + CABINETS[game] + (CH.day ? ' — Daily #' + dayNumber(CH.day) : ''), true, 6500); }, 900);
+    setTimeout(function () { toast('🎯', CH.n + ' CHALLENGED YOU', 'Beat ' + fmt(CH.s) + ' on ' + CABINETS[game] + (CH.label ? ' — ' + CH.label : '') + (CH.day ? ' — Daily #' + dayNumber(CH.day) : ''), true, 6500); }, 900);
   }
 
   /* ---------------- daily helpers ---------------- */
