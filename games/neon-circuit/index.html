@@ -176,6 +176,11 @@ body[data-steer="slide"] #pBrake{left:calc(14px + var(--safeL));bottom:calc(16px
 .bT{font-family:Orbitron,Impact,Haettenschweiler,Anton,sans-serif;font-size:12px;color:var(--amber);text-align:right}
 .bRow.bHead .bT,.bRow.bHead .bCup{color:var(--faint)}
 @media(max-width:560px){.bRow{grid-template-columns:48px 1fr 70px 70px;font-size:12px;padding:6px 8px}.bT{font-size:11px}}
+#initsInput{width:92px;text-align:center;font-family:Orbitron,Impact,sans-serif;font-weight:900;font-size:20px;letter-spacing:.3em;padding:10px 6px;background:rgba(8,3,24,.85);color:#fff;border:1px solid rgba(0,229,255,.5);clip-path:var(--cut);text-transform:uppercase;outline:0}
+#saveMsg.ok{color:var(--green)}
+.topList{list-style:none;margin:8px 0;padding:0;font-family:Orbitron,Impact,sans-serif;font-size:12px}
+.topList li{display:grid;grid-template-columns:34px 1fr auto;gap:8px;padding:6px 10px;margin-bottom:3px;background:rgba(12,5,30,.6);border:1px solid rgba(122,43,255,.22)}
+.topList li.you{border-color:var(--mag);background:rgba(255,45,149,.12)}.topList li .r{color:var(--faint)}.topList li .p{color:var(--amber)}.topList li.empty{grid-template-columns:1fr;color:var(--faint);text-align:center}
 .statGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0}.statGrid div{background:rgba(12,5,30,.6);padding:9px 12px;border:1px solid rgba(122,43,255,.25);font-size:12px;color:var(--dim)}.statGrid b{display:block;font-family:Orbitron,Impact,Haettenschweiler,Anton,sans-serif;color:#fff;margin-top:3px}
 #boot{position:fixed;inset:0;z-index:100;background:radial-gradient(100% 100% at 50% 30%,#2b0a4e,#070313);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;transition:opacity .5s}
 #boot.gone{opacity:0;pointer-events:none}.spinner{width:52px;height:52px;border-radius:50%;border:3px solid rgba(0,229,255,.15);border-top-color:var(--cyan);border-right-color:var(--mag);animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
@@ -297,6 +302,9 @@ body[data-steer="slide"] #pBrake{left:calc(14px + var(--safeL));bottom:calc(16px
   <div class="panel" style="text-align:center">
     <div class="brand" id="resultTrack"></div><h2 id="resultTitle" style="font-family:Orbitron,Impact,Haettenschweiler,Anton,sans-serif;font-size:30px;margin:10px 0">RACE COMPLETE</h2>
     <div class="small" id="resultMsg"></div><div class="results" id="resultRows"></div>
+    <div id="scoreBox"><div class="cash total"><span>RACE SCORE</span><b id="raceScore" style="color:var(--cyan)">—</b></div><div class="small" id="scoreWhy" style="text-align:right;margin:-2px 10px 6px"></div>
+     <div class="row" style="justify-content:center;margin:8px 0"><input id="initsInput" type="text" maxlength="3" placeholder="ABC" autocomplete="off" spellcheck="false" aria-label="Your initials"><button class="btn cy" id="postBtn">POST SCORE</button></div>
+     <div class="small" id="saveMsg" style="text-align:center">ARCADE BOARD</div><ol class="topList" id="resultTop"></ol></div>
     <div class="cash"><span>FINISH BONUS</span><b id="bonusCash" style="color:var(--amber)">$0</b></div>
     <div class="cash"><span>TRACK COINS</span><b id="coinCash" style="color:var(--amber)">$0</b></div>
     <div class="cash total"><span>BANK</span><b id="resultBank" style="color:var(--amber)">$0</b></div>
@@ -312,6 +320,9 @@ body[data-steer="slide"] #pBrake{left:calc(14px + var(--safeL));bottom:calc(16px
   <div class="panel">
     <div class="row" style="justify-content:space-between"><div><div class="brand">PERSONAL BESTS</div><h2 style="font-family:Orbitron,Impact,Haettenschweiler,Anton,sans-serif;margin-top:8px">LEADERBOARD</h2></div></div>
     <div class="seg" id="boardDiff" data-d="1"><button data-d="0">ROOKIE</button><button data-d="1">PRO</button><button data-d="2">LEGEND</button></div>
+    <div class="small" style="letter-spacing:.2em;color:var(--cyan);margin-top:8px">🏁 ARCADE TOP 10 · RACE SCORE</div><ol class="topList" id="globalTop"></ol>
+    <div class="small" id="globalNote" style="margin-bottom:10px">Race score = finishing position + average speed, scaled by difficulty and New Game+. Every racer at ds-da.ca shares this board.</div>
+    <div class="small" style="letter-spacing:.2em;color:var(--cyan)">YOUR TRACK RECORDS</div>
     <div id="boardRows" style="margin:10px 0"></div>
     <div class="small" id="boardNote"></div>
     <div class="row" style="justify-content:center;margin-top:16px"><button class="btn cy" id="boardBack">◂ Back</button></div>
@@ -497,6 +508,7 @@ function doAction(a){
   }
 }
 document.addEventListener("keydown",e=>{
+  const el=document.activeElement;if(el&&el.tagName==="INPUT")return;
   const a=actionOf(e);if(!a)return;e.preventDefault();AudioSys.unlock();
   // first real key press on a fine-pointer device dims the touch pad out of the way
   if(!coarse)document.body.classList.add("kbd");
@@ -506,7 +518,7 @@ document.addEventListener("keydown",e=>{
 document.addEventListener("keyup",e=>{const a=actionOf(e);if(a&&["up","down","left","right","drift"].includes(a)){Input.keys[a]=false;e.preventDefault();}},{passive:false});
 window.addEventListener("blur",clearInput);
 document.addEventListener("visibilitychange",()=>{if(document.hidden){clearInput();if(Game.state==="race")pause();}});
-document.addEventListener("pointerdown",()=>{AudioSys.unlock();try{$("gl").focus({preventScroll:true})}catch(e){}},true);
+document.addEventListener("pointerdown",e=>{AudioSys.unlock();if(e.target&&e.target.tagName==="INPUT")return;try{$("gl").focus({preventScroll:true})}catch(e){}},true);
 
 function bindPad(){
   document.querySelectorAll(".padBtn").forEach(btn=>{
@@ -1678,7 +1690,9 @@ function onLap(c){
 function playerFinish(){setState("finish");Game.finishDelay=2.2;showBanner("🏁 FINISH — "+ord(Game.pos)+"!",Game.pos<=3?"gold":"",2100);Game.pos<=3?AudioSys.win():AudioSys.lose();vibe([40,60,100]);track('race_finish',{time_ms:Math.round(Game.raceTime*1000),position:Game.pos})}
 function showResults(){
  const sorted=Game.order.slice(),pos=sorted.indexOf(0)+1,qualified=Game.quick||pos<=3,bonus=Game.quick?100:pos===1?300:pos===2?180:pos===3?100:0;
- save.money+=bonus+Game.coins;save.coins+=Game.coins;if(!Game.quick&&pos===1)save.wins++;if(!Game.quick&&!qualified)save.lives--;persist();Game.results={pos,qualified,bonus};track('game_over',{position:pos,qualified});
+ save.money+=bonus+Game.coins;save.coins+=Game.coins;if(!Game.quick&&pos===1)save.wins++;if(!Game.quick&&!qualified)save.lives--;persist();Game.results={pos,qualified,bonus};
+ const fin=cars[0].finished&&cars[0].finishTime>1,rs=fin?raceScore(pos,cars[0].finishTime):{score:0,avg:0};Game.results.score=rs.score;
+ track('game_over',{position:pos,qualified,final_score:rs.score,level_reached:(save.cup|0)+1,share_extra:ord(pos)+' · '+TRACKS[Game.track].name});
  const over=!qualified&&save.lives<=0;
  $("resultTrack").textContent=TRACKS[Game.track].name;$("resultTitle").textContent=over?"GAME OVER":qualified?"RACE COMPLETE":"QUALIFY FAILED";$("resultTitle").style.color=qualified?"var(--green)":"var(--red)";
  $("resultMsg").textContent=Game.quick?"Quick race complete — bank your coins and run it back.":qualified?"QUALIFIED · "+ord(pos)+" PLACE":over?"LAST CHASSIS WRECKED · the championship resets from round 1":"TOP 3 REQUIRED · chassis lost ("+save.lives+" left)";
@@ -1686,7 +1700,16 @@ function showResults(){
  if(cars[0].finished&&cars[0].finishTime>1){const got=recSubmit(Game.track,save.diff,null,cars[0].finishTime);
   if(got.length)$("resultMsg").textContent="★ NEW "+DIFFS[save.diff]+" RACE RECORD · "+timef(cars[0].finishTime);}
  $("bonusCash").textContent=money(bonus);$("coinCash").textContent=money(Game.coins);$("resultBank").textContent=money(save.money);$("nextBtn").style.display=qualified?"":"none";$("retryBtn").style.display=qualified?"none":"";$("retryBtn").textContent=over?"↻ New Championship":"↻ Retry";
- setState("results");
+ setState("results");;
+ // ---- arcade board ----
+ const sc=Game.results.score,pb=sc>(save.bestScore||0);
+ $("raceScore").textContent=sc?sc.toLocaleString():"—";
+ $("scoreWhy").textContent=sc?ord(pos)+" · avg "+Math.round(raceScore(pos,cars[0].finishTime).avg)+" km/h · "+DIFFS[save.diff]+(save.ng?" · NG+"+save.ng:"")+(pb?" · PERSONAL BEST":""):"";
+ if(pb){save.bestScore=sc;persist()}
+ $("initsInput").value=getInits();$("postBtn").disabled=!sc;$("saveMsg").classList.remove("ok");
+ $("saveMsg").textContent=sc?(getInits()?(pb?"NEW BEST — POSTING…":"ARCADE BOARD"):"ENTER INITIALS TO POST"):"FINISH THE RACE TO SCORE";
+ $("resultTop").innerHTML='<li class="empty">LOADING…</li>';refreshTop($("resultTop"),5);
+ if(sc&&pb&&getInits())postScore(sc);
 }
 function nextRace(){
  if(Game.quick){renderGarage();setState("garage");return}
@@ -1710,27 +1733,53 @@ function recSubmit(gi,diff,lap,race){
  const k=recKey(gi,diff),cur=save.records[k]||{};let changed=[];
  if(lap!=null&&(cur.lap==null||lap<cur.lap)){cur.lap=lap;changed.push("LAP")}
  if(race!=null&&(cur.race==null||race<cur.race)){cur.race=race;changed.push("RACE")}
- if(changed.length){cur.at=Date.now();save.records[k]=cur;persist();Board.submit(gi,diff,cur);track('score_submit',{type:changed.join("+"),track:TRACKS[gi].name,difficulty:DIFFS[diff]})}
+ if(changed.length){cur.at=Date.now();save.records[k]=cur;persist();track('score_submit',{type:changed.join("+"),track:TRACKS[gi].name,difficulty:DIFFS[diff]})}
  return changed;
 }
+/* ---- DSDA ARCADE BOARD ----
+   Same contract as every cabinet at ds-da.ca/games:
+     GET  /api/board/leaderboard?game=neon-circuit -> {updated, top:[{n,s,d}], stats}
+     POST /api/board/score {initials,score,secret,game}
+   The board ranks highest-first, so a race is posted as a RACE SCORE (position +
+   average speed, scaled by difficulty/NG+) rather than a time — that keeps runs on
+   different circuits comparable on one board. Per-track lap/race times stay local.
+   Initials use the arcade-wide key, so players type them once for every cabinet. */
+const BOARD_API="https://api.ds-da.ca/api/board",SCORE_SECRET="6216cf68f4e077d3cd991f2d6bd3e878",INITS_KEY="dsda-initials";
+const cleanInits=v=>(v||"").toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,3);
+const getInits=()=>{try{return cleanInits(localStorage.getItem(INITS_KEY))}catch(e){return""}};
+const setInits=v=>{const i=cleanInits(v);try{localStorage.setItem(INITS_KEY,i)}catch(e){}return i};
+function fetchT(url,opts,ms){const c=new AbortController(),t=setTimeout(()=>c.abort(),ms||4500);return fetch(url,Object.assign({signal:c.signal},opts||{})).finally(()=>clearTimeout(t))}
+const POS_PTS=[5000,3500,2500,1500,1000,500];
+function raceScore(pos,time){
+ const D=Track.data,avg=D.def.laps*D.len/Math.max(1,time)*4.2,mult=[.8,1,1.25][save.diff]*(1+.1*save.ng);
+ return{score:Math.round((POS_PTS[pos-1]||0)+avg*20)*mult|0,avg};
+}
 const Board={
- // ---- INTEGRATION SEAM -------------------------------------------------
- // Point BASE at the Worker and fill in these two bodies to go global. The rest of the
- // game already calls them; nothing else needs touching. Left disabled so the cabinet
- // never blocks on a network call or silently fails a POST.
- BASE:null,            // e.g. "https://api.ds-da.ca/api/board"
- enabled(){return !!this.BASE},
- async submit(gi,diff,rec){
-  if(!this.enabled())return;
-  try{await fetch(this.BASE+"/neon-circuit",{method:"POST",headers:{"content-type":"application/json"},
-   body:JSON.stringify({track:TRACKS[gi].name,trackIndex:gi,difficulty:DIFFS[diff],lap:rec.lap,race:rec.race})});
-  }catch(e){/* a dead board must never interrupt a race */}
+ lastPosted:0,
+ async submit(score){
+  const inits=getInits();if(!inits)return"no-inits";if(!score||score<=this.lastPosted)return"dupe";
+  try{const r=await fetchT(BOARD_API+"/score",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({initials:inits,score:Math.round(score),secret:SCORE_SECRET,game:GAME_ID})},6000);
+   if(r.ok){this.lastPosted=Math.max(this.lastPosted,score);track('score_submit',{score});return"ok"}}catch(e){}
+  return"offline";
  },
- async fetch(){ if(!this.enabled())return null;
-  try{const r=await fetch(this.BASE+"/neon-circuit");return r.ok?await r.json():null}catch(e){return null}
+ async fetch(){
+  try{const r=await fetchT(BOARD_API+"/leaderboard?game="+GAME_ID,{cache:"no-store"});if(r.ok){const j=await r.json();if(j&&Array.isArray(j.top))return j}}catch(e){}
+  try{const r=await fetchT("leaderboard.json?t="+Date.now(),{cache:"no-store"});if(r.ok)return await r.json()}catch(e){}   // repo mirror
+  return null;
  }
- // ----------------------------------------------------------------------
 };
+function renderTop(el,top,me,n){
+ if(!el)return;if(!top||!top.length){el.innerHTML='<li class="empty">NO RACERS YET — FIRST SCORE TAKES THE TOP SPOT</li>';return}
+ el.innerHTML=top.slice(0,n||10).map((e,i)=>`<li class="${me&&e.n===me?"you":""}"><span class="r">${i+1}.</span><span>${cleanInits(e.n).padEnd(3,"?")}</span><span class="p">${Math.round(e.s).toLocaleString()}</span></li>`).join("");
+}
+async function refreshTop(el,n,mark){const b=await Board.fetch();renderTop(el,b?b.top:null,getInits(),n);return b}
+async function postScore(score){
+ const msg=$("saveMsg");msg.classList.remove("ok");
+ const i=setInits($("initsInput").value);if(!i){msg.textContent="ENTER YOUR INITIALS";$("initsInput").focus();return}
+ msg.textContent="POSTING…";const r=await Board.submit(score);
+ if(r==="ok"||r==="dupe"){msg.textContent="ON THE ARCADE BOARD ✓";msg.classList.add("ok");$("postBtn").disabled=true;refreshTop($("resultTop"),5)}
+ else msg.textContent="BOARD OFFLINE — TRY AGAIN IN A BIT";
+}
 function renderBoard(){
  const only=+($("boardDiff").dataset.d||save.diff);
  document.querySelectorAll("#boardDiff button").forEach(b=>b.classList.toggle("on",+b.dataset.d===only));
@@ -1744,7 +1793,7 @@ function renderBoard(){
    <span class="bT">${r&&r.race!=null?timef(r.race):"—"}</span></div>`}).join("");
  $("boardRows").innerHTML=`<div class="bRow bHead"><span class="bCup">CUP</span><span class="bName">CIRCUIT</span><span class="bT">BEST LAP</span><span class="bT">BEST RACE</span></div>`+rows;
  const n=TRACKS.filter((_,gi)=>recGet(gi,only)).length;
- $("boardNote").textContent=n?n+" of "+TRACKS.length+" circuits set on "+DIFFS[only]+(Board.enabled()?"":" · local to this device"):"No times set on "+DIFFS[only]+" yet.";
+ $("boardNote").textContent=n?n+" of "+TRACKS.length+" circuits set on "+DIFFS[only]+" · times are kept on this device":"No times set on "+DIFFS[only]+" yet.";
 }
 function renderChampion(){
  const bests=save.best.filter(Boolean),done=save.cupsDone.filter(Boolean).length;
@@ -1852,11 +1901,13 @@ $("quickBtn").onclick=()=>{AudioSys.unlock();quickRace()};
 $("autoBtn").onclick=()=>{save.autoGas=!save.autoGas;persist();renderTitle();AudioSys.click()};
 $("steerBtn").onclick=()=>{save.steer=steerMode()==="slide"?"buttons":"slide";persist();applySteerMode();renderTitle();AudioSys.click()};$("ctrlBtn").onclick=()=>{$("controlHelp").style.display=$("controlHelp").style.display==="none"?"block":"none";AudioSys.click()};
 document.querySelectorAll("#diffSeg button").forEach(b=>b.onclick=()=>{save.diff=+b.dataset.d;persist();renderTitle();AudioSys.click()});
-$("boardBtn").onclick=()=>{AudioSys.click();$("boardDiff").dataset.d=save.diff;renderBoard();setState("board")};
+$("boardBtn").onclick=()=>{AudioSys.click();$("boardDiff").dataset.d=save.diff;renderBoard();$("globalTop").innerHTML='<li class="empty">LOADING…</li>';refreshTop($("globalTop"),10);setState("board")};
 $("boardBack").onclick=()=>{AudioSys.click();renderTitle();setState("title")};
 document.querySelectorAll("#boardDiff button").forEach(b=>b.onclick=()=>{$("boardDiff").dataset.d=b.dataset.d;renderBoard();AudioSys.click()});
 $("garageBack").onclick=enterTitle;$("raceBtn").onclick=()=>startRace(globalTrack());
-$("nextBtn").onclick=nextRace;$("retryBtn").onclick=()=>{if(save.lives<=0)newGame();else startRace(Game.track)};
+$("nextBtn").onclick=nextRace;$("postBtn").onclick=()=>{AudioSys.click();postScore(Game.results&&Game.results.score)};
+$("initsInput").addEventListener("keydown",e=>{e.stopPropagation();if(e.key==="Enter"){e.preventDefault();$("postBtn").click()}});
+$("initsInput").addEventListener("input",e=>{e.target.value=cleanInits(e.target.value)});$("retryBtn").onclick=()=>{if(save.lives<=0)newGame();else startRace(Game.track)};
 $("ngBtn").onclick=()=>{renderGarage();setState("garage")};$("champTitle").onclick=enterTitle;
 $("resumeBtn").onclick=resume;$("restartBtn").onclick=()=>{Game.paused=false;startRace(Game.track)};$("quitBtn").onclick=()=>{Game.paused=false;enterTitle()};
 addEventListener("resize",()=>{renderer.setSize(innerWidth,innerHeight);if(composer)composer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()});
