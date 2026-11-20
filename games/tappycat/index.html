@@ -652,25 +652,27 @@ function fetchGlobalBoard() {
     });
 }
 function submitGlobal(name, s) {
+    var headers = { 'Content-Type': 'application/json' };
+    var accTok = '';
+    try { accTok = localStorage.getItem('dsda-token') || ''; } catch(e) {}
+    if (accTok) headers['Authorization'] = 'Bearer ' + accTok;
+    var payload = { initials: name, score: s, secret: SCORE_SECRET, game: GAME_ID };
     return fetchTimeout(BOARD_API + '/score', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ initials: name, score: s, secret: SCORE_SECRET, game: GAME_ID })
+        headers: headers,
+        body: JSON.stringify(payload)
     }, 5000).then(r => {
         if (r.ok) return 'ok';
+        if (r.status === 401 && accTok) {
+            // Dead session: retry once as casual (no token)
+            return fetchTimeout(BOARD_API + '/score', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }, 5000).then(r2 => r2.ok ? 'ok' : 'http-' + r2.status);
+        }
         throw new Error('http-' + r.status);
-    }).catch(() => {
-        if (!SCORE_TOKEN || SCORE_TOKEN.indexOf('PASTE_') === 0) return Promise.resolve('no-token');
-        return fetch(SCORE_DISPATCH_URL, {
-            method: 'POST',
-            headers: {
-                'Authorization': 'Bearer ' + SCORE_TOKEN,
-                'X-GitHub-Api-Version': '2022-11-28',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ ref: 'main', inputs: { initials: name, score: String(s), secret: SCORE_SECRET, game: GAME_ID } })
-        }).then(r => (r.ok ? 'ok' : 'http-' + r.status), () => 'err');
-    });
+    }).catch(() => 'board-offline');
 }
 function renderGlobalBoard(el, rows) {
     el.innerHTML = '';
