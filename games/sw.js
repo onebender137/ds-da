@@ -18,7 +18,8 @@
 //     dropped and re-fetched; fixes players stuck on the loading screen.
 // v5: Neon Circuit v2 — new cabinet screenshot/og image.
 // v6: Poke It cabinet — new screenshot/og art + arcade-social.js learns 'poke-it'.
-const CACHE = 'dsda-arcade-v6';
+// v7: player accounts — arcade-social.js loads /games/arcade-account.js (absolute path).
+const CACHE = 'dsda-arcade-v7';
 const CORE = [
   './',
   './manifest.webmanifest',

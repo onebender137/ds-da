@@ -135,6 +135,7 @@
       <div class="divider">OR EMAIL</div>
       <input id="email" type="email" placeholder="email address" autocomplete="email">
       <input id="pass" type="password" placeholder="password" autocomplete="current-password">
+      <input id="handle" type="text" placeholder="public handle (shown on your card)" maxlength="16" autocomplete="nickname" style="display:none">
       <button class="btn" id="b-login">Log in</button>
       <button class="btn ghost" id="b-register">Create account</button>
       <div class="links"><a id="b-forgot">Forgot password?</a><a id="b-home">← Back to arcade</a></div>
@@ -205,7 +206,7 @@
   // Local dev override (set before arcade-account.js). Prod uses https://api.ds-da.ca.
   if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') window.DSDA_API_BASE = 'http://127.0.0.1:8787';
 </script>
-<script src="/games/arcade-account.js"></script>
+<script src="/games/arcade-account.js?v=2"></script>
 <script>
 (function () {
   'use strict';
@@ -332,15 +333,16 @@
   // ---- load the card (owner view) ----
   function loadCard() {
     show('loading');
-    window.DSDA.account.pull().then(function () {
+    window.DSDA.account.pull().then(function (sync) {
       var acc = window.DSDA.account.getAccount();
+      // pull() logs out on a 401, so no token/account here = session expired.
+      if (!window.DSDA.account.getToken() || !acc || !acc.id) { show('login'); msg('Your session expired — log in again.', 'err'); return; }
       return fetch((window.DSDA_API_BASE || 'https://api.ds-da.ca') + '/api/account/profile/' + acc.id)
         .then(function (r) { return r.json(); })
         .then(function (j) {
-          return window.DSDA.account.pull().then(function (sync) {
-            renderCard(acc, j.profile, sync);
-            show('card');
-          });
+          if (!j || !j.profile) throw new Error('profile not found');
+          renderCard(acc, j.profile, sync);
+          show('card');
         });
     }).catch(function (e) { msg('Could not load your card: ' + e.message, 'err'); show('login'); });
   }
@@ -388,7 +390,13 @@
   $('b-register').onclick = function () {
     var email = $('email').value.trim(), pw = $('pass').value;
     if (!email || !pw) return msg('Enter an email and password to register', 'err');
-    window.DSDA.account.register(email, email.split('@')[0].slice(0, 16), pw).then(function (r) {
+    // Public handle is asked for, never derived from the email (that leaked
+    // the email's local part onto a public, shareable card).
+    var hEl = $('handle');
+    if (hEl.style.display === 'none') { hEl.style.display = 'block'; hEl.focus(); return msg('Pick a public handle — this is what other players see.', 'ok'); }
+    var handle = hEl.value.trim().slice(0, 16);
+    if (!handle) { hEl.focus(); return msg('Pick a public handle', 'err'); }
+    window.DSDA.account.register(email, handle, pw).then(function (r) {
       if (r.ok) { msg(''); loadCard(); } else { msg(r.error, 'err'); }
     });
   };
@@ -396,8 +404,9 @@
     var email = $('email').value.trim();
     if (!email) return msg('Enter your email above first', 'err');
     window.DSDA.account.forgotPassword(email).then(function (r) {
-      if (r.resetUrl) { window.location.href = r.resetUrl; }
-      else { msg(r.message || 'If that address is registered, a reset link is on its way.', 'ok'); }
+      var j = (r && r.j) || {};
+      if (j.resetUrl) { window.location.href = j.resetUrl; }
+      else { msg(j.message || 'If that address is registered, a reset link is on its way.', 'ok'); }
     });
   };
   $('b-home').onclick = function () { window.location.href = '/games/'; };

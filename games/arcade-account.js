@@ -19,7 +19,7 @@
  */
 (function () {
   'use strict';
-  if (window.DSDA && window.DSDA.__account) return;
+  if (window.DSDA && window.DSDA.account && window.DSDA.account.__account) return;
 
   var API = (window.DSDA_API_BASE || 'https://api.ds-da.ca') + '/api/account';
   var TOKEN_KEY = 'dsda-token';
@@ -43,6 +43,9 @@
       body: body ? JSON.stringify(body) : undefined
     }).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (j) {
+        // Dead/expired session: clear it so we stop syncing into the void and
+        // the card page falls back to the login screen.
+        if (r.status === 401 && t) logout();
         return { ok: r.status >= 200 && r.status < 300, status: r.status, j: j };
       });
     }).catch(function (e) { return { ok: false, status: 0, j: { error: String(e) } }; });
@@ -105,6 +108,7 @@
     if (!tok()) return Promise.resolve(null);
     return api('/sync').then(function (r) {
       if (!r.ok) return null;
+      r.j.daily = r.j.daily || {};
       var p = getPass() || { games: {}, badges: {}, daily: { days: {}, streak: 0, last: '' }, plays: 0 };
       p.games = p.games || {}; p.badges = p.badges || {};
       p.daily = p.daily || { days: {}, streak: 0, last: '' };
