@@ -212,7 +212,7 @@
     // Use account handle if logged in, otherwise fall back to initials
     var me = 'YOU';
     try {
-      var acc = window.DSDA && window.DSDA.account && window.DSDA.account.get();
+      var acc = window.DSDA && window.DSDA.account && window.DSDA.account.getAccount && window.DSDA.account.getAccount();
       if (acc && acc.handle) me = acc.handle;
       else me = inits() || 'YOU';
     } catch (e) {}

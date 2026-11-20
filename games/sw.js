@@ -19,7 +19,8 @@
 // v5: Neon Circuit v2 — new cabinet screenshot/og image.
 // v6: Poke It cabinet — new screenshot/og art + arcade-social.js learns 'poke-it'.
 // v7: player accounts — arcade-social.js loads /games/arcade-account.js (absolute path).
-const CACHE = 'dsda-arcade-v8';
+// v9: challenge links use the account handle (fix getAccount call).
+const CACHE = 'dsda-arcade-v9';
 const CORE = [
   './',
   './manifest.webmanifest',

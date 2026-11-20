@@ -327,9 +327,11 @@
       var rgList = $('c-recent-games-list'); rgList.innerHTML = '';
       recentGames.forEach(function (rg) {
         var d = document.createElement('div'); d.className = 'rg-item';
-        var date = new Date(rg.created);
+        var date = new Date(typeof rg.created === 'number' && rg.created < 1e12 ? rg.created * 1000 : rg.created);
         var dateStr = date.toLocaleDateString('en-US', {month:'short', day:'numeric'}) + ' ' + date.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
-        d.innerHTML = '<span class="rg-date">' + dateStr + '</span><span class="rg-game">' + rg.game + '</span><span class="rg-score">' + rg.score.toLocaleString() + '</span>';
+        [['rg-date', dateStr], ['rg-game', String(rg.game || '')], ['rg-score', (Number(rg.score) || 0).toLocaleString()]].forEach(function (p) {
+          var sp = document.createElement('span'); sp.className = p[0]; sp.textContent = p[1]; d.appendChild(sp);
+        });
         rgList.appendChild(d);
       });
       $('c-recent-games').style.display = 'block';
@@ -480,7 +482,9 @@
     window.DSDA.account.linkWallet().then(function (r) {
       btn.disabled = false;
       if (r.ok) { btn.textContent = '✓ Linked!'; setTimeout(function () { loadCard(); }, 800); }
-      else { btn.textContent = '🔐 Link Wallet'; msg(r.error, 'err'); }
+      else { btn.textContent = '🔐 Link Wallet'; toast(r.error || 'link failed'); }
+    }).catch(function (e) {
+      btn.disabled = false; btn.textContent = '🔐 Link Wallet'; toast((e && e.message) || 'wallet signing cancelled');
     });
   };
   $('pass').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('b-login').click(); });
