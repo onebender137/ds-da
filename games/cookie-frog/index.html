@@ -857,7 +857,7 @@ function getLocalBoard(){
 }
 function saveLocal(initials,score){
   const lb=getLocalBoard();
-  lb.push({n:initials,s:Math.round(score),d:Date.now()});
+  lb.push({n:initials,s:Math.round(score),d:Date.now(),h:memberHandle()||undefined});
   lb.sort((a,b)=>b.s-a.s);
   if(lb.length>10)lb.length=10;
   try{localStorage.setItem(localKey(),JSON.stringify(lb));}catch(e){}
@@ -1840,7 +1840,21 @@ function gameOver(){
     renderBoardList($('overBoard'),b?b.top:null,me);
   });
   lastPosted=0;
+  // Logged-in members: no initials prompt — auto-post; arcade-account.js attaches
+  // the session so the Worker files the score under the account handle.
+  const member=memberHandle();
+  $('initsRow').style.display=member?'none':'';
+  if(member&&G.score>0){
+    track('score_submit',{score:G.score});
+    submitScore(DSDA.memberInits(),G.score).then(res=>{
+      if(res!=='ok')return;
+      $('saveMsg').classList.add('ok');
+      setSaveMsg((boardDay?'ON THE DAILY BOARD':'ON THE TOP FROGS BOARD')+' AS '+member.toUpperCase()+' \u25c6 ✓');
+      fetchBoard().then(b=>{if(b&&!$('overScreen').classList.contains('hidden'))renderBoardList($('overBoard'),b.top,me);});
+    });
+  }
 }
+function memberHandle(){try{return(window.DSDA&&DSDA.member&&DSDA.member())||'';}catch(e){return'';}}
 function toMenu(){
   A.ui();hideOverlays();
   if(G.userDiff){G.diff=G.userDiff;G.userDiff=null;}
@@ -2358,7 +2372,7 @@ window.__tl = {
 
   <!-- DSDA Radio network widget (shared 6-station dial) -->
   <div id="radioBox"></div>
-  <script src="../arcade-social.js?v=7"></script>
+  <script src="../arcade-social.js?v=8"></script>
   <script src="../../radio/radio.js?v=11"></script>
   <script>
     // DSDA Radio — shared cross-game dial (6 stations). The radio is the music source;

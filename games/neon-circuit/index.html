@@ -1996,7 +1996,10 @@ function showResults(){
  $("initsInput").value=getInits();setTimeout(()=>{$("resultScreen").scrollTop=0},30);$("postBtn").disabled=!sc;$("saveMsg").classList.remove("ok");
  $("saveMsg").textContent=sc?(getInits()?(pb?"NEW BEST — POSTING…":"ARCADE BOARD"):"ENTER INITIALS TO POST"):"FINISH THE RACE TO SCORE";
  $("resultTop").innerHTML='<li class="empty">LOADING…</li>';refreshTop($("resultTop"),5);
- if(sc&&pb&&getInits())postScore(sc);
+ // Logged-in members: no initials prompt — every scored race auto-posts; arcade-account.js
+ // attaches the session so the Worker files it under the account handle.
+ const member=memberHandle();$("initsInput").parentElement.style.display=member?"none":"";
+ if(member){if(sc)postScore(sc)}else if(sc&&pb&&getInits())postScore(sc);
  const CH=Game.challenge;if(CH){const won=sc>CH.s;$("resultMsg").textContent="🎯 "+(won?"YOU BEAT "+CH.n+"! ":CH.n+" STILL LEADS · ")+sc.toLocaleString()+" vs "+CH.s.toLocaleString()+(won?" — send it back":" — run it back");
   $("resultMsg").style.color=won?"var(--green)":"var(--amber)";$("retryBtn").style.display="";$("retryBtn").textContent="↻ Run it back"}else $("resultMsg").style.color="";
 }
@@ -2047,7 +2050,7 @@ function raceScore(pos,time){
 const Board={
  lastPosted:0,
  async submit(score){
-  const inits=getInits();if(!inits)return"no-inits";if(!score||score<=this.lastPosted)return"dupe";
+  const inits=memberHandle()?DSDA.memberInits():getInits();if(!inits)return"no-inits";if(!score||score<=this.lastPosted)return"dupe";
   try{const r=await fetchT(BOARD_API+"/score",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({initials:inits,score:Math.round(score),secret:SCORE_SECRET,game:GAME_ID})},6000);
    if(r.ok){this.lastPosted=Math.max(this.lastPosted,score);track('score_submit',{score});return"ok"}}catch(e){}
   return"offline";
@@ -2063,11 +2066,13 @@ function renderTop(el,top,me,n){
  el.innerHTML=top.slice(0,n||10).map((e,i)=>`<li class="${me&&e.n===me?"you":""}"><span class="r">${i+1}.</span><span>${e.h?String(e.h).replace(/[^a-z0-9_-]/gi,'')+'<span class="member-badge" title="'+String(e.h).replace(/[^a-z0-9_-]/gi,'')+'">◆</span>':cleanInits(e.n).padEnd(3,"?")}</span><span class="p">${Math.round(e.s).toLocaleString()}</span></li>`).join("");
 }
 async function refreshTop(el,n,mark){const b=await Board.fetch();renderTop(el,b?b.top:null,getInits(),n);return b}
+function memberHandle(){try{return(window.DSDA&&DSDA.member&&DSDA.member())||""}catch(e){return""}}
 async function postScore(score){
  const msg=$("saveMsg");msg.classList.remove("ok");
- const i=setInits($("initsInput").value);if(!i){msg.textContent="ENTER YOUR INITIALS";$("initsInput").focus();return}
+ const member=memberHandle();
+ const i=member?DSDA.memberInits():setInits($("initsInput").value);if(!i){msg.textContent="ENTER YOUR INITIALS";$("initsInput").focus();return}
  msg.textContent="POSTING…";const r=await Board.submit(score);
- if(r==="ok"||r==="dupe"){msg.textContent="ON THE ARCADE BOARD ✓";msg.classList.add("ok");$("postBtn").disabled=true;refreshTop($("resultTop"),5)}
+ if(r==="ok"||r==="dupe"){msg.textContent="ON THE ARCADE BOARD"+(member?" AS "+member.toUpperCase()+" \u25c6":"")+" ✓";msg.classList.add("ok");$("postBtn").disabled=true;refreshTop($("resultTop"),5)}
  else msg.textContent="BOARD OFFLINE — TRY AGAIN IN A BIT";
 }
 function renderBoard(){
@@ -2297,7 +2302,7 @@ if(/[?&]test=1/.test(location.search))window.__G={
 
   <!-- DSDA Radio network widget (shared 6-station dial) -->
   <div id="radioBox"></div>
-  <script src="../arcade-social.js?v=7"></script>
+  <script src="../arcade-social.js?v=8"></script>
   <script src="../../radio/radio.js?v=11"></script>
   <script>
     // DSDA Radio — shared cross-game dial (6 stations). The radio is the music source;

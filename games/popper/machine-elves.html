@@ -2620,8 +2620,17 @@ function gameOver() {
   const mine = top.findIndex(e => e.n === dsdaInits());
   if (mine >= 0 && elTopList.children[mine]) elTopList.children[mine].classList.add('me');
   elOverlay.classList.remove('hidden');
-  elInitials.focus();
+  // Logged-in members: no initials prompt — auto-save through the normal board
+  // post; arcade-account.js attaches the session so the Worker files it under
+  // the account handle.
+  const member = memberHandle();
+  const lbl = document.querySelector('label[for="initials"]');
+  elInitials.style.display = elSave.style.display = member ? 'none' : '';
+  if (lbl) lbl.style.display = member ? 'none' : '';
+  if (member) { if (score > 0) { elSave.disabled = false; saveScore(); } }
+  else elInitials.focus();
 }
+function memberHandle() { try { return (window.DSDA && DSDA.member && DSDA.member()) || ''; } catch (e) { return ''; } }
 function resetGame() {
   score = 0;
   startLevel(1);
@@ -2811,7 +2820,7 @@ function loadScores(diff) {
 function saveToStorage(name, s, diff) {
   const key = scoreKey(diff);
   const arr = loadScores(diff);
-  arr.push({ n: name, s: s, d: Date.now() });
+  arr.push({ n: name, s: s, d: Date.now(), h: memberHandle() || undefined });
   arr.sort((a, b) => b.s - a.s);
   const top = arr.slice(0, 10);
   try { localStorage.setItem(key, JSON.stringify(top)); } catch (e) {}
@@ -3002,11 +3011,12 @@ async function submitGlobal(name, s, diff) {
 function saveScore() {
   if (phase !== 'over' || elSave.disabled) return;
   track('score_submit', { score });
-  let name = elInitials.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const member = memberHandle();
+  let name = member ? DSDA.memberInits() : elInitials.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
   if (!name) name = dsdaInits();
   if (!name) { elSavedMsg.textContent = 'ENTER YOUR INITIALS'; elInitials.focus(); return; }
   name = name.slice(0, 3).padEnd(3, '?');
-  try { localStorage.setItem(DSDA_INITS_KEY, name); } catch (e) {}
+  if (!member) try { localStorage.setItem(DSDA_INITS_KEY, name); } catch (e) {}
   const top = saveToStorage(name, score);
   renderTopList(elTopList, top);
   renderTopList(elHudTop, top);
@@ -3016,7 +3026,7 @@ function saveScore() {
   elSavedMsg.textContent = 'Saved locally · submitting to global board…';
   if (mine === 0 && score > 0) sfx.newHigh(); else sfx.pop(4);
   submitGlobal(name, score).then(res => {
-    if (res === 'ok') elSavedMsg.textContent = 'Saved! On the global board ✓';
+    if (res === 'ok') elSavedMsg.textContent = 'Saved! On the global board' + (member ? ' as ' + member + ' \u25c6' : '') + ' ✓';
     else elSavedMsg.textContent = 'Saved locally · global board: ' + res;
   });
 }
@@ -3727,7 +3737,7 @@ try {
   hideLoader(); // reveal the boot error (loader sits above it at z-100)
 }
 </script>
-<script src="../arcade-social.js?v=7"></script>
+<script src="../arcade-social.js?v=8"></script>
 <script src="../../radio/radio.js?v=11"></script>
 <script>
   // DSDA Radio network — streams Polkahole (+ future stations) as in-game radio.

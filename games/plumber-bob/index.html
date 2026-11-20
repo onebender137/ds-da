@@ -1385,7 +1385,7 @@ function loadScores() {
 }
 function saveScore(n, s) {
   const a = loadScores();
-  a.push({ n, s, d: Date.now() });
+  a.push({ n, s, d: Date.now(), h: memberHandle() || undefined });
   a.sort((x, y) => y.s - x.s || y.d - x.d);
   const top = a.slice(0, 10);
   try { localStorage.setItem(LB_KEY, JSON.stringify(top)); } catch (e) {}
@@ -1631,21 +1631,28 @@ function gameOver() {
   sfx.over(best);
   playShout(); // the excited "PLUMBER BOB!!!" call
   track('game_over', { final_score: score });
+  // Logged-in members: no initials prompt — auto-save; arcade-account.js attaches
+  // the session so the Worker files the score under the account handle.
+  const member = memberHandle();
+  $('initials').parentElement.style.display = $('saveBtn').style.display = member ? 'none' : '';
+  if (member && score > 0) commitScore();
 }
+function memberHandle() { try { return (window.DSDA && DSDA.member && DSDA.member()) || ''; } catch (e) { return ''; } }
 function commitScore() {
   if (scoreSaved) return;
-  const n = ($('initials').value || dsdaInits()).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3);
+  const member = memberHandle();
+  const n = (member ? DSDA.memberInits() : ($('initials').value || dsdaInits())).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3);
   if (!n) { $('savedMsg').textContent = 'ENTER YOUR INITIALS'; $('initials').focus(); return; }
   saveScore(n, score);
-  try { localStorage.setItem(DSDA_INITS_KEY, n); } catch (e) {}
-  $('initials').value = n;
+  if (!member) try { localStorage.setItem(DSDA_INITS_KEY, n); } catch (e) {}
+  if (!member) $('initials').value = n;
   renderBoard($('overBoard'), loadScores().slice(0, 10));
   scoreSaved = true;
   $('saveBtn').disabled = true;
   $('savedMsg').textContent = 'Saved locally · submitting to global board…';
   track('score_submit', { score });
   submitGlobal(n, score).then(res => {
-    if (res === 'ok') $('savedMsg').textContent = 'Saved! On the global board ✓';
+    if (res === 'ok') $('savedMsg').textContent = 'Saved! On the global board' + (member ? ' as ' + member + ' \u25c6' : '') + ' ✓';
     else $('savedMsg').textContent = 'Saved locally · global board: ' + res;
   });
 }
@@ -1837,7 +1844,7 @@ try {
 
   <!-- DSDA Radio network widget (shared 6-station dial) -->
   <div id="radioBox"></div>
-  <script src="../arcade-social.js?v=7"></script>
+  <script src="../arcade-social.js?v=8"></script>
   <script src="../../radio/radio.js?v=11"></script>
   <script>
     // DSDA Radio — shared cross-game dial (6 stations). The radio is the music source;

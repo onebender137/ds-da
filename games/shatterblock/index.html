@@ -2416,8 +2416,17 @@ function gameOver() {
   if (isHigh) sfx.newHigh();
   renderTopList(elTopList, top.slice(0, 20));
   elOverlay.classList.remove('hidden');
-  elInitials.focus();
+  // Logged-in members: no initials prompt — auto-save through the normal board
+  // post; arcade-account.js attaches the session so the Worker files it under
+  // the account handle.
+  const member = memberHandle();
+  const lbl = document.querySelector('label[for="initials"]');
+  elInitials.style.display = elSave.style.display = member ? 'none' : '';
+  if (lbl) lbl.style.display = member ? 'none' : '';
+  if (member) { if (score > 0) { elSave.disabled = false; saveScore(); } }
+  else elInitials.focus();
 }
+function memberHandle() { try { return (window.DSDA && DSDA.member && DSDA.member()) || ''; } catch (e) { return ''; } }
 function togglePause() {
   if (phase === 'paused') {
     phase = pausedFrom || 'launch'; pausedFrom = null;
@@ -2616,7 +2625,7 @@ function loadScores() {
 }
 function saveToStorage(name, s) {
   const arr = loadScores();
-  arr.push({ n: name, s: s, d: Date.now() });
+  arr.push({ n: name, s: s, d: Date.now(), h: memberHandle() || undefined });
   arr.sort((a, b) => b.s - a.s);
   const top = arr.slice(0, 20);
   try { localStorage.setItem(SCORE_KEY, JSON.stringify(top)); } catch (e) {}
@@ -2879,11 +2888,12 @@ async function submitGlobal(name, s) {
 function saveScore() {
   if (phase !== 'over' || elSave.disabled) return;
   track('score_submit', { score });
-  let name = elInitials.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const member = memberHandle();
+  let name = member ? DSDA.memberInits() : elInitials.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
   if (!name) name = dsdaInits();
   if (!name) { elSavedMsg.textContent = 'ENTER YOUR INITIALS'; elInitials.focus(); return; }
   name = name.slice(0, 3).padEnd(3, '?');
-  try { localStorage.setItem(DSDA_INITS_KEY, name); } catch (e) {}
+  if (!member) try { localStorage.setItem(DSDA_INITS_KEY, name); } catch (e) {}
   const top = saveToStorage(name, score);
   renderTopList(elTopList, top);
   renderTopList(elHudTop, top);
@@ -2891,7 +2901,7 @@ function saveScore() {
   elSavedMsg.textContent = 'Saved locally · submitting to global board…';
   sfx.power();
   submitGlobal(name, score).then(res => {
-    if (res === 'ok') elSavedMsg.textContent = 'Saved! On the global board ✓';
+    if (res === 'ok') elSavedMsg.textContent = 'Saved! On the global board' + (member ? ' as ' + member + ' \u25c6' : '') + ' ✓';
     else elSavedMsg.textContent = 'Saved on this device · global board unreachable right now';
   });
 }
@@ -3433,7 +3443,7 @@ try {
   elBootErr.textContent = window.__bootErr;
 }
 </script>
-<script src="../arcade-social.js?v=7"></script>
+<script src="../arcade-social.js?v=8"></script>
 <script src="../../radio/radio.js?v=11"></script>
 <script>
   // DSDA Radio — the shared cross-game dial (all stations, one manifest).

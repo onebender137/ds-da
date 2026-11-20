@@ -1433,32 +1433,17 @@ function gameOver() {
   setDanger(false);
   updatePreview();
   elOverlay.classList.remove('hidden');
-  // Logged-in members: the score already went to their account (arcade-social's
-  // game_over hook → DSDA.account.submitScore), so no initials prompt and no
-  // second initials-based post. Keep a local copy under the handle.
+  // Logged-in members: no initials prompt — auto-save through the normal board
+  // post; arcade-account.js attaches the session so the Worker files it under
+  // the account handle.
   const member = memberHandle();
   const lbl = document.querySelector('label[for="initials"]');
   elInitials.style.display = elSave.style.display = member ? 'none' : '';
   if (lbl) lbl.style.display = member ? 'none' : '';
-  if (member) {
-    if (score > 0) {
-      const t = saveToStorage(member, score, member);
-      renderTopList(elTopList, t);
-      const mine = t.findIndex(e => e.h === member && e.s === score);
-      if (mine >= 0 && elTopList.children[mine]) elTopList.children[mine].classList.add('me');
-      elSavedMsg.textContent = 'Saved to your account as ' + member + ' ◆';
-    }
-  } else elInitials.focus();
+  if (member) { if (score > 0) { elSave.disabled = false; saveScore(); } }
+  else elInitials.focus();
 }
-// Account handle if the player is logged in to the arcade (arcade-account.js), else ''.
-function memberHandle() {
-  try {
-    const a = window.DSDA && window.DSDA.account;
-    if (!a || !a.getToken || !a.getToken()) return '';
-    const acc = a.getAccount && a.getAccount();
-    return acc && acc.handle ? String(acc.handle).replace(/[^a-z0-9_-]/gi, '').slice(0, 16) : '';
-  } catch (e) { return ''; }
-}
+function memberHandle() { try { return (window.DSDA && DSDA.member && DSDA.member()) || ''; } catch (e) { return ''; } }
 function setDanger(on) {
   if (on === dangerOn) return;
   dangerOn = on; dangerT = 0;
@@ -1970,23 +1955,25 @@ async function submitGlobal(name, s) {
   } catch (e) { return 'err'; }
 }
 function saveScore() {
-  if (phase !== 'over' || elSave.disabled || memberHandle()) return;
+  const member = memberHandle();
+  if (phase !== 'over' || elSave.disabled) return;
   track('score_submit', { score });
-  let name = elInitials.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  let name = member ? DSDA.memberInits() : elInitials.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
   if (!name) name = dsdaInits();
   if (!name) { elSavedMsg.textContent = 'ENTER YOUR INITIALS'; elInitials.focus(); return; }
   name = name.slice(0, 3).padEnd(3, '?');
-  try { localStorage.setItem(DSDA_INITS_KEY, name); } catch (e) {}
-  const top = saveToStorage(name, score);
+  if (!member) try { localStorage.setItem(DSDA_INITS_KEY, name); } catch (e) {}
+  const top = saveToStorage(name, score, member);
   renderTopList(elTopList, top);
   renderTopList(elHudTop, top);
   const mine = top.findIndex(e => e.n === name && e.s === score);
   if (mine >= 0 && elTopList.children[mine]) elTopList.children[mine].classList.add('me');
   elSave.disabled = true;
   elSavedMsg.textContent = 'Saved locally · submitting to global board…';
+  const who = member ? ' as ' + member + ' \u25c6' : '';
   sfx.match(2);
   submitGlobal(name, score).then(res => {
-    if (res === 'ok') elSavedMsg.textContent = 'Saved! On the global board ✓';
+    if (res === 'ok') elSavedMsg.textContent = 'Saved! On the global board' + who + ' ✓';
     else elSavedMsg.textContent = 'Saved on this device · global board unreachable right now';
   });
 }
@@ -2568,7 +2555,7 @@ try {
   elBootErr.textContent = window.__bootErr;
 }
 </script>
-<script src="../arcade-social.js?v=7"></script>
+<script src="../arcade-social.js?v=8"></script>
 <script src="../../radio/radio.js?v=11"></script>
 <script>
   // DSDA Radio — the shared cross-game dial (6 stations: Most Pit, Easy Mellow,

@@ -953,10 +953,11 @@ function fetchTimeout(url,opts,ms){
   const c=new AbortController(),t=setTimeout(()=>c.abort(),ms||4000);
   return fetch(url,Object.assign({signal:c.signal},opts||{})).then(r=>{clearTimeout(t);return r;},e=>{clearTimeout(t);throw e;});
 }
+function memberHandle(){try{return(window.DSDA&&DSDA.member&&DSDA.member())||'';}catch(e){return'';}}
 function getLocalBoard(){try{return JSON.parse(localStorage.getItem(LOCAL_LB_KEY)||'[]')||[];}catch(e){return [];}}
 function saveLocal(initials,score){
   const lb=getLocalBoard();
-  lb.push({n:initials,s:Math.round(score),d:Date.now()});
+  lb.push({n:initials,s:Math.round(score),d:Date.now(),h:memberHandle()||undefined});
   lb.sort((a,b)=>b.s-a.s);
   if(lb.length>10)lb.length=10;
   try{localStorage.setItem(LOCAL_LB_KEY,JSON.stringify(lb));}catch(e){}
@@ -1013,6 +1014,7 @@ function showScores(){
   auInit();auResume();
   const me=getInits();
   const inp=$('initsInput');if(inp)inp.value=me;
+  const si=$('scoresInits');if(si)si.style.display=memberHandle()?'none':'';
   renderBoardList($('scoresList'),null,me);
   renderBoardList($('scoresLocal'),getLocalBoard(),me);
   fetchBoard().then(b=>{
@@ -3529,7 +3531,7 @@ function showGameOver(){
     c.matches++;c.kos+=t1.stats.kos;c.dmg+=t1.stats.dmg;
     if(winner===0)c.wins++;else if(winner===1)c.losses++;else c.draws++;
     persist();
-    submitScore(getInits(), t1.stats.dmg);  // Top Beaverz: post damage dealt
+    submitScore(memberHandle() ? DSDA.memberInits() : getInits(), t1.stats.dmg);  // Top Beaverz: post damage dealt (members: arcade-account.js attaches the session → handle)
     const ri=rankInfo(c.wins);
     $("rankWrap").style.display="";
     $("overRankName").textContent=ri.cur.n;
@@ -3539,7 +3541,7 @@ function showGameOver(){
   showScreen("game");
   $("hud").classList.add("hidden");
   $("overScreen").classList.remove("hidden");
-  track("game_over",{mode:G.mode,result:winner===-1?"draw":G.mode==="ai"?(winner===0?"win":"loss"):"team"+(winner+1),rounds:Math.floor((G.turnCount-1)/2)+1});
+  track("game_over",{mode:G.mode,final_score:G.mode==="ai"?t1.stats.dmg:undefined,no_share:G.mode!=="ai"||undefined,result:winner===-1?"draw":G.mode==="ai"?(winner===0?"win":"loss"):"team"+(winner+1),rounds:Math.floor((G.turnCount-1)/2)+1});
   if(winner===0||(winner===1&&G.mode==="local")){SFX.win();confettiFX(G.teams[winner].color);}
   else if(winner===-1)SFX.lose();
   else SFX.lose();
@@ -3883,7 +3885,7 @@ requestAnimationFrame(t=>{lastT=t;requestAnimationFrame(frame);});
 
   <!-- DSDA Radio network widget (shared cross-game dial) -->
   <div id="radioBox"></div>
-  <script src="../arcade-social.js?v=7"></script>
+  <script src="../arcade-social.js?v=8"></script>
   <script src="../../radio/radio.js?v=11"></script>
   <script>
     // DSDA Radio is the music source for this cabinet; the game's own

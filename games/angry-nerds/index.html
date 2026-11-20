@@ -370,6 +370,10 @@ const SCORE_SECRET='6216cf68f4e077d3cd991f2d6bd3e878';
 const DSDA_INITS_KEY='dsda-initials';
 let pendingSubmit=null;
 function cleanInits(s){return (s||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,3);}
+/* Logged-in members: no initials fields — scores post under the account handle
+   (arcade-account.js attaches the session to the board post). */
+function memberHandle(){try{return(window.DSDA&&DSDA.member&&DSDA.member())||'';}catch(e){return'';}}
+function memberUI(){const m=!!memberHandle();['runName','runSaveBtn','boardInits','boardSaveBtn'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=m?'none':'';});}
 function getInits(){try{return cleanInits(localStorage.getItem(DSDA_INITS_KEY)||save.name||'');}catch(e){return cleanInits(save.name);}}
 function setInits(v){const i=cleanInits(v);save.name=i;persist();try{localStorage.setItem(DSDA_INITS_KEY,i);}catch(e){}return i;}
 function fetchTimeout(url,opts,ms){
@@ -383,13 +387,14 @@ async function submitScore(board,sc,meta){
      save.posted is the high-water mark of what actually reached the Worker, so a
      failed post still retries while a successful one never double-files. */
   if(sc<=(save.posted||0)){setStatus('Already on the board ✅');return;}
-  const initials=getInits();
+  const member=memberHandle();
+  const initials=member?DSDA.memberInits():getInits();
   if(!initials){pendingSubmit={board,sc,meta};setStatus('Enter your initials to post this score.');return;}
   pendingSubmit=null;setStatus('Posting…');
   try{
     const r=await fetchTimeout(BOARD_API+'/score',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({initials,score:Math.round(sc),secret:SCORE_SECRET,game:GAME_ID})},5000);
-    if(r.ok){save.posted=Math.max(save.posted||0,Math.round(sc));persist();setStatus('✅ Posted to the arcade board.');}
+    if(r.ok){save.posted=Math.max(save.posted||0,Math.round(sc));persist();setStatus('✅ Posted to the arcade board'+(member?' as '+member+' \u25c6':'')+'.');}
     else setStatus('Board offline — saved on this device.');
   }catch(e){setStatus('Board offline — saved on this device.');}
 }
@@ -1239,7 +1244,7 @@ function endRun(){
   $('runBest').textContent=(save.endlessBest||0).toLocaleString();
   const cb=Math.max(runComboBest,comboBest);
   $('runCombo').textContent='×'+COMBO_MULT[Math.min(Math.max(cb-1,0),COMBO_MULT.length-1)];
-  $('runName').value=getInits();setStatus('');
+  $('runName').value=getInits();setStatus('');memberUI();
   $('runRecord').classList.toggle('hidden',!isBest);
   submitScore('endless',score,{wave:wave+1});
   showScreen('runScr');
@@ -1254,7 +1259,7 @@ function showScreen(id){
 }
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 async function openBoard(){
-  $('boardInits').value=getInits();
+  $('boardInits').value=getInits();memberUI();
   $('myBest').textContent=(save.endlessBest||0).toLocaleString();
   /* A run finished while the Worker was unreachable never made it up. Offer to
      send it, but only while the local best actually beats what we've posted. */
@@ -1332,7 +1337,7 @@ $('boardSaveBtn').addEventListener('click',()=>{
 });
 $('glReloadBtn').addEventListener('click',()=>location.reload());
 $('postBestBtn').addEventListener('click',async()=>{
-  S.click();const n=setInits($('boardInits').value);
+  S.click();const n=memberHandle()||setInits($('boardInits').value);
   if(!n){$('boardNote').textContent='Enter your initials first.';return;}
   $('boardNote').textContent='Posting…';
   await submitScore('endless',save.endlessBest||0,{});
@@ -1595,7 +1600,7 @@ setTimeout(()=>loaderEl.classList.add('hidden'),350);
 
   <!-- DSDA Radio network widget (shared 6-station dial) -->
   <div id="radioBox"></div>
-  <script src="../arcade-social.js?v=7"></script>
+  <script src="../arcade-social.js?v=8"></script>
   <script src="../../radio/radio.js?v=11"></script>
   <script>
     // DSDA Radio — shared cross-game dial (6 stations). The radio is the music source;

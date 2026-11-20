@@ -3553,7 +3553,10 @@ function gameOver(reason) {
 
     const lb = getLeaderboard();
     const qualifies = score > 0 && (lb.length < 10 || score > lb[lb.length - 1].score);
-    initialsEntry.classList.toggle('hidden', !qualifies);
+    // Logged-in members: no initials prompt — every run auto-saves; arcade-account.js
+    // attaches the session so the Worker files it under the account handle.
+    const member = memberHandle();
+    initialsEntry.classList.toggle('hidden', !qualifies || !!member);
     nameInput.value = dsdaInits();
     setSaveEnabled();
     saveMsgEl.innerText = '';
@@ -3564,9 +3567,11 @@ function gameOver(reason) {
         gameoverScreen.classList.remove('hidden');
         renderLeaderboard(leaderboardList, 10);
         loadGlobalBoard();
-        if (qualifies) nameInput.focus();
+        if (member) { if (score > 0) saveScore(); }
+        else if (qualifies) nameInput.focus();
     }, 900);
 }
+function memberHandle() { try { return (window.DSDA && DSDA.member && DSDA.member()) || ''; } catch (e) { return ''; } }
 
 // ============================================================
 //  INPUT
@@ -3865,13 +3870,15 @@ function getLeaderboard() {
 }
 
 function saveScore() {
-    let name = (nameInput.value || dsdaInits()).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3);
+    const member = memberHandle();
+    let name = (member ? DSDA.memberInits() : (nameInput.value || dsdaInits())).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3);
     if (!name) { saveMsgEl.innerText = 'ENTER YOUR INITIALS'; nameInput.focus(); return; }
-    try { localStorage.setItem(DSDA_INITS_KEY, name); } catch (e) {}
+    if (!member) try { localStorage.setItem(DSDA_INITS_KEY, name); } catch (e) {}
     while (name.length < 3) name += 'A';
 
     const lb = getLeaderboard();
     const entry = { name: name, score: score, date: new Date().toLocaleDateString(), you: true };
+    if (member) entry.h = member;
     lb.forEach(e => delete e.you);
     lb.push(entry);
     lb.sort((a, b) => b.score - a.score);
@@ -3885,7 +3892,7 @@ function saveScore() {
     track('score_submit', { score: score });
     saveMsgEl.innerText = 'SUBMITTING TO GLOBAL…';
     submitGlobal(name, score).then(res => {
-        saveMsgEl.innerText = res === 'ok' ? 'ON THE GLOBAL BOARD ✓' : 'SAVED LOCALLY · GLOBAL: ' + res;
+        saveMsgEl.innerText = res === 'ok' ? 'ON THE GLOBAL BOARD' + (member ? ' AS ' + member.toUpperCase() + ' \u25c6' : '') + ' ✓' : 'SAVED LOCALLY · GLOBAL: ' + res;
     });
 }
 
@@ -4001,7 +4008,7 @@ init();
 
   <!-- DSDA Radio network widget (shared 6-station dial) -->
   <div id="radioBox"></div>
-  <script src="../arcade-social.js?v=7"></script>
+  <script src="../arcade-social.js?v=8"></script>
   <script src="../../radio/radio.js?v=11"></script>
   <script>
     // DSDA Radio — shared cross-game dial (6 stations). The radio is the music source;

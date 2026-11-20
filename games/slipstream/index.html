@@ -2043,7 +2043,7 @@ function finish() {
   sfx.stopEngine(2.2);       // lift off and coast through the gate
   showBanner('FINISH!', fmtClock(finishTime));
   track('race_finish', { time_ms: Math.round(finishTime) });
-  track('game_over', { time_ms: Math.round(finishTime), no_share: true }); // arcade passport + analytics; Slipstream has its own share
+  track('game_over', { time_ms: Math.round(finishTime), final_score: toPoints(finishTime), no_share: true }); // arcade passport + analytics; Slipstream has its own share
   // best time
   if (bestTime === null || finishTime < bestTime) bestTime = finishTime;
   elBest.textContent = (bestTime / 1000).toFixed(2);
@@ -2063,8 +2063,17 @@ function showFinish() {
   elShareMsg.textContent = '';
   renderTopList(elTopList, top.slice(0, 10));
   elOverlay.classList.remove('hidden');
-  elInitials.focus();
+  // Logged-in members: no initials prompt — auto-save through the normal board
+  // post; arcade-account.js attaches the session so the Worker files it under
+  // the account handle.
+  const member = memberHandle();
+  const lbl = document.querySelector('label[for="initials"]');
+  elInitials.style.display = elSave.style.display = member ? 'none' : '';
+  if (lbl) lbl.style.display = member ? 'none' : '';
+  if (member) { if (finishTime > 0) { elSave.disabled = false; saveScore(); } }
+  else elInitials.focus();
 }
+function memberHandle() { try { return (window.DSDA && DSDA.member && DSDA.member()) || ''; } catch (e) { return ''; } }
 function resetGame() { startRace(); }
 // ---- the SLIPSTREAM wordmark: one span per letter, each carrying its own bevel + stagger ----
 const TITLE_TEXT = 'SLIPSTREAM';
@@ -2167,7 +2176,7 @@ function loadScores() {
 }
 function saveToStorage(name, tMs) {
   const arr = loadScores();
-  arr.push({ n: name, s: toPoints(tMs), d: Date.now() });
+  arr.push({ n: name, s: toPoints(tMs), d: Date.now(), h: memberHandle() || undefined });
   arr.sort((a, b) => b.s - a.s);   // higher points = faster = top
   const top = arr.slice(0, 10);
   try { localStorage.setItem(SCORE_KEY, JSON.stringify(top)); } catch (e) {}
@@ -2343,11 +2352,12 @@ async function submitGlobal(name, tMs) {
 function saveScore() {
   if (phase !== 'finish' || elSave.disabled) return;
   track('score_submit', { time_ms: Math.round(finishTime) });
-  let name = elInitials.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const member = memberHandle();
+  let name = member ? DSDA.memberInits() : elInitials.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
   if (!name) name = dsdaInits();
   if (!name) { elSavedMsg.textContent = 'ENTER YOUR INITIALS'; elInitials.focus(); return; }
   name = name.slice(0, 3).padEnd(3, '?');
-  try { localStorage.setItem(DSDA_INITS_KEY, name); } catch (e) {}
+  if (!member) try { localStorage.setItem(DSDA_INITS_KEY, name); } catch (e) {}
   const top = saveToStorage(name, finishTime);
   renderTopList(elTopList, top);
   renderTopList(elHudTop, top);
@@ -2355,7 +2365,7 @@ function saveScore() {
   elSavedMsg.textContent = 'Saved locally · submitting to global board…';
   sfx.draft();
   submitGlobal(name, finishTime).then(res => {
-    if (res === 'ok') elSavedMsg.textContent = 'Saved! On the global board ✓';
+    if (res === 'ok') elSavedMsg.textContent = 'Saved! On the global board' + (member ? ' as ' + member + ' \u25c6' : '') + ' ✓';
     else elSavedMsg.textContent = 'Saved locally · global board: ' + res;
   });
 }
@@ -3020,7 +3030,7 @@ try {
 
   <!-- DSDA Radio network widget (shared 6-station dial) -->
   <div id="radioBox"></div>
-  <script src="../arcade-social.js?v=7"></script>
+  <script src="../arcade-social.js?v=8"></script>
   <script src="../../radio/radio.js?v=11"></script>
   <script>
     // DSDA Radio — shared cross-game dial (6 stations). The radio is the music source;

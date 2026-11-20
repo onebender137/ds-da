@@ -21,7 +21,8 @@
 // v7: player accounts — arcade-social.js loads /games/arcade-account.js (absolute path).
 // v9: challenge links use the account handle (fix getAccount call).
 // v10: arcade-account.js v4 (purpose-scoped link nonce).
-const CACHE = 'dsda-arcade-v10';
+// v11: members post scores through each cabinet's board call under their handle.
+const CACHE = 'dsda-arcade-v11';
 const CORE = [
   './',
   './manifest.webmanifest',

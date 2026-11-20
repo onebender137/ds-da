@@ -2400,22 +2400,31 @@ function showGameOver(total, isBest){
   setSaveEnabled();
   $('gameover').classList.remove('hidden');
   loadBoard();
-  setTimeout(() => $('goInitials').focus(), 50);
+  // Logged-in members: no initials prompt — auto-save; arcade-account.js attaches
+  // the session so the Worker files the score under the account handle.
+  const member = memberHandle();
+  $('goInitials').style.display = $('goSave').style.display = member ? 'none' : '';
+  if (member) { if (total > 0) { $('goSave').disabled = false; saveScore(); } }
+  else setTimeout(() => $('goInitials').focus(), 50);
 }
+function memberHandle() { try { return (window.DSDA && DSDA.member && DSDA.member()) || ''; } catch (e) { return ''; } }
 function saveScore(){
   if (S.phase !== 'over' || $('goSave').disabled) return;
   const total = S.runScores.reduce((a,b)=>a+b, 0);
   track('score_submit', { score: total });
-  let name = $('goInitials').value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const member = memberHandle();
+  let name = member ? DSDA.memberInits() : $('goInitials').value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
   if (!name) name = dsdaInits();
   if (!name) { $('goSaveMsg').textContent = 'ENTER YOUR INITIALS'; $('goInitials').focus(); return; }
   name = name.slice(0, 3).padEnd(3, '?');
-  localStorage.setItem('stunts-initials', name);
-  try { localStorage.setItem(DSDA_INITS_KEY, name); } catch (e) {}
+  if (!member) {
+    localStorage.setItem('stunts-initials', name);
+    try { localStorage.setItem(DSDA_INITS_KEY, name); } catch (e) {}
+  }
   $('goSave').disabled = true;
   submitGlobal(name, total).then(res => {
     const m = $('goSaveMsg');
-    if (res === 'ok'){ m.textContent = "SAVED — you're on the board!"; m.style.color = '#7CFF6B'; loadBoard(); }
+    if (res === 'ok'){ m.textContent = member ? 'SAVED as ' + member + ' \u25c6 — on the board!' : "SAVED — you're on the board!"; m.style.color = '#7CFF6B'; loadBoard(); }
     else if (res === 'no-token'){ m.textContent = 'Saved locally — global board offline'; m.style.color = 'var(--gold)'; }
     else { m.textContent = 'Saved locally — check connection'; m.style.color = 'var(--gold)'; }
   });
@@ -2735,7 +2744,7 @@ try { boot(); } catch(err){
 
   <!-- DSDA Radio network widget (shared 6-station dial) -->
   <div id="radioBox"></div>
-  <script src="../arcade-social.js?v=7"></script>
+  <script src="../arcade-social.js?v=8"></script>
   <script src="../../radio/radio.js?v=11"></script>
   <script>
     // DSDA Radio — shared cross-game dial (6 stations). The radio is the music source;

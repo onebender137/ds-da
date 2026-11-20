@@ -678,8 +678,9 @@ function fetchTimeout(url,opts,ms){
   return fetch(url,Object.assign({signal:c.signal},opts||{})).then(r=>{clearTimeout(tm);return r;},e=>{clearTimeout(tm);throw e;});
 }
 function getLocalBoard(d){try{return JSON.parse(localStorage.getItem(LOCAL_LB_KEY+d)||'[]')||[];}catch(e){return [];}}
+function memberHandle(){try{return(window.DSDA&&DSDA.member&&DSDA.member())||'';}catch(e){return'';}}
 function saveLocal(d,n,sc,lv){
-  const lb=getLocalBoard(d);lb.push({n,s:Math.round(sc),l:lv,d:Date.now()});
+  const lb=getLocalBoard(d);lb.push({n,s:Math.round(sc),l:lv,d:Date.now(),h:memberHandle()||undefined});
   lb.sort((a,b)=>b.s-a.s);if(lb.length>10)lb.length=10;
   try{localStorage.setItem(LOCAL_LB_KEY+d,JSON.stringify(lb));}catch(e){}
 }
@@ -1804,7 +1805,11 @@ function showRoundEnd(r){
     els.btnPost.disabled=!pre||r.total<=0;
     els.saveMsg.className='save-msg';
     els.saveMsg.textContent=r.total>0?(pre?`POST TO THE ${DIFF_NAMES[diff].toUpperCase()} BOARD`:'ENTER 3 INITIALS TO POST'):'NOTHING TO POST — POKE SOMETHING FIRST';
-    if(pre&&r.total>0&&flightPosted!==r.total)postFlight();
+    // Logged-in members: no initials prompt — auto-post; arcade-account.js attaches
+    // the session so the Worker files the flight under the account handle.
+    const member=memberHandle();
+    els.initsInput.style.display=els.btnPost.style.display=member?'none':'';
+    if((pre||member)&&r.total>0&&flightPosted!==r.total)postFlight();
   }
   setScreen('roundend');
   (over?els.btnRetry:els.btnNext).focus({preventScroll:true});
@@ -1812,14 +1817,15 @@ function showRoundEnd(r){
 }
 async function postFlight(){
   const r=lastResult;if(!r||!r.over||r.total<=0)return;
-  const inits=setInits(els.initsInput.value);
+  const member=memberHandle();
+  const inits=member?DSDA.memberInits():setInits(els.initsInput.value);
   if(!inits){els.saveMsg.textContent='ENTER 3 INITIALS TO POST';return;}
   if(flightPosted===r.total){els.saveMsg.textContent='ALREADY ON THE BOARD ✓';return;}
   flightPosted=r.total;
   els.btnPost.disabled=true;els.saveMsg.className='save-msg';els.saveMsg.textContent='POSTING…';
   const ok=await postScore(diff,inits,r.total,level);
   els.saveMsg.className='save-msg'+(ok?' ok':'');
-  els.saveMsg.textContent=ok?`ON THE ${DIFF_NAMES[diff].toUpperCase()} BOARD ✓ · tap 🏆 Board`:'BOARD OFFLINE — SAVED ON THIS DEVICE';
+  els.saveMsg.textContent=ok?`ON THE ${DIFF_NAMES[diff].toUpperCase()} BOARD${member?' AS '+member.toUpperCase()+' \u25c6':''} ✓ · tap 🏆 Board`:'BOARD OFFLINE — SAVED ON THIS DEVICE';
 }
 function bankFlight(){
   // leaving mid-flight with points on the board turns it into a posted, finished flight
@@ -2459,7 +2465,7 @@ window.__pk={
 </script>
 <!-- DSDA arcade social layer (passport, share + challenge links) and the shared DSDA Radio dial.
      The radio is the music source; Poke It keeps its own SFX only. -->
-<script src="../arcade-social.js?v=7"></script>
+<script src="../arcade-social.js?v=8"></script>
 <script src="../../radio/radio.js?v=11"></script>
 <script>
   DSDARadio.init({ mount: 'radioBox', manifest: '../../radio/stations.json' });

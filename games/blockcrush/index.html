@@ -1474,13 +1474,21 @@ async function showWin(){
   $('wBlocks').textContent=fmt(stats.blocks);$('wChain').textContent='×'+Math.max(1,stats.chain);$('wSpecials').textContent=stats.specials;
   for(let i=0;i<3;i++)$('ws'+i).classList.remove('lit');$('winOv').hidden=false;
   for(let i=0;i<stars;i++)scheduleAt(420+i*400,()=>{$('ws'+i).classList.add('lit');sfx.star();burstConfetti();vib(20);});
-  $('winInitials').value=dsdaInits();setSaveEnabled('win');scheduleAt(500,()=>$('nextBtn').focus());
+  $('winInitials').value=dsdaInits();setSaveEnabled('win');memberSave('win');scheduleAt(500,()=>$('nextBtn').focus());
 }
 async function showLose(){
   const sid=session;state='lose';busy=true;setBodyState();sfx.lose();await wait(550);if(sid!==session)return;
   track('game_over',{final_score:Math.round(score),level:currentLevel,diff:save.diff});
   $('loseScore').textContent=fmt(score);$('loseTarget').textContent='Target: '+fmt(cfg.target)+(cfg.collects.length?' + collections':'');
-  $('loseTip').innerHTML='<b>TIP</b> — '+TIPS[Math.floor(Math.random()*TIPS.length)];$('loseOv').hidden=false;$('loseInitials').value=dsdaInits();setSaveEnabled('lose');scheduleAt(300,()=>$('retryBtn').focus());
+  $('loseTip').innerHTML='<b>TIP</b> — '+TIPS[Math.floor(Math.random()*TIPS.length)];$('loseOv').hidden=false;$('loseInitials').value=dsdaInits();setSaveEnabled('lose');memberSave('lose');scheduleAt(300,()=>$('retryBtn').focus());
+}
+// Logged-in members: no initials prompt — auto-save; arcade-account.js attaches
+// the session so the Worker files the score under the account handle.
+function memberHandle(){try{return(window.DSDA&&DSDA.member&&DSDA.member())||'';}catch(e){return'';}}
+function memberSave(prefix){
+  const member=memberHandle(),lbl=document.querySelector('label[for="'+prefix+'Initials"]');
+  [$(prefix+'Initials'),$(prefix+'Save'),lbl].forEach(el=>{if(el)el.style.display=member?'none':'';});
+  if(member&&Math.round(score)>0){$(prefix+'Save').disabled=false;saveScore(prefix);}
 }
 function openPause(){
   if(state!=='play'||paused)return;paused=true;setBodyState();
@@ -1746,7 +1754,7 @@ function loadScores(){
 }
 function saveToStorage(name,s){
   const arr=loadScores();
-  arr.push({n:name,s:s,d:Date.now()});
+  arr.push({n:name,s:s,d:Date.now(),h:memberHandle()||undefined});
   arr.sort((a,b)=>b.s-a.s);
   const top=arr.slice(0,10);
   try{localStorage.setItem(SCORE_KEY,JSON.stringify(top));}catch(e){}
@@ -1784,11 +1792,12 @@ function saveScore(prefix){
   if(s<=0){$(prefix+'SavedMsg').textContent='No score to save yet — crush some blocks first.';return;}
   if($(prefix+'Save').disabled)return;
   track('score_submit',{score:s,level:currentLevel});
-  let name=($(prefix+'Initials').value||dsdaInits()).trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+  const member=memberHandle();
+  let name=(member?DSDA.memberInits():($(prefix+'Initials').value||dsdaInits())).trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
   if(!name){$(prefix+'SavedMsg').textContent='ENTER YOUR INITIALS';$(prefix+'Initials').focus();return;}
   name=name.slice(0,3).padEnd(3,'?');
   saveToStorage(name,s);
-  try{localStorage.setItem(DSDA_INITS_KEY,name);}catch(e){}
+  if(!member)try{localStorage.setItem(DSDA_INITS_KEY,name);}catch(e){}
   $(prefix+'Save').disabled=true;
   sfx.click();
   const msg=$(prefix+'SavedMsg');
@@ -1796,7 +1805,7 @@ function saveScore(prefix){
   msg.textContent='Saved locally · submitting to global board…';
   submitGlobal(name,s).then(res=>{
     msg.className=res==='ok'?'saved-msg ok':'saved-msg';
-    msg.textContent=res==='ok'?'Saved! On the DSDA board ✓':'Saved locally · global board: '+res;
+    msg.textContent=res==='ok'?'Saved! On the DSDA board'+(member?' as '+member+' \u25c6':'')+' ✓':'Saved locally · global board: '+res;
   });
 }
 
@@ -2003,7 +2012,7 @@ scheduleAt(400,()=>{$('veil').classList.add('off');});
 
   <!-- DSDA Radio network widget (shared 6-station dial) -->
   <div id="radioBox"></div>
-  <script src="../arcade-social.js?v=7"></script>
+  <script src="../arcade-social.js?v=8"></script>
   <script src="../../radio/radio.js?v=11"></script>
   <script>
     // DSDA Radio — shared cross-game dial (6 stations). The radio is the music source;

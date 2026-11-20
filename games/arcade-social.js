@@ -223,6 +223,21 @@
     if (extra && extra.label) u += '&cl=' + encodeURIComponent(extra.label);
     return u;
   }
+  // Logged-in arcade member's handle ('' for casual players). Reads storage
+  // directly so it works before arcade-account.js has finished loading.
+  function member() {
+    try {
+      if (!localStorage.getItem('dsda-token')) return '';
+      var a = JSON.parse(localStorage.getItem('dsda-account') || 'null');
+      return a && a.handle ? String(a.handle).replace(/[^a-z0-9_-]/gi, '').slice(0, 16) : '';
+    } catch (e) { return ''; }
+  }
+  // 3-char placeholder for cabinets whose save flow needs initials. The Worker
+  // ignores it for members (handle comes from the token).
+  function memberInits() {
+    var h = member().toUpperCase().replace(/[^A-Z0-9]/g, '');
+    return (h || 'YOU').slice(0, 3).padEnd(3, 'X');
+  }
   function fmt(n) { try { return Math.round(n).toLocaleString('en-US'); } catch (e) { return String(n); } }
 
   /* ---------------- passport recording (gtag hook) ---------------- */
@@ -349,7 +364,8 @@
   window.DSDA = Object.assign(window.DSDA || {}, {
     __social: true, CABINETS: CABINETS, BADGES: BADGES,
     passport: load, badge: badge, toast: toast, share: share,
-    challenge: CH, challengeLink: challengeLink, daily: daily, fmt: fmt
+    challenge: CH, challengeLink: challengeLink, daily: daily, fmt: fmt,
+    member: member, memberInits: memberInits
   });
 
   // Opt-in account sync: load arcade-account.js once (no-op if the player
@@ -359,7 +375,7 @@
     if (!document.getElementById('dsda-account-script')) {
       var s = document.createElement('script');
       s.id = 'dsda-account-script';
-      s.src = '/games/arcade-account.js?v=4';
+      s.src = '/games/arcade-account.js?v=5';
       s.async = true;
       (document.head || document.documentElement).appendChild(s);
     }

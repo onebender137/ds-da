@@ -550,7 +550,7 @@ function renderGlobal(el,rows,emptyMsg){
 function openScores(){
   Audio.init();Audio.resume();Audio.click();
   showPanel("scoresPanel");
-  renderGlobal($("deviceBoard"),scores().map(function(e){return{n:e.name,s:e.score,d:e.date};}),"No flights logged on this device yet.");
+  renderGlobal($("deviceBoard"),scores().map(function(e){return{n:e.name,s:e.score,d:e.date,h:e.h};}),"No flights logged on this device yet.");
   $("globalNote").textContent="Loading global board…";
   return fetchGlobalBoard().then(function(g){
     if($("scoresPanel").classList.contains("hide"))return"scores shown";
@@ -835,19 +835,27 @@ function finishRun(){
   $("stPearls").textContent=S.pearls+"/"+orbs.length;$("stTime").textContent=S.elapsed.toFixed(1);
   $("saveMsg").textContent="";$("shareMsg").textContent="";
   $("name").value=dsdaInits();setSaveEnabled();showPanel("endPanel");
+  // Logged-in members: no initials prompt — auto-save; arcade-account.js attaches
+  // the session so the Worker files the score under the account handle.
+  var member=memberHandle();
+  ["name","saveBtn"].forEach(function(id){$(id).style.display=member?"none":"";});
+  var sec=$("name").previousElementSibling;if(sec&&sec.classList.contains("sec"))sec.style.display=member?"none":"";
+  if(member&&sc>0)saveScore();
 }
+function memberHandle(){try{return(window.DSDA&&DSDA.member&&DSDA.member())||"";}catch(e){return"";}}
 function showPanel(id){$("shade").classList.toggle("hide",!id);["menu","pausePanel","endPanel","scoresPanel"].forEach(function(p){$(p).classList.toggle("hide",p!==id);});}
 function saveScore(){
   if(S.saved)return;
-  var init=$("name").value.trim().toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,3)||dsdaInits();if(!init){$("saveMsg").textContent="ENTER YOUR INITIALS";$("name").focus();return;}
-  $("name").value=init;store("ds.lastName",init);try{localStorage.setItem(DSDA_INITS_KEY,init);}catch(e){}
-  var l=scores();l.push({name:init,score:S.score,diff:DIFF[S.diff].label,time:+S.elapsed.toFixed(1),pearls:S.pearls,date:Date.now()});
+  var member=memberHandle();
+  var init=(member?DSDA.memberInits():$("name").value.trim().toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,3))||dsdaInits();if(!init){$("saveMsg").textContent="ENTER YOUR INITIALS";$("name").focus();return;}
+  if(!member){$("name").value=init;store("ds.lastName",init);try{localStorage.setItem(DSDA_INITS_KEY,init);}catch(e){}}
+  var l=scores();l.push({name:init,h:member||undefined,score:S.score,diff:DIFF[S.diff].label,time:+S.elapsed.toFixed(1),pearls:S.pearls,date:Date.now()});
   l.sort(function(a,b){return b.score-a.score||a.time-b.time;});try{store(LB,JSON.stringify(l.slice(0,50)));}catch(e){}
   S.saved=true;$("saveBtn").disabled=true;$("saveBtn").textContent="SAVED ✓";paintBoard($("endBoard"));$("endBoard").classList.remove("hide");
   track("score_submit",{score:S.score});
   var nm=$("saveMsg");nm.textContent="Submitting to the global board…";
   submitGlobal(init,S.score).then(function(res){
-    nm.textContent=res==="ok"?"On the global board ✓":"Saved locally · global: "+res;
+    nm.textContent=res==="ok"?"On the global board"+(member?" as "+member+" \u25c6":"")+" ✓":"Saved locally · global: "+res;
   });
   Audio.click();best();
 }
@@ -1400,7 +1408,7 @@ window.__tl={
 
   <!-- DSDA Radio network widget (shared 6-station dial) -->
   <div id="radioBox"></div>
-  <script src="../arcade-social.js?v=7"></script>
+  <script src="../arcade-social.js?v=8"></script>
   <script src="../../radio/radio.js?v=11"></script>
   <script>
     // DSDA Radio — shared cross-game dial (6 stations). The radio is the music source;

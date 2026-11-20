@@ -198,6 +198,39 @@
     return api('/scores', 'POST', { game: game, score: s });
   }
 
+  /* ---------------- board posts carry the session ----------------
+     Every cabinet posts its score to <api>/api/board/score itself (it knows the
+     right board id + score). When logged in, attach the session token so the
+     Worker writes the row under the account handle. Expired/invalid session
+     (401) -> log out and retry once as a casual so the score isn't lost. */
+  (function () {
+    var orig = window.fetch;
+    if (typeof orig !== 'function' || orig.__dsdaBoard) return;
+    var wrapped = function (input, init) {
+      try {
+        var url = typeof input === 'string' ? input : (input && input.url) || '';
+        var method = ((init && init.method) || 'GET').toUpperCase();
+        var t = tok();
+        if (t && method === 'POST' && /\/api\/board\/score(\?|$)/.test(url)) {
+          var h = {};
+          var src = init.headers;
+          if (src && typeof src.forEach === 'function' && !Array.isArray(src)) src.forEach(function (v, k) { h[k] = v; });
+          else if (src) for (var k in src) h[k] = src[k];
+          h['Authorization'] = 'Bearer ' + t;
+          var authed = Object.assign({}, init, { headers: h });
+          return orig.call(window, input, authed).then(function (r) {
+            if (r.status !== 401) return r;
+            logout();
+            return orig.call(window, input, init);
+          });
+        }
+      } catch (e) {}
+      return orig.apply(window, arguments);
+    };
+    wrapped.__dsdaBoard = true;
+    window.fetch = wrapped;
+  })();
+
   window.DSDA = window.DSDA || {};
   window.DSDA.account = {
     __account: true,
