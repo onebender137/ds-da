@@ -460,7 +460,8 @@
     display:flex;flex-direction:column;gap:5px;box-shadow:0 5px 18px rgba(0,0,0,0.42);
     color:#e8e8f5;font-family:"Segoe UI",system-ui,-apple-system,sans-serif;}
   #radioBox.dsda-radio .radio-np-trk{color:#6ea8ff;}
-  </style>
+  .member-badge{color:var(--gold,#c9a227);font-size:0.7em;margin-left:3px;vertical-align:middle;}
+</style>
 </head>
 <body>
 
@@ -683,7 +684,7 @@ function renderGlobalBoard(el, rows) {
     rows.slice(0, 10).forEach((e, i) => {
         const li = document.createElement('li');
         const n = String(e.n || '???').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3).padEnd(3, '?');
-        li.innerHTML = `<span class="rank">${i + 1}.</span><span class="name">${n}</span><span class="pts">${e.s}</span>`;
+        li.innerHTML = `<span class="rank">${i + 1}.</span><span class="name">${n}${e.h?'<span class="member-badge" title="'+e.h+'">◆</span>':''}</span><span class="pts">${e.s}</span>`;
         el.appendChild(li);
     });
 }
@@ -3902,7 +3903,7 @@ function renderLeaderboard(target, max) {
         const li = document.createElement('li');
         if (entry.you) li.classList.add('you');
         const displayName = String(entry.name || 'AAA').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3).padEnd(3, 'A');
-        li.innerHTML = `<span class="rank">${i + 1}.</span><span class="name">${displayName}</span><span class="pts">${entry.score}</span>`;
+        li.innerHTML = `<span class="rank">${i + 1}.</span><span class="name">${displayName}${entry.h?'<span class="member-badge" title="'+entry.h+'">◆</span>':''}</span><span class="pts">${entry.score}</span>`;
         target.appendChild(li);
     });
 }

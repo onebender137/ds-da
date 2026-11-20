@@ -315,6 +315,7 @@ kbd{font-family:var(--mono);font-size:11px;color:var(--mint);background:rgba(10,
     display:flex;flex-direction:column;gap:5px;box-shadow:0 5px 18px rgba(0,0,0,0.42);
     color:#e8e8f5;font-family:"Segoe UI",system-ui,-apple-system,sans-serif;}
 #radioBox.dsda-radio .radio-np-trk{color:#6ea8ff;}
+.member-badge{color:var(--gold,#c9a227);font-size:0.7em;margin-left:3px;vertical-align:middle;}
 </style>
 </head>
 <body>
@@ -876,7 +877,7 @@ function renderBoardList(el,top,me){
     const li=document.createElement('li');
     if(me&&e.n===me)li.classList.add('you');
     const n=String(e.n||'???').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,3).padEnd(3,'?');
-    li.innerHTML='<span class="rank">'+(i+1)+'.</span><span class="name">'+n+'</span><span class="pts">'+fmt(e.s)+'</span>';
+    li.innerHTML='<span class="rank">'+(i+1)+'.</span><span class="name">'+n+(e.h?'<span class="member-badge" title="'+e.h+'">◆</span>':'')+'</span><span class="pts">'+fmt(e.s)+'</span>';
     el.appendChild(li);
   });
 }
