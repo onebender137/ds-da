@@ -219,6 +219,7 @@
 }
 #gameover > :first-child { margin-top: auto; }
 #gameover > :last-child { margin-bottom: auto; }
+.member-badge{color:var(--gold,#c9a227);font-size:0.7em;margin-left:3px;vertical-align:middle;}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2344,7 +2345,7 @@ function renderTopList(el, top){
     const row = document.createElement('div');
     row.className = 'go-board-row';
     const rk = document.createElement('span'); rk.className = 'rk'; rk.textContent = i + 1;
-    const nn = document.createElement('span'); nn.className = 'nn'; nn.textContent = e.n;
+    const nn = document.createElement('span'); nn.className = 'nn'; nn.textContent = e.h || e.n; if (e.h) { const mb = document.createElement('span'); mb.className = 'member-badge'; mb.title = e.h; mb.textContent = '◆'; nn.appendChild(mb); }
     const ss = document.createElement('span'); ss.className = 'ss'; ss.textContent = Number(e.s).toLocaleString();
     row.append(rk, nn, ss);
     el.appendChild(row);

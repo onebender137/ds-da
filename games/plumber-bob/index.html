@@ -63,6 +63,7 @@
   padding: 16px 0;
 }
 #over > div, #scoresOv > div, #menu > div { margin: auto; }
+.member-badge{color:var(--gold,#c9a227);font-size:0.7em;margin-left:3px;vertical-align:middle;}
 </style>
 
   <!-- DSDA Radio network widget (shared 6-station dial) -->
@@ -1399,7 +1400,7 @@ function renderBoard(el, scores) {
   el.innerHTML = scores.map((s, i) => `
     <tr class="border-b border-white/10">
       <td class="py-1.5 pr-3 text-slate-400 w-8">${i + 1}</td>
-      <td class="py-1.5 pr-3 font-bold tracking-widest">${escapeHtml(s.n)}</td>
+      <td class="py-1.5 pr-3 font-bold tracking-widest">${escapeHtml(s.h || s.n)}${s.h ? '<span class="member-badge" title="' + escapeHtml(s.h) + '">◆</span>' : ''}</td>
       <td class="py-1.5 text-right font-bold text-amber-300 tabular-nums">${s.s}</td>
       <td class="py-1.5 pl-3 text-right text-xs text-slate-500 hidden sm:table-cell">${new Date(s.d).toLocaleDateString()}</td>
     </tr>`).join('');

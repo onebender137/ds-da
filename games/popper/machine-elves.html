@@ -507,6 +507,7 @@
 .loader-gauge-fill { height: 100%; width: 0%; border-radius: 4px;
   background: linear-gradient(90deg, #00e5ff, #4fd8f2);
   box-shadow: 0 0 12px rgba(0,229,255,0.7); transition: width .12s linear; }
+.member-badge{color:var(--gold,#c9a227);font-size:0.7em;margin-left:3px;vertical-align:middle;}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2964,7 +2965,7 @@ function renderTopList(el, top) {
     li.className = 'tier-' + t;
     li.title = tierLabel(t);
     const r = document.createElement('span'); r.className = 'rank'; r.textContent = i + 1;
-    const n = document.createElement('span'); n.className = 'name'; n.textContent = e.n;
+    const n = document.createElement('span'); n.className = 'name'; n.textContent = e.h || e.n; if (e.h) { const mb = document.createElement('span'); mb.className = 'member-badge'; mb.title = e.h; mb.textContent = '◆'; n.appendChild(mb); }
     const tier = document.createElement('span'); tier.className = 'tier'; tier.textContent = tierLabel(t);
     const sc = document.createElement('span'); sc.className = 'score'; sc.textContent = e.s;
     li.append(r, n, tier, sc);

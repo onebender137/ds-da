@@ -254,6 +254,7 @@
 @media (max-width: 520px) {
   #overlay .tops > li:nth-child(n+6) { display: none; }
 }
+.member-badge{color:var(--gold,#c9a227);font-size:0.7em;margin-left:3px;vertical-align:middle;}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2306,7 +2307,7 @@ function renderTopList(el, top) {
   top.forEach((e, i) => {
     const li = document.createElement('li');
     const r = document.createElement('span'); r.className = 'rank'; r.textContent = i + 1;
-    const n = document.createElement('span'); n.className = 'name'; n.textContent = e.n;
+    const n = document.createElement('span'); n.className = 'name'; n.textContent = e.h || e.n; if (e.h) { const mb = document.createElement('span'); mb.className = 'member-badge'; mb.title = e.h; mb.textContent = '◆'; n.appendChild(mb); }
     const s = document.createElement('span'); s.className = 's'; s.textContent = fmtTime(e.s);
     li.append(r, n, s);
     el.appendChild(li);

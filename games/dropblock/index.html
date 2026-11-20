@@ -323,6 +323,7 @@
 @media (max-width: 520px) {
   #overlay .tops > li:nth-child(n+6) { display: none; }
 }
+.member-badge{color:var(--gold,#c9a227);font-size:0.7em;margin-left:3px;vertical-align:middle;}
 </style>
 </head>
 <body class="menu-mode">
@@ -1908,7 +1909,7 @@ function renderTopList(el, top) {
   top.forEach((e, i) => {
     const li = document.createElement('li');
     const r = document.createElement('span'); r.className = 'rank'; r.textContent = i + 1;
-    const n = document.createElement('span'); n.className = 'name'; n.textContent = e.n;
+    const n = document.createElement('span'); n.className = 'name'; n.textContent = e.h || e.n; if (e.h) { const mb = document.createElement('span'); mb.className = 'member-badge'; mb.title = e.h; mb.textContent = '◆'; n.appendChild(mb); }
     const t = document.createElement('span'); t.className = 'tier'; t.textContent = tierName(i + 1);
     const s = document.createElement('span'); s.className = 'score'; s.textContent = e.s;
     li.append(r, n, t, s);

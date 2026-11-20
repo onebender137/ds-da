@@ -224,6 +224,7 @@ h2.big.win{color:var(--green)}h2.big.lose{color:var(--danger)}
 }
 @media (max-width:640px){.iconbtn{width:44px;height:44px;border-radius:12px}.hud-center{margin-right:54px}#levelPill .lvname{display:none}.qnerd{width:32px;height:32px}}
 @media (prefers-reduced-motion:reduce){#grain,#logo span,#mascot{animation:none}#comboPill{animation:none}}
+.member-badge{color:var(--gold,#c9a227);font-size:0.7em;margin-left:3px;vertical-align:middle;}
 </style>
 
   <!-- DSDA Radio network widget (shared 6-station dial) -->
@@ -1266,7 +1267,7 @@ async function openBoard(){
   const me=getInits();
   $('boardNote').textContent=res.live?'':'⚠️ showing the last synced copy';
   list.innerHTML=res.top.slice(0,10).map((r,i)=>
-    `<div class="brow${me&&r.n===me?' me':''}"><span class="rank">${i+1}</span><span class="bname">${esc(r.n)}</span><span class="bscore">${(+r.s||0).toLocaleString()}</span></div>`
+    `<div class="brow${me&&r.n===me?' me':''}"><span class="rank">${i+1}</span><span class="bname">${esc(r.h||r.n)}${r.h?'<span class="member-badge" title="'+esc(r.h)+'">◆</span>':''}</span><span class="bscore">${(+r.s||0).toLocaleString()}</span></div>`
   ).join('');
 }
 let toastT=null;

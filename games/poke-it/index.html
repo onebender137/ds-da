@@ -393,6 +393,7 @@ ol.lb-list li.empty{display:block;text-align:center;color:var(--ink-faint);font-
 }
 #veil{background:radial-gradient(ellipse at 50% 40%,#3a1a7a,#140838 70%)}
 #veil small{font-size:.62rem;font-weight:900;letter-spacing:.32em;color:var(--dsda-gold)}
+.member-badge{color:var(--gold,#c9a227);font-size:0.7em;margin-left:3px;vertical-align:middle;}
 </style>
 </head>
 <body>
@@ -1428,7 +1429,7 @@ function renderList(el,top,me,emptyMsg){
   if(!top||!top.length){el.innerHTML=`<li class="empty">${esc(emptyMsg)}</li>`;return;}
   el.innerHTML=top.slice(0,10).map((e,i)=>{
     const n=String(e.n||'???').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,3).padEnd(3,'?');
-    return `<li class="${me&&n===me?'you':''}"><span class="rk">${i+1}</span><span class="nm">${esc(n)}</span><span class="pt">${fmt(e.s)}</span></li>`;
+    return `<li class="${me&&n===me?'you':''}"><span class="rk">${i+1}</span><span class="nm">${esc(e.h||n)}${e.h?'<span class="member-badge" title="'+esc(e.h)+'">◆</span>':''}</span><span class="pt">${fmt(e.s)}</span></li>`;
   }).join('');
 }
 async function renderBoard(){

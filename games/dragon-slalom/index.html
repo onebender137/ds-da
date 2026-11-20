@@ -167,6 +167,7 @@ input:focus{border-color:var(--gold);box-shadow:0 0 15px rgba(255,203,99,.28)}
 }
   #name::placeholder { opacity: 0.4; }
   #saveBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+.member-badge{color:var(--gold,#c9a227);font-size:0.7em;margin-left:3px;vertical-align:middle;}
 </style>
 
   <!-- DSDA Radio network widget (shared 6-station dial) -->
@@ -543,7 +544,7 @@ function renderGlobal(el,rows,emptyMsg){
   var h="";
   if(!rows.length)h='<div class="empty">'+(emptyMsg||"No scores yet — be the first rider.")+'</div>';
   else for(var i=0;i<Math.min(10,rows.length);i++){var e=rows[i];
-    h+='<div class="row"><span class="rk">'+(i+1)+'</span><span class="nm">'+esc(e.n)+'</span><span class="pt">'+e.s+'</span></div>';}
+    h+='<div class="row"><span class="rk">'+(i+1)+'</span><span class="nm">'+esc(e.h||e.n)+(e.h?'<span class="member-badge" title="'+esc(e.h)+'">◆</span>':'')+'</span><span class="pt">'+e.s+'</span></div>';}
   el.innerHTML=h;
 }
 function openScores(){

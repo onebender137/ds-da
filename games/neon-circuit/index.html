@@ -293,6 +293,7 @@ body[data-steer="slide"] #pBrake{left:calc(14px + var(--safeL));bottom:calc(16px
   #steerTrack{bottom:calc(116px + var(--safeB))}
   #steerHint{display:none}
 }
+.member-badge{color:var(--gold,#c9a227);font-size:0.7em;margin-left:3px;vertical-align:middle;}
 </style>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-M9D0GNYMWJ"></script>
 <script>
@@ -2059,7 +2060,7 @@ const Board={
 };
 function renderTop(el,top,me,n){
  if(!el)return;if(!top||!top.length){el.innerHTML='<li class="empty">NO RACERS YET — FIRST SCORE TAKES THE TOP SPOT</li>';return}
- el.innerHTML=top.slice(0,n||10).map((e,i)=>`<li class="${me&&e.n===me?"you":""}"><span class="r">${i+1}.</span><span>${cleanInits(e.n).padEnd(3,"?")}</span><span class="p">${Math.round(e.s).toLocaleString()}</span></li>`).join("");
+ el.innerHTML=top.slice(0,n||10).map((e,i)=>`<li class="${me&&e.n===me?"you":""}"><span class="r">${i+1}.</span><span>${e.h?String(e.h).replace(/[^a-z0-9_-]/gi,'')+'<span class="member-badge" title="'+String(e.h).replace(/[^a-z0-9_-]/gi,'')+'">◆</span>':cleanInits(e.n).padEnd(3,"?")}</span><span class="p">${Math.round(e.s).toLocaleString()}</span></li>`).join("");
 }
 async function refreshTop(el,n,mark){const b=await Board.fetch();renderTop(el,b?b.top:null,getInits(),n);return b}
 async function postScore(score){
