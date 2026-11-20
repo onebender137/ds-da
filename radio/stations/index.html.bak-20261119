@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DSDA Radio — The Arcade Network</title>
+<meta property="og:title" content="DSDA Radio — The Arcade Network">
+<meta property="og:description" content="6 live stations, one dial, zero ads. Metal, bossa, chiptunes, classic rock, triphop & electronic — all broadcasting live off the same clock. Tune in.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ds-da.ca/radio/stations/">
+<meta property="og:image" content="https://ds-da.ca/radio/stations/station-og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="DSDA Radio — The Arcade Network">
+<meta name="twitter:description" content="6 live stations, one dial, zero ads. The secret frequency of the DSDA arcade. Tune in.">
+<meta name="twitter:image" content="https://ds-da.ca/radio/stations/station-og.png">
+<!-- GA4: track the hub page + radio events (see track() in radio.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-M9D0GNYMWJ"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-M9D0GNYMWJ', { page_title: 'DSDA Radio — The Arcade Network', page_path: '/radio/stations/' });
+</script>
+<style>
+  :root{
+    --bg:#07070d; --panel:#0d0d18; --panel2:#12122a; --border:#23233f;
+    --ink:#e8e8f5; --muted:#8a8ab0; --accent:#00e5ff; --accent2:#b967ff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:"Segoe UI",system-ui,-apple-system,sans-serif;
+    background-image:
+      radial-gradient(circle at 15% -5%, rgba(0,229,255,.10), transparent 42%),
+      radial-gradient(circle at 85% 0%, rgba(185,103,255,.10), transparent 42%);
+    min-height:100vh; padding:22px 16px 44px;
+  }
+  .wrap{max-width:900px;margin:0 auto}
+  header{text-align:center;margin-bottom:20px}
+  .logo{display:inline-flex;align-items:center;gap:10px}
+  .logo svg{width:38px;height:38px;filter:drop-shadow(0 0 10px rgba(0,229,255,.5))}
+  h1{font-size:32px;letter-spacing:6px;font-weight:800;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .sub{font-size:11px;letter-spacing:4px;color:var(--muted);margin-top:5px}
+
+  /* ============ HERO: the live dial is the big seller ============ */
+  .radio-frame{
+    background:linear-gradient(180deg,#101024,#0b0b18);
+    border:1px solid var(--border);border-radius:18px;
+    padding:20px 22px 18px;margin-bottom:26px;
+    box-shadow:0 12px 60px rgba(0,0,0,.55), 0 0 0 1px rgba(0,229,255,.06), inset 0 1px 0 rgba(255,255,255,.04);
+    position:relative;overflow:hidden;
+  }
+  .radio-frame::before{ /* subtle top glow line */
+    content:"";position:absolute;top:0;left:0;right:0;height:1px;
+    background:linear-gradient(90deg,transparent,var(--accent),var(--accent2),transparent);
+  }
+  .radio-frame .hint{font-size:12px;color:var(--muted);letter-spacing:.4px;margin-bottom:14px;text-align:center}
+  .radio-frame .hint b{color:var(--accent)}
+  .hero-badge{display:inline-flex;align-items:center;gap:6px;font-size:10px;letter-spacing:2px;
+    color:var(--accent);border:1px solid rgba(0,229,255,.3);border-radius:20px;padding:4px 12px;margin-bottom:12px}
+  .hero-badge .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);animation:pulse 1.4s infinite}
+
+  /* enlarge the radio widget — :not(.folded) bumps specificity ABOVE radio.js's
+     #radioBox.dsda-radio:not(.folded){max-width:300px} (which is appended later) */
+  .radio-frame #radioBox.dsda-radio:not(.folded){min-width:0;max-width:100%;width:100%;}
+  .radio-frame #radioBox.dsda-radio .radio-scale{height:112px;}
+  .radio-frame #radioBox.dsda-radio .radio-scale-track{top:66px;height:22px;border-radius:6px;}
+  .radio-frame #radioBox.dsda-radio .radio-tick{top:70px;height:13px;}
+  .radio-frame #radioBox.dsda-radio .radio-tick-major{top:66px;height:19px;}
+  .radio-frame #radioBox.dsda-radio .radio-stn-label{top:6px;font-size:19px;padding:5px 6px;letter-spacing:.5px;}
+  .radio-frame #radioBox.dsda-radio .radio-knob{top:50px;bottom:66px;width:5px;}
+  .radio-frame #radioBox.dsda-radio .radio-knob-handle{top:-9px;width:28px;height:28px;}
+  .radio-frame #radioBox.dsda-radio .radio-ctl{gap:26px;margin:10px 0;}
+  .radio-frame #radioBox.dsda-radio .radio-ctl button{font-size:30px;padding:8px 14px;}
+  .radio-frame #radioBox.dsda-radio .radio-np{padding:14px 16px;}
+  .radio-frame #radioBox.dsda-radio .radio-np-stn{font-size:15px;}
+  .radio-frame #radioBox.dsda-radio .radio-np-freq{font-size:15px;}
+  .radio-frame #radioBox.dsda-radio .radio-np-trk{font-size:23px;}
+  .radio-frame #radioBox.dsda-radio .radio-np-credit{font-size:11px;}
+  .radio-frame #radioBox.dsda-radio .radio-vol input{width:120px;}
+
+  /* ============ stations: smaller cards below the hero ============ */
+  .stations-head{display:flex;align-items:baseline;justify-content:space-between;margin:0 4px 12px}
+  .stations-head h2{font-size:14px;letter-spacing:3px;color:var(--muted);font-weight:700}
+  .stations-head span{font-size:11px;color:var(--muted);letter-spacing:1px}
+  .stations{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+  .stn{
+    display:flex;align-items:center;gap:12px;
+    background:var(--panel2);border:1px solid var(--border);border-left:3px solid var(--stn-accent,var(--accent));
+    border-radius:11px;padding:11px 13px;text-decoration:none;color:inherit;
+    transition:transform .12s, box-shadow .12s, border-color .12s;
+  }
+  .stn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.5);border-color:var(--stn-accent,var(--accent))}
+  .stn-thumb{
+    width:52px;height:52px;flex:0 0 auto;border-radius:9px;object-fit:cover;
+    border:1px solid var(--border);box-shadow:0 3px 10px rgba(0,0,0,.4);
+  }
+  .stn-freq{
+    font-size:21px;font-weight:800;letter-spacing:.5px;flex:0 0 auto;width:60px;text-align:center;
+    color:var(--stn-accent,var(--accent));text-shadow:0 0 12px var(--stn-accent,var(--accent));
+  }
+  .stn-freq small{display:block;font-size:8px;letter-spacing:2px;color:var(--muted);text-shadow:none;margin-top:1px}
+  .stn-body{flex:1;min-width:0}
+  .stn-name{font-size:14px;font-weight:700;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .stn-freq-row{display:flex;align-items:center;gap:8px;margin-top:2px}
+  .stn-freq-inline{font-size:12px;font-weight:800;letter-spacing:.5px;color:var(--stn-accent,var(--accent));text-shadow:0 0 10px var(--stn-accent,var(--accent))}
+  .stn-tag{font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .stn-live{display:inline-flex;align-items:center;gap:5px;font-size:9px;letter-spacing:1.5px;color:var(--stn-accent,var(--accent))}
+  .stn-live .dot{width:6px;height:6px;border-radius:50%;background:var(--stn-accent,var(--accent));box-shadow:0 0 7px var(--stn-accent,var(--accent));animation:pulse 1.4s infinite}
+  .stn-go{
+    flex:0 0 auto;background:var(--stn-accent,var(--accent));color:#05050a;font-weight:700;
+    font-size:11px;letter-spacing:1px;padding:7px 12px;border-radius:7px;text-decoration:none;
+  }
+  .stn:hover .stn-go{filter:brightness(1.1)}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+  footer{text-align:center;font-size:11px;color:var(--muted);letter-spacing:1px;margin-top:28px;line-height:1.7}
+  footer a{color:var(--accent);text-decoration:none}
+  @media(max-width:560px){
+    h1{font-size:24px;letter-spacing:4px}
+    .radio-frame{padding:16px 14px}
+    .radio-frame #radioBox.dsda-radio .radio-stn-label{font-size:15px;}
+    .radio-frame #radioBox.dsda-radio .radio-np-trk{font-size:19px;}
+    .stations{grid-template-columns:minmax(0,1fr)}  /* minmax(0,…): plain 1fr let the nowrap taglines push the cards off the side of a phone */
+  }
+</style>
+</head>
+<body>
+  <!-- ds-da.ca site header (shared by every radio page) -->
+  <script src="/radio/site-bar.js?v=1"></script>
+  <div class="wrap">
+    <header>
+      <div class="logo">
+        <svg viewBox="0 0 48 48" fill="none"><rect x="6" y="14" width="36" height="26" rx="4" stroke="#00e5ff" stroke-width="2.5"/><circle cx="30" cy="27" r="7" stroke="#00e5ff" stroke-width="2.5"/><circle cx="30" cy="27" r="2.5" fill="#00e5ff"/><line x1="11" y1="22" x2="22" y2="22" stroke="#00e5ff" stroke-width="2.5"/><line x1="11" y1="28" x2="20" y2="28" stroke="#00e5ff" stroke-width="2"/><line x1="14" y1="6" x2="26" y2="14" stroke="#b967ff" stroke-width="2.5" stroke-linecap="round"/></svg>
+        <h1>DSDA RADIO</h1>
+      </div>
+      <div class="sub">THE ARCADE NETWORK — TUNE IN</div>
+    </header>
+
+    <div class="radio-frame">
+      <div style="text-align:center"><span class="hero-badge"><span class="dot"></span>LIVE DIAL</span></div>
+      <div class="hint">🎙️ grab the knob to scan (static between stations) · tap a frequency · or use ⏮ / ⏭ to jump — <b>the same radio as in-game</b></div>
+      <div id="radioBox"></div>
+    </div>
+
+    <div class="stations-head">
+      <h2>STATIONS</h2>
+      <span id="stn-count"></span>
+    </div>
+    <div class="stations" id="stations"></div>
+
+    <footer>
+      Every listener shares the same broadcast second — tune in mid-song.<br>
+      Music is CC-licensed (credit shown on each station) · <a href="../">ds-da.ca</a>
+    </footer>
+  </div>
+
+  <script src="../radio.js?v=11"></script>
+  <script>
+  (function(){
+    var MANIFEST = '../stations.json';
+    // mount the shared live radio — persistent: starts open, never auto-folds
+    // (the dial is the hero of this page). `DSDARadio` is a top-level const
+    // (global lexical scope, NOT on window), so check `typeof`, not `window.*`.
+    if (typeof DSDARadio !== 'undefined') DSDARadio.init({ mount: 'radioBox', manifest: MANIFEST, persistent: true });
+
+    // render the (smaller) station cards — each links to its full standalone page
+    fetch(MANIFEST, { cache: 'no-store' })
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        var box = document.getElementById('stations');
+        var list = d.stations || [];
+        var cnt = document.getElementById('stn-count');
+        if (cnt) cnt.textContent = list.length + ' on air';
+        list.forEach(function(st){
+          var a = document.createElement('a');
+          a.className = 'stn';
+          a.href = st.id + '/';                 // -> /radio/stations/<id>/
+          a.style.setProperty('--stn-accent', st.accent || '#00e5ff');
+          // innerHTML is a static template; dynamic name/tagline go through
+          // textContent below, and frequency comes from our own trusted stations.json
+          a.innerHTML =
+            '<img class="stn-thumb" src="' + st.id + '/station-thumb.png" alt="' + st.name + '" loading="lazy">' +
+            '<div class="stn-body">' +
+              '<div class="stn-name"></div>' +
+              '<div class="stn-freq-row"><span class="stn-freq-inline"></span><span class="stn-live"><span class="dot"></span>LIVE</span></div>' +
+              '<div class="stn-tag"></div>' +
+            '</div>' +
+            '<span class="stn-go">LISTEN</span>';
+          a.querySelector('.stn-name').textContent = st.name;
+          a.querySelector('.stn-freq-inline').textContent = st.frequency + ' FM';
+          a.querySelector('.stn-tag').textContent = st.tagline || '';
+          box.appendChild(a);
+        });
+      })
+      .catch(function(e){
+        document.getElementById('stations').innerHTML =
+          '<div style="text-align:center;color:#8a8ab0">Could not load the station list.</div>';
+        console.error(e);
+      });
+  })();
+  </script>
+</body>
+</html>
