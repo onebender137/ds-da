@@ -197,7 +197,7 @@
   function parseChallenge() {
     try {
       var v = new URLSearchParams(location.search).get('vs'); if (!v) return null;
-      var m = v.toUpperCase().match(/^([A-Z0-9]{1,3})-(\d{1,9})$/); if (!m) return null;
+      var m = v.match(/^([A-Za-z0-9_-]{1,16})-(\d{1,9})$/); if (!m) return null;
       var c = { n: m[1], s: +m[2] };
       var d = new URLSearchParams(location.search).get('d'); if (d && /^\d{8}$/.test(d)) c.day = d;
       // optional cabinet-specific details (e.g. Neon Circuit's track + difficulty) and a readable label
@@ -209,7 +209,14 @@
     } catch (e) { return null; }
   }
   function challengeLink(game, score, extra) {
-    var me = inits() || 'YOU';
+    // Use account handle if logged in, otherwise fall back to initials
+    var me = 'YOU';
+    try {
+      var acc = window.DSDA && window.DSDA.account && window.DSDA.account.get();
+      if (acc && acc.handle) me = acc.handle;
+      else me = inits() || 'YOU';
+    } catch (e) {}
+    me = me.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 16);
     var u = cabinetUrl(game) + '?vs=' + me + '-' + Math.round(score);
     if (extra && extra.day) u += '&d=' + extra.day + '&daily=1';
     if (extra && extra.q) for (var k in extra.q) u += '&' + k + '=' + encodeURIComponent(extra.q[k]);
