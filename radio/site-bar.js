@@ -38,6 +38,10 @@
         '.dsda-bar .dsda-bar-radio:hover,.dsda-bar .dsda-bar-radio[aria-current]{background:#c9a227;border-color:#c9a227;color:#0a1628}' +
         '.dsda-bar-dot{width:7px;height:7px;border-radius:50%;flex:none;background:#e5484d;box-shadow:0 0 8px rgba(229,72,77,.8);animation:dsdaBarOnAir 1.8s ease-in-out infinite}' +
         '@keyframes dsdaBarOnAir{50%{opacity:.35}}' +
+        '.dsda-bar .dsda-bar-theme{display:inline-flex;align-items:center;gap:5px;background:transparent;border:1px solid rgba(201,162,39,.4);border-radius:20px;padding:4px 11px;cursor:pointer;font-size:.78rem;font-weight:500;color:#c9a227;transition:background .2s ease;font-family:Inter,system-ui,sans-serif;line-height:1.4}' +
+        '.dsda-bar .dsda-bar-theme:hover{background:rgba(201,162,39,.15)}' +
+        '.dsda-bar .dsda-bar-theme .theme-icon{font-size:.88rem;line-height:1}' +
+        '.dsda-bar .dsda-bar-theme .theme-label{font-size:.7rem;letter-spacing:.4px}' +
         '.dsda-bar a:focus-visible{outline:2px solid #c9a227;outline-offset:3px;border-radius:4px}' +
         /* make room: the pages centre a card in the viewport, so pad the top and let short screens scroll. */
         /* height:auto + min-height: a card taller than the screen grows the page down instead of sliding up under the bar */
@@ -73,6 +77,7 @@
             '<a class="dsda-bar-logo" href="/" aria-label="DSDA home">DSDA</a>' +
             '<nav class="dsda-bar-nav" aria-label="ds-da.ca">' +
                 LINKS.map(function (l) { return '<a class="dsda-bar-link" href="' + l.href + '">' + l.html + '</a>'; }).join('') +
+                '<button class="dsda-bar-theme" id="themeToggle" aria-label="Toggle theme"><span class="theme-icon">☀️</span><span class="theme-label">Light</span></button>' +
                 '<a class="dsda-bar-link dsda-bar-radio" href="/radio/stations/"' + (onHub ? ' aria-current="page"' : '') + '>' +
                     '<span class="dsda-bar-dot" aria-hidden="true"></span><span><span class="dsda-bar-wide">DSDA </span>Radio</span></a>' +
             '</nav>' +
