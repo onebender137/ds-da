@@ -94,6 +94,14 @@
   .top-games .k { font-size:8.5px; letter-spacing:2px; color:var(--muted); margin-bottom:7px; }
   .tg-row { display:flex; gap:6px; flex-wrap:wrap; }
   .tg { display:inline-flex; align-items:center; gap:5px; background:rgba(201,162,39,0.06); border:1px solid var(--line); border-radius:7px; padding:5px 9px; font-size:10.5px; }
+  .recent-games { margin-bottom:14px; }
+  .recent-games .k { font-size:8.5px; letter-spacing:2px; color:var(--muted); margin-bottom:7px; }
+  .rg-list { max-height:120px; overflow-y:auto; border:1px solid var(--line); border-radius:7px; }
+  .rg-item { display:flex; align-items:center; gap:8px; padding:6px 9px; border-bottom:1px solid var(--line); font-size:10.5px; }
+  .rg-item:last-child { border-bottom:none; }
+  .rg-date { color:var(--muted); font-size:9.5px; min-width:72px; }
+  .rg-game { color:var(--text); font-weight:600; flex:1; }
+  .rg-score { color:var(--gold-bright, #e6c84a); font-weight:700; font-family:"Playfair Display",serif; }
   .tg .r { font-family:"Playfair Display",serif; font-weight:800; color:var(--gold-bright); font-size:13px; }
   .tg .g { color:var(--ink); font-weight:500; letter-spacing:0.3px; }
   .stats { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px; }
@@ -179,6 +187,10 @@
         <div class="top-games" id="c-top-games" style="display:none">
           <div class="k">TOP GAMES</div>
           <div class="tg-row" id="c-top-games-row"></div>
+        </div>
+        <div class="recent-games" id="c-recent-games" style="display:none">
+          <div class="k">RECENT GAMES</div>
+          <div class="rg-list" id="c-recent-games-list"></div>
         </div>
         <div class="stats">
           <div class="stat"><div class="k">TOP SCORE</div><div class="v gold" id="c-top">0</div></div>
@@ -301,6 +313,19 @@
         tgRow.appendChild(d);
       });
       $('c-top-games').style.display = 'block';
+    }
+    // recent games
+    var recentGames = profile.recentGames || [];
+    if (recentGames.length) {
+      var rgList = $('c-recent-games-list'); rgList.innerHTML = '';
+      recentGames.forEach(function (rg) {
+        var d = document.createElement('div'); d.className = 'rg-item';
+        var date = new Date(rg.created);
+        var dateStr = date.toLocaleDateString('en-US', {month:'short', day:'numeric'}) + ' ' + date.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
+        d.innerHTML = '<span class="rg-date">' + dateStr + '</span><span class="rg-game">' + rg.game + '</span><span class="rg-score">' + rg.score.toLocaleString() + '</span>';
+        rgList.appendChild(d);
+      });
+      $('c-recent-games').style.display = 'block';
     }
     // streak
     if (sync && sync.daily && sync.daily.streak) $('c-streak').textContent = sync.daily.streak + ' days';
