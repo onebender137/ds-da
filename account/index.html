@@ -4,6 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>DSDA Arcade — Player Card</title>
+<meta name="description" content="Your high scores, badges & on-chain identity — all tied to one shareable card. Top 3 win BSV at year-end.">
+<meta property="og:title" content="DSDA Arcade — Player Card">
+<meta property="og:description" content="Your high scores, badges & on-chain identity — all in one shareable card. Top 3 win BSV at year-end.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ds-da.ca/account/">
+<meta property="og:image" content="https://ds-da.ca/account/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="DSDA Arcade — Player Card">
+<meta name="twitter:description" content="Your high scores, badges & on-chain identity — all in one shareable card.">
+<meta name="twitter:image" content="https://ds-da.ca/account/og-image.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -75,6 +87,9 @@
   .bar i { display:block; height:100%; width:0%; border-radius:999px; background:linear-gradient(90deg,#8a6d1c,var(--gold-bright)); box-shadow:0 0 12px rgba(232,198,90,0.5); transition:width .6s; }
   .running { font-size:10.5px; color:var(--gold-bright); letter-spacing:0.5px; display:flex; align-items:center; gap:6px; }
   .running b { font-weight:700; }
+  .rankline { font-size:10.5px; color:var(--muted); margin-top:9px; letter-spacing:0.5px; display:flex; align-items:center; gap:6px; }
+  .rankline b { color:var(--gold-bright); font-family:"Playfair Display",serif; font-size:15px; font-weight:800; }
+  .rankline .of { color:var(--muted); }
   .stats { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px; }
   .stat { background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:9px; padding:8px 10px; }
   .stat .k { font-size:8px; letter-spacing:1.5px; color:var(--muted); }
@@ -152,6 +167,7 @@
           </div>
           <div class="bar"><i id="c-bar"></i></div>
           <div class="running">◆ <span><b id="c-running">Climb the ranks</b> — Top 3 win BSV at year-end</span></div>
+          <div class="rankline" id="c-rankline" style="display:none">🏆 <span>Season rank <b id="c-rank">#—</b> <span class="of">of <span id="c-ranktotal">—</span> players</span></span></div>
         </div>
         <div class="stats">
           <div class="stat"><div class="k">TOP SCORE</div><div class="v gold" id="c-top">0</div></div>
@@ -287,12 +303,29 @@
     $('c-url').textContent = 'ds-da.ca/account?player=' + profile.id.slice(0, 8);
     $('c-qr').innerHTML = qrSvg(url);
     $('c-share').onclick = function () { shareCard(url, handle); };
+    // Season rank (async — fetches the leaderboard, finds this player).
+    loadRank(profile.id);
   }
 
   function shareCard(url, handle) {
     var text = 'Check out my DSDA arcade card — ' + handle + '!';
     if (navigator.share) { navigator.share({ title: 'DSDA Arcade Card', text: text, url: url }).catch(function () {}); }
     else { (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(function () { toast('📋 Card link copied — ' + url); }, function () { toast(url); }); }
+  }
+
+  // Season rank: fetch the leaderboard, find this player, show "#N of M".
+  function loadRank(playerId) {
+    fetch((window.DSDA_API_BASE || 'https://api.ds-da.ca') + '/api/account/leaderboard')
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (!j || !j.ok || !j.top) return;
+        var me = null;
+        for (var i = 0; i < j.top.length; i++) if (j.top[i].id === playerId) { me = j.top[i]; break; }
+        $('c-rank').textContent = me ? '#' + me.rank : '—';
+        $('c-ranktotal').textContent = fmt(j.total);
+        $('c-rankline').style.display = 'flex';
+      })
+      .catch(function () {});
   }
 
   // ---- load the card (owner view) ----

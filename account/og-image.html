@@ -1,0 +1,77 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1200px; height: 630px; overflow: hidden; }
+  body {
+    font-family: "Inter", -apple-system, sans-serif;
+    background: radial-gradient(900px 500px at 30% 0%, #10182a 0%, #06090f 60%);
+    color: #f4f1e8; position: relative;
+    display: flex; align-items: center;
+  }
+  .glow { position: absolute; top: -200px; left: -100px; width: 700px; height: 700px;
+    background: radial-gradient(circle, rgba(201,162,39,0.14) 0%, transparent 65%); }
+  .wrap { display: flex; align-items: center; gap: 60px; padding: 0 80px; width: 100%; }
+  .left { flex: 1; }
+  .brand { font-family: "Playfair Display", serif; font-weight: 800; font-size: 64px;
+    letter-spacing: 2px; color: #e8c65a; line-height: 1; }
+  .brand small { display: block; font-family: "Inter"; font-weight: 600; font-size: 20px;
+    letter-spacing: 8px; color: #8b93a3; margin-top: 14px; }
+  .season { display: inline-block; margin-top: 30px; font-size: 15px; letter-spacing: 4px;
+    color: #c9a227; border: 1px solid rgba(201,162,39,0.4); padding: 9px 18px; border-radius: 999px; }
+  .tagline { margin-top: 34px; font-size: 24px; line-height: 1.5; color: #c8cdd8; max-width: 520px; }
+  .tagline b { color: #f4f1e8; }
+  .cta { margin-top: 38px; font-size: 17px; letter-spacing: 2px; color: #0a0e14;
+    background: linear-gradient(90deg, #c9a227, #e8c65a); padding: 15px 30px; border-radius: 12px;
+    font-weight: 700; display: inline-block; }
+  .right { width: 300px; height: 420px; border-radius: 22px; position: relative;
+    background: linear-gradient(160deg, #101a2b 0%, #0a0f1a 55%, #0c1220 100%);
+    box-shadow: 0 30px 70px rgba(0,0,0,0.6), 0 0 0 1.5px rgba(201,162,39,0.35);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; }
+  .right::before { content: ""; position: absolute; inset: 0; border-radius: 22px; padding: 2px;
+    background: conic-gradient(from 180deg, #c9a227, #6b5416, #e8c65a, #8a6d1c, #c9a227);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude; }
+  .avatar { width: 120px; height: 120px; border-radius: 50%;
+    background: radial-gradient(circle at 50% 35%, #1a2438 0%, #0c1320 70%);
+    border: 2.5px solid #c9a227; box-shadow: 0 0 30px rgba(201,162,39,0.4);
+    display: flex; align-items: center; justify-content: center; position: relative; }
+  .avatar .glyph { font-family: "Playfair Display", serif; font-weight: 800; font-size: 48px;
+    color: #e8c65a; text-shadow: 0 0 20px rgba(232,198,90,0.5); }
+  .avatar .tier { position: absolute; bottom: -8px; right: -10px; background: #c9a227;
+    color: #0a0e14; font-size: 12px; font-weight: 700; letter-spacing: 1px; padding: 5px 12px; border-radius: 999px; }
+  .rhandle { margin-top: 26px; font-family: "Playfair Display", serif; font-weight: 700;
+    font-size: 30px; letter-spacing: 1px; color: #f4f1e8; }
+  .raddr { font-size: 12px; color: #8b93a3; letter-spacing: 1px; margin-top: 6px; font-family: monospace; }
+  .rstats { display: flex; gap: 14px; margin-top: 26px; }
+  .rstat { text-align: center; }
+  .rstat .k { font-size: 10px; letter-spacing: 2px; color: #8b93a3; }
+  .rstat .v { font-family: "Playfair Display", serif; font-weight: 800; font-size: 24px;
+    color: #e8c65a; margin-top: 4px; }
+  .foot { position: absolute; bottom: 34px; left: 80px; font-size: 14px; letter-spacing: 2px;
+    color: #5a6273; }
+  .foot b { color: #c9a227; }
+</style></head>
+<body>
+  <div class="glow"></div>
+  <div class="wrap">
+    <div class="left">
+      <div class="brand">DSDA ARCADE<small>PLAYER CARD</small></div>
+      <div class="season">2026 SEASON</div>
+      <p class="tagline">Your <b>high scores</b>, <b>badges</b> &amp; <b>on-chain identity</b> — all tied to one shareable card. Top 3 win BSV at year-end.</p>
+      <div class="cta">GET YOUR CARD →</div>
+    </div>
+    <div class="right">
+      <div class="avatar"><span class="glyph">DS</span><span class="tier">GOLD</span></div>
+      <div class="rhandle">PLAYER</div>
+      <div class="raddr">1A2b…9f3c</div>
+      <div class="rstats">
+        <div class="rstat"><div class="k">SEASON</div><div class="v">184</div></div>
+        <div class="rstat"><div class="k">RANK</div><div class="v">#4</div></div>
+        <div class="rstat"><div class="k">BADGES</div><div class="v">11</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><b>ds-da.ca</b> / account</div>
+</body></html>
