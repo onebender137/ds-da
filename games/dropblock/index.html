@@ -1433,7 +1433,31 @@ function gameOver() {
   setDanger(false);
   updatePreview();
   elOverlay.classList.remove('hidden');
-  elInitials.focus();
+  // Logged-in members: the score already went to their account (arcade-social's
+  // game_over hook → DSDA.account.submitScore), so no initials prompt and no
+  // second initials-based post. Keep a local copy under the handle.
+  const member = memberHandle();
+  const lbl = document.querySelector('label[for="initials"]');
+  elInitials.style.display = elSave.style.display = member ? 'none' : '';
+  if (lbl) lbl.style.display = member ? 'none' : '';
+  if (member) {
+    if (score > 0) {
+      const t = saveToStorage(member, score, member);
+      renderTopList(elTopList, t);
+      const mine = t.findIndex(e => e.h === member && e.s === score);
+      if (mine >= 0 && elTopList.children[mine]) elTopList.children[mine].classList.add('me');
+      elSavedMsg.textContent = 'Saved to your account as ' + member + ' ◆';
+    }
+  } else elInitials.focus();
+}
+// Account handle if the player is logged in to the arcade (arcade-account.js), else ''.
+function memberHandle() {
+  try {
+    const a = window.DSDA && window.DSDA.account;
+    if (!a || !a.getToken || !a.getToken()) return '';
+    const acc = a.getAccount && a.getAccount();
+    return acc && acc.handle ? String(acc.handle).replace(/[^a-z0-9_-]/gi, '').slice(0, 16) : '';
+  } catch (e) { return ''; }
 }
 function setDanger(on) {
   if (on === dangerOn) return;
@@ -1736,9 +1760,11 @@ function loadScores() {
     return Array.isArray(a) ? a : [];
   } catch (e) { return []; }
 }
-function saveToStorage(name, s) {
+function saveToStorage(name, s, handle) {
   const arr = loadScores();
-  arr.push({ n: name, s: s, d: Date.now() });
+  const row = { n: name, s: s, d: Date.now() };
+  if (handle) row.h = handle;
+  arr.push(row);
   arr.sort((a, b) => b.s - a.s);
   const top = arr.slice(0, 10);
   try { localStorage.setItem(SCORE_KEY, JSON.stringify(top)); } catch (e) {}
@@ -1944,7 +1970,7 @@ async function submitGlobal(name, s) {
   } catch (e) { return 'err'; }
 }
 function saveScore() {
-  if (phase !== 'over' || elSave.disabled) return;
+  if (phase !== 'over' || elSave.disabled || memberHandle()) return;
   track('score_submit', { score });
   let name = elInitials.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
   if (!name) name = dsdaInits();
