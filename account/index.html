@@ -135,7 +135,7 @@
       <div class="divider">OR EMAIL</div>
       <input id="email" type="email" placeholder="email address" autocomplete="email">
       <input id="pass" type="password" placeholder="password" autocomplete="current-password">
-      <input id="handle" type="text" placeholder="public handle (shown on your card)" maxlength="16" autocomplete="nickname" style="display:none">
+      <input id="handle" type="text" placeholder="handle: a-z 0-9 _ - (2–16)" maxlength="16" autocomplete="nickname" autocapitalize="none" autocorrect="off" spellcheck="false" style="display:none">
       <button class="btn" id="b-login">Log in</button>
       <button class="btn ghost" id="b-register">Create account</button>
       <div class="links"><a id="b-forgot">Forgot password?</a><a id="b-home">← Back to arcade</a></div>
@@ -394,8 +394,8 @@
     // the email's local part onto a public, shareable card).
     var hEl = $('handle');
     if (hEl.style.display === 'none') { hEl.style.display = 'block'; hEl.focus(); return msg('Pick a public handle — this is what other players see.', 'ok'); }
-    var handle = hEl.value.trim().slice(0, 16);
-    if (!handle) { hEl.focus(); return msg('Pick a public handle', 'err'); }
+    var handle = cleanHandle(hEl.value);
+    if (handle.length < 2) { hEl.focus(); return msg('Handle needs 2–16 characters: a-z, 0-9, _ or -', 'err'); }
     window.DSDA.account.register(email, handle, pw).then(function (r) {
       if (r.ok) { msg(''); loadCard(); } else { msg(r.error, 'err'); }
     });
@@ -409,6 +409,14 @@
       else { msg(j.message || 'If that address is registered, a reset link is on its way.', 'ok'); }
     });
   };
+  // Mirror the Worker's cleanHandle (lowercase, [a-z0-9_-], max 16) live, so
+  // the handle the player types is exactly the handle they get.
+  function cleanHandle(v) { return String(v || '').toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 16); }
+  $('handle').addEventListener('input', function () {
+    var el = this, c = cleanHandle(el.value);
+    if (c !== el.value) el.value = c;
+  });
+  $('handle').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('b-register').click(); });
   $('b-home').onclick = function () { window.location.href = '/games/'; };
   $('b-logout').onclick = function () { window.DSDA.account.logout(); show('login'); };
   $('pass').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('b-login').click(); });
