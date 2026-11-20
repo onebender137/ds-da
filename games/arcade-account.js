@@ -108,7 +108,7 @@
     if (!window.CWI || typeof window.CWI.getPublicKey !== 'function') {
       return Promise.resolve({ ok: false, error: 'no wallet (open in BSV Browser / Pocket Wallet)' });
     }
-    return api('/nonce').then(function (n) {
+    return api('/nonce?purpose=link').then(function (n) {
       var nonce = n.j.nonce;
       var proto = { protocolID: [0, 'dsda ca login'], keyID: 'login', counterparty: 'anyone' };
       return window.CWI.getPublicKey({ protocolID: proto.protocolID, keyID: proto.keyID, counterparty: proto.counterparty, forSelf: true })
