@@ -3882,6 +3882,7 @@ function saveScore() {
     saveMsgEl.innerText = 'SUBMITTING TO GLOBAL…';
     submitGlobal(name, score).then(res => {
         saveMsgEl.innerText = res === 'ok' ? 'ON THE GLOBAL BOARD' + (member ? ' AS ' + member.toUpperCase() + ' \u25c6' : '') + ' ✓' : 'SAVED LOCALLY · GLOBAL: ' + res;
+        if (res === 'ok') loadGlobalBoard();   // the over-screen board was fetched before this post landed
     });
 }
 
