@@ -202,7 +202,18 @@
      Every cabinet posts its score to <api>/api/board/score itself (it knows the
      right board id + score). When logged in, attach the session token so the
      Worker writes the row under the account handle. Expired/invalid session
-     (401) -> log out and retry once as a casual so the score isn't lost. */
+     (401) -> log out and retry once as a casual so the score isn't lost.
+     Rate-limited (429) -> toast how long to wait (Retry-After, seconds per
+     the HTTP spec), so the player sees "slow down", not just "offline". */
+  function rateToast(r) {
+    try {
+      var ra = r.headers && r.headers.get && r.headers.get('Retry-After');
+      var secs = ra && /^\d+$/.test(ra) ? +ra : ra ? Math.max(0, (Date.parse(ra) - Date.now()) / 1000) : 0;
+      var mins = Math.max(1, Math.ceil((secs || 60) / 60));
+      if (window.DSDA && typeof window.DSDA.toast === 'function')
+        window.DSDA.toast('\u23f3', 'BOARD LIMIT HIT', 'Too many posts this hour \u2014 try again in ~' + mins + ' min', true, 5200);
+    } catch (e) {}
+  }
   (function () {
     var orig = window.fetch;
     if (typeof orig !== 'function' || orig.__dsdaBoard) return;
@@ -210,8 +221,10 @@
       try {
         var url = typeof input === 'string' ? input : (input && input.url) || '';
         var method = ((init && init.method) || 'GET').toUpperCase();
-        var t = tok();
-        if (t && method === 'POST' && /\/api\/board\/score(\?|$)/.test(url)) {
+        if (method === 'POST' && /\/api\/board\/score(\?|$)/.test(url)) {
+          var watch = function (r) { if (r && r.status === 429) rateToast(r); return r; };
+          var t = tok();
+          if (!t) return orig.call(window, input, init).then(watch);
           var h = {};
           var src = init.headers;
           if (src && typeof src.forEach === 'function' && !Array.isArray(src)) src.forEach(function (v, k) { h[k] = v; });
@@ -219,9 +232,9 @@
           h['Authorization'] = 'Bearer ' + t;
           var authed = Object.assign({}, init, { headers: h });
           return orig.call(window, input, authed).then(function (r) {
-            if (r.status !== 401) return r;
+            if (r.status !== 401) return watch(r);
             logout();
-            return orig.call(window, input, init);
+            return orig.call(window, input, init).then(watch);
           });
         }
       } catch (e) {}

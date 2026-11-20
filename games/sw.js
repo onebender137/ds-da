@@ -22,7 +22,8 @@
 // v9: challenge links use the account handle (fix getAccount call).
 // v10: arcade-account.js v4 (purpose-scoped link nonce).
 // v11: members post scores through each cabinet's board call under their handle.
-const CACHE = 'dsda-arcade-v11';
+// v12: board 429 -> 'slow down' toast (arcade-account.js v6).
+const CACHE = 'dsda-arcade-v12';
 const CORE = [
   './',
   './manifest.webmanifest',
