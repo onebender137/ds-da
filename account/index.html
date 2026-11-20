@@ -134,6 +134,9 @@
   .card-actions { display:flex; gap:10px; }
   .card-actions button { background:transparent; color:var(--muted); border:1px solid rgba(255,255,255,0.12); font-family:"Inter"; font-size:11px; letter-spacing:1px; padding:8px 16px; border-radius:8px; cursor:pointer; }
   .card-actions button:hover { color:var(--gold-bright); border-color:var(--line); }
+  .card-back { text-align:center; margin-top:18px; }
+  .back-btn { color:var(--muted); text-decoration:none; font-size:12px; letter-spacing:1px; padding:10px 20px; border:1px solid var(--line); border-radius:8px; transition:all .15s; display:inline-block; }
+  .back-btn:hover { color:var(--gold-bright); border-color:var(--gold); background:rgba(201,162,39,0.06); }
   .toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px); background:#0c1320; border:1px solid var(--gold); color:var(--ink); padding:11px 18px; border-radius:10px; font-size:12px; opacity:0; transition:all .25s; pointer-events:none; }
   .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
   .loading { color:var(--muted); font-size:12px; letter-spacing:2px; }
@@ -218,6 +221,9 @@
     </div>
     <div class="card-actions" id="card-actions">
       <button id="b-logout">Log out</button>
+    </div>
+    <div class="card-back">
+      <a href="/games/" class="back-btn">← Back to Arcade</a>
     </div>
   </div>
 
