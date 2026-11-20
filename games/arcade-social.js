@@ -73,7 +73,7 @@
     p.plays = p.plays || 0;
     return p;
   }
-  function save(p) { try { localStorage.setItem(KEY, JSON.stringify(p)); } catch (e) {} }
+  function save(p) { try { localStorage.setItem(KEY, JSON.stringify(p)); window.dispatchEvent(new CustomEvent('DSDA:passport-saved', { detail: p })); } catch (e) {} }
   function inits() {
     try { return (localStorage.getItem(INITS_KEY) || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3); }
     catch (e) { return ''; }
@@ -232,6 +232,10 @@
     if (score != null && score > (g.best || 0)) { g.best = Math.round(score); newBest = true; }
     if (lvl > (g.bestLevel || 0)) g.bestLevel = lvl;
     save(p);
+    // Opt-in: submit the score to the account (wallet-signed or session; no-op if not logged in)
+    if (score != null && score > 0 && window.DSDA.account && window.DSDA.account.submitScore) {
+      window.DSDA.account.submitScore(game, score);
+    }
     var played = Object.keys(p.games).length;
     badge('first-coin');
     if (played >= 3) badge('tourist');
@@ -340,6 +344,19 @@
     passport: load, badge: badge, toast: toast, share: share,
     challenge: CH, challengeLink: challengeLink, daily: daily, fmt: fmt
   });
+
+  // Opt-in account sync: load arcade-account.js once (no-op if the player
+  // isn't logged in). It reads the token, pulls persistent state into
+  // localStorage on load, and pushes on every DSDA:passport-saved.
+  try {
+    if (!document.getElementById('dsda-account-script')) {
+      var s = document.createElement('script');
+      s.id = 'dsda-account-script';
+      s.src = 'arcade-account.js';
+      s.async = true;
+      (document.head || document.documentElement).appendChild(s);
+    }
+  } catch (e) {}
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', showChallengeCard);
   else showChallengeCard();

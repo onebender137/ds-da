@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DSDA Arcade — Player Card</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #06090f; --card: #0b111c; --gold: #c9a227; --gold-bright: #e8c65a;
+    --ink: #f4f1e8; --muted: #8b93a3; --line: rgba(201,162,39,0.28);
+  }
+  body {
+    font-family: "Inter", -apple-system, sans-serif;
+    background: radial-gradient(1200px 700px at 50% -10%, #10182a 0%, var(--bg) 60%);
+    color: var(--ink); min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 40px 20px; gap: 20px; -webkit-font-smoothing: antialiased;
+  }
+  .label { font-size: 11px; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; }
+  .wrap { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+
+  /* ---- login card ---- */
+  .login-card {
+    width: 340px; border-radius: 18px; padding: 28px 26px;
+    background: linear-gradient(160deg, #101a2b 0%, #0a0f1a 55%, #0c1220 100%);
+    box-shadow: 0 30px 70px rgba(0,0,0,0.6), 0 0 0 1px rgba(201,162,39,0.18);
+    text-align: center;
+  }
+  .brand { font-family:"Playfair Display",serif; font-weight:800; font-size:18px; letter-spacing:1px; color:var(--gold-bright); }
+  .brand small { display:block; font-family:"Inter"; font-weight:600; font-size:9px; letter-spacing:3px; color:var(--muted); margin-top:3px; }
+  .tagline { font-size:12.5px; color:var(--muted); margin:16px 0 20px; line-height:1.5; }
+  .btn { display:block; width:100%; background:var(--gold); color:#0a0e14; border:none; font-family:"Inter"; font-weight:700; font-size:13px; letter-spacing:0.5px; padding:13px; border-radius:10px; cursor:pointer; transition:transform .1s, box-shadow .1s; }
+  .btn:hover { transform:translateY(-2px); box-shadow:0 8px 20px rgba(201,162,39,0.4); }
+  .btn.ghost { background:transparent; color:var(--gold-bright); border:1px solid var(--line); margin-top:10px; }
+  .divider { display:flex; align-items:center; gap:12px; color:var(--muted); font-size:10px; letter-spacing:2px; margin:18px 0; }
+  .divider::before, .divider::after { content:""; flex:1; height:1px; background:rgba(255,255,255,0.08); }
+  input { width:100%; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:var(--ink); font-family:"Inter"; font-size:13px; padding:12px 14px; border-radius:9px; margin-bottom:10px; outline:none; }
+  input:focus { border-color:var(--gold); }
+  .links { display:flex; justify-content:space-between; margin-top:12px; font-size:11px; }
+  .links a { color:var(--gold-bright); cursor:pointer; text-decoration:none; }
+  .links a:hover { text-decoration:underline; }
+  .msg { font-size:11.5px; margin-top:14px; min-height:14px; line-height:1.4; }
+  .msg.ok { color:#7fc97f; } .msg.err { color:#e07a7a; }
+
+  /* ---- the card (Variant A) ---- */
+  .card { position:relative; width:340px; border-radius:18px; background:linear-gradient(160deg,#101a2b 0%,#0a0f1a 55%,#0c1220 100%); padding:3px; box-shadow:0 30px 70px rgba(0,0,0,0.6), 0 0 0 1px rgba(201,162,39,0.18); }
+  .card::before { content:""; position:absolute; inset:0; border-radius:18px; padding:1.5px; background:conic-gradient(from 180deg,#c9a227,#6b5416,#e8c65a,#8a6d1c,#c9a227); -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask-composite:exclude; pointer-events:none; }
+  .inner { border-radius:15px; background:linear-gradient(180deg,#0c1320 0%,#090e18 100%); padding:20px 20px 18px; position:relative; overflow:hidden; }
+  .inner::after { content:""; position:absolute; top:-60%; left:-30%; width:60%; height:220%; background:linear-gradient(90deg,transparent,rgba(232,198,90,0.06),transparent); transform:rotate(18deg); pointer-events:none; }
+  .head { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+  .head .brand { font-size:15px; } .head .brand small { font-size:8.5px; }
+  .season { font-size:9px; letter-spacing:2px; color:var(--gold); border:1px solid var(--line); padding:4px 8px; border-radius:999px; }
+  .id { display:flex; flex-direction:column; align-items:center; text-align:center; margin-bottom:14px; }
+  .avatar { width:96px; height:96px; border-radius:50%; background:radial-gradient(circle at 50% 35%,#1a2438 0%,#0c1320 70%); border:2px solid var(--gold); box-shadow:0 0 24px rgba(201,162,39,0.35), inset 0 0 18px rgba(201,162,39,0.12); display:flex; align-items:center; justify-content:center; position:relative; }
+  .avatar .glyph { font-family:"Playfair Display",serif; font-weight:800; font-size:38px; color:var(--gold-bright); letter-spacing:1px; text-shadow:0 0 16px rgba(232,198,90,0.5); }
+  .avatar .tier { position:absolute; bottom:-6px; right:-6px; background:var(--gold); color:#0a0e14; font-size:9px; font-weight:700; letter-spacing:1px; padding:3px 8px; border-radius:999px; }
+  .handle { margin-top:14px; display:flex; align-items:center; gap:8px; }
+  .handle .name { font-family:"Playfair Display",serif; font-weight:700; font-size:24px; letter-spacing:1px; }
+  .handle .verified { width:16px; height:16px; border-radius:50%; background:var(--gold); display:flex; align-items:center; justify-content:center; font-size:10px; color:#0a0e14; }
+  .addr { font-size:10px; color:var(--muted); letter-spacing:1px; margin-top:3px; font-family:monospace; }
+  .addr.none { color:#5a6273; font-style:italic; }
+  .rank-row { display:flex; gap:10px; margin-bottom:14px; }
+  .rank { flex:1; background:rgba(201,162,39,0.06); border:1px solid var(--line); border-radius:10px; padding:9px 10px; text-align:center; }
+  .rank .k { font-size:8.5px; letter-spacing:2px; color:var(--muted); }
+  .rank .v { font-family:"Playfair Display",serif; font-weight:800; font-size:19px; color:var(--gold-bright); margin-top:2px; }
+  .season-box { background:linear-gradient(180deg,rgba(201,162,39,0.10),rgba(201,162,39,0.03)); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:14px; }
+  .season-box .top { display:flex; justify-content:space-between; align-items:baseline; }
+  .season-box .k { font-size:9px; letter-spacing:2px; color:var(--gold); }
+  .season-box .pts { font-family:"Playfair Display",serif; font-weight:800; font-size:20px; color:var(--ink); }
+  .season-box .pts small { font-size:11px; color:var(--muted); font-weight:400; }
+  .bar { height:7px; background:rgba(255,255,255,0.06); border-radius:999px; margin:9px 0 8px; overflow:hidden; }
+  .bar i { display:block; height:100%; width:0%; border-radius:999px; background:linear-gradient(90deg,#8a6d1c,var(--gold-bright)); box-shadow:0 0 12px rgba(232,198,90,0.5); transition:width .6s; }
+  .running { font-size:10.5px; color:var(--gold-bright); letter-spacing:0.5px; display:flex; align-items:center; gap:6px; }
+  .running b { font-weight:700; }
+  .stats { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px; }
+  .stat { background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:9px; padding:8px 10px; }
+  .stat .k { font-size:8px; letter-spacing:1.5px; color:var(--muted); }
+  .stat .v { font-weight:700; font-size:15px; margin-top:2px; }
+  .stat .v.gold { color:var(--gold-bright); }
+  .badges { margin-bottom:14px; }
+  .badges .k { font-size:8.5px; letter-spacing:2px; color:var(--muted); margin-bottom:8px; display:flex; justify-content:space-between; }
+  .badge-row { display:flex; gap:7px; flex-wrap:wrap; }
+  .badge { width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:16px; background:rgba(201,162,39,0.10); border:1px solid var(--line); cursor:default; transition:transform .12s; position:relative; }
+  .badge:hover { transform:translateY(-3px); box-shadow:0 6px 16px rgba(201,162,39,0.3); }
+  .badge.locked { opacity:0.28; filter:grayscale(1); background:rgba(255,255,255,0.03); border-color:rgba(255,255,255,0.08); }
+  .badge .tip { position:absolute; bottom:115%; left:50%; transform:translateX(-50%); background:#0a0e14; border:1px solid var(--line); color:var(--ink); font-size:9px; padding:3px 7px; border-radius:6px; white-space:nowrap; opacity:0; pointer-events:none; transition:opacity .12s; z-index:2; }
+  .badge:hover .tip { opacity:1; }
+  .onchain { display:flex; align-items:center; gap:9px; background:rgba(201,162,39,0.05); border:1px dashed var(--line); border-radius:10px; padding:9px 11px; margin-bottom:14px; }
+  .onchain .ic { font-size:15px; }
+  .onchain .t { font-size:10px; color:var(--ink); }
+  .onchain .t b { color:var(--gold-bright); }
+  .onchain .t span { color:var(--muted); font-family:monospace; font-size:9px; display:block; margin-top:1px; }
+  .onchain.dim { opacity:0.6; }
+  .foot { display:flex; align-items:center; gap:12px; border-top:1px solid rgba(255,255,255,0.06); padding-top:14px; }
+  .qr { width:52px; height:52px; border-radius:6px; background:#fff; padding:4px; flex-shrink:0; }
+  .qr svg { width:100%; height:100%; display:block; }
+  .foot .info { flex:1; min-width:0; }
+  .foot .info .l { font-size:8.5px; letter-spacing:2px; color:var(--muted); }
+  .foot .info .u { font-size:10.5px; color:var(--gold-bright); font-family:monospace; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .share { background:var(--gold); color:#0a0e14; border:none; font-family:"Inter"; font-weight:700; font-size:11px; letter-spacing:1px; padding:9px 14px; border-radius:8px; cursor:pointer; transition:transform .1s, box-shadow .1s; }
+  .share:hover { transform:translateY(-2px); box-shadow:0 8px 20px rgba(201,162,39,0.4); }
+  .card-actions { display:flex; gap:10px; }
+  .card-actions button { background:transparent; color:var(--muted); border:1px solid rgba(255,255,255,0.12); font-family:"Inter"; font-size:11px; letter-spacing:1px; padding:8px 16px; border-radius:8px; cursor:pointer; }
+  .card-actions button:hover { color:var(--gold-bright); border-color:var(--line); }
+  .toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px); background:#0c1320; border:1px solid var(--gold); color:var(--ink); padding:11px 18px; border-radius:10px; font-size:12px; opacity:0; transition:all .25s; pointer-events:none; }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  .loading { color:var(--muted); font-size:12px; letter-spacing:2px; }
+</style>
+</head>
+<body>
+  <!-- Login view -->
+  <div id="login-view" class="wrap" style="display:none">
+    <div class="login-card">
+      <div class="brand">DSDA ARCADE<small>PLAYER CARD</small></div>
+      <p class="tagline">Log in to see your card, sync your scores &amp; badges, and go on-chain. Your WIF stays yours.</p>
+      <button class="btn" id="b-wallet">🔐 Log in with wallet</button>
+      <div class="divider">OR EMAIL</div>
+      <input id="email" type="email" placeholder="email address" autocomplete="email">
+      <input id="pass" type="password" placeholder="password" autocomplete="current-password">
+      <button class="btn" id="b-login">Log in</button>
+      <button class="btn ghost" id="b-register">Create account</button>
+      <div class="links"><a id="b-forgot">Forgot password?</a><a id="b-home">← Back to arcade</a></div>
+      <div class="msg" id="login-msg"></div>
+    </div>
+  </div>
+
+  <!-- Card view -->
+  <div id="card-view" class="wrap" style="display:none">
+    <div class="label" id="card-label">YOUR CARD</div>
+    <div class="card">
+      <div class="inner">
+        <div class="head">
+          <div class="brand">DSDA ARCADE<small>PLAYER CARD</small></div>
+          <div class="season">2026 SEASON</div>
+        </div>
+        <div class="id">
+          <div class="avatar"><span class="glyph" id="c-glyph">?</span><span class="tier" id="c-tier">ROOKIE</span></div>
+          <div class="handle"><span class="name" id="c-name">—</span><span class="verified" id="c-verified" style="display:none">✓</span></div>
+          <div class="addr" id="c-addr">—</div>
+        </div>
+        <div class="rank-row">
+          <div class="rank"><div class="k">CABINETS</div><div class="v" id="c-cabs">0</div></div>
+          <div class="rank"><div class="k">GAMES PLAYED</div><div class="v" id="c-plays">0</div></div>
+        </div>
+        <div class="season-box">
+          <div class="top">
+            <span class="k">SEASON POINTS</span>
+            <span class="pts"><span id="c-points">0</span><small> / <span id="c-smax">240</span></small></span>
+          </div>
+          <div class="bar"><i id="c-bar"></i></div>
+          <div class="running">◆ <span><b id="c-running">Climb the ranks</b> — Top 3 win BSV at year-end</span></div>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="k">TOP SCORE</div><div class="v gold" id="c-top">0</div></div>
+          <div class="stat"><div class="k">TOTAL SCORE</div><div class="v" id="c-total">0</div></div>
+          <div class="stat"><div class="k">BEST DAILY STREAK</div><div class="v" id="c-streak">—</div></div>
+          <div class="stat"><div class="k">BADGES</div><div class="v" id="c-badges-n">0 / 16</div></div>
+        </div>
+        <div class="badges">
+          <div class="k"><span>BADGES</span><span id="c-badges-label">0 / 16</span></div>
+          <div class="badge-row" id="c-badge-row"></div>
+        </div>
+        <div class="onchain" id="c-onchain">
+          <span class="ic">🔗</span>
+          <div class="t"><b id="c-onchain-b">Connect a wallet to go on-chain</b><span id="c-onchain-s">anchor your scores on BSV</span></div>
+        </div>
+        <div class="foot">
+          <div class="qr" id="c-qr"></div>
+          <div class="info">
+            <div class="l">SCAN TO VIEW</div>
+            <div class="u" id="c-url">ds-da.ca/account</div>
+          </div>
+          <button class="share" id="c-share">SHARE</button>
+        </div>
+      </div>
+    </div>
+    <div class="card-actions" id="card-actions">
+      <button id="b-logout">Log out</button>
+    </div>
+  </div>
+
+  <div id="loading" class="loading" style="display:none">LOADING…</div>
+  <div class="toast" id="toast"></div>
+
+<script>
+  // Local dev override (set before arcade-account.js). Prod uses https://api.ds-da.ca.
+  if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') window.DSDA_API_BASE = 'http://127.0.0.1:8787';
+</script>
+<script src="/games/arcade-account.js"></script>
+<script>
+(function () {
+  'use strict';
+  var SEASON_MAX = 2400;
+  var BADGES = {
+    'first-coin': { icon: '🪙', name: 'First Coin' },
+    'tourist': { icon: '🗺️', name: 'Tourist (3 cabinets)' },
+    'regular': { icon: '🎮', name: 'Regular (7 cabinets)' },
+    'all-cabinets': { icon: '👑', name: 'All Cabinets' },
+    'marathon': { icon: '🏃', name: 'Marathon (25 games)' },
+    'century': { icon: '💯', name: 'Century (100 games)' },
+    'deep-diver': { icon: '🤿', name: 'Deep Diver (level 5)' },
+    'night-owl': { icon: '🦉', name: 'Night Owl (2–5am)' },
+    'loudmouth': { icon: '📣', name: 'Loudmouth (shared)' },
+    'gauntlet': { icon: '⚔️', name: 'Gauntlet (challenge)' },
+    'giant-slayer': { icon: '🗡️', name: 'Giant Slayer' },
+    'daily-1': { icon: '📅', name: 'Daily #1' },
+    'streak-3': { icon: '🔥', name: '3-Day Streak' },
+    'streak-7': { icon: '☄️', name: '7-Day Streak' },
+    'frog-frost': { icon: '❄️', name: 'Frog Frost' },
+    'frog-marsh': { icon: '🐸', name: 'Frog Marsh' }
+  };
+  var TIER_LABEL = { rookie: 'ROOKIE', bronze: 'BRONZE', silver: 'SILVER', gold: 'GOLD', legendary: 'LEGENDARY' };
+  var $ = function (id) { return document.getElementById(id); };
+  function fmt(n) { try { return Math.round(n).toLocaleString('en-US'); } catch (e) { return String(n); } }
+  function msg(text, cls) { var m = $('login-msg'); m.textContent = text || ''; m.className = 'msg ' + (cls || ''); }
+  function toast(text) { var t = $('toast'); t.textContent = text; t.classList.add('show'); setTimeout(function () { t.classList.remove('show'); }, 2200); }
+  function show(id) { $('login-view').style.display = id === 'login' ? 'flex' : 'none'; $('card-view').style.display = id === 'card' ? 'flex' : 'none'; $('loading').style.display = id === 'loading' ? 'block' : 'none'; }
+
+  // ---- QR (tiny deterministic pseudo-QR for the card URL) ----
+  function qrSvg(text) {
+    var h = 2166136261; for (var i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 16777719); }
+    var cells = '';
+    for (var y = 0; y < 21; y++) for (var x = 0; x < 21; x++) {
+      var inFinder = (x < 7 && y < 7) || (x > 13 && y < 7) || (x < 7 && y > 13);
+      if (inFinder) continue;
+      h = Math.imul(h ^ (h >>> 13), 0x5bd1e995);
+      if ((h >>> 24) & 1) cells += '<rect x="' + x + '" y="' + y + '" width="1" height="1"/>';
+    }
+    var finders = '<rect x="0" y="0" width="7" height="7"/><rect x="2" y="2" width="3" height="3" fill="#fff"/><rect x="14" y="0" width="7" height="7"/><rect x="16" y="2" width="3" height="3" fill="#fff"/><rect x="0" y="14" width="7" height="7"/><rect x="2" y="16" width="3" height="3" fill="#fff"/>';
+    return '<svg viewBox="0 0 21 21" shape-rendering="crispEdges"><g fill="#0a0e14">' + finders + cells + '</g></svg>';
+  }
+
+  function renderCard(account, profile, sync) {
+    var handle = account.handle || 'PLAYER';
+    var initials = handle.replace(/[^a-zA-Z0-9]/g, '').slice(0, 3).toUpperCase() || '???';
+    $('c-glyph').textContent = initials;
+    $('c-name').textContent = handle;
+    $('c-verified').style.display = account.address ? 'flex' : 'none';
+    var tier = TIER_LABEL[profile.tier] || 'ROOKIE';
+    $('c-tier').textContent = tier;
+    // address
+    var addr = $('c-addr');
+    if (account.address) { addr.textContent = account.address.slice(0, 6) + '…' + account.address.slice(-4); addr.className = 'addr'; }
+    else { addr.textContent = 'no wallet linked'; addr.className = 'addr none'; }
+    // scores
+    var scores = profile.scores || {};
+    var games = Object.keys(scores);
+    var top = 0, total = 0;
+    games.forEach(function (g) { top = Math.max(top, scores[g] || 0); total += scores[g] || 0; });
+    $('c-cabs').textContent = games.length;
+    $('c-plays').textContent = fmt(sync ? (sync.plays || 0) : 0);
+    $('c-top').textContent = fmt(top);
+    $('c-total').textContent = fmt(total);
+    // Season points = the normalized payout metric (top-10 rank points), not the raw sum.
+    var sp = profile.seasonPoints || 0;
+    var smax = profile.seasonMax || 240;
+    $('c-points').textContent = fmt(sp);
+    $('c-smax').textContent = fmt(smax);
+    var pct = Math.min(100, (sp / smax) * 100);
+    $('c-bar').style.width = pct + '%';
+    $('c-running').textContent = sp >= (smax * 0.33) ? 'In the running' : 'Climb the ranks';
+    // streak
+    if (sync && sync.daily && sync.daily.streak) $('c-streak').textContent = sync.daily.streak + ' days';
+    else $('c-streak').textContent = '—';
+    // badges
+    var earned = profile.badges || [];
+    $('c-badges-n').textContent = earned.length + ' / ' + Object.keys(BADGES).length;
+    $('c-badges-label').textContent = earned.length + ' / ' + Object.keys(BADGES).length;
+    var row = $('c-badge-row'); row.innerHTML = '';
+    Object.keys(BADGES).forEach(function (id) {
+      var b = BADGES[id];
+      var d = document.createElement('div');
+      d.className = 'badge' + (earned.indexOf(id) >= 0 ? '' : ' locked');
+      // Safe: b.icon + b.name come from the trusted BADGES constant (not user input).
+      d.innerHTML = b.icon + '<span class="tip">' + b.name + '</span>';
+      row.appendChild(d);
+    });
+    // on-chain
+    var oc = $('c-onchain');
+    if (account.address) { oc.className = 'onchain'; $('c-onchain-b').textContent = 'On-chain identity linked'; $('c-onchain-s').textContent = account.address.slice(0, 10) + '… · milestones coming soon'; }
+    else { oc.className = 'onchain dim'; $('c-onchain-b').textContent = 'Connect a wallet to go on-chain'; $('c-onchain-s').textContent = 'anchor your scores on BSV'; }
+    // url + qr
+    var url = location.origin + '/account?player=' + profile.id;
+    $('c-url').textContent = 'ds-da.ca/account?player=' + profile.id.slice(0, 8);
+    $('c-qr').innerHTML = qrSvg(url);
+    $('c-share').onclick = function () { shareCard(url, handle); };
+  }
+
+  function shareCard(url, handle) {
+    var text = 'Check out my DSDA arcade card — ' + handle + '!';
+    if (navigator.share) { navigator.share({ title: 'DSDA Arcade Card', text: text, url: url }).catch(function () {}); }
+    else { (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(function () { toast('📋 Card link copied — ' + url); }, function () { toast(url); }); }
+  }
+
+  // ---- load the card (owner view) ----
+  function loadCard() {
+    show('loading');
+    window.DSDA.account.pull().then(function () {
+      var acc = window.DSDA.account.getAccount();
+      return fetch((window.DSDA_API_BASE || 'https://api.ds-da.ca') + '/api/account/profile/' + acc.id)
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          return window.DSDA.account.pull().then(function (sync) {
+            renderCard(acc, j.profile, sync);
+            show('card');
+          });
+        });
+    }).catch(function (e) { msg('Could not load your card: ' + e.message, 'err'); show('login'); });
+  }
+
+  // ---- load a public card (viewing someone else via ?player=ID) ----
+  function loadPublicCard(id) {
+    show('loading');
+    fetch((window.DSDA_API_BASE || 'https://api.ds-da.ca') + '/api/account/profile/' + id)
+      .then(function (r) { return r.json().then(function (j) { return { status: r.status, j: j }; }); })
+      .then(function (res) {
+        if (res.status !== 200 || !res.j.profile) { $('card-label').textContent = 'PLAYER NOT FOUND'; show('login'); msg('No player at that link.', 'err'); return; }
+        var p = res.j.profile;
+        // Public view: no token, no private daily/streak. Render with a stub account.
+        renderCard({ id: p.id, handle: p.handle, address: p.address }, p, null);
+        $('card-label').textContent = 'VIEWING ' + (p.handle || 'PLAYER').toUpperCase();
+        // Public view: hide the owner-only logout, show a "log in" CTA instead.
+        $('b-logout').textContent = 'Log in to see your card';
+        $('b-logout').onclick = function () { window.location.href = '/account/'; };
+        show('card');
+      })
+      .catch(function (e) { $('card-label').textContent = 'ERROR'; show('login'); msg('Could not load that player: ' + e.message, 'err'); });
+  }
+
+  // ---- boot ----
+  function boot() {
+    var playerParam = new URLSearchParams(location.search).get('player');
+    if (playerParam) { loadPublicCard(playerParam); return; }
+    if (window.DSDA.account.getToken()) loadCard();
+    else show('login');
+  }
+  // login handlers
+  $('b-wallet').onclick = function () {
+    msg('Approve the signature in your wallet…');
+    window.DSDA.account.loginBrc100().then(function (r) {
+      if (r.ok) { msg(''); loadCard(); } else { msg(r.error, 'err'); }
+    });
+  };
+  $('b-login').onclick = function () {
+    var email = $('email').value.trim(), pw = $('pass').value;
+    if (!email || !pw) return msg('Enter your email and password', 'err');
+    window.DSDA.account.loginEmail(email, pw).then(function (r) {
+      if (r.ok) { msg(''); loadCard(); } else { msg(r.error, 'err'); }
+    });
+  };
+  $('b-register').onclick = function () {
+    var email = $('email').value.trim(), pw = $('pass').value;
+    if (!email || !pw) return msg('Enter an email and password to register', 'err');
+    window.DSDA.account.register(email, email.split('@')[0].slice(0, 16), pw).then(function (r) {
+      if (r.ok) { msg(''); loadCard(); } else { msg(r.error, 'err'); }
+    });
+  };
+  $('b-forgot').onclick = function () {
+    var email = $('email').value.trim();
+    if (!email) return msg('Enter your email above first', 'err');
+    window.DSDA.account.forgotPassword(email).then(function (r) {
+      if (r.resetUrl) { window.location.href = r.resetUrl; }
+      else { msg(r.message || 'If that address is registered, a reset link is on its way.', 'ok'); }
+    });
+  };
+  $('b-home').onclick = function () { window.location.href = '/games/'; };
+  $('b-logout').onclick = function () { window.DSDA.account.logout(); show('login'); };
+  $('pass').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('b-login').click(); });
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+})();
+</script>
+</body>
+</html>
