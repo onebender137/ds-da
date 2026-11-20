@@ -319,6 +319,7 @@
       .then(function (r) { return r.json(); })
       .then(function (j) {
         if (!j || !j.ok || !j.top) return;
+        if (!j.total) return; // no players in the leaderboard yet — keep the rank line hidden
         var me = null;
         for (var i = 0; i < j.top.length; i++) if (j.top[i].id === playerId) { me = j.top[i]; break; }
         $('c-rank').textContent = me ? '#' + me.rank : '—';
