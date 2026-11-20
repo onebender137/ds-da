@@ -359,7 +359,7 @@
     if (!document.getElementById('dsda-account-script')) {
       var s = document.createElement('script');
       s.id = 'dsda-account-script';
-      s.src = '/games/arcade-account.js?v=2';
+      s.src = '/games/arcade-account.js?v=3';
       s.async = true;
       (document.head || document.documentElement).appendChild(s);
     }

@@ -102,6 +102,30 @@
     return api('/reset-password', 'POST', { token: token, password: password });
   }
 
+  // Link a BRC-100 wallet to the current account (requires session token).
+  function linkWallet() {
+    if (!tok()) return Promise.resolve({ ok: false, error: 'not logged in' });
+    if (!window.CWI || typeof window.CWI.getPublicKey !== 'function') {
+      return Promise.resolve({ ok: false, error: 'no wallet (open in BSV Browser / Pocket Wallet)' });
+    }
+    return api('/nonce').then(function (n) {
+      var nonce = n.j.nonce;
+      var proto = { protocolID: [0, 'dsda ca login'], keyID: 'login', counterparty: 'anyone' };
+      return window.CWI.getPublicKey({ protocolID: proto.protocolID, keyID: proto.keyID, counterparty: proto.counterparty, forSelf: true })
+        .then(function (pk) {
+          var data = Array.from(new TextEncoder().encode(nonce));
+          return window.CWI.createSignature({ data: data, protocolID: proto.protocolID, keyID: proto.keyID, counterparty: proto.counterparty, forSelf: true })
+            .then(function (sg) {
+              var hex = Array.from(sg.signature).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+              return api('/link-wallet', 'POST', { nonce: nonce, publicKey: pk.publicKey, signature: hex });
+            });
+        });
+    }).then(function (r) {
+      if (r.ok) { setAcc(r.j.account); return { ok: true, account: r.j.account }; }
+      return { ok: false, error: r.j.error || 'link failed' };
+    });
+  }
+
   /* ---------------- sync ---------------- */
   // Pull persistent state and merge into the localStorage passport.
   function pull() {
@@ -179,7 +203,7 @@
     __account: true,
     loginBrc100: loginBrc100, loginEmail: loginEmail, register: register,
     forgotPassword: forgotPassword, resetPassword: resetPassword,
-    logout: logout, pull: pull, push: push, submitScore: submitScore,
+    logout: logout, pull: pull, push: push, submitScore: submitScore, linkWallet: linkWallet,
     getToken: tok, getAccount: getAcc
   };
 })();

@@ -208,6 +208,7 @@
         <div class="onchain" id="c-onchain">
           <span class="ic">🔗</span>
           <div class="t"><b id="c-onchain-b">Connect a wallet to go on-chain</b><span id="c-onchain-s">anchor your scores on BSV</span></div>
+          <button class="btn btn-sm" id="b-link-wallet" style="display:none">🔐 Link Wallet</button>
         </div>
         <div class="foot">
           <div class="qr" id="c-qr"></div>
@@ -234,7 +235,7 @@
   // Local dev override (set before arcade-account.js). Prod uses https://api.ds-da.ca.
   if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') window.DSDA_API_BASE = 'http://127.0.0.1:8787';
 </script>
-<script src="/games/arcade-account.js?v=2"></script>
+<script src="/games/arcade-account.js?v=3"></script>
 <script>
 (function () {
   'use strict';
@@ -351,8 +352,8 @@
     });
     // on-chain
     var oc = $('c-onchain');
-    if (account.address) { oc.className = 'onchain'; $('c-onchain-b').textContent = 'On-chain identity linked'; $('c-onchain-s').textContent = account.address.slice(0, 10) + '… · milestones coming soon'; }
-    else { oc.className = 'onchain dim'; $('c-onchain-b').textContent = 'Connect a wallet to go on-chain'; $('c-onchain-s').textContent = 'anchor your scores on BSV'; }
+    if (account.address) { oc.className = 'onchain'; $('c-onchain-b').textContent = 'On-chain identity linked'; $('c-onchain-s').textContent = account.address.slice(0, 10) + '… · milestones coming soon'; $('b-link-wallet').style.display = 'none'; }
+    else { oc.className = 'onchain dim'; $('c-onchain-b').textContent = 'Connect a wallet to go on-chain'; $('c-onchain-s').textContent = 'anchor your scores on BSV'; $('b-link-wallet').style.display = 'inline-block'; }
     // url + qr
     var url = location.origin + '/account?player=' + profile.id;
     $('c-url').textContent = 'ds-da.ca/account?player=' + profile.id.slice(0, 8);
@@ -473,6 +474,15 @@
   $('handle').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('b-register').click(); });
   $('b-home').onclick = function () { window.location.href = '/games/'; };
   $('b-logout').onclick = function () { window.DSDA.account.logout(); show('login'); };
+  $('b-link-wallet').onclick = function () {
+    var btn = $('b-link-wallet');
+    btn.disabled = true; btn.textContent = '🔐 Signing…';
+    window.DSDA.account.linkWallet().then(function (r) {
+      btn.disabled = false;
+      if (r.ok) { btn.textContent = '✓ Linked!'; setTimeout(function () { loadCard(); }, 800); }
+      else { btn.textContent = '🔐 Link Wallet'; msg(r.error, 'err'); }
+    });
+  };
   $('pass').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('b-login').click(); });
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
