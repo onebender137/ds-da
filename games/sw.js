@@ -23,7 +23,9 @@
 // v10: arcade-account.js v4 (purpose-scoped link nonce).
 // v11: members post scores through each cabinet's board call under their handle.
 // v12: board 429 -> 'slow down' toast (arcade-account.js v6).
-const CACHE = 'dsda-arcade-v12';
+// v13: arcade-account.js v7 — same-origin /api/account (3f5cb3b changed the file
+//      without a version bump, so cached phones kept calling api.ds-da.ca).
+const CACHE = 'dsda-arcade-v13';
 const CORE = [
   './',
   './manifest.webmanifest',
