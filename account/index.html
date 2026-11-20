@@ -90,6 +90,12 @@
   .rankline { font-size:10.5px; color:var(--muted); margin-top:9px; letter-spacing:0.5px; display:flex; align-items:center; gap:6px; }
   .rankline b { color:var(--gold-bright); font-family:"Playfair Display",serif; font-size:15px; font-weight:800; }
   .rankline .of { color:var(--muted); }
+  .top-games { margin-bottom:14px; }
+  .top-games .k { font-size:8.5px; letter-spacing:2px; color:var(--muted); margin-bottom:7px; }
+  .tg-row { display:flex; gap:6px; flex-wrap:wrap; }
+  .tg { display:inline-flex; align-items:center; gap:5px; background:rgba(201,162,39,0.06); border:1px solid var(--line); border-radius:7px; padding:5px 9px; font-size:10.5px; }
+  .tg .r { font-family:"Playfair Display",serif; font-weight:800; color:var(--gold-bright); font-size:13px; }
+  .tg .g { color:var(--ink); font-weight:500; letter-spacing:0.3px; }
   .stats { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px; }
   .stat { background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:9px; padding:8px 10px; }
   .stat .k { font-size:8px; letter-spacing:1.5px; color:var(--muted); }
@@ -169,6 +175,10 @@
           <div class="bar"><i id="c-bar"></i></div>
           <div class="running">◆ <span><b id="c-running">Climb the ranks</b> — Top 3 win BSV at year-end</span></div>
           <div class="rankline" id="c-rankline" style="display:none">🏆 <span>Season rank <b id="c-rank">#—</b> <span class="of">of <span id="c-ranktotal">—</span> players</span></span></div>
+        </div>
+        <div class="top-games" id="c-top-games" style="display:none">
+          <div class="k">TOP GAMES</div>
+          <div class="tg-row" id="c-top-games-row"></div>
         </div>
         <div class="stats">
           <div class="stat"><div class="k">TOP SCORE</div><div class="v gold" id="c-top">0</div></div>
@@ -279,6 +289,19 @@
     var pct = Math.min(100, (sp / smax) * 100);
     $('c-bar').style.width = pct + '%';
     $('c-running').textContent = sp >= (smax * 0.33) ? 'In the running' : 'Climb the ranks';
+    // Per-game ranks: show the top 3 games where the player ranks highest.
+    var gameRanks = profile.gameRanks || [];
+    if (gameRanks.length) {
+      var tgRow = $('c-top-games-row'); tgRow.innerHTML = '';
+      gameRanks.slice(0, 3).forEach(function (gr) {
+        var d = document.createElement('div');
+        d.className = 'tg';
+        // gr.game comes from the trusted GAMES list (not user input)
+        d.innerHTML = '<span class="r">#' + gr.rank + '</span><span class="g">' + gr.game + '</span>';
+        tgRow.appendChild(d);
+      });
+      $('c-top-games').style.display = 'block';
+    }
     // streak
     if (sync && sync.daily && sync.daily.streak) $('c-streak').textContent = sync.daily.streak + ' days';
     else $('c-streak').textContent = '—';
