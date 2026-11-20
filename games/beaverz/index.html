@@ -972,7 +972,7 @@ function renderBoardList(el,top,me){
   top.slice(0,10).forEach((e,i)=>{
     const li=document.createElement('li');
     if(me&&e.n===me)li.classList.add('you');
-    const n=String(e.n||'???').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,3).padEnd(3,'?');
+    const n=e.h||String(e.n||'???').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,3).padEnd(3,'?');
     li.innerHTML='<span class="rank">'+(i+1)+'.</span><span class="name">'+n+(e.h?'<span class="member-badge" title="'+e.h+'">◆</span>':'')+'</span><span class="pts">'+Math.round(e.s).toLocaleString()+'</span>';
     el.appendChild(li);
   });
