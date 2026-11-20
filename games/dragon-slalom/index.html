@@ -486,7 +486,7 @@ function track(event,params){
 
 /* ---------- global board (API-first, GitHub dispatch fallback) ---------- */
 var SCORE_DISPATCH_URL="https://api.github.com/repos/onebender137/ds-da/actions/workflows/score-webhook.yml/dispatches";
-var BOARD_API="https://api.ds-da.ca/api/board";
+var BOARD_API="/api/board";
 function fetchTimeout(url,opts,ms){
   var c=new AbortController();
   var t=setTimeout(function(){c.abort();},ms||4000);

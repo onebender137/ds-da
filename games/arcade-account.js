@@ -21,7 +21,7 @@
   'use strict';
   if (window.DSDA && window.DSDA.account && window.DSDA.account.__account) return;
 
-  var API = (window.DSDA_API_BASE || 'https://api.ds-da.ca') + '/api/account';
+  var API = (window.DSDA_API_BASE || '') + '/api/account';
   var TOKEN_KEY = 'dsda-token';
   var ACC_KEY = 'dsda-account';
   var PASS_KEY = 'dsda-passport';

@@ -414,7 +414,7 @@ function track(event, params) {
 }
 const SHARE_URL = 'https://ds-da.ca/games/slipstream/';
 const SCORE_DISPATCH_URL = 'https://api.github.com/repos/onebender137/ds-da/actions/workflows/score-webhook.yml/dispatches';
-const BOARD_API = 'https://api.ds-da.ca/api/board'; // fast path (instant); GitHub dispatch = fallback
+const BOARD_API = '/api/board'; // fast path (instant); GitHub dispatch = fallback
 function fetchTimeout(url, opts, ms = 4000) {
   const c = new AbortController();
   const t = setTimeout(() => c.abort(), ms);

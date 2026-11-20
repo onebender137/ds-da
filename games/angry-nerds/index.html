@@ -365,7 +365,7 @@ function persist(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(save));}catc
    Initials live under the arcade-wide key, so a player types them once for the
    whole arcade and every cabinet already knows them.                             */
 const GAME_ID='angry-nerds';
-const BOARD_API='https://api.ds-da.ca/api/board';
+const BOARD_API='/api/board';
 const SCORE_SECRET='6216cf68f4e077d3cd991f2d6bd3e878';
 const DSDA_INITS_KEY='dsda-initials';
 let pendingSubmit=null;

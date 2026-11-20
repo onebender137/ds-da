@@ -2037,7 +2037,7 @@ function recSubmit(gi,diff,lap,race){
    average speed, scaled by difficulty/NG+) rather than a time — that keeps runs on
    different circuits comparable on one board. Per-track lap/race times stay local.
    Initials use the arcade-wide key, so players type them once for every cabinet. */
-const BOARD_API="https://api.ds-da.ca/api/board",SCORE_SECRET="6216cf68f4e077d3cd991f2d6bd3e878",INITS_KEY="dsda-initials";
+const BOARD_API="/api/board",SCORE_SECRET="6216cf68f4e077d3cd991f2d6bd3e878",INITS_KEY="dsda-initials";
 const cleanInits=v=>(v||"").toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,3);
 const getInits=()=>{try{return cleanInits(localStorage.getItem(INITS_KEY))}catch(e){return""}};
 const setInits=v=>{const i=cleanInits(v);try{localStorage.setItem(INITS_KEY,i)}catch(e){}return i};
