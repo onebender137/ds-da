@@ -1442,31 +1442,15 @@ async function showScores() {
     $('globalNote').textContent = 'Global board offline (local copy only)';
   }
 }
-async function submitGlobal(name, s) {
-  try {
-    const r = await fetchTimeout(BOARD_API + '/score', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ initials: name, score: s, secret: SCORE_SECRET, game: GAME_ID }),
-    }, 5000);
-    if (r.ok) return 'ok';
-  } catch (e) { /* fall through to GitHub */ }
-  if (!SCORE_TOKEN || SCORE_TOKEN.indexOf('PASTE_') === 0) return 'no-token';
-  try {
-    const r = await fetch(SCORE_DISPATCH_URL, {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + SCORE_TOKEN,
-        'X-GitHub-Api-Version': '2022-11-28',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        ref: 'main',
-        inputs: { initials: name, score: String(s), secret: SCORE_SECRET, game: GAME_ID },
-      }),
-    });
-    return r.ok ? 'ok' : 'http-' + r.status;
-  } catch (e) { return 'err'; }
+function submitGlobal(name, s) {
+  // Worker only: arcade-account.js attaches the session token when logged in (and
+  // retries once as casual on a 401). Honest result for the save line: 'ok',
+  // 'http-<status>' (http-429 = rate limited), or 'board-offline'.
+  return fetchTimeout(BOARD_API + '/score', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ initials: name, score: s, secret: SCORE_SECRET, game: GAME_ID })
+  }, 5000).then(function (r) { return r.ok ? 'ok' : 'http-' + r.status; }, function () { return 'board-offline'; });
 }
 
 // ---------------- share score (DSDA house card) ----------------

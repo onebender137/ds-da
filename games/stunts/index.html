@@ -2357,31 +2357,15 @@ function loadBoard(){
     .then(d => renderTopList($('goBoard'), (d && d.top) || []))
     .catch(() => { $('goBoard').innerHTML = '<div class="go-board-empty">Board unavailable</div>'; });
 }
-async function submitGlobal(name, s){
-  try {
-    const r = await fetchTimeout(BOARD_API + '/score', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ initials: name, score: s, secret: SCORE_SECRET, game: 'stunts' }),
-    }, 5000);
-    if (r.ok) return 'ok';
-  } catch (e) { /* fall through to GitHub */ }
-  if (!SCORE_TOKEN) return 'no-token';
-  try {
-    const r = await fetch(SCORE_DISPATCH_URL, {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + SCORE_TOKEN,
-        'X-GitHub-Api-Version': '2022-11-28',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        ref: 'main',
-        inputs: { initials: name, score: String(s), secret: SCORE_SECRET, game: 'stunts' },
-      }),
-    });
-    return r.ok ? 'ok' : 'http-' + r.status;
-  } catch (e) { return 'err'; }
+function submitGlobal(name, s){
+  // Worker only: arcade-account.js attaches the session token when logged in (and
+  // retries once as casual on a 401). Honest result for the save line: 'ok',
+  // 'http-<status>' (http-429 = rate limited), or 'board-offline'.
+  return fetchTimeout(BOARD_API + '/score', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ initials: name, score: s, secret: SCORE_SECRET, game: 'stunts' })
+  }, 5000).then(function (r) { return r.ok ? 'ok' : 'http-' + r.status; }, function () { return 'board-offline'; });
 }
 function showGameOver(total, isBest){
   $('goScore').textContent = total.toLocaleString();
@@ -2425,7 +2409,7 @@ function saveScore(){
   submitGlobal(name, total).then(res => {
     const m = $('goSaveMsg');
     if (res === 'ok'){ m.textContent = member ? 'SAVED as ' + member + ' \u25c6 — on the board!' : "SAVED — you're on the board!"; m.style.color = '#7CFF6B'; loadBoard(); }
-    else if (res === 'no-token'){ m.textContent = 'Saved locally — global board offline'; m.style.color = 'var(--gold)'; }
+    else if (res === 'board-offline'){ m.textContent = 'Saved locally — global board offline'; m.style.color = 'var(--gold)'; }
     else { m.textContent = 'Saved locally — check connection'; m.style.color = 'var(--gold)'; }
   });
 }

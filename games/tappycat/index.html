@@ -652,27 +652,14 @@ function fetchGlobalBoard() {
     });
 }
 function submitGlobal(name, s) {
-    var headers = { 'Content-Type': 'application/json' };
-    var accTok = '';
-    try { accTok = localStorage.getItem('dsda-token') || ''; } catch(e) {}
-    if (accTok) headers['Authorization'] = 'Bearer ' + accTok;
-    var payload = { initials: name, score: s, secret: SCORE_SECRET, game: GAME_ID };
+    // Worker only: arcade-account.js attaches the session token when logged in (and
+    // retries once as casual on a 401). Honest result for the save line: 'ok',
+    // 'http-<status>' (http-429 = rate limited), or 'board-offline'.
     return fetchTimeout(BOARD_API + '/score', {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify(payload)
-    }, 5000).then(r => {
-        if (r.ok) return 'ok';
-        if (r.status === 401 && accTok) {
-            // Dead session: retry once as casual (no token)
-            return fetchTimeout(BOARD_API + '/score', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            }, 5000).then(r2 => r2.ok ? 'ok' : 'http-' + r2.status);
-        }
-        throw new Error('http-' + r.status);
-    }).catch(() => 'board-offline');
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ initials: name, score: s, secret: SCORE_SECRET, game: GAME_ID })
+    }, 5000).then(function (r) { return r.ok ? 'ok' : 'http-' + r.status; }, function () { return 'board-offline'; });
 }
 function renderGlobalBoard(el, rows) {
     el.innerHTML = '';
