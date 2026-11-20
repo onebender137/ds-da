@@ -93,9 +93,9 @@
       .arcade-pass button:hover, .arcade-pass a:hover { background: rgba(201, 162, 39, 0.25); }
       /* phones: the pills drop below the cabinets (JS moves the node to <body>), strip stays one line */
       body > .arcade-pass { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(62px + env(safe-area-inset-bottom));
-        z-index: 7; width: max-content; transition: opacity 0.45s ease; }
-      body > .arcade-pass button, body > .arcade-pass a { background: rgba(10, 22, 40, 0.82); padding: 10px 14px; font-size: 0.72rem;
-        backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+        z-index: 7; width: max-content; max-width: 96vw; transition: opacity 0.45s ease; gap: 6px; }
+      body > .arcade-pass button, body > .arcade-pass a { background: rgba(10, 22, 40, 0.82); padding: 8px 10px; font-size: 0.66rem;
+        letter-spacing: 1px; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
       #zooming .arcade-pass, body.zooming .arcade-pass { opacity: 0; pointer-events: none; }
       @media (max-width: 640px) {
         .arcade-stats { flex-wrap: nowrap; gap: 12px; padding: 8px 14px; }
