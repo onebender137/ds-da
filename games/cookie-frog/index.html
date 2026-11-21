@@ -1900,16 +1900,32 @@ function shareText(challenge){
     ?'🐸 Beat my '+fmt(G.score)+' on Cookie Frog'+dn+' 👀'
     :'🐸 Cookie Frog'+dn+': '+fmt(G.score)+' · LV '+G.level+' · 🦊×'+G.stats.foxes+(G.daily&&G.dailyStreak>1?' · 🔥'+G.dailyStreak:'');
 }
+/* Arrived through a daily link (?daily=1) or a daily challenge? Then the big
+   HOP IN button plays the Daily and the second button becomes Classic — before,
+   HOP IN always started Classic and daily-link players never reached the daily. */
+function dailyFirst(){if(!SOC)return false;const ch=SOC.challenge;return SOC.daily.requested()||!!(ch&&ch.day===SOC.daily.key());}
 function refreshDailyBtn(){
   const b=$('btnDaily');if(!SOC||!b)return;
   b.hidden=false;
   const k=SOC.daily.key(),n=SOC.daily.number(k),best=SOC.daily.best(GAME_ID,k),st=SOC.daily.streak();
   const h=Math.max(1,Math.round(SOC.daily.msToNext()/3600e3));
-  $('dailyName').textContent='DAILY #'+n;
-  $('dailySub').textContent=(best?'today\'s best '+fmt(best):'same pond for everyone today')+(st>1?' · 🔥'+st+'-day streak':'')+' · new in '+h+'h';
+  const info=(best?'today\'s best '+fmt(best):'same pond for everyone today')+(st>1?' · 🔥'+st+'-day streak':'')+' · new in '+h+'h';
   const ch=SOC.challenge,vs=$('vsChip');
   if(ch&&vs){vs.textContent='🎯 '+ch.n+' WANTS YOU TO BEAT '+fmt(ch.s)+(ch.day?' ON DAILY #'+SOC.daily.number(ch.day):'');vs.classList.add('on');}
-  b.classList.toggle('pulse',SOC.daily.requested()||!!(ch&&ch.day===k));
+  if(dailyFirst()){
+    $('btnPlay').innerHTML='<svg class="ic"><use href="#i-play"/></svg>HOP IN · DAILY #'+n;
+    $('btnPlay').title=info;
+    const dl=b.querySelector('.dl');if(dl&&dl.firstChild&&dl.firstChild.nodeType===3)dl.firstChild.nodeValue='🐸 ';
+    $('dailyName').textContent='CLASSIC';
+    $('dailySub').textContent='free play · all-time Top Frogs board';
+    b.classList.remove('pulse');
+  }else{
+    $('btnPlay').innerHTML='<svg class="ic"><use href="#i-play"/></svg>HOP IN';
+    const dl=b.querySelector('.dl');if(dl&&dl.firstChild&&dl.firstChild.nodeType===3)dl.firstChild.nodeValue='📅 ';
+    $('dailyName').textContent='DAILY #'+n;
+    $('dailySub').textContent=info;
+    b.classList.remove('pulse');
+  }
 }
 
 /* ============================== visuals per frame ============================== */
@@ -2248,8 +2264,8 @@ function syncSoundP(){
 $('btnSound').addEventListener('click',()=>{setMuted(!A.muted);A.ui();});
 $('btnSoundP').addEventListener('click',()=>{setMuted(!A.muted);A.ui();});
 $('btnPause').addEventListener('click',()=>{A.init();A.resume();togglePause();});
-$('btnPlay').addEventListener('click',()=>startGame(false));
-$('btnDaily').addEventListener('click',()=>startGame(true));
+$('btnPlay').addEventListener('click',()=>startGame(dailyFirst()));
+$('btnDaily').addEventListener('click',()=>startGame(!dailyFirst()));
 $('btnShare').addEventListener('click',()=>{A.ui();SOC.share({title:'Cookie Frog',text:shareText(false),url:'https://ds-da.ca/games/cookie-frog/'+(G.daily?'?daily=1':'')});});
 $('btnChallenge').addEventListener('click',()=>{A.ui();SOC.share({title:'Cookie Frog',challenge:true,text:shareText(true),url:SOC.challengeLink(GAME_ID,G.score,G.daily?{day:G.daily}:null)});});
 $('tabAll').addEventListener('click',()=>showScores(false));
@@ -2361,7 +2377,7 @@ catch(err){
 }
 /* ============================== __tl test harness ============================== */
 window.__tl = {
-  state: () => ({ state: G.state, score: G.score, level: G.level, lives: G.lives, best: G.best, diff: G.diff, remaining: G.remaining, paused: G.paused }),
+  state: () => ({ state: G.state, daily: G.daily, score: G.score, level: G.level, lives: G.lives, best: G.best, diff: G.diff, remaining: G.remaining, paused: G.paused }),
   start: () => { startGame(); return 'started'; },
   dir: (di) => { setDesired(di); return 'dir ' + di; },
   frog: () => ({ x: frog.tile.x, y: frog.tile.y, dir: frog.dir, t: +frog.t.toFixed(2), queue: frog.queue.slice(), chev: +frog.chev.material.opacity.toFixed(2) }),
