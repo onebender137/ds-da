@@ -323,16 +323,17 @@
 <script type="importmap">
 {
   "imports": {
-    "three": "./three.module.js"
+    "three": "./three.module.js",
+    "three/addons/": "./jsm/"
   }
 }
 </script>
 <script type="module">
 import * as THREE from './three.module.js';
-import { EffectComposer } from 'https://unpkg.com/three@0.160.0/examples/jsm/postprocessing/EffectComposer.js';
-import { RenderPass } from 'https://unpkg.com/three@0.160.0/examples/jsm/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'https://unpkg.com/three@0.160.0/examples/jsm/postprocessing/UnrealBloomPass.js';
-import { OutputPass } from 'https://unpkg.com/three@0.160.0/examples/jsm/postprocessing/OutputPass.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
 const GAME_ID = 'stunts';
 function track(event, params){ try { if (typeof gtag==='function') gtag('event', event, Object.assign({game: GAME_ID}, params||{})); } catch(e){} }
