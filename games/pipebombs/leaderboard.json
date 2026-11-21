@@ -1,18 +1,9 @@
 {
-  "updated": 1795229344936,
-  "top": [
-    {
-      "n": "DAN",
-      "s": 1234,
-      "d": 1795229344936,
-      "h": null
-    }
-  ],
+  "updated": 0,
+  "top": [],
   "stats": {
-    "saves": 1,
-    "initials": [
-      "DAN"
-    ],
-    "players": 1
+    "saves": 0,
+    "initials": [],
+    "players": 0
   }
 }
