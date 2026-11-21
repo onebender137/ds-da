@@ -35,7 +35,7 @@
 //      arcade-social.js v11 bumps the injector). Members post a round to the
 //      cabinet board only when it beats their personal best for that board;
 //      a 429'd post is stashed in localStorage and retried, never dropped.
-const CACHE = 'dsda-arcade-v17';
+const CACHE = 'dsda-arcade-v18';
 const CORE = [
   './',
   './manifest.webmanifest',

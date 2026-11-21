@@ -167,26 +167,32 @@
       p.daily.streak = Math.max(p.daily.streak || 0, r.j.daily.streak || 0);
       p.daily.last = (r.j.daily.last && r.j.daily.last > (p.daily.last || '')) ? r.j.daily.last : (p.daily.last || '');
       p.plays = Math.max(p.plays || 0, r.j.plays || 0);
-      // Per-board bests from the account score history. Members seed their
-      // local board-best from this when it covers the exact board id they
-      // post to (the board gate in the fetch wrapper reads passport.scores).
+      // `scores` (player_scores, keyed by GAME id) feeds the account card +
+      // points — it includes daily runs + pre-reset runs, so it's the
+      // max-of-history, NOT the PB gate's source. Leave it as-is.
       p.scores = p.scores || {};
       Object.keys(r.j.scores || {}).forEach(function (g) {
-        // OVERWRITE, not max: the account sync is the source of truth for a
-        // member's per-board best. A board reset (Slipstream, prize seasons)
-        // re-seeds the account score, and this overwrite is what lets the local
-        // best DROP to match — a max() ratchet would lock the member out until
-        // they beat a best that no longer exists on the board.
         p.scores[g] = Math.trunc(+r.j.scores[g] || 0);
       });
-      // Re-seed the local board-best store from the synced boards (overwrite)
-      // so a wiped board un-locks member posts. Boards the sync doesn't cover
-      // are left alone (a fresh board the member hasn't played keeps its best).
+      // `boards` (scores JOIN score_handles, keyed by BOARD id) is the PB
+      // gate's source of truth: it reflects the LIVE boards, so daily/split
+      // boards stay separate and board resets/deletes are picked up
+      // automatically. This is what un-locks a member after a reset.
+      p.boards = (r.j.boards && typeof r.j.boards === 'object') ? r.j.boards : {};
+      // Re-seed the local board-best store from the synced BOARDS (overwrite).
+      // Covered boards get the synced best (a reset lowers/clears it); boards
+      // the sync does NOT cover get their stale local best cleared (a wiped
+      // board has no rows for the member -> their best there is 0 again).
       try {
         var bb = boardBests();
         var touched = false;
-        Object.keys(r.j.scores || {}).forEach(function (g) {
-          if (bb[g] !== p.scores[g]) { bb[g] = p.scores[g]; touched = true; }
+        var synced = p.boards || {};
+        Object.keys(synced).forEach(function (g) {
+          var v = Math.trunc(+synced[g] || 0);
+          if (bb[g] !== v) { bb[g] = v; touched = true; }
+        });
+        Object.keys(bb).forEach(function (g) {
+          if (!(g in synced) && bb[g]) { bb[g] = 0; touched = true; }
         });
         if (touched) localStorage.setItem(BESTS_KEY, JSON.stringify(bb));
       } catch (e) {}
@@ -258,8 +264,11 @@
     var b = +boardBests()[boardId] || 0;
     try {
       var p = JSON.parse(localStorage.getItem(PASS_KEY) || 'null');
-      var acc = p && p.scores;
-      if (acc && typeof acc === 'object') b = Math.max(b, +acc[boardId] || 0);
+      var acc = p && p.boards;
+      // OVERWRITE (not max): the account-synced board best is authoritative for
+      // boards it covers, so a stale local best (pre-reset / daily-run) drops
+      // to the live board value. Boards the sync doesn't cover keep the local.
+      if (acc && typeof acc === 'object' && acc[boardId] != null) b = +acc[boardId] || 0;
     } catch (e) {}
     return b;
   }
@@ -375,6 +384,6 @@
     forgotPassword: forgotPassword, resetPassword: resetPassword,
     logout: logout, pull: pull, push: push, submitScore: submitScore, linkWallet: linkWallet,
     getToken: tok, getAccount: getAcc,
-    boardBest: boardBest, pending: loadPend // v8: board gate / 429 queue (test hooks)
+    boardBest: boardBest, pending: loadPend // v9: board gate reads passport.boards (live-board bests), not passport.scores (test hooks)
   };
 })();
