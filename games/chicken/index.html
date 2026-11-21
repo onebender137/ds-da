@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#2a1a12">
-<meta name="description" content="CHICKEN — a pixel-voxel farm crossing from the DS-DA.CA arcade. Hop six farms, dodge the traffic, and get back to the barn.">
-<title>CHICKEN — get back to the barn · ds-da.ca arcade</title>
+<meta name="description" content="CHICKEN — a pixel-voxel farm crossing from the DS-DA.CA arcade. One life on the endless Long Road, a Daily Road, unlockable birds and six story farms.">
+<title>CHICKEN — the Long Road · ds-da.ca arcade</title>
 <link rel="canonical" href="https://ds-da.ca/games/chicken/">
 <meta property="og:title" content="Chicken — DSDA Arcade">
-<meta property="og:description" content="Six farms stand between you and the barn. Three lives. One determined chicken.">
+<meta property="og:description" content="One life. Endless farmland. How far can one hen go?">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://ds-da.ca/games/chicken/">
 <meta property="og:image" content="https://ds-da.ca/games/chicken/screenshot.png">
@@ -130,6 +130,7 @@ body{font-family:'Press Start 2P','Courier New',monospace;color:var(--ink);
 #progress{display:flex;align-items:center;gap:8px;max-width:560px;width:min(92%,560px);margin:0 auto;pointer-events:none}
 #progress-track{position:relative;flex:1;height:16px;background:rgba(42,26,18,.8);border:3px solid var(--cream);box-shadow:0 3px 0 rgba(0,0,0,.4)}
 #progress-fill{position:absolute;left:0;top:0;bottom:0;width:0%;background:linear-gradient(90deg,var(--grass),var(--corn));transition:width .2s steps(6)}
+#progress-barn .zone-next{font-size:8px;color:var(--corn);background:rgba(42,26,18,.8);border:3px solid var(--cream);padding:4px 5px;display:inline-block;box-shadow:0 3px 0 rgba(0,0,0,.4)}
 #progress-chick{position:absolute;top:-9px;left:0;transform:translateX(-50%);transition:left .2s steps(6);filter:drop-shadow(2px 2px 0 rgba(0,0,0,.4))}
 #warn{position:absolute;top:calc(98px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:11;display:none;
   background:var(--barn);color:var(--cream);border:3px solid var(--corn);padding:9px 14px;font-size:9px;
@@ -195,6 +196,30 @@ body.touch #dpad.on{display:grid}
 #title-lb .lbmini{background:rgba(42,26,18,.72);border:2px solid var(--corn);color:var(--cream);padding:5px 7px;display:flex;gap:6px;align-items:center}
 #title-lb .lbmini b{color:var(--corn)}
 #credit{font-size:7px;color:rgba(255,244,214,.85);text-shadow:1px 1px 0 var(--ink);letter-spacing:1px;line-height:1.9;text-align:center}
+#title-bottom .tb-row{display:flex;gap:8px;width:min(300px,84vw)}
+#title-bottom .tb-row .btn{flex:1;width:auto;padding:12px 6px;font-size:10px}
+.btn-stack{flex-direction:column;gap:6px}
+.btn-stack small{font-size:7px;letter-spacing:.5px;opacity:.85;text-transform:none}
+#btn-daily.pulse{animation:dpulse 1.4s steps(2) infinite}@keyframes dpulse{50%{filter:brightness(1.15)}}
+.btn .newdot{display:inline-block;width:8px;height:8px;background:var(--danger);border:2px solid var(--ink);margin-left:4px;animation:blink .6s steps(2) infinite}
+.lb-tabs{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:4px 0 2px}
+.lb-tabs .lb-toggle.sel{background:var(--corn)}
+/* ---------- COOP ---------- */
+#scr-coop{align-items:flex-end;background:linear-gradient(180deg,transparent 0%,transparent 40%,rgba(24,14,8,.55) 100%);padding:0 10px calc(10px + env(safe-area-inset-bottom))}
+.coop-sheet{background:var(--paper);border:4px solid var(--ink);width:min(96vw,640px);padding:14px 14px 12px;box-shadow:0 10px 0 rgba(15,8,4,.5),inset 0 0 0 4px var(--cream);animation:pop .18s steps(3)}
+.coop-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.coop-head h2{font-size:14px;color:var(--barn-d)}
+#coop-name{font-size:12px;margin-top:8px;color:var(--ink)}
+#coop-flav{font-size:7px;line-height:1.8;color:#6a5238;min-height:26px;margin-top:4px}
+#coop-grid{display:flex;gap:8px;overflow-x:auto;padding:6px 2px 10px;touch-action:pan-x;scrollbar-width:thin}
+.bird-card{font-family:inherit;flex:none;width:74px;border:3px solid var(--ink);background:var(--cream);padding:7px 4px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:5px;box-shadow:0 4px 0 var(--ink);color:var(--ink)}
+.bird-card.sel{background:#ffe9a8;transform:translateY(-3px);box-shadow:0 7px 0 var(--ink)}
+.bird-card.locked svg{filter:brightness(.25) saturate(0)}
+.bird-card b{font-size:6px;line-height:1.4;text-align:center}
+.bird-card small{font-size:6px;color:#6a5238}
+.bird-card .eq{color:var(--grass-d)}
+@media (max-width:640px){#scr-coop{padding-bottom:calc(64px + env(safe-area-inset-bottom))}}
 /* ---------- LEVELS ---------- */
 #levels-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 0}
 .lv-card{font-family:inherit;border:3px solid var(--ink);background:var(--cream);padding:12px 10px;cursor:pointer;text-align:left;
@@ -355,23 +380,29 @@ body.touch #dpad.on{display:grid}
   <div class="screen" id="scr-title" data-ui>
     <div id="title-top">
       <div id="logo">CHICKEN</div>
-      <div id="tagline">★ GET BACK TO THE BARN ★</div>
+      <div id="tagline">★ HOW FAR CAN ONE HEN GO? ★</div>
     </div>
     <div id="title-bottom">
-      <button class="btn btn-primary" id="btn-play"><span id="play-label">PLAY</span></button>
-      <button class="btn btn-corn" id="btn-levels">LEVEL MAP</button>
-      <button class="btn btn-grass" id="btn-board">LEADERBOARD</button>
-      <button class="btn btn-ghost" id="btn-how">HOW TO PLAY</button>
+      <button class="btn btn-primary btn-stack" id="btn-play"><span id="play-label">PLAY · LONG ROAD</span><small id="play-sub">one life · endless farmland</small></button>
+      <button class="btn btn-corn btn-stack" id="btn-daily" hidden><span id="daily-label">DAILY ROAD</span><small id="daily-sub">same road for everyone today</small></button>
+      <div class="tb-row">
+        <button class="btn btn-grass" id="btn-levels">STORY</button>
+        <button class="btn btn-corn" id="btn-coop">COOP</button>
+      </div>
+      <div class="tb-row">
+        <button class="btn btn-ghost" id="btn-board">BOARD</button>
+        <button class="btn btn-ghost" id="btn-how">HOW TO</button>
+      </div>
       <a class="btn btn-ghost" id="btn-arcade" href="/games/">BACK TO DSDA ARCADE</a>
       <div id="title-stats"><span class="chip" id="title-best"></span><span class="chip" id="title-corn"></span></div>
       <div id="title-lb"></div>
-      <div id="credit">A DS-DA.CA ARCADE ORIGINAL<br>FARM BUILD 1.2 · 6 FARMS · 3 LIVES · 1 DETERMINED CHICKEN</div>
+      <div id="credit">A DS-DA.CA ARCADE ORIGINAL<br>FARM BUILD 2.0 · LONG ROAD · DAILY · 6 STORY FARMS · 8 BIRDS</div>
     </div>
   </div>
 
   <div class="screen" id="scr-levels" data-ui>
     <div class="panel">
-      <h2>THE LONG ROAD HOME</h2>
+      <h2>STORY · SIX FARMS</h2>
       <p>Six farms stand between you and the barn. Three lives per round — every hit is a kill and costs one life. Earn stars: clear the farm, keep 2+ lives, gather the corn.</p>
       <div id="levels-grid"></div>
       <div class="row-btns"><button class="btn" id="btn-levels-back">BACK</button></div>
@@ -383,11 +414,15 @@ body.touch #dpad.on{display:grid}
       <h2>FIELD MANUAL</h2>
       <div class="how-grid">
         <div class="how-card"><h3 id="how-move-ic">MOVE</h3><p id="how-move-txt"></p></div>
-        <div class="how-card"><h3 id="how-lives-ic">THREE LIVES</h3>
-          <p>You get exactly <b>3 lives per round</b>. A vehicle hit <b>kills the chicken outright</b> — it gets squashed, you lose a life, and you respawn on the last safe grass after a short beat. The same goes for trains, foxes, the hawk and deep water. At zero lives the round ends immediately. No refills — the golden egg is pure bonus points.</p>
+        <div class="how-card"><h3>THE LONG ROAD</h3>
+          <p>The main event. <b>One life</b>, endless farmland. Every row forward is <b>+10</b>, every 40 rows a new <b>zone</b> (+250) and the farm gets meaner: faster traffic, more trains, foxes, then night and storms. Your best row is marked with a <b>gold line</b> — beat it. The <b>DAILY ROAD</b> is the same road for everyone until midnight; best run of the day counts and keeps your streak alive.</p></div>
+        <div class="how-card"><h3>CORN &amp; THE COOP</h3>
+          <p>Every corn you grab is banked when the run ends. Spend it in the <b>COOP</b> on new birds — rooster, duck, penguin, turkey, Robo-Hen and the Golden Hen. Looks only: every bird hops the same, so the board stays fair.</p></div>
+        <div class="how-card"><h3 id="how-lives-ic">STORY: THREE LIVES</h3>
+          <p>In <b>Story</b> you get <b>3 lives per farm</b>. A vehicle hit <b>kills the chicken outright</b> — it gets squashed, you lose a life, and you respawn on the last safe grass after a short beat. The same goes for trains, foxes, the hawk and deep water. At zero lives the round ends immediately. No refills — the golden egg is pure bonus points.</p>
           <div class="lives-demo" id="lives-demo"></div></div>
         <div class="how-card"><h3>HAZARDS</h3><p>Trains own the rails — watch the blinking signals and the <b>!</b> banner. Rivers soak chickens: ride logs and lily pads. Foxes sprint after a <b>!</b> warning. Stand still too long and the <b>hawk</b> dives. Keep hopping.</p></div>
-        <div class="how-card"><h3>GOAL &amp; LOOT</h3><p>Reach the red barn at the end of each farm. Corn is <b>+25</b>, the golden egg <b>+200</b>. Stars: finish · finish with 2+ lives · collect 70% of the corn. Submit your run to the Barnyard Legends board.</p></div>
+        <div class="how-card"><h3>STORY GOAL</h3><p>Reach the red barn at the end of each farm. Corn is <b>+25</b>, the golden egg <b>+200</b>. Stars: finish · finish with 2+ lives · collect 70% of the corn. Submit your run to the Barnyard Legends board.</p></div>
       </div>
       <div class="row-btns"><button class="btn btn-primary" id="btn-how-back">GOT IT</button></div>
     </div>
@@ -401,7 +436,9 @@ body.touch #dpad.on{display:grid}
         <button class="btn btn-corn" id="btn-restart">RESTART</button>
         <button class="btn" id="btn-pause-map">MAP</button>
       </div>
-      <div class="row-btns"><button class="lb-toggle" id="btn-scan" aria-pressed="true">CRT SCANLINES: ON</button></div>
+      <div class="row-btns"><button class="lb-toggle" id="btn-scan" aria-pressed="true">CRT SCANLINES: ON</button>
+        <button class="lb-toggle" id="btn-px" aria-pressed="false">PIXELS: CHUNKY</button>
+        <button class="lb-toggle" id="btn-fx" aria-pressed="true">SHADOWS: ON</button></div>
     </div>
   </div>
 
@@ -435,6 +472,8 @@ body.touch #dpad.on{display:grid}
       <div class="big-emoji" id="over-chick"></div>
       <p id="over-cause"></p><p id="over-flav">Three lives spent. The barn can wait one more try.</p>
       <div class="stat-row"><span>SCORE</span><b id="over-score">0</b></div>
+      <div class="stat-row" id="over-rows-row"><span>DISTANCE</span><b id="over-rows">0</b></div>
+      <div class="stat-row" id="over-best-row"><span>BEST</span><b id="over-best">0</b></div>
       <div class="stat-row"><span>CORN</span><b id="over-corn">0</b></div>
       <div class="lb-submit">
         <label class="inits-label" for="over-name">INITIALS</label>
@@ -445,6 +484,7 @@ body.touch #dpad.on{display:grid}
       </div>
       <div class="row-btns">
         <button class="btn btn-primary" id="btn-retry">TRY AGAIN</button>
+        <button class="btn btn-corn" id="btn-over-coop">COOP</button>
         <button class="btn btn-grass" id="btn-over-board">BOARD</button>
         <button class="btn" id="btn-over-map">MAP</button>
       </div></div>
@@ -453,7 +493,12 @@ body.touch #dpad.on{display:grid}
   <div class="screen" id="scr-board" data-ui>
     <div class="panel">
       <h2>BARNYARD LEGENDS</h2>
-      <p>The fastest feathers on the farm. Submit a run from any result screen to carve your initials here.</p>
+      <p>The farthest feathers on the farm. Every run posts from the result screen.</p>
+      <div class="lb-tabs" id="lb-tabs">
+        <button class="lb-toggle" data-tab="road">LONG ROAD</button>
+        <button class="lb-toggle" data-tab="daily">TODAY</button>
+        <button class="lb-toggle" data-tab="story">STORY</button>
+      </div>
       <div id="lb-global-status" class="lb-global-status">LOADING…</div>
       <div id="lb-global"></div>
       <div class="lb-section-label">THIS CABINET</div>
@@ -473,6 +518,18 @@ body.touch #dpad.on{display:grid}
         <button class="btn btn-primary" id="btn-board-play">PLAY A RUN</button>
         <button class="btn" id="btn-board-back">BACK</button>
         <button class="btn btn-ghost" id="btn-board-clear">CLEAR MY RUNS</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="screen" id="scr-coop" data-ui>
+    <div class="coop-sheet">
+      <div class="coop-head"><h2>THE COOP</h2><span class="chip gold" id="coop-corn"></span></div>
+      <div id="coop-name">HEN</div><div id="coop-flav"></div>
+      <div id="coop-grid"></div>
+      <div class="row-btns" style="margin-top:10px">
+        <button class="btn btn-primary" id="coop-act">EQUIPPED</button>
+        <button class="btn" id="coop-back">BACK</button>
       </div>
     </div>
   </div>
@@ -534,9 +591,20 @@ function pixSVG(rows,pal,px){
 const ic=(n,p,px)=>pixSVG(P[n],PAL[p],px);
 
 /* ---------------- save & leaderboard ---------------- */
-let SAVE={u:0,s:[0,0,0,0,0,0],best:0,corn:0,muted:false,name:'YOU',scan:true};
+let SAVE={u:0,s:[0,0,0,0,0,0],best:0,corn:0,muted:false,name:'YOU',scan:true,
+  rBest:0,rRow:0,runs:0,dRow:null,birds:['hen'],bird:'hen',px:'chunky',fx:true};
 try{const s=JSON.parse(localStorage.getItem('chicken_save_v1'));if(s&&typeof s==='object')SAVE=Object.assign(SAVE,s);}catch(e){}
+if(!Array.isArray(SAVE.birds)||!SAVE.birds.includes('hen'))SAVE.birds=['hen'];
 function persist(){try{localStorage.setItem('chicken_save_v1',JSON.stringify(SAVE));}catch(e){}}
+/* modes: 'road' (endless, board chicken) · 'daily' (board chicken-dYYYYMMDD) · 'story' (board chicken_story) */
+let MODE='road',dailyKey=null,curZone=0,maxHearts=1,passedBest=false;
+const SOCd=()=>(window.DSDA&&window.DSDA.daily)?window.DSDA:null;   // games/arcade-social.js
+function hashStr(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function modeBoard(m,k){
+  if(m==='story')return 'chicken_story';
+  if(m==='daily'){const S=SOCd();return S?S.daily.board('chicken',k||dailyKey||S.daily.key()):'chicken';}
+  return 'chicken';
+}
 const LB_KEY='chicken_lb_v1';
 const SEED_LB=[
 ['HEN SOLO',4980,6,41,3,82,1],['EGGSPRESS',4620,6,36,3,77,2],['CLUCKY',4310,5,33,2,95,3],
@@ -548,7 +616,7 @@ let LB=[];
 try{const l=JSON.parse(localStorage.getItem(LB_KEY));LB=Array.isArray(l)&&l.length?l:seedLB();}catch(e){LB=seedLB();}
 function lbSave(){try{localStorage.setItem(LB_KEY,JSON.stringify(LB.slice(-200)));}catch(e){}}
 lbSave();
-let lbFilter='all',lbSort='score',lbMine=false,runSubmitted=false,lastStars=0;
+let lbFilter='road',lbSort='score',lbMine=false,runSubmitted=false,lastStars=0;
 function lbSorted(list){
   const a=[...list];
   if(lbSort==='corn')a.sort((x,y)=>y.corn-x.corn||y.score-x.score);
@@ -561,22 +629,23 @@ function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;',
 function renderBoard(){
   const f=$('lb-filter');
   if(!f.options.length){
-    f.innerHTML='<option value="all">ALL FARMS</option>'+LEVELS.map((L,i)=>`<option value="${i+1}">LV ${i+1} · ${L.name}</option>`).join('');
-    f.value=lbFilter;
+    f.innerHTML='<option value="road">LONG ROAD</option><option value="daily">DAILY ROADS</option><option value="story">STORY · ALL FARMS</option>'+LEVELS.map((L,i)=>`<option value="${i+1}">STORY LV ${i+1}</option>`).join('');
   }
-  let list=LB.filter(e=>lbFilter==='all'||e.level===+lbFilter);
+  f.value=lbFilter;
+  const em=e=>e.mode||'story';
+  let list=LB.filter(e=>lbFilter==='road'?em(e)==='road':lbFilter==='daily'?em(e)==='daily':lbFilter==='story'?em(e)==='story':(em(e)==='story'&&e.level===+lbFilter));
   if(lbMine)list=list.filter(e=>e.you);
   list=lbSorted(list);
   const medals=['gold','silver','bronze'];
   $('lb-podium').innerHTML=list.slice(0,3).map((e,i)=>`
     <div class="pod p${i+1}"><span class="medal">${ic('MEDAL',medals[i],26)}</span>
       <span class="pn">${esc(e.name)}${e.you?' ★':''}</span><span class="ps">${e.score}</span>
-      <span class="pm">LV ${e.level} · ${e.corn} CORN</span></div>`).join('');
+      <span class="pm">${(e.mode||'story')==='story'?'LV '+e.level:'ROW '+(e.rows||0)} · ${e.corn} CORN</span></div>`).join('');
   const rows=list.map((e,i)=>`
     <div class="lb-row${e.you?' you':''}">
       <span class="rk">${String(i+1).padStart(2,'0')}</span>
       <span class="nm">${esc(e.name)}${e.you?'<span class="tag">YOU</span>':''}</span>
-      <span class="sc">${e.score}</span><span class="lv">L${e.level}</span>
+      <span class="sc">${e.score}</span><span class="lv">${(e.mode||'story')==='story'?'L'+e.level:'R'+(e.rows||0)}</span>
       <span class="cn">${ic('CORN','corn',10)} ${e.corn}</span>
     </div>`).join('');
   $('lb-list').innerHTML=list.length
@@ -597,7 +666,8 @@ async function submitRun(src){
   if(!name){rk.style.display='inline-flex';rk.textContent='ENTER YOUR INITIALS';input.focus();return;}
   setInits(name);
   SAVE.name=name;persist();
-  const entry={id:'run'+Date.now()+Math.random().toString(36).slice(2,6),name,score,level:currentLevel+1,corn:cornGot,stars:lastStars,time:Math.round(levelTime),ts:Date.now(),you:true};
+  const entry={id:'run'+Date.now()+Math.random().toString(36).slice(2,6),name,score,mode:MODE,rows:maxRow,day:dailyKey||undefined,
+    level:MODE==='story'?currentLevel+1:curZone+1,corn:cornGot,stars:lastStars,time:Math.round(levelTime),ts:Date.now(),you:true};
   LB.push(entry);lbSave();runSubmitted=true;
   const rank=lbRankOf(entry);
   input.disabled=true;$(src+'-submit-btn').disabled=true;$(src+'-submit-btn').textContent='SUBMITTED ✓';
@@ -605,7 +675,7 @@ async function submitRun(src){
   renderBoard();renderTitle();
   track('score_submit',{score});
   line.style.display='inline-flex';
-  const res=await submitScore(name,score);
+  const res=await submitScore(name,score,modeBoard(MODE));
   if(member){
     if(res==='ok')line.textContent='POSTED AS '+name.toUpperCase()+' ';
     else if(res==='deduped')line.textContent='PERSONAL BEST STANDS';
@@ -663,7 +733,7 @@ function setSaveEnabled(src){
    handle + ◆ badge. */
 const GAME_ID='chicken';
 const BOARD_API='/api/board';
-const SCORE_SECRET='***';  // arcade-wide shared board secret (one Worker BOARD_SECRET)
+const SCORE_SECRET='6216cf68f4e077d3cd991f2d6bd3e878';  // arcade-wide shared board secret (one Worker BOARD_SECRET)
 const DSDA_INITS_KEY='dsda-initials';
 let lastPosted=0;
 function cleanInits(s){return (s||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,3);}
@@ -678,16 +748,18 @@ function fetchTimeout(url,opts,ms){
    arcade-social.js) dedupes member sub-PB posts (fake 200, deduped:true /
    X-DSDA-Dedup header) and stashes + retries 429'd posts in
    dsda-board-pending. submitScore just posts and reads the result. */
-async function submitScore(initials,sc){
+const lastPostedBy={};
+async function submitScore(initials,sc,gid){
+  gid=gid||modeBoard(MODE);
   if(!sc||sc<=0)return 'local';
-  if(sc<=(lastPosted||0))return 'ok';
+  if(sc<=(lastPostedBy[gid]||0))return 'ok';
   const inits=cleanInits(initials||getInits());
   if(!inits)return 'no-inits';
   try{
     const r=await fetchTimeout(BOARD_API+'/score',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({initials:inits,score:Math.round(sc),secret:SCORE_SECRET,game:GAME_ID})},5000);
+      body:JSON.stringify({initials:inits,score:Math.round(sc),secret:SCORE_SECRET,game:gid})},5000);
     if(r.ok){
-      lastPosted=Math.max(lastPosted||0,Math.round(sc));
+      lastPostedBy[gid]=Math.max(lastPostedBy[gid]||0,Math.round(sc));
       try{const j=await r.json();if(j&&j.deduped)return 'deduped';}catch(e){}
       return 'ok';
     }
@@ -705,6 +777,7 @@ async function fetchBoard(gid){
     if(j&&Array.isArray(j.top))return{top:j.top,live:true};
     throw new Error('bad shape');
   }catch(e){
+    if(gid!==GAME_ID)return null;
     try{
       const r=await fetch('leaderboard.json?nocache='+Date.now(),{cache:'no-store'});
       if(!r.ok)return null;
@@ -722,14 +795,21 @@ function fmtBoardDate(ms){
   const d=new Date(ms);
   return(d.getMonth()+1)+'/'+d.getDate();
 }
-function renderGlobalBoard(){
+let lbTab='road';
+function renderGlobalBoard(tab){
+  if(tab)lbTab=tab;
+  if(lbTab==='daily'&&!SOCd())lbTab='road';
+  for(const b of document.querySelectorAll('#lb-tabs [data-tab]')){b.classList.toggle('sel',b.dataset.tab===lbTab);b.setAttribute('aria-pressed',String(b.dataset.tab===lbTab));}
   const box=$('lb-global'),status=$('lb-global-status');
   status.textContent='LOADING…';box.innerHTML='';
   const me=memberHandle()||getInits();
-  fetchBoard(GAME_ID).then(b=>{
+  const want=lbTab;
+  fetchBoard(modeBoard(lbTab)).then(b=>{
+    if(want!==lbTab)return;
     if(!$('scr-board').classList.contains('active'))return;
     if(b&&b.top&&b.top.length){
-      status.textContent=b.live?'LIVE · DSDA ARCADE BOARD':'DSDA ARCADE BOARD · LAST SYNC';
+      const lab=lbTab==='daily'?'DAILY #'+SOCd().daily.number():lbTab==='story'?'STORY':'LONG ROAD';
+      status.textContent=(b.live?'LIVE · ':'LAST SYNC · ')+lab;
       box.innerHTML=b.top.slice(0,10).map((e,i)=>{
         const n=e.h||String(e.n||'???').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,3).padEnd(3,'?');
         const badge=e.h?`<span class="member-badge" title="${esc(e.h)}">◆</span>`:'';
@@ -737,8 +817,8 @@ function renderGlobalBoard(){
         return`<div class="lb-row${isMe?' you':''}"><span class="rk">${String(i+1).padStart(2,'0')}</span><span class="nm">${esc(n)}${badge}</span><span class="sc">${Math.round(e.s)}</span><span class="lv">${fmtBoardDate(e.d)}</span><span class="cn"></span></div>`;
       }).join('');
     }else{
-      status.textContent='OFFLINE — BOARD UNREACHABLE';
-      box.innerHTML='<div class="lb-empty">No runs on the global board yet.<br>First score goes to you!</div>';
+      status.textContent=b?(lbTab==='daily'?'DAILY #'+SOCd().daily.number()+' · NO RUNS YET':'NO RUNS YET'):'OFFLINE — BOARD UNREACHABLE';
+      box.innerHTML='<div class="lb-empty">'+(lbTab==='daily'?'Nobody has run today\'s road yet.<br>First feather takes the crown!':'No runs on this board yet.<br>First score goes to you!')+'</div>';
     }
   }).catch(()=>{status.textContent='OFFLINE — BOARD UNREACHABLE';});
 }
@@ -752,11 +832,11 @@ const LEVELS=[
 {name:'MOONLIGHT RUN',flav:'Headlights, fireflies, and things that go bump.',rows:44,theme:'night',seed:55,mix:[.30,.38,.20,.12],speed:[3.6,5.6],obsMax:4,fox:.18,extra:2},
 {name:'STORM HARVEST',flav:'Rain, thunder, and every hazard on the farm.',rows:50,theme:'storm',seed:66,mix:[.28,.38,.20,.14],speed:[4.0,6.2],obsMax:5,fox:.20,extra:2}];
 const THEMES={
-day:{fog:'#cfeaff',hemiSky:'#bfe3ff',hemiGnd:'#7a9c5a',hemiI:1.3,sunC:'#fff2c8',sunI:2.2,sunPos:[7,12,5],fillC:'#9fc8ff',fillI:.5,grassA:'#66c24e',grassB:'#58b241',grassD:'#4a9c36',tuft:'#7fd45e',treeA:'#3f9a3a',treeB:'#4fae45',treeC:'#69cc58',bush:'#4fae45',road:'#5c6168',roadD:'#4c5158',line:'#e8e4da',water:'#3f9be0',deep:'#2f7fc0',glint:'#eaf7ff',cloud:'#ffffff',cloudOp:.95,night:false,rain:false,amb:'day',music:{tempo:126,filter:2400,trans:0,hat:.05}},
-noon:{fog:'#d8f0ff',hemiSky:'#cfeaff',hemiGnd:'#7a9c5a',hemiI:1.35,sunC:'#ffffff',sunI:2.4,sunPos:[3,14,4],fillC:'#a8d8ff',fillI:.5,grassA:'#58b942',grassB:'#4caa37',grassD:'#3f9430',tuft:'#72cc52',treeA:'#379436',treeB:'#46a341',treeC:'#5cc050',bush:'#46a341',road:'#565b62',roadD:'#464b52',line:'#e8e4da',water:'#37a0e8',deep:'#2a86c8',glint:'#f2fbff',cloud:'#ffffff',cloudOp:.95,night:false,rain:false,amb:'day',music:{tempo:132,filter:2600,trans:0,hat:.05}},
-sunset:{fog:'#f0a870',hemiSky:'#ffb08a',hemiGnd:'#5a4a6a',hemiI:1.1,sunC:'#ffb066',sunI:2.1,sunPos:[-9,5,6],fillC:'#7a6ad8',fillI:.55,grassA:'#84b24e',grassB:'#75a243',grassD:'#639038',tuft:'#9cc45e',treeA:'#4f8a3a',treeB:'#5f9a42',treeC:'#84b252',bush:'#5f9a42',road:'#6a5f66',roadD:'#584e56',line:'#f0d8c0',water:'#5a7ac8',deep:'#4a66b0',glint:'#ffd9a0',cloud:'#ffd8c8',cloudOp:.9,night:false,rain:false,amb:'day',music:{tempo:112,filter:1800,trans:-2,hat:.04}},
-night:{fog:'#141c34',hemiSky:'#4a5a8a',hemiGnd:'#1a2430',hemiI:.66,sunC:'#9fb4ff',sunI:1.05,sunPos:[-6,10,-4],fillC:'#3a4a9a',fillI:.4,grassA:'#336444',grassB:'#295538',grassD:'#20462e',tuft:'#3f7a52',treeA:'#234a30',treeB:'#2a5638',treeC:'#3a7048',bush:'#2a5638',road:'#3c414c',roadD:'#30353e',line:'#8a90a0',water:'#24427a',deep:'#1a3260',glint:'#9fb4ff',cloud:'#3a4a6a',cloudOp:.5,night:true,rain:false,amb:'night',music:{tempo:96,filter:900,trans:-5,hat:.02}},
-storm:{fog:'#6a7580',hemiSky:'#95a0aa',hemiGnd:'#3a4438',hemiI:1.0,sunC:'#b8c2cc',sunI:1.25,sunPos:[4,12,6],fillC:'#6a7a8a',fillI:.45,grassA:'#529340',grassB:'#478536',grassD:'#3a722c',tuft:'#63a44e',treeA:'#35703a',treeB:'#3f7d40',treeC:'#529a50',bush:'#3f7d40',road:'#4e545c',roadD:'#40464e',line:'#c8ccd0',water:'#3a6ea0',deep:'#2e5a88',glint:'#c8d8e8',cloud:'#6a7280',cloudOp:.95,night:false,rain:true,amb:'storm',music:{tempo:140,filter:2000,trans:-3,hat:.06}}};
+day:{fog:'#cfeaff',hemiSky:'#bfe3ff',hemiGnd:'#7a9c5a',hemiI:1.15,sunC:'#fff2c8',sunI:2.4,sunPos:[-6,10,2.5],fillC:'#9fc8ff',fillI:.5,grassA:'#66c24e',grassB:'#58b241',grassD:'#4a9c36',tuft:'#7fd45e',treeA:'#3f9a3a',treeB:'#4fae45',treeC:'#69cc58',bush:'#4fae45',road:'#5c6168',roadD:'#4c5158',line:'#e8e4da',water:'#3f9be0',deep:'#2f7fc0',glint:'#eaf7ff',cloud:'#ffffff',cloudOp:.95,night:false,rain:false,amb:'day',music:{tempo:126,filter:2400,trans:0,hat:.05}},
+noon:{fog:'#d8f0ff',hemiSky:'#cfeaff',hemiGnd:'#7a9c5a',hemiI:1.2,sunC:'#ffffff',sunI:2.6,sunPos:[-3,14,1.5],fillC:'#a8d8ff',fillI:.5,grassA:'#58b942',grassB:'#4caa37',grassD:'#3f9430',tuft:'#72cc52',treeA:'#379436',treeB:'#46a341',treeC:'#5cc050',bush:'#46a341',road:'#565b62',roadD:'#464b52',line:'#e8e4da',water:'#37a0e8',deep:'#2a86c8',glint:'#f2fbff',cloud:'#ffffff',cloudOp:.95,night:false,rain:false,amb:'day',music:{tempo:132,filter:2600,trans:0,hat:.05}},
+sunset:{fog:'#f0a870',hemiSky:'#ffb08a',hemiGnd:'#5a4a6a',hemiI:1.0,sunC:'#ffb066',sunI:2.3,sunPos:[-10,5,3],fillC:'#7a6ad8',fillI:.55,grassA:'#84b24e',grassB:'#75a243',grassD:'#639038',tuft:'#9cc45e',treeA:'#4f8a3a',treeB:'#5f9a42',treeC:'#84b252',bush:'#5f9a42',road:'#6a5f66',roadD:'#584e56',line:'#f0d8c0',water:'#5a7ac8',deep:'#4a66b0',glint:'#ffd9a0',cloud:'#ffd8c8',cloudOp:.9,night:false,rain:false,amb:'day',music:{tempo:112,filter:1800,trans:-2,hat:.04}},
+night:{fog:'#141c34',hemiSky:'#4a5a8a',hemiGnd:'#1a2430',hemiI:0.6,sunC:'#9fb4ff',sunI:1.15,sunPos:[-5,10,-1],fillC:'#3a4a9a',fillI:.4,grassA:'#336444',grassB:'#295538',grassD:'#20462e',tuft:'#3f7a52',treeA:'#234a30',treeB:'#2a5638',treeC:'#3a7048',bush:'#2a5638',road:'#3c414c',roadD:'#30353e',line:'#8a90a0',water:'#24427a',deep:'#1a3260',glint:'#9fb4ff',cloud:'#3a4a6a',cloudOp:.5,night:true,rain:false,amb:'night',music:{tempo:96,filter:900,trans:-5,hat:.02}},
+storm:{fog:'#6a7580',hemiSky:'#95a0aa',hemiGnd:'#3a4438',hemiI:0.95,sunC:'#b8c2cc',sunI:1.3,sunPos:[-4,12,2],fillC:'#6a7a8a',fillI:.45,grassA:'#529340',grassB:'#478536',grassD:'#3a722c',tuft:'#63a44e',treeA:'#35703a',treeB:'#3f7d40',treeC:'#529a50',bush:'#3f7d40',road:'#4e545c',roadD:'#40464e',line:'#c8ccd0',water:'#3a6ea0',deep:'#2e5a88',glint:'#c8d8e8',cloud:'#6a7280',cloudOp:.95,night:false,rain:true,amb:'storm',music:{tempo:140,filter:2000,trans:-3,hat:.06}}};
 
 /* ---------------- audio (fully guarded: audio can never break gameplay) ---------------- */
 const Audio={
@@ -887,13 +967,30 @@ let W=innerWidth,H=innerHeight,PX=3;
 let renderer;
 try{renderer=new THREE.WebGLRenderer({canvas:$('c'),antialias:false,alpha:true,powerPreference:'high-performance'});}
 catch(e){$('scr-loading').classList.remove('active');$('scr-error').classList.add('active');$('error-msg').textContent='WebGL is not available on this device or browser.';$('btn-retry-load').onclick=()=>location.reload();throw e;}
-renderer.setPixelRatio(1);renderer.setClearColor(0x000000,0);renderer.shadowMap.enabled=false;
+renderer.setPixelRatio(1);renderer.setClearColor(0x000000,0);
+/* GRAPHICS: real sun shadows (crisp PCF — they get the same chunky upscale as
+   everything else). Quality steps down on its own if a phone can't hold 45fps. */
+const LOWEND=isTouchDev()&&((navigator.hardwareConcurrency||4)<=4||(navigator.deviceMemory||4)<=3);
+let QUAL=LOWEND?1:2;   // 2 = shadows 1024 · 1 = shadows 512 · 0 = no shadows
+renderer.shadowMap.enabled=QUAL>0;renderer.shadowMap.type=THREE.PCFShadowMap;
+function isTouchDev(){return('ontouchstart'in window)||matchMedia('(pointer:coarse)').matches;}
 const scene=new THREE.Scene();
 scene.fog=new THREE.Fog(new THREE.Color('#cfeaff'),28,56);
 const camera=new THREE.OrthographicCamera(-10,10,6,-6,.1,120);
 const CAM_DIR=new THREE.Vector3(1,1.35,1).normalize();
 const hemi=new THREE.HemisphereLight(0xbfe3ff,0x7a9c5a,1.3);scene.add(hemi);
-const sunLight=new THREE.DirectionalLight(0xfff2c8,2.2);sunLight.position.set(7,12,5);scene.add(sunLight);
+const sunLight=new THREE.DirectionalLight(0xfff2c8,2.2);sunLight.position.set(7,12,5);scene.add(sunLight);scene.add(sunLight.target);
+sunLight.castShadow=QUAL>0;
+{const sc=sunLight.shadow.camera;sc.left=-15;sc.right=15;sc.top=15;sc.bottom=-15;sc.near=1;sc.far=70;sc.updateProjectionMatrix();}
+sunLight.shadow.mapSize.set(QUAL>=2?1024:512,QUAL>=2?1024:512);sunLight.shadow.bias=-.0012;sunLight.shadow.normalBias=.03;
+function setQuality(q){
+  q=clamp(q,0,2);if(q===QUAL)return;QUAL=q;
+  renderer.shadowMap.enabled=q>0;sunLight.castShadow=q>0;
+  if(sunLight.shadow.map){sunLight.shadow.map.dispose();sunLight.shadow.map=null;}
+  const s=q>=2?1024:512;sunLight.shadow.mapSize.set(s,s);
+  for(const m of[MAT,FOLIAGE,GLOW])m.needsUpdate=true;
+  shadowMat.opacity=q>0?.6:1;
+}
 const fillLight=new THREE.DirectionalLight(0x9fc8ff,.5);fillLight.position.set(-8,6,-6);scene.add(fillLight);
 const world=new THREE.Group();scene.add(world);
 const structures=new THREE.Group();scene.add(structures);
@@ -915,14 +1012,25 @@ function mergeParts(gs){
   out.setAttribute('color',new THREE.BufferAttribute(col,3));
   out.setIndex(new THREE.BufferAttribute(ix,1));return out;
 }
+/* Voxel shading baked into vertex colours: each box darkens toward its base
+   (cheap ambient occlusion — trees, cars and hens sit IN the world instead of
+   on it) and gets a tiny deterministic tone jitter so repeats don't look
+   copy-pasted. Ground slabs (wide + flat) are left alone. */
 function voxGeo(parts){
   return mergeParts(parts.map(p=>{
     const g=new THREE.BoxGeometry(p.w,p.h,p.d);g.translate(p.x,p.y,p.z);
-    const c=new THREE.Color(p.c),n=g.attributes.position.count,a=new Float32Array(n*3);
-    for(let i=0;i<n;i++){a[i*3]=c.r;a[i*3+1]=c.g;a[i*3+2]=c.b;}
+    const c=new THREE.Color(p.c),n=g.attributes.position.count,a=new Float32Array(n*3),pos=g.attributes.position.array;
+    const flat=p.w>8||p.h<.05,ao=flat?0:clamp(.18+p.h*.12,.18,.34);
+    const j=flat?1:1+(((Math.sin(p.x*12.9898+p.y*78.233+p.z*37.719)*43758.5453)%1+1)%1-.5)*.07;
+    const y0=p.y-p.h/2;
+    for(let i=0;i<n;i++){
+      const k=ao&&pos[i*3+1]<y0+1e-4?(1-ao)*j:j;
+      a[i*3]=c.r*k;a[i*3+1]=c.g*k;a[i*3+2]=c.b*k;
+    }
     g.setAttribute('color',new THREE.BufferAttribute(a,3));return g;
   }));
 }
+function mixHex(a,b,t){return '#'+new THREE.Color(a).lerp(new THREE.Color(b),t).getHexString();}
 const MAT=new THREE.MeshLambertMaterial({vertexColors:true});
 const GLOW=new THREE.MeshBasicMaterial({vertexColors:true});
 const windU={value:0};
@@ -942,7 +1050,18 @@ const waterU={uTime:{value:0},uA:{value:new THREE.Color('#3f9be0')},uB:{value:ne
   uGlint:{value:new THREE.Color('#eaf7ff')},uFog:{value:new THREE.Color('#cfeaff')},uFogNear:{value:28},uFogFar:{value:56}};
 const waterMat=new THREE.ShaderMaterial({uniforms:waterU,
   vertexShader:'varying vec3 vW;varying float vDist;void main(){vec4 wp=modelMatrix*vec4(position,1.0);vW=wp.xyz;vec4 mv=viewMatrix*wp;vDist=-mv.z;gl_Position=projectionMatrix*mv;}',
-  fragmentShader:'uniform float uTime;uniform vec3 uA,uB,uGlint,uFog;uniform float uFogNear,uFogFar;varying vec3 vW;varying float vDist;void main(){float w1=sin(vW.x*2.0+uTime*1.7);float w2=sin(vW.z*3.4-uTime*1.2+vW.x*0.6);float band=step(0.15,w1*0.5+w2*0.5);vec3 col=mix(uA,uB,band);float g=sin(vW.x*5.2+uTime*2.4)*sin(vW.z*7.3-uTime*1.9);col=mix(col,uGlint,step(0.9,g)*0.85);float f=smoothstep(uFogNear,uFogFar,vDist);gl_FragColor=vec4(mix(col,uFog,f),1.0);\n#include <colorspace_fragment>\n}'});
+  fragmentShader:[
+   'uniform float uTime;uniform vec3 uA,uB,uGlint,uFog;uniform float uFogNear,uFogFar;varying vec3 vW;varying float vDist;',
+   'void main(){',
+   ' float lz=vW.z-floor(vW.z+0.5);float edge=abs(lz)*2.0;',            /* 0 = mid-river, 1 = bank */
+   ' float w1=sin(vW.x*2.0+uTime*1.7);float w2=sin(vW.z*3.4-uTime*1.2+vW.x*0.6);',
+   ' float band=step(0.15,w1*0.5+w2*0.5);vec3 col=mix(uA,uB,band);',
+   ' col=mix(col,uB*0.78,step(edge,0.42)*0.35);',                        /* deep channel */
+   ' float g=sin(vW.x*5.2+uTime*2.4)*sin(vW.z*7.3-uTime*1.9);col=mix(col,uGlint,step(0.9,g)*0.85);',
+   ' float foamN=sin(vW.x*3.1+uTime*2.2+sin(vW.x*1.3-uTime)*2.0)*0.5+0.5;',
+   ' float foam=step(0.8-foamN*0.12,edge);col=mix(col,mix(uGlint,vec3(1.0),0.5),foam*0.75);', /* lapping foam on both banks */
+   ' float f=smoothstep(uFogNear,uFogFar,vDist);gl_FragColor=vec4(mix(col,uFog,f),1.0);',
+   '#include <colorspace_fragment>','}'].join('\n')});
 const waterGeo=new THREE.PlaneGeometry(44,1);waterGeo.rotateX(-Math.PI/2);
 const geoCache=new Map();
 const cached=(k,make)=>{if(!geoCache.has(k))geoCache.set(k,make());return geoCache.get(k);};
@@ -956,6 +1075,14 @@ const shadowMat=new THREE.MeshBasicMaterial({map:softShadowTex(),transparent:tru
 const shadowGeo=new THREE.PlaneGeometry(1.35,1.35);shadowGeo.rotateX(-Math.PI/2);
 const beamGeo=new THREE.PlaneGeometry(2.6,1.7);beamGeo.rotateX(-Math.PI/2);
 const beamMat=new THREE.MeshBasicMaterial({color:0xffe9a0,transparent:true,opacity:.15,blending:THREE.AdditiveBlending,depthWrite:false});
+/* night: a soft lantern pool that follows the hen so you can read the ground */
+function glowTex(){
+  const cv=document.createElement('canvas');cv.width=cv.height=64;const g=cv.getContext('2d');
+  const gr=g.createRadialGradient(32,32,2,32,32,31);gr.addColorStop(0,'rgba(255,226,150,.55)');gr.addColorStop(.5,'rgba(255,200,120,.18)');gr.addColorStop(1,'rgba(255,200,120,0)');
+  g.fillStyle=gr;g.fillRect(0,0,64,64);const t=new THREE.CanvasTexture(cv);return t;
+}
+const nightGlow=new THREE.Mesh(new THREE.PlaneGeometry(5,5).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({map:glowTex(),transparent:true,depthWrite:false,blending:THREE.AdditiveBlending}));
+nightGlow.position.y=.035;nightGlow.visible=false;nightGlow.renderOrder=2;scene.add(nightGlow);
 
 /* ---------------- models ---------------- */
 function treeParts(x,z,v,th){
@@ -1030,26 +1157,77 @@ function makeSign(texKey,lines,bg,fg,arrow,w=1.7){
   face.position.set(0,1.2,.06);grp.add(face);return grp;
 }
 
-/* ---------------- chicken ---------------- */
+/* ---------------- chicken & the coop birds ----------------
+   Every bird is the same hen skeleton (core / head / wings / legs) with its
+   own palette and a few swap-in parts: combs, beaks, tails. Looks only —
+   hitboxes and hop timing never change, so the boards stay fair. */
+const HEN_PAL={body:'#ffffff',belly:'#f2ece0',tail:'#f4f0e6',head:'#ffffff',comb:'#e83a3a',comb2:'#ff6a5a',beak:'#ff9f2e',beak2:'#ffc93c',
+  wattle:'#e83a3a',wing:'#f0eadc',wing2:'#d8cfba',wing3:'#c8bfa8',leg:'#ffb02e',leg2:'#e8a020',cheek:'#ffb0a0',eye:'#1a1a24'};
+const BIRDS=[
+{id:'hen',name:'HEN',price:0,flav:'The original. Determined, slightly concussed.',pal:{}},
+{id:'rusty',name:'RUSTY',price:60,flav:'Rhode Island Red. Has opinions about tractors.',pal:{body:'#c8743a',belly:'#e0a060',tail:'#7a3a1a',head:'#d07a3e',wing:'#a85a2a',wing2:'#8a4420',wing3:'#6a3418'}},
+{id:'duck',name:'DUCK',price:150,flav:'Still can\'t swim here. Union rules.',comb:'none',beak:'flat',wattle:false,tail:'stub',
+  pal:{body:'#b8a890',belly:'#d8ccb4',tail:'#3a3430',head:'#2e7a4a',beak:'#ffc93c',beak2:'#e8a020',wing:'#8a7a68',wing2:'#3a5aa8',wing3:'#f4f0e6',leg:'#ff9f2e',leg2:'#e88a20',cheek:'#2e7a4a'}},
+{id:'rooster',name:'ROOSTER',price:250,flav:'Crows at 4:12am. Every day. On purpose.',comb:'big',tail:'sickle',
+  pal:{body:'#b8402a',belly:'#2a2a30',tail:'#3a3a40',head:'#d8602a',wing:'#e8a040',wing2:'#2e5a3a',wing3:'#1a3a2a',cheek:'#e8603a',t1:'#2e6a4a',t2:'#1a1a24',t3:'#b8402a'}},
+{id:'penguin',name:'PENGUIN',price:400,flav:'Took a wrong turn at Antarctica. Committed anyway.',comb:'none',wattle:false,tail:'stub',front:true,
+  pal:{body:'#2a2c36',belly:'#ffffff',tail:'#2a2c36',head:'#2a2c36',beak:'#ffb02e',beak2:'#ff8a1e',wing:'#2a2c36',wing2:'#22242c',wing3:'#1a1c24',leg:'#ff9f2e',leg2:'#e88a20',cheek:'#ffffff',front:'#f4f4f8'}},
+{id:'turkey',name:'TURKEY',price:600,flav:'Escaped in November. Wanted poster in three counties.',comb:'none',wattle:false,tail:'fan',snood:true,
+  pal:{body:'#6a4a2e',belly:'#4a3220',tail:'#5a3a22',head:'#9ab0d8',beak:'#c8a070',beak2:'#e8c890',wing:'#8a6a42',wing2:'#6a4a2e',wing3:'#d8c8a0',leg:'#c87a4a',leg2:'#a85a2a',cheek:'#e83a3a',t1:'#8a5a32',t2:'#e8d8b0',t3:'#3a2a1a'}},
+{id:'robo',name:'ROBO-HEN',price:900,flav:'DSDA unit HN-137. Firmware: cluck v2.0.',comb:'antenna',wattle:false,glowEyes:'#5affff',
+  pal:{body:'#a4aebe',belly:'#6a7484',tail:'#6a7484',head:'#c2ccd6',beak:'#e8c860',beak2:'#ffd94a',wing:'#8a94a4',wing2:'#6a7484',wing3:'#4a5464',leg:'#5a6474',leg2:'#4a5464',cheek:'#ff5a8a',eye:'#1a2a3a'}},
+{id:'golden',name:'GOLDEN HEN',price:1500,flav:'Lays nothing. Is the egg. Leaves sparkles.',trail:true,gold:true,
+  pal:{body:'#ffd94a',belly:'#e8b020',tail:'#f0c030',head:'#ffe070',comb:'#ff5a3a',wing:'#f0c030',wing2:'#d8a020',wing3:'#b88010',leg:'#ff9f2e',cheek:'#ffb070'}}];
+const birdById=id=>BIRDS.find(b=>b.id===id)||BIRDS[0];
+function birdGeos(b){
+  return cached('bird_'+b.id,()=>{
+    const p=Object.assign({},HEN_PAL,b.pal);
+    const core=[V(.5,.42,.62,0,.44,0,p.body),V(.44,.16,.5,0,.28,.02,p.belly)];
+    const tail=b.tail||'hen';
+    if(tail==='hen'||tail==='sickle')core.push(V(.3,.2,.16,0,.6,.33,p.tail),V(.26,.14,.14,0,.74,.36,p.tail),V(.16,.12,.12,.1,.82,.38,p.body),V(.16,.12,.12,-.1,.82,.38,p.body));
+    if(tail==='sickle')core.push(V(.1,.46,.1,0,.9,.46,p.t1),V(.08,.38,.1,.08,.98,.52,p.t2),V(.08,.34,.1,-.08,.94,.5,p.t3),V(.08,.12,.22,0,1.12,.56,p.t1));
+    if(tail==='stub')core.push(V(.24,.12,.16,0,.5,.36,p.tail),V(.16,.08,.1,0,.56,.44,p.tail));
+    if(tail==='fan')core.push(V(.24,.18,.16,0,.6,.34,p.tail),V(1.0,.62,.08,0,.9,.44,p.t1),V(.86,.5,.09,0,.86,.46,p.t2),V(.7,.4,.1,0,.82,.48,p.t3),V(.4,.24,.11,0,.76,.5,p.t1));
+    if(b.front)core.push(V(.34,.32,.05,0,.44,-.31,p.front));
+    const head=[V(.32,.34,.3,0,.12,-.06,p.head)];
+    const comb=b.comb||'hen';
+    if(comb==='hen')head.push(V(.1,.12,.22,0,.33,-.04,p.comb),V(.08,.08,.1,0,.39,-.08,p.comb),V(.07,.07,.08,.06,.36,-.02,p.comb2));
+    if(comb==='big')head.push(V(.1,.2,.3,0,.37,-.04,p.comb),V(.08,.12,.1,0,.52,0,p.comb),V(.08,.14,.1,0,.5,-.13,p.comb),V(.08,.1,.08,0,.46,.1,p.comb2));
+    if(comb==='antenna')head.push(V(.04,.2,.04,0,.38,-.04,'#6a7484'),V(.14,.04,.14,0,.29,-.04,'#6a7484'));
+    if(b.beak==='flat')head.push(V(.2,.07,.2,0,.06,-.3,p.beak),V(.16,.04,.12,0,.1,-.28,p.beak2));
+    else head.push(V(.12,.1,.14,0,.1,-.26,p.beak),V(.1,.04,.1,0,.13,-.3,p.beak2));
+    if(b.wattle!==false)head.push(V(.08,b.comb==='big'?.16:.1,.06,0,b.comb==='big'?-.05:-.02,-.22,p.wattle));
+    if(b.snood)head.push(V(.06,.2,.06,.04,.02,-.31,'#e83a3a'),V(.1,.14,.08,0,-.06,-.2,'#e83a3a'));
+    if(!b.glowEyes)head.push(V(.05,.07,.07,.17,.16,-.12,p.eye),V(.05,.07,.07,-.17,.16,-.12,p.eye),V(.02,.02,.02,.19,.19,-.14,'#ffffff'),V(.02,.02,.02,-.15,.19,-.14,'#ffffff'));
+    head.push(V(.06,.05,.05,.18,.06,-.1,p.cheek),V(.06,.05,.05,-.18,.06,-.1,p.cheek));
+    const glow=[];
+    if(b.glowEyes)glow.push(V(.05,.06,.1,.17,.16,-.12,b.glowEyes),V(.05,.06,.1,-.17,.16,-.12,b.glowEyes));
+    if(comb==='antenna')glow.push(V(.09,.09,.09,0,.52,-.04,'#ff5a5a'));
+    return{core:voxGeo(core),head:voxGeo(head),
+      wing:voxGeo([V(.1,.26,.4,0,-.1,0,p.wing),V(.1,.08,.2,0,-.24,.06,p.wing2),V(.1,.06,.12,0,-.28,.14,p.wing3)]),
+      leg:voxGeo([V(.08,.2,.08,0,-.1,0,p.leg),V(.14,.05,.18,0,-.2,-.03,p.leg),V(.04,.04,.08,.05,-.2,-.12,p.leg2),V(.04,.04,.08,-.05,-.2,-.12,p.leg2)]),
+      glow:glow.length?voxGeo(glow):null};
+  });
+}
+const GOLDMAT=new THREE.MeshLambertMaterial({vertexColors:true,emissive:0x4a3000});
 const chickenG=new THREE.Group();scene.add(chickenG);
-const chickCore=new THREE.Mesh(cached('chCore2',()=>voxGeo([
-  V(.5,.42,.62,0,.44,0,'#ffffff'),V(.44,.16,.5,0,.28,.02,'#f2ece0'),
-  V(.3,.2,.16,0,.6,.33,'#f4f0e6'),V(.26,.14,.14,0,.74,.36,'#f4f0e6'),V(.16,.12,.12,.1,.82,.38,'#ffffff'),V(.16,.12,.12,-.1,.82,.38,'#ffffff')])),MAT);
 const chickHeadG=new THREE.Group();chickHeadG.position.set(0,.66,-.22);
-const chickHead=new THREE.Mesh(cached('chHead2',()=>voxGeo([
-  V(.32,.34,.3,0,.12,-.06,'#ffffff'),V(.1,.12,.22,0,.33,-.04,'#e83a3a'),V(.08,.08,.1,0,.39,-.08,'#e83a3a'),V(.07,.07,.08,.06,.36,-.02,'#ff6a5a'),
-  V(.12,.1,.14,0,.1,-.26,'#ff9f2e'),V(.1,.04,.1,0,.13,-.3,'#ffc93c'),V(.08,.1,.06,0,-.02,-.22,'#e83a3a'),
-  V(.05,.07,.07,.17,.16,-.12,'#1a1a24'),V(.05,.07,.07,-.17,.16,-.12,'#1a1a24'),
-  V(.02,.02,.02,.19,.19,-.14,'#ffffff'),V(.02,.02,.02,-.15,.19,-.14,'#ffffff'),
-  V(.06,.05,.05,.18,.06,-.1,'#ffb0a0'),V(.06,.05,.05,-.18,.06,-.1,'#ffb0a0')])),MAT);
-chickHeadG.add(chickHead);
-const wingGeo=cached('chWing2',()=>voxGeo([V(.1,.26,.4,0,-.1,0,'#f0eadc'),V(.1,.08,.2,0,-.24,.06,'#d8cfba'),V(.1,.06,.12,0,-.28,.14,'#c8bfa8')]));
-const legGeo=cached('chLeg2',()=>voxGeo([V(.08,.2,.08,0,-.1,0,'#ffb02e'),V(.14,.05,.18,0,-.2,-.03,'#ffb02e'),V(.04,.04,.08,.05,-.2,-.12,'#e8a020'),V(.04,.04,.08,-.05,-.2,-.12,'#e8a020')]));
-const wingL=new THREE.Mesh(wingGeo,MAT);wingL.position.set(.3,.56,-.02);
-const wingR=new THREE.Mesh(wingGeo,MAT);wingR.position.set(-.3,.56,-.02);
-const legL=new THREE.Mesh(legGeo,MAT);legL.position.set(.12,.22,.05);
-const legR=new THREE.Mesh(legGeo,MAT);legR.position.set(-.12,.22,.05);
+const chickCore=new THREE.Mesh(undefined,MAT),chickHead=new THREE.Mesh(undefined,MAT),chickGlow=new THREE.Mesh(undefined,GLOW);
+chickHeadG.add(chickHead,chickGlow);
+const wingL=new THREE.Mesh(undefined,MAT);wingL.position.set(.3,.56,-.02);
+const wingR=new THREE.Mesh(undefined,MAT);wingR.position.set(-.3,.56,-.02);
+const legL=new THREE.Mesh(undefined,MAT);legL.position.set(.12,.22,.05);
+const legR=new THREE.Mesh(undefined,MAT);legR.position.set(-.12,.22,.05);
 chickenG.add(chickCore,chickHeadG,wingL,wingR,legL,legR);
+for(const m of[chickCore,chickHead,wingL,wingR,legL,legR])m.castShadow=true;
+let birdDef=BIRDS[0];
+function applyBird(id){
+  birdDef=birdById(id);const g=birdGeos(birdDef),mat=birdDef.gold?GOLDMAT:MAT;
+  chickCore.geometry=g.core;chickHead.geometry=g.head;wingL.geometry=wingR.geometry=g.wing;legL.geometry=legR.geometry=g.leg;
+  for(const m of[chickCore,chickHead,wingL,wingR])m.material=mat;
+  if(g.glow){chickGlow.geometry=g.glow;chickGlow.visible=true;}else chickGlow.visible=false;
+}
+applyBird(SAVE.bird);
 const chickShadow=new THREE.Mesh(shadowGeo,shadowMat);chickShadow.position.y=.02;scene.add(chickShadow);
 
 /* hawk */
@@ -1154,113 +1332,146 @@ const spillMat=new THREE.MeshBasicMaterial({color:0xffcf7a,transparent:true,opac
 const spillGeo=new THREE.PlaneGeometry(2.4,2.8);spillGeo.rotateX(-Math.PI/2);
 let doorGlow=null,doorSpill=null,doorL=null,doorR=null,vane=null,doorOpen=0;
 
-/* ---------------- level generation ---------------- */
-const OFF=3;
-let rowsData=null,levelMeta=null,themeKey='day';
-function genLevel(idx){
-  const L=LEVELS[idx],rnd=mulberry32(L.seed*1000+7),N=L.rows;
-  const rows=[];let prev='grass',run=0,forceGrass=false,prevFox=false;
-  let eggRow=Math.floor(N*.55+rnd()*N*.15),eggPlaced=false,cornTotal=0;
-  let firstRoad=-1,firstWater=-1,firstRail=-1;
-  for(let i=-OFF;i<=N+2;i++){
-    let type='grass',safe=false;
-    if(i<0){type='start';safe=true;}
-    else if(i<3)safe=true;
-    else if(i>=N-3&&i<N)safe=true;
-    else if(i===N){type='barn';safe=true;}
-    else if(i>N){type='meadow';safe=true;}
-    else{
-      if(forceGrass){type='grass';forceGrass=false;}
-      else{
-        const r=rnd(),m=L.mix;
-        type=r<m[0]?'grass':r<m[0]+m[1]?'road':r<m[0]+m[1]+m[2]?'water':'rail';
-        if(type==='water'&&prev==='water'&&run>=2)type='grass';
-        if(type==='road'&&prev==='road'&&run>=3)type='grass';
-        if(type==='rail'&&prev!=='grass')type='grass';
-        if(type==='rail')forceGrass=true;
-      }
-      run=type===prev?run+1:1;prev=type;
-      if(type==='road'&&firstRoad<0)firstRoad=i;
-      if(type==='water'&&firstWater<0)firstWater=i;
-      if(type==='rail'&&firstRail<0)firstRail=i;
-    }
-    const d={i,type,safe,blocked:new Set(),obs:[],flowers:[],tufts:[],patches:[],corn:[],side:[],dashes:false,group:null,unique:[],built:false};
-    for(let x=-20;x<=20;x++){
-      if(Math.abs(x)<8)continue;
-      if(rnd()<.3)d.side.push({x,k:pick(rnd,['tree','tree','bush','rock']),v:Math.floor(rnd()*3)});
-    }
-    if(type==='grass'&&!safe){
-      const maxObs=Math.min(L.obsMax,5);
-      const n=Math.floor(rnd()*(maxObs+1));
-      const cols=[...Array(13)].map((_,k)=>k-6).sort(()=>rnd()-.5);
-      for(let k=0;k<n;k++){const c=cols[k];d.blocked.add(c);d.obs.push({col:c,k:pick(rnd,['tree','tree','tree','hay','rock']),v:Math.floor(rnd()*3)});}
-      if(i>4&&rnd()<L.fox&&!prevFox){
-        d.fox={period:4+rnd()*4,t:rnd()*2,dir:rnd()<.5?1:-1,state:'idle',x:0,mesh:null,bang:null};
-        prevFox=true;
-        while(d.blocked.size>3){const c=[...d.blocked][0];d.blocked.delete(c);d.obs=d.obs.filter(o=>o.col!==c);}
-      }else prevFox=false;
-      if(rnd()<.55){
-        const free=[...Array(13)].map((_,k)=>k-6).filter(c=>!d.blocked.has(c)).sort(()=>rnd()-.5);
-        const nc=1+(rnd()<.3?1:0);
-        for(let k=0;k<nc&&k<free.length;k++){d.corn.push({col:free[k],taken:false,mesh:null});cornTotal++;}
-      }
-      if(!eggPlaced&&i>=eggRow){
-        const free=[...Array(13)].map((_,k)=>k-6).filter(c=>!d.blocked.has(c)&&!d.corn.some(cc=>cc.col===c));
-        if(free.length){d.egg={col:pick(rnd,free),taken:false,mesh:null};eggPlaced=true;}
-      }
-      const nf=Math.floor(rnd()*3);
-      for(let k=0;k<nf;k++){const c=Math.floor(rnd()*13)-6;if(!d.blocked.has(c))d.flowers.push({col:c,c:pick(rnd,['#ff8ab0','#ffc93c','#ffffff','#ff6a5a'])});}
-    }
-    if(type==='grass'||type==='start'||type==='barn'||type==='meadow'){
-      const rr=mulberry32(i*7919+idx*131+5);
-      for(let k=0;k<6;k++)d.tufts.push({x:(rr()-.5)*13,z:(rr()-.5)*.7});
-      for(let k=0;k<5;k++)d.patches.push({x:(rr()-.5)*40,z:(rr()-.5)*.7,s:.3+rr()*.5});
-    }
-    if(type==='road'){
-      d.dir=rnd()<.5?1:-1;
-      const tractorRow=rnd()<.14;
-      d.speed=lerp(L.speed[0],L.speed[1],rnd())*(tractorRow?.55:1);
-      const count=3+Math.floor(rnd()*2)+L.extra;
-      const spacing=42/count;d.vehicles=[];
-      for(let k=0;k<count;k++){
-        const vt=tractorRow?'tractor':rnd()<.25?'truck':'car';
-        d.vehicles.push({type:vt,x:-21+k*spacing+(rnd()-.5)*2.4,half:vt==='truck'?1.6:vt==='tractor'?1.05:.95,
-          color:pick(rnd,CAR_COLORS),phase:rnd()*9,mesh:null,puff:rnd()*.6});
-      }
-    }
-    if(type==='water'){
-      d.dir=rnd()<.5?1:-1;d.speed=1.3+rnd()*1.4;
-      if(rnd()<.25){
-        d.pads=new Set([...Array(13)].map((_,k)=>k-6));
-        const cols=[...Array(13)].map((_,k)=>k-6).sort(()=>rnd()-.5);
-        let removed=0;
-        for(const c of cols){
-          if(removed>=5)break;
-          const l1=!d.pads.has(c-1),l2=!d.pads.has(c-2),r1=!d.pads.has(c+1),r2=!d.pads.has(c+2);
-          if((l1&&l2)||(r1&&r2)||(l1&&r1))continue;
-          d.pads.delete(c);removed++;
-        }
-      }else{
-        const count=7,spacing=42/count;d.logs=[];
-        for(let k=0;k<count;k++){
-          const len=2.4+rnd()*1.4;
-          d.logs.push({len,x:-21+k*spacing+(rnd()-.5)*1.2,half:len/2,phase:rnd()*9,mesh:null});
-        }
-      }
-      d.sparkles=[];for(let k=0;k<3;k++)d.sparkles.push({x:(rnd()-.5)*36,z:(rnd()-.5)*.6,mesh:null});
-    }
-    if(type==='rail'){d.dir=rnd()<.5?1:-1;d.state='idle';d.t=-rnd()*4;d.idleDur=4+rnd()*4;d.trainX=0;d.bellT=0;d.train=null;d.lights=[];}
-    if(i===N-2||i===N-1||i===N||i===-2)d.porchFence=true;
-    rows.push(d);
-  }
-  for(let k=0;k<rows.length-1;k++)if(rows[k].type==='road'&&rows[k+1].type==='road')rows[k].dashes=true;
-  return{rows,N,cornTotal,firstRoad,firstWater,firstRail,idx};
+/* ---------------- level generation ----------------
+   One incremental row generator drives every mode. STORY builds a farm's
+   rows up front (fixed seed, barn at N). LONG ROAD / DAILY stream rows
+   forever: 40-row zones cycle the farm themes, and the difficulty ramps
+   with distance. Rows live in a Map keyed by row index; far-behind rows
+   are recycled and dropped so a 1,000-row run costs the same as row 10. */
+const OFF=3,ZONE=40;
+const ZONE_THEMES=['day','noon','sunset','night','storm'];
+const ZONE_NAMES=['SUNNY MEADOW','BUSY BACKROAD','SUNSET FIELDS','MOONLIGHT RUN','STORM HARVEST'];
+const ROMAN=['','II','III','IV','V','VI','VII','VIII','IX','X'];
+function zoneOf(i){return Math.max(0,Math.floor(i/ZONE));}
+function zoneName(z){const c=Math.floor(z/5);return ZONE_NAMES[z%5]+(c?' '+(ROMAN[c]||'+'+c):'');}
+function zoneTheme(z){return ZONE_THEMES[z%5];}
+/* endless difficulty: t=0 at the coop, 1 by row ~360; speed keeps climbing a little past that */
+function roadParams(i){
+  const t=clamp(i/360,0,1),ts=clamp(i/400,0,1.35);
+  const rail=i<24?0:lerp(.05,.14,t),water=lerp(.16,.2,t),road=lerp(.34,.39,t);
+  return{mix:[1-rail-water-road,road,water,rail],speed:[2.2+2.0*ts,3.4+3.0*ts],
+    obsMax:Math.round(lerp(3,5,t)),fox:i<30?0:lerp(.1,.22,t),extra:Math.floor(lerp(0,2.6,t))};
 }
-const rowData=i=>(rowsData&&rowsData[i+OFF])||{type:'grass',safe:true,blocked:new Set(),corn:[],obs:[],flowers:[],side:[],tufts:[],patches:[]};
+let rowMap=null,levelMeta=null,themeKey='day',gen=null;
+function makeGen(mode,seed,idx){
+  const story=mode==='story',L=story?LEVELS[idx]:null;
+  const g={mode,story,idx,L,N:story?L.rows:Infinity,rnd:mulberry32(seed),salt:story?idx*131:(seed%9973),
+    next:-OFF,prev:'grass',run:0,forceGrass:false,prevFox:false,cornTotal:0,firstRoad:-1,firstWater:-1,firstRail:-1,
+    eggPlaced:false,eggRow:0,eggZone:-1,bestRow:0};
+  if(story)g.eggRow=Math.floor(g.N*.55+g.rnd()*g.N*.15);
+  return g;
+}
+function genRow(g){
+  const i=g.next++,rnd=g.rnd,N=g.N;
+  const L=g.story?g.L:roadParams(i);
+  let type='grass',safe=false,gate=false;
+  if(i<0){type='start';safe=true;}
+  else if(i<3)safe=true;
+  else if(g.story&&i>=N-3&&i<N)safe=true;
+  else if(g.story&&i===N){type='barn';safe=true;}
+  else if(g.story&&i>N){type='meadow';safe=true;}
+  else if(!g.story&&i%ZONE===0){safe=true;gate=true;}
+  else{
+    if(g.forceGrass){type='grass';g.forceGrass=false;}
+    else{
+      const r=rnd(),m=L.mix;
+      type=r<m[0]?'grass':r<m[0]+m[1]?'road':r<m[0]+m[1]+m[2]?'water':'rail';
+      if(type==='water'&&g.prev==='water'&&g.run>=2)type='grass';
+      if(type==='road'&&g.prev==='road'&&g.run>=3)type='grass';
+      if(type==='rail'&&g.prev!=='grass')type='grass';
+      if(type==='rail')g.forceGrass=true;
+    }
+    g.run=type===g.prev?g.run+1:1;g.prev=type;
+    if(type==='road'&&g.firstRoad<0)g.firstRoad=i;
+    if(type==='water'&&g.firstWater<0)g.firstWater=i;
+    if(type==='rail'&&g.firstRail<0)g.firstRail=i;
+  }
+  if(gate){g.prev='grass';g.run=1;g.forceGrass=false;}
+  const theme=g.story?L.theme:zoneTheme(zoneOf(i));
+  const d={i,type,safe,theme,gate,blocked:new Set(),obs:[],flowers:[],tufts:[],patches:[],corn:[],side:[],dashes:false,group:null,unique:[],built:false};
+  for(let x=-20;x<=20;x++){
+    if(Math.abs(x)<8)continue;
+    if(rnd()<.3)d.side.push({x,k:pick(rnd,['tree','tree','bush','rock']),v:Math.floor(rnd()*3)});
+  }
+  /* endless: one golden egg somewhere in every zone */
+  if(!g.story){const z=zoneOf(i);if(z!==g.eggZone&&i>0){g.eggZone=z;g.eggPlaced=false;g.eggRow=z*ZONE+8+Math.floor(rnd()*26);}}
+  if(type==='grass'&&!safe){
+    const maxObs=Math.min(L.obsMax,5);
+    const n=Math.floor(rnd()*(maxObs+1));
+    const cols=[...Array(13)].map((_,k)=>k-6).sort(()=>rnd()-.5);
+    for(let k=0;k<n;k++){const c=cols[k];d.blocked.add(c);d.obs.push({col:c,k:pick(rnd,['tree','tree','tree','hay','rock']),v:Math.floor(rnd()*3)});}
+    if(i>4&&rnd()<L.fox&&!g.prevFox){
+      d.fox={period:4+rnd()*4,t:rnd()*2,dir:rnd()<.5?1:-1,state:'idle',x:0,mesh:null,bang:null};
+      g.prevFox=true;
+      while(d.blocked.size>3){const c=[...d.blocked][0];d.blocked.delete(c);d.obs=d.obs.filter(o=>o.col!==c);}
+    }else g.prevFox=false;
+    if(rnd()<.55){
+      const free=[...Array(13)].map((_,k)=>k-6).filter(c=>!d.blocked.has(c)).sort(()=>rnd()-.5);
+      const nc=1+(rnd()<.3?1:0);
+      for(let k=0;k<nc&&k<free.length;k++){d.corn.push({col:free[k],taken:false,mesh:null});g.cornTotal++;}
+    }
+    if(!g.eggPlaced&&i>=g.eggRow){
+      const free=[...Array(13)].map((_,k)=>k-6).filter(c=>!d.blocked.has(c)&&!d.corn.some(cc=>cc.col===c));
+      if(free.length){d.egg={col:pick(rnd,free),taken:false,mesh:null};g.eggPlaced=true;}
+    }
+    const nf=Math.floor(rnd()*3);
+    for(let k=0;k<nf;k++){const c=Math.floor(rnd()*13)-6;if(!d.blocked.has(c))d.flowers.push({col:c,c:pick(rnd,['#ff8ab0','#ffc93c','#ffffff','#ff6a5a'])});}
+  }
+  if(gate){for(let k=0;k<5;k++)d.flowers.push({col:k*3-6,c:['#ff8ab0','#ffc93c','#ffffff','#ff6a5a','#9ad8ff'][k]});}
+  if(type==='grass'||type==='start'||type==='barn'||type==='meadow'){
+    const rr=mulberry32(i*7919+g.salt+5);
+    for(let k=0;k<6;k++)d.tufts.push({x:(rr()-.5)*13,z:(rr()-.5)*.7});
+    for(let k=0;k<5;k++)d.patches.push({x:(rr()-.5)*40,z:(rr()-.5)*.7,s:.3+rr()*.5});
+  }
+  if(type==='road'){
+    d.dir=rnd()<.5?1:-1;
+    const tractorRow=rnd()<.14;
+    d.speed=lerp(L.speed[0],L.speed[1],rnd())*(tractorRow?.55:1);
+    const count=3+Math.floor(rnd()*2)+L.extra;
+    const spacing=42/count;d.vehicles=[];
+    for(let k=0;k<count;k++){
+      const vt=tractorRow?'tractor':rnd()<.25?'truck':'car';
+      d.vehicles.push({type:vt,x:-21+k*spacing+(rnd()-.5)*2.4,half:vt==='truck'?1.6:vt==='tractor'?1.05:.95,
+        color:pick(rnd,CAR_COLORS),phase:rnd()*9,mesh:null,puff:rnd()*.6});
+    }
+  }
+  if(type==='water'){
+    d.dir=rnd()<.5?1:-1;d.speed=1.3+rnd()*1.4*(g.story?1:1+clamp(i/400,0,.4));
+    if(rnd()<.25){
+      d.pads=new Set([...Array(13)].map((_,k)=>k-6));
+      const cols=[...Array(13)].map((_,k)=>k-6).sort(()=>rnd()-.5);
+      let removed=0;
+      for(const c of cols){
+        if(removed>=5)break;
+        const l1=!d.pads.has(c-1),l2=!d.pads.has(c-2),r1=!d.pads.has(c+1),r2=!d.pads.has(c+2);
+        if((l1&&l2)||(r1&&r2)||(l1&&r1))continue;
+        d.pads.delete(c);removed++;
+      }
+    }else{
+      const count=7,spacing=42/count;d.logs=[];
+      for(let k=0;k<count;k++){
+        const len=2.4+rnd()*1.4;
+        d.logs.push({len,x:-21+k*spacing+(rnd()-.5)*1.2,half:len/2,phase:rnd()*9,mesh:null});
+      }
+    }
+    d.sparkles=[];for(let k=0;k<3;k++)d.sparkles.push({x:(rnd()-.5)*36,z:(rnd()-.5)*.6,mesh:null});
+  }
+  if(type==='rail'){d.dir=rnd()<.5?1:-1;d.state='idle';d.t=-rnd()*4;d.idleDur=4+rnd()*4;d.trainX=0;d.bellT=0;d.train=null;d.lights=[];}
+  if(g.story&&(i===N-2||i===N-1||i===N||i===-2))d.porchFence=true;
+  if(!g.story&&i===-2)d.porchFence=true;
+  if(!g.story&&g.bestRow>8&&i===g.bestRow)d.bestLine=true;
+  const pd=rowMap.get(i-1);
+  if(pd&&pd.type==='road'&&type==='road')pd.dashes=true;
+  rowMap.set(i,d);
+  return d;
+}
+function genUpTo(n){if(!gen)return;n=Math.min(n,gen.N+2);while(gen.next<=n)genRow(gen);}
+const EMPTY_ROW=Object.freeze({type:'grass',safe:true,blocked:new Set(),corn:[],obs:[],flowers:[],side:[],tufts:[],patches:[]});
+const rowData=i=>(rowMap&&rowMap.get(i))||EMPTY_ROW;
 
 /* ---------------- row building ---------------- */
 function buildRow(d){
-  const th=THEMES[themeKey],g=new THREE.Group();g.position.z=-d.i;
+  const tk=d.theme||themeKey,th=THEMES[tk],g=new THREE.Group();g.position.z=-d.i;
   const parts=[],fol=[];const par=((d.i%2)+2)%2;
   if(d.type==='water'){
     const wm=new THREE.Mesh(waterGeo,waterMat);wm.position.y=-.2;g.add(wm);
@@ -1269,6 +1480,12 @@ function buildRow(d){
     parts.push(V(44,.5,1,0,-.25,0,th.road));
     parts.push(V(44,.015,.3,0,.011,.22,th.roadD),V(44,.015,.3,0,.011,-.22,th.roadD));
     if(d.dashes)for(let x=-21;x<=21;x+=2.4)parts.push(V(1.1,.02,.09,x,.012,.5,th.line));
+    /* curbs where the road meets grass */
+    const nb=rowData(d.i+1).type,pb=rowData(d.i-1).type;
+    if(nb!=='road'&&nb!=='rail'&&nb!=='water')parts.push(V(44,.07,.1,0,.03,-.47,th.curb||'#a8a49a'));
+    if(pb!=='road'&&pb!=='rail'&&pb!=='water')parts.push(V(44,.07,.1,0,.03,.47,th.curb||'#a8a49a'));
+    /* a few oil/patch stains */
+    const rs=mulberry32(d.i*131+7);for(let k=0;k<4;k++)parts.push(V(.4+rs()*.7,.014,.2+rs()*.3,(rs()-.5)*16,.009,(rs()-.5)*.5,th.roadD));
   }else if(d.type==='rail'){
     parts.push(V(44,.5,1,0,-.25,0,'#7a7066'));
     for(let x=-21.6;x<=21.6;x+=.8)parts.push(V(.3,.05,.62,x,.015,0,'#5a4a3a'));
@@ -1276,16 +1493,19 @@ function buildRow(d){
     for(const sx of[-7.4,7.4])parts.push(V(.14,1.5,.14,sx,.75,0,'#3a3f4a'),V(.7,.12,.1,sx,1.35,0,'#f5efe2'),V(.12,.7,.1,sx,1.35,0,'#f5efe2'),V(.24,.24,.16,sx,1.02,.05,'#22242c'));
   }else{
     parts.push(V(44,.5,1,0,-.25,0,par?th.grassA:th.grassB));
-    for(const p of d.patches)parts.push(V(p.s,.02,p.s*.6,p.x,.012,p.z,th.grassD));
+    /* checkered voxel tiles across the play lane — reads depth and lateral position */
+    const tileC=par?th.grassB:th.grassA;
+    for(let x=-6;x<=6;x++)if(((x+d.i)%2+2)%2===0)parts.push(V(1,.012,1,x,.006,0,mixHex(tileC,par?th.grassA:th.grassB,.5)));
+    for(const p of d.patches)parts.push(V(p.s,.02,p.s*.6,p.x,.014,p.z,th.grassD));
     for(const t of d.tufts)fol.push(...tuftParts(t.x,t.z,th.tuft));
   }
   for(const s of d.side){
-    if(s.k==='tree')fol.push(...treeParts(s.x,0,s.v,themeKey));
-    else if(s.k==='bush')fol.push(...bushParts(s.x,0,themeKey));
+    if(s.k==='tree')fol.push(...treeParts(s.x,0,s.v,tk));
+    else if(s.k==='bush')fol.push(...bushParts(s.x,0,tk));
     else parts.push(...rockParts(s.x,0));
   }
   for(const o of d.obs){
-    if(o.k==='tree')fol.push(...treeParts(o.col,0,o.v,themeKey));
+    if(o.k==='tree')fol.push(...treeParts(o.col,0,o.v,tk));
     else if(o.k==='hay')parts.push(...hayParts(o.col,0));
     else parts.push(...rockParts(o.col,0));
   }
@@ -1293,12 +1513,33 @@ function buildRow(d){
   if(d.porchFence)parts.push(...fenceParts(-6.8,0),...fenceParts(6.8,0));
   if(d.type==='start'&&d.i===-3)for(let x=-6;x<=6;x++)parts.push(...fenceParts(x,0));
   if(d.type==='barn'||d.type==='meadow')for(let k=0;k<4;k++)fol.push(...flowerParts(-5+k*3.4,.3,['#ff8ab0','#ffc93c','#ffffff','#ff6a5a'][k]));
-  if(parts.length){const sg=voxGeo(parts);d.unique.push(sg);g.add(new THREE.Mesh(sg,MAT));}
-  if(fol.length){const fg=voxGeo(fol);d.unique.push(fg);g.add(new THREE.Mesh(fg,FOLIAGE));}
+  if(d.gate)for(const sx of[-7.3,7.3])parts.push(V(.16,1.6,.16,sx,.8,-.3,'#8a5a3a'),V(.5,.12,.5,sx,1.62,-.3,'#e8c860'));
+  if(d.bestLine){
+    for(let x=-6.5;x<=6.5;x+=1)parts.push(V(.5,.02,.12,x,.02,.44,'#ffd94a'));
+    parts.push(V(.1,1.5,.1,-6.9,.75,.44,'#e8e4da'),V(.1,1.5,.1,6.9,.75,.44,'#e8e4da'));
+  }
+  if(parts.length){const sg=voxGeo(parts);d.unique.push(sg);const m=new THREE.Mesh(sg,MAT);m.castShadow=m.receiveShadow=true;g.add(m);}
+  if(fol.length){const fg=voxGeo(fol);d.unique.push(fg);const m=new THREE.Mesh(fg,FOLIAGE);m.castShadow=m.receiveShadow=true;g.add(m);}
+  if(d.gate&&d.i>0){
+    const z=zoneOf(d.i);
+    const sg=makeSign('zone'+z,['ZONE '+(z+1),ZONE_NAMES[z%5].split(' ')[0]],'#fff4d6','#a02a22',false,1.6);
+    sg.position.set(-7.3,0,.1);sg.traverse(o=>{if(o.isMesh){o.castShadow=true;if(o.geometry)d.unique.push(o.geometry);}});g.add(sg);
+    const sg2=makeSign('zrow'+z,['ROW',String(d.i)],'#e8c860','#2a1a12',false,1.6);
+    sg2.position.set(7.3,0,.1);sg2.traverse(o=>{if(o.isMesh){o.castShadow=true;if(o.geometry)d.unique.push(o.geometry);}});g.add(sg2);
+  }
+  if(d.bestLine){
+    for(const sx of[-6.9,6.9]){
+      const fl=new THREE.Mesh(cached('bestflag',()=>voxGeo([V(.06,.36,.5,0,0,.25,'#ffd94a'),V(.07,.12,.3,0,.04,.2,'#e83a3a')])),GLOW);
+      fl.position.set(sx,1.3,.44);g.add(fl);
+    }
+    const sg=makeSign('best'+d.i,['BEST',String(d.i)],'#ffd94a','#2a1a12',false,1.4);
+    sg.position.set(-8.2,0,.3);sg.traverse(o=>{if(o.isMesh&&o.geometry)d.unique.push(o.geometry);});g.add(sg);
+  }
   if(d.type==='road'){
     for(const v of d.vehicles){
       const grp=new THREE.Group();
-      grp.add(new THREE.Mesh(cached(v.type+'_'+v.color,()=>voxGeo(v.type==='truck'?truckParts(v.color):v.type==='tractor'?tractorParts():carParts(v.color))),MAT));
+      const vm=new THREE.Mesh(cached(v.type+'_'+v.color,()=>voxGeo(v.type==='truck'?truckParts(v.color):v.type==='tractor'?tractorParts():carParts(v.color))),MAT);
+      vm.castShadow=true;grp.add(vm);
       if(th.night){
         grp.add(new THREE.Mesh(cached('glow_'+v.type,()=>voxGeo(vehicleGlowParts(v.type))),GLOW));
         const beam=new THREE.Mesh(beamGeo,beamMat);
@@ -1316,7 +1557,7 @@ function buildRow(d){
       for(const l of d.logs){
         const bucket=Math.round(l.len*5)/5;
         const m=new THREE.Mesh(cached('log'+bucket,()=>voxGeo(logParts(bucket))),MAT);
-        m.position.x=l.x;g.add(m);l.mesh=m;
+        m.castShadow=true;m.position.x=l.x;g.add(m);l.mesh=m;
       }
     }
     for(const s of d.sparkles){const m=new THREE.Mesh(sparkGeo,sparkMat);m.position.set(s.x,-.17,s.z);g.add(m);s.mesh=m;}
@@ -1324,17 +1565,17 @@ function buildRow(d){
   if(d.type==='rail'){
     for(const sx of[-7.4,7.4]){const m=new THREE.Mesh(sigGeo,sigOff);m.position.set(sx,1.02,.14);g.add(m);d.lights.push(m);}
     const grp=new THREE.Group();
-    grp.add(new THREE.Mesh(cached('train',()=>voxGeo(trainParts())),MAT));
+    const tm=new THREE.Mesh(cached('train',()=>voxGeo(trainParts())),MAT);tm.castShadow=true;grp.add(tm);
     if(th.night)grp.add(new THREE.Mesh(cached('trainGlow',()=>voxGeo(trainGlowParts())),GLOW));
     grp.rotation.y=d.dir>0?0:Math.PI;grp.visible=false;g.add(grp);d.train=grp;
   }
   if(d.fox){
-    const m=new THREE.Mesh(cached('fox',()=>voxGeo(foxParts())),MAT);
+    const m=new THREE.Mesh(cached('fox',()=>voxGeo(foxParts())),MAT);m.castShadow=true;
     m.rotation.y=d.fox.dir>0?0:Math.PI;m.visible=false;g.add(m);d.fox.mesh=m;
     const sp=new THREE.Sprite(bangMat);sp.scale.set(.85,.85,1);sp.position.set(-d.fox.dir*7.6,1.35,0);sp.visible=false;g.add(sp);d.fox.bang=sp;
   }
   const cornGeo=cached('corn',()=>voxGeo(cornParts()));
-  for(const c of d.corn){const m=new THREE.Mesh(cornGeo,MAT);m.position.set(c.col,.06,0);m.visible=!c.taken;g.add(m);c.mesh=m;}
+  for(const c of d.corn){const m=new THREE.Mesh(cornGeo,MAT);m.castShadow=true;m.position.set(c.col,.06,0);m.visible=!c.taken;g.add(m);c.mesh=m;}
   if(d.egg&&!d.egg.taken){const m=new THREE.Mesh(cached('egg',()=>voxGeo(eggParts())),GLOW);m.position.set(d.egg.col,.08,0);g.add(m);d.egg.mesh=m;}
   world.add(g);d.group=g;d.built=true;
 }
@@ -1352,20 +1593,36 @@ function recycleRow(d){
   d.train=null;d.lights=[];
 }
 function streamRows(){
-  if(!rowsData)return;
-  const lo=Math.max(-OFF,chicken.row-9),hi=Math.min(levelMeta.N+2,chicken.row+16);
-  for(const d of rowsData){
+  if(!rowMap)return;
+  const story=gen&&gen.story;
+  genUpTo(chicken.row+24);
+  const lo=Math.max(-OFF,chicken.row-9),hi=story?Math.min(levelMeta.N+2,chicken.row+16):chicken.row+16;
+  const drop=Math.min(chicken.row,backFloor())-12;
+  for(const d of rowMap.values()){
     if(d.i>=lo&&d.i<=hi){if(!d.built)buildRow(d);}
     else if(d.built)recycleRow(d);
+    if(!story&&d.i<drop){recycleRow(d);rowMap.delete(d.i);}
   }
 }
+/* LONG ROAD: you can back up a few rows, not retreat to the coop */
+function backFloor(){return gen&&!gen.story?Math.max(-2,maxRow-6):-2;}
 function clearWorld(){
-  if(rowsData)for(const d of rowsData)recycleRow(d);
+  if(rowMap)for(const d of rowMap.values())recycleRow(d);
+  rowMap=new Map();
   while(structures.children.length)structures.remove(structures.children[0]);
   doorGlow=doorSpill=doorL=doorR=vane=null;doorOpen=0;
 }
 function buildStructures(){
-  const N=levelMeta.N,th=THEMES[themeKey];
+  const th=THEMES[themeKey];
+  const coop=new THREE.Mesh(cached('coop',()=>voxGeo(coopParts())),MAT);coop.position.set(-3,0,1.7);coop.castShadow=true;structures.add(coop);
+  const farmSign=makeSign('farm',['DS-DA','FARM'],'#e8c860','#2a1a12',false);farmSign.position.set(3.2,0,1.5);structures.add(farmSign);
+  if(!gen.story){
+    const s=makeSign(MODE==='daily'?'daily':'road',MODE==='daily'?['DAILY','ROAD']:['LONG','ROAD'],'#e8c860','#a02a22',true);
+    s.position.set(4.6,0,.3);structures.add(s);
+    structures.traverse(o=>{if(o.isMesh)o.castShadow=true;});
+    return;
+  }
+  const N=levelMeta.N;
   const barn=new THREE.Group();
   barn.add(new THREE.Mesh(cached('barn2',()=>voxGeo(barnParts())),MAT));
   const bg=new THREE.Mesh(cached('barnGlow',()=>voxGeo(barnGlowParts())),GLOW);bg.visible=th.night;barn.add(bg);
@@ -1385,24 +1642,36 @@ function buildStructures(){
   doorGlow=new THREE.Mesh(new THREE.PlaneGeometry(1.5,1.8),doorGlowMat);
   doorGlow.position.set(0,.9,-(N+.36));structures.add(doorGlow);
   doorSpill=new THREE.Mesh(spillGeo,spillMat);doorSpill.position.set(0,.03,-(N-.3));structures.add(doorSpill);
-  const coop=new THREE.Mesh(cached('coop',()=>voxGeo(coopParts())),MAT);coop.position.set(-3,0,1.7);structures.add(coop);
-  const farmSign=makeSign('farm',['DS-DA','FARM'],'#e8c860','#2a1a12',false);farmSign.position.set(3.2,0,1.5);structures.add(farmSign);
   const arrowSign=makeSign('barn',['BARN'],'#e8c860','#a02a22',true);arrowSign.position.set(4.6,0,.3);structures.add(arrowSign);
+  structures.traverse(o=>{if(o.isMesh&&o.material!==doorGlowMat&&o.material!==spillMat)o.castShadow=true;});
 }
 
 /* ---------------- theme ---------------- */
-function applyTheme(key){
+/* Lights, fog and water ease toward the target theme (zone changes on the
+   Long Road blend over ~1.5s); `instant` snaps for a fresh level. */
+const TT={fog:new THREE.Color(),hs:new THREE.Color(),hg:new THREE.Color(),hi:1,sc:new THREE.Color(),si:1,sp:new THREE.Vector3(),
+  fc:new THREE.Color(),fi:1,cc:new THREE.Color(),co:1,wa:new THREE.Color(),wb:new THREE.Color(),wg:new THREE.Color()};
+const sunDir=new THREE.Vector3(7,12,5).normalize();
+function applyTheme(key,instant=true){
+  const changed=key!==themeKey;
   themeKey=key;const th=THEMES[key];
   $('sky').className='theme-'+key;
-  scene.fog.color.set(th.fog);
-  hemi.color.set(th.hemiSky);hemi.groundColor.set(th.hemiGnd);hemi.intensity=th.hemiI;
-  sunLight.color.set(th.sunC);sunLight.intensity=th.sunI;sunLight.position.set(...th.sunPos);
-  fillLight.color.set(th.fillC);fillLight.intensity=th.fillI;
-  cloudMat.color.set(th.cloud);cloudMat.opacity=th.cloudOp;
-  waterU.uA.value.set(th.water);waterU.uB.value.set(th.deep);waterU.uGlint.value.set(th.glint);waterU.uFog.value.set(th.fog);
-  rain.visible=th.rain;fireflies.visible=th.night;
+  TT.fog.set(th.fog);TT.hs.set(th.hemiSky);TT.hg.set(th.hemiGnd);TT.hi=th.hemiI;
+  TT.sc.set(th.sunC);TT.si=th.sunI;TT.sp.set(...th.sunPos).normalize();
+  TT.fc.set(th.fillC);TT.fi=th.fillI;TT.cc.set(th.cloud);TT.co=th.cloudOp;
+  TT.wa.set(th.water);TT.wb.set(th.deep);TT.wg.set(th.glint);
+  if(instant)blendTheme(1);
+  rain.visible=th.rain;fireflies.visible=th.night;nightGlow.visible=th.night;
   for(const b of butterflies)b.g.visible=!th.night&&!th.rain;
-  Audio.setTheme(th);regenStars();
+  Audio.setTheme(th);if(changed||instant)regenStars();
+}
+function blendTheme(k){
+  scene.fog.color.lerp(TT.fog,k);
+  hemi.color.lerp(TT.hs,k);hemi.groundColor.lerp(TT.hg,k);hemi.intensity=lerp(hemi.intensity,TT.hi,k);
+  sunLight.color.lerp(TT.sc,k);sunLight.intensity=lerp(sunLight.intensity,TT.si,k);sunDir.lerp(TT.sp,k).normalize();
+  fillLight.color.lerp(TT.fc,k);fillLight.intensity=lerp(fillLight.intensity,TT.fi,k);
+  cloudMat.color.lerp(TT.cc,k);cloudMat.opacity=lerp(cloudMat.opacity,TT.co,k);
+  waterU.uA.value.lerp(TT.wa,k);waterU.uB.value.lerp(TT.wb,k);waterU.uGlint.value.lerp(TT.wg,k);waterU.uFog.value.copy(scene.fog.color);
 }
 function regenStars(){
   const mk=n=>{const s=[];for(let i=0;i<n;i++){const x=Math.floor(Math.random()*W),y=Math.floor(Math.random()*H*.55);s.push(`${x}px ${y}px 0 ${Math.random()<.25?1:0}px ${Math.random()<.2?'#ffc93c':'#ffffff'}`);}return s.join(',');};
@@ -1426,7 +1695,7 @@ const isTouch=('ontouchstart'in window)||matchMedia('(pointer:coarse)').matches;
 if(isTouch)document.body.classList.add('touch');
 
 /* ---------------- UI helpers ---------------- */
-const SCREENS=['scr-loading','scr-error','scr-title','scr-levels','scr-how','scr-pause','scr-complete','scr-over','scr-board','scr-win'];
+const SCREENS=['scr-loading','scr-error','scr-title','scr-levels','scr-how','scr-pause','scr-complete','scr-over','scr-board','scr-win','scr-coop'];
 function showScreen(id){
   for(const s of SCREENS)$(s).classList.toggle('active',s===id);
   if(tallyTimer){clearInterval(tallyTimer);tallyTimer=null;}
@@ -1442,7 +1711,7 @@ function setState(s,screen){
   Audio.duck(s==='paused');
 }
 function renderHearts(){
-  $('hud-hearts').innerHTML='<span class="lbl">LIVES</span>'+[0,1,2].map(i=>ic('HEART',i<hearts?'heart':'heartE',20)).join('');
+  $('hud-hearts').innerHTML='<span class="lbl">'+(maxHearts>1?'LIVES':'LIFE')+'</span>'+[...Array(maxHearts)].map((_,i)=>ic('HEART',i<hearts?'heart':'heartE',20)).join('');
 }
 function heartsHurt(){const el=$('hud-hearts');el.classList.remove('hurt');void el.offsetWidth;el.classList.add('hurt');}
 function updateCornHUD(){
@@ -1503,14 +1772,23 @@ function radioPause(){try{if(typeof DSDARadio!=='undefined')DSDARadio.pause();}c
 function radioStop(){radioWasPlaying=false;radioPause();}
 
 /* ---------------- level lifecycle ---------------- */
-function startLevel(idx,menu=false){
-  currentLevel=idx;clearWorld();
-  levelMeta=genLevel(idx);rowsData=levelMeta.rows;
-  applyTheme(LEVELS[idx].theme);
+function startLevel(idx,menu=false){startRun('story',idx,menu);}
+function restartRun(){startRun(MODE,currentLevel);}
+function startRun(mode,idx=0,menu=false){
+  if(mode==='daily'&&!SOCd())mode='road';
+  MODE=mode;currentLevel=mode==='story'?idx:0;clearWorld();hideShareBar();
+  dailyKey=mode==='daily'?SOCd().daily.key():null;
+  const seed=mode==='story'?LEVELS[idx].seed*1000+7:mode==='daily'?hashStr('chicken-road-'+dailyKey):(Math.random()*4294967296)>>>0;
+  gen=makeGen(mode,seed,idx);levelMeta=gen;
+  if(mode==='road')gen.bestRow=SAVE.rRow||0;
+  else if(mode==='daily')gen.bestRow=SAVE.dRow&&SAVE.dRow.k===dailyKey?SAVE.dRow.r:0;
+  if(mode==='story')genUpTo(gen.N+2);else genUpTo(24);
+  applyTheme(mode==='story'?LEVELS[idx].theme:zoneTheme(0),true);
   buildStructures();
   Object.assign(chicken,{x:0,z:0,y:0,row:0,col:0});
   hop=null;buffered=null;onLog=null;lastSafe={r:0,c:0};
-  hearts=3;score=0;shownScore=0;cornGot=0;maxRow=0;levelTime=0;inv=0;idleT=0;timeScale=1;hitStop=0;shake=0;
+  maxHearts=mode==='story'?3:1;curZone=0;passedBest=false;
+  hearts=maxHearts;score=0;shownScore=0;cornGot=0;maxRow=0;levelTime=0;inv=0;idleT=0;timeScale=1;hitStop=0;shake=0;
   deathT=0;killT=0;killKind=null;killVeh=null;killDir=1;hideKillBanner();
   winT=0;winIdx=0;winSteps=[];winConfetti=false;
   facingYaw=0;squash=1;peckT=2;peckAnim=0;bumpT=0;
@@ -1523,20 +1801,46 @@ function startLevel(idx,menu=false){
   for(const p of pool)p.ttl=0;
   $('toasts').innerHTML='';$('floats').innerHTML='';
   resetSubmitUI();
-  $('chip-level').innerHTML='LV '+(idx+1)+'<span class="name"> · '+LEVELS[idx].name+'</span>';
+  document.body.classList.toggle('mode-story',mode==='story');
+  renderLevelChip();
   renderHearts();updateCornHUD();$('chip-score').textContent='0000';
+  $('progress-barn').innerHTML=mode==='story'?ic('BARN','barn',22):'<span class="zone-next">Z2</span>';
   streamRows();
   camTarget.set(0,0,-3.2);camPos.copy(camTarget);
   if(menu){setState('menu','scr-title');return;}
   setState('playing',null);
   autoTuneRadio();
-  track('game_start',{level:idx+1});
-  $('intro-name').textContent='LV '+(idx+1)+' — '+LEVELS[idx].name;
-  $('intro-flav').textContent=LEVELS[idx].flav;
+  track('game_start',Object.assign({mode,level:mode==='story'?idx+1:1},dailyKey?{daily_day:dailyKey}:{}));
+  if(mode==='story'){
+    $('intro-name').textContent='LV '+(idx+1)+' — '+LEVELS[idx].name;
+    $('intro-flav').textContent=LEVELS[idx].flav;
+    $('intro-lives').textContent='3 LIVES THIS ROUND · EVERY HIT IS A KILL';
+  }else{
+    $('intro-name').textContent=mode==='daily'?'DAILY ROAD #'+SOCd().daily.number(dailyKey):'THE LONG ROAD';
+    $('intro-flav').textContent=mode==='daily'?'Same road for everyone today. Your best run counts.':'Endless farmland. It only gets meaner.';
+    $('intro-lives').textContent=gen.bestRow>8?'ONE LIFE · YOUR BEST: ROW '+gen.bestRow:'ONE LIFE · HOW FAR CAN YOU GO?';
+  }
   const intro=$('intro');intro.classList.remove('on');void intro.offsetWidth;intro.classList.add('on');
   if(introTimer)clearTimeout(introTimer);
   introTimer=setTimeout(()=>intro.classList.remove('on'),2050);
   Audio.select();
+}
+function renderLevelChip(){
+  if(MODE==='story')$('chip-level').innerHTML='LV '+(currentLevel+1)+'<span class="name"> · '+LEVELS[currentLevel].name+'</span>';
+  else $('chip-level').innerHTML=(MODE==='daily'?'DAILY ':'')+'ROW '+maxRow+'<span class="name"> · '+zoneName(curZone)+'</span>';
+}
+/* crossing into a new 40-row zone on the Long Road */
+function enterZone(z){
+  curZone=z;applyTheme(zoneTheme(z),false);
+  score+=250;floatLabel('+250 ZONE','gold');
+  toast('ZONE '+(z+1)+' · '+zoneName(z),'gold');Audio.star();
+  $('intro-name').textContent='ZONE '+(z+1);
+  $('intro-flav').textContent=zoneName(z);
+  $('intro-lives').textContent=['','TRAFFIC PICKS UP','TRAINS RUN MORE OFTEN','FOXES COME OUT AT DUSK','LIGHTS OUT','HOLD ON TO YOUR FEATHERS'][Math.min(z,5)]||'IT ONLY GETS MEANER';
+  const intro=$('intro');intro.classList.remove('on');void intro.offsetWidth;intro.classList.add('on');
+  if(introTimer)clearTimeout(introTimer);
+  introTimer=setTimeout(()=>intro.classList.remove('on'),2050);
+  $('progress-barn').innerHTML='<span class="zone-next">Z'+(z+2)+'</span>';
 }
 function renderLevels(){
   const grid=$('levels-grid');grid.innerHTML='';
@@ -1555,14 +1859,75 @@ function renderLevels(){
 }
 function renderTitle(){
   const first=SAVE.s.findIndex(s=>!s);const idx=first<0?0:first;
-  $('play-label').textContent=SAVE.u>0||SAVE.s[0]>0?'CONTINUE · LV '+(idx+1):'PLAY';
-  $('title-best').innerHTML='BEST '+String(SAVE.best).padStart(4,'0');
+  $('btn-levels').textContent=SAVE.u>0||SAVE.s[0]>0?'STORY · LV '+(idx+1):'STORY';
+  $('play-sub').textContent=SAVE.rRow>0?'best row '+SAVE.rRow+' · '+SAVE.rBest+' pts':'one life · endless farmland';
+  $('title-best').innerHTML='BEST '+String(SAVE.rBest||0).padStart(4,'0');
   $('title-corn').innerHTML=ic('CORN','corn',13)+' ×'+SAVE.corn;
-  const top=lbSorted(LB).slice(0,3);
+  $('btn-coop').innerHTML='COOP'+(affordableBird()?'<span class="newdot" title="A new bird is affordable"></span>':'');
+  const S=SOCd(),db=$('btn-daily'),df=dailyFirst();
+  $('play-label').textContent=df&&S?'PLAY · DAILY ROAD #'+S.daily.number():'PLAY · LONG ROAD';
+  if(df&&S){$('play-sub').textContent='same road for everyone today';}
+  if(S&&df){db.hidden=false;$('daily-label').textContent='LONG ROAD';$('daily-sub').textContent=SAVE.rRow>0?'best row '+SAVE.rRow:'endless farmland';db.classList.remove('pulse');}
+  else if(S){
+    const k=S.daily.key(),n=S.daily.number(k),best=S.daily.best('chicken',k),st=S.daily.streak();
+    const h=Math.max(1,Math.round(S.daily.msToNext()/3600e3));
+    db.hidden=false;
+    $('daily-label').textContent='DAILY ROAD #'+n;
+    $('daily-sub').textContent=(best?'today '+best+' pts':'not run yet today')+(st>1?' · 🔥'+st+'-day streak':'')+' · new road in '+h+'h';
+    db.classList.toggle('pulse',!best);
+  }else db.hidden=true;
+  const top=lbSorted(LB.filter(e=>e.mode==='road')).slice(0,3);
   $('title-lb').innerHTML=top.map((e,i)=>`<span class="lbmini">${ic('MEDAL',['gold','silver','bronze'][i],12)}<b>${esc(e.name)}</b> ${e.score}</span>`).join('');
 }
+/* arrived through a daily share link (?daily=1) or a daily challenge → PLAY runs the daily */
+function dailyFirst(){const S=SOCd();if(!S)return false;const ch=S.challenge;return S.daily.requested()||!!(ch&&ch.day===S.daily.key());}
 function openTitle(){radioStop();renderTitle();setState('menu','scr-title');}
-function openBoard(){renderGlobalBoard();renderBoard();setState('board','scr-board');}
+function openBoard(){
+  const t=MODE==='story'?'story':MODE==='daily'?'daily':'road';
+  lbFilter=t;renderGlobalBoard(t);renderBoard();setState('board','scr-board');
+}
+
+/* ---------------- the coop ---------------- */
+let coopSel='hen';
+const affordableBird=()=>BIRDS.some(b=>!SAVE.birds.includes(b.id)&&SAVE.corn>=b.price);
+function birdIcon(b,px){
+  const p=Object.assign({},HEN_PAL,b.pal);
+  const pal={1:(b.comb==='none'||b.comb==='antenna')?p.head:p.comb,2:p.body,3:b.glowEyes||p.eye,4:p.beak};
+  return pixSVG(P.CHICK,pal,px);
+}
+function hideShareBar(){try{const x=document.querySelector('.dsda-x-bar.on .x');if(x)x.click();}catch(e){}}
+function openCoop(){
+  hideShareBar();
+  if(state==='over'||state==='complete'||state==='win'||state==='board'||state==='levels'){startRun(MODE==='story'?'road':MODE,0,true);}
+  radioStop();
+  coopSel=SAVE.bird;renderCoop();setState('coop','scr-coop');
+}
+function renderCoop(){
+  $('coop-corn').innerHTML=ic('CORN','corn',12)+' '+SAVE.corn;
+  const b=birdById(coopSel),own=SAVE.birds.includes(b.id),eq=SAVE.bird===b.id;
+  $('coop-name').textContent=b.name;$('coop-flav').textContent=b.flav;
+  $('coop-grid').innerHTML=BIRDS.map(x=>{
+    const o=SAVE.birds.includes(x.id);
+    return `<button class="bird-card${x.id===coopSel?' sel':''}${o?'':' locked'}" data-bird="${x.id}">${birdIcon(x,34)}<b>${x.name}</b><small class="${SAVE.bird===x.id?'eq':''}">${SAVE.bird===x.id?'EQUIPPED':o?'OWNED':ic('CORN','corn',8)+' '+x.price}</small></button>`;
+  }).join('');
+  for(const el of $('coop-grid').querySelectorAll('[data-bird]'))el.addEventListener('click',()=>{coopSel=el.dataset.bird;applyBird(coopSel);Audio.click();peckAnim=.55;renderCoop();});
+  const act=$('coop-act');
+  if(eq){act.textContent='EQUIPPED ✓';act.disabled=true;}
+  else if(own){act.textContent='EQUIP';act.disabled=false;}
+  else if(SAVE.corn>=b.price){act.innerHTML='BUY · '+ic('CORN','corn',12)+' '+b.price;act.disabled=false;}
+  else{act.textContent='NEED '+(b.price-SAVE.corn)+' MORE CORN';act.disabled=true;}
+}
+$('coop-act').addEventListener('click',()=>{
+  const b=birdById(coopSel);
+  if(!SAVE.birds.includes(b.id)){
+    if(SAVE.corn<b.price)return;
+    SAVE.corn-=b.price;SAVE.birds.push(b.id);
+    confetti(chicken.x,1.2,chicken.z);Audio.fanfare();toast(b.name+' JOINS THE COOP!','gold');
+    track('bird_unlock',{bird:b.id,price:b.price});
+  }else Audio.select();
+  SAVE.bird=b.id;persist();applyBird(b.id);renderCoop();
+});
+$('coop-back').addEventListener('click',()=>{Audio.click();if(coopSel!==SAVE.bird)applyBird(SAVE.bird);openTitle();});
 
 /* ---------------- movement ---------------- */
 function startHop(col,row,dur=.15,arc=.52){
@@ -1571,12 +1936,13 @@ function startHop(col,row,dur=.15,arc=.52){
   if(Math.abs(dx)>Math.abs(dz))facingYaw=dx>0?Math.PI/2:-Math.PI/2;
   else facingYaw=dz>0?0:Math.PI;
   onLog=null;Audio.hop();
+  if(birdDef.trail)burst(chicken.x,.4,chicken.z,{count:4,colors:['#ffd94a','#fff0a0','#ffffff'],speed:.6,up:1.2,g:1.5,size:.07,ttl:.7,flut:true,drag:.95});
 }
 function tryMove(dx,dz){
   if(state!=='playing'||killT>0)return;
   if(hop){buffered=[dx,dz];return;}
   const tc=Math.round(chicken.x)+dx,tr=chicken.row+dz;
-  if(tc<-6||tc>6||tr<-2){bump(dx,dz);return;}
+  if(tc<-6||tc>6||tr<backFloor()){bump(dx,dz);return;}
   const rd=rowData(tr);
   if((rd.type==='grass'||rd.type==='start'||rd.type==='barn'||rd.type==='meadow')&&rd.blocked&&rd.blocked.has(tc)){bump(dx,dz);return;}
   startHop(tc,tr);
@@ -1607,12 +1973,20 @@ function land(){
     }
   }
   if(rd.egg&&!rd.egg.taken&&rd.egg.col===c){
+    if(MODE!=='story'){SAVE.eggs=(SAVE.eggs||0)+1;}
     rd.egg.taken=true;if(rd.egg.mesh)rd.egg.mesh.visible=false;
     score+=200;cornFX(chicken.x,chicken.z);
     burst(chicken.x,.5,chicken.z,{count:16,colors:['#ffd94a','#fff0a0','#ffffff'],speed:2.2,up:3.2,g:4,size:.09,ttl:.9});
     Audio.egg();toast('GOLDEN EGG! +200','gold');floatLabel('+200','gold');
   }
-  if(r>maxRow){score+=r-maxRow;maxRow=r;}
+  if(r>maxRow){
+    score+=(r-maxRow)*(MODE==='story'?1:10);maxRow=r;
+    if(MODE!=='story'){
+      const z=zoneOf(r);if(z>curZone)enterZone(z);
+      if(!passedBest&&gen.bestRow>8&&r>gen.bestRow){passedBest=true;toast('NEW BEST ROW!','gold');confetti(chicken.x,1,chicken.z);Audio.fanfare();}
+      renderLevelChip();
+    }
+  }
   if(rd.type==='barn'){beginWin();return;}
   if(buffered){const b=buffered;buffered=null;tryMove(b[0],b[1]);}
 }
@@ -1666,13 +2040,41 @@ function die(cause,veh){
 }
 function showOver(){
   lastStars=0;
+  const road=MODE!=='story';
+  let newBest=false,streak=0;
+  if(road){
+    SAVE.corn+=cornGot;SAVE.runs=(SAVE.runs||0)+1;
+    if(MODE==='road'){
+      if(score>(SAVE.rBest||0)){SAVE.rBest=score;newBest=true;}
+      SAVE.rRow=Math.max(SAVE.rRow||0,maxRow);
+    }else{
+      const prev=SAVE.dRow&&SAVE.dRow.k===dailyKey?SAVE.dRow:{k:dailyKey,r:0,s:0};
+      newBest=score>prev.s;
+      SAVE.dRow={k:dailyKey,r:Math.max(prev.r,maxRow),s:Math.max(prev.s,score)};
+      const S=SOCd();if(S&&score>0)streak=S.daily.finish('chicken',score,dailyKey);
+    }
+    persist();
+  }
   $('over-cause').textContent=CAUSES[deathCause]||CAUSES.car;
   $('over-score').textContent=String(score).padStart(4,'0');
-  $('over-corn').textContent='×'+cornGot;
+  $('over-corn').textContent='×'+cornGot+(road?'  ·  BANK '+SAVE.corn:'');
+  $('over-rows-row').style.display=road?'':'none';
+  $('over-best-row').style.display=road?'':'none';
+  $('over-rows').textContent='ROW '+maxRow+' · ZONE '+(curZone+1);
+  if(road)$('over-best').textContent=MODE==='daily'?(SAVE.dRow.s+' TODAY'+(streak>1?' · 🔥'+streak:'')):(SAVE.rBest+' · ROW '+SAVE.rRow);
+  $('over-flav').textContent=!road?'Three lives spent. The barn can wait one more try.'
+    :newBest&&score>0?'★ NEW BEST! ★ The road remembers.'
+    :maxRow<gen.bestRow&&gen.bestRow>8?(gen.bestRow-maxRow)+' rows short of your gold line.'
+    :'One life. One more try?';
+  $('btn-over-map').textContent=road?'MENU':'MAP';
+  $('btn-over-coop').style.display=road?'':'none';
+  $('btn-over-coop').innerHTML='COOP'+(affordableBird()?'<span class="newdot"></span>':'');
   setState('over','scr-over');
   radioStop();
-  track('game_over',{final_score:score,level_reached:currentLevel+1});
+  track('game_over',Object.assign({final_score:score,level_reached:road?curZone+1:currentLevel+1,mode:MODE,share_extra:road?'ROW '+maxRow:undefined},
+    dailyKey?{daily_day:dailyKey}:{}));
   prepPanel('over');
+  if(road&&affordableBird())screenTimeouts.push(setTimeout(()=>toast('NEW BIRD AFFORDABLE · VISIT THE COOP','gold'),1400));
 }
 function beginWin(){
   setState('winning',null);buffered=null;winT=0;winIdx=0;winConfetti=false;
@@ -1705,7 +2107,7 @@ function showComplete(){
   $('btn-next').textContent=currentLevel<5?'NEXT FARM':'FINISH · HOME';
   setState('complete','scr-complete');
   radioStop();
-  track('level_complete',{level:currentLevel+1,score:total});
+  track('level_complete',{level:currentLevel+1,score:total,mode:'story'});
   prepPanel('cmp');
   let shown=0;
   tallyTimer=setInterval(()=>{
@@ -1725,9 +2127,9 @@ function renderWin(){
 
 /* ---------------- entities & hazards ---------------- */
 function updateEntities(dt,t){
-  if(!rowsData)return;
+  if(!rowMap)return;
   honkCd-=dt;
-  for(const d of rowsData){
+  for(const d of rowMap.values()){
     const near=Math.abs(-d.i-chicken.z)<13;
     if(d.type==='road'){
       for(const v of d.vehicles){
@@ -1886,7 +2288,8 @@ function updateChicken(dt,t,rawDt){
     chicken.col=Math.round(chicken.x);
     if(Math.abs(chicken.x)>6.55){hitChicken('water',null,d.dir);return;}
   }
-  if(!hop&&(state==='playing'||state==='menu'||state==='levels')){
+  if(state==='coop')facingYaw+=dt*.9;
+  if(!hop&&(state==='playing'||state==='menu'||state==='levels'||state==='coop')){
     peckT-=dt;
     if(peckT<=0){peckAnim=.55;peckT=2.5+Math.random()*3;}
   }
@@ -1930,7 +2333,8 @@ function updateChicken(dt,t,rawDt){
 
 /* ---------------- hints / warnings / weather ---------------- */
 function updateHints(){
-  if(state!=='playing'||currentLevel!==0||killT>0){$('hint').style.display='none';return;}
+  const tut=MODE==='story'?currentLevel===0:(SAVE.runs||0)<3&&maxRow<40;
+  if(state!=='playing'||!tut||killT>0){$('hint').style.display='none';return;}
   let txt=null;
   if(!movedFwd)txt=isTouch?'TAP ANYWHERE TO HOP FORWARD':'CLICK OR PRESS ↑ / W TO HOP';
   else if(!movedSide)txt=isTouch?'SWIPE SIDEWAYS TO STEER · D-PAD WORKS TOO':'ARROWS / WASD STEER LEFT · RIGHT · BACK';
@@ -1950,6 +2354,7 @@ function updateWarn(){
 function updateWeather(dt,t){
   const th=THEMES[themeKey];
   for(const c of clouds){
+    c.m.visible=state!=='coop';
     c.m.position.x+=c.v*dt*(th.rain?2.2:1);
     if(c.m.position.x>camPos.x+30)c.m.position.x=camPos.x-30;
     if(c.m.position.x<camPos.x-32)c.m.position.x=camPos.x+28;
@@ -1999,19 +2404,27 @@ function updateWeather(dt,t){
 
 /* ---------------- camera / HUD ---------------- */
 const camTarget=new THREE.Vector3(0,0,-3.2),camPos=new THREE.Vector3(0,0,-3.2);
+let camZoom=1;
 function updateCamera(dt,t){
-  if(state==='menu'||state==='levels'||state==='how'||state==='board')camTarget.set(Math.sin(t*.3)*1.2,0,-2.8+Math.sin(t*.17)*.8);
+  if(state==='coop')camTarget.set(chicken.x+(W>H?-.35:.3),0,chicken.z+(W>H?.55:.75));
+  else if(state==='menu'||state==='levels'||state==='how'||state==='board')camTarget.set(Math.sin(t*.3)*1.2,0,-2.8+Math.sin(t*.17)*.8);
   else camTarget.set(chicken.x*.45,0,chicken.z-3.4);
+  const zt=state==='coop'?2.3:1;
+  if(Math.abs(camZoom-zt)>.002){camZoom+=(zt-camZoom)*Math.min(1,5*dt);camera.zoom=camZoom;camera.updateProjectionMatrix();}
   camPos.lerp(camTarget,Math.min(1,6*dt));
   shake=Math.max(0,shake-2.2*dt);
   const ox=(Math.random()-.5)*shake,oy=(Math.random()-.5)*shake;
   camera.position.set(camPos.x+CAM_DIR.x*30+ox,camPos.y+CAM_DIR.y*30+oy,camPos.z+CAM_DIR.z*30);
   camera.lookAt(camPos.x+ox,camPos.y+oy,camPos.z);
+  /* the sun (and its shadow frustum) rides along with the camera */
+  sunLight.target.position.set(camPos.x,0,camPos.z-1);
+  sunLight.position.set(camPos.x+sunDir.x*30,sunDir.y*30,camPos.z-1+sunDir.z*30);
+  nightGlow.position.set(chicken.x,.035,chicken.z);
 }
 function updateHUDFrame(){
   if(!['playing','paused','dying','winning','complete'].includes(state))return;
   if(shownScore!==score){shownScore+=Math.ceil((score-shownScore)*.25);if(Math.abs(score-shownScore)<2)shownScore=score;$('chip-score').textContent=String(Math.max(0,shownScore)).padStart(4,'0');}
-  const pct=levelMeta?clamp(maxRow/levelMeta.N,0,1)*100:0;
+  const pct=!levelMeta?0:MODE==='story'?clamp(maxRow/levelMeta.N,0,1)*100:(Math.max(0,maxRow)%ZONE)/ZONE*100;
   $('progress-fill').style.width=pct+'%';
   $('progress-chick').style.left=pct+'%';
 }
@@ -2056,7 +2469,7 @@ window.addEventListener('keydown',e=>{
     else if(state==='how'||state==='levels'||state==='board')openTitle();
   }
   if(e.code==='KeyM')toggleMute();
-  if(e.code==='KeyR'&&['playing','paused','over'].includes(state))startLevel(currentLevel);
+  if(e.code==='KeyR'&&['playing','paused','over'].includes(state))restartRun();
   if(e.code==='KeyL'&&['menu','over','complete','win'].includes(state))openBoard();
   if(e.code==='Enter'&&state==='menu')$('btn-play').click();
 });
@@ -2083,7 +2496,7 @@ for(const b of document.querySelectorAll('#dpad button')){
 document.querySelector('#dpad .mid').innerHTML=ic('CHICK','chick',22);
 
 /* ---------------- buttons ---------------- */
-function pauseGame(){if(state!=='playing')return;radioWasPlaying=(typeof DSDARadio!=='undefined')&&!!DSDARadio.playing;radioPause();setState('paused','scr-pause');}
+function pauseGame(){if(state!=='playing')return;$('btn-pause-map').textContent=MODE==='story'?'MAP':'MENU';radioWasPlaying=(typeof DSDARadio!=='undefined')&&!!DSDARadio.playing;radioPause();setState('paused','scr-pause');}
 function resumeGame(){if(state!=='paused')return;inv=Math.max(inv,killT>0?999:.6);setState('playing',null);if(radioWasPlaying&&typeof DSDARadio!=='undefined'){DSDARadio.play();radioWasPlaying=false;}}
 function toggleMute(){Audio.unlock();Audio.setMuted(!SAVE.muted);renderMute();}
 function renderMute(){
@@ -2094,15 +2507,27 @@ function renderMute(){
 $('btn-mute').addEventListener('click',toggleMute);
 $('btn-pause').innerHTML=ic('PAUSE','cream',16);
 $('btn-pause').addEventListener('click',()=>{Audio.click();pauseGame();});
-$('btn-play').addEventListener('click',()=>{Audio.unlock();Audio.select();const first=SAVE.s.findIndex(s=>!s);startLevel(first<0?0:first);});
+$('btn-play').addEventListener('click',()=>{Audio.unlock();Audio.select();startRun(dailyFirst()?'daily':'road');});
+$('btn-daily').addEventListener('click',()=>{Audio.unlock();Audio.select();startRun(dailyFirst()?'road':'daily');});
 $('btn-levels').addEventListener('click',()=>{Audio.click();renderLevels();setState('levels','scr-levels');});
+$('btn-coop').addEventListener('click',()=>{Audio.click();openCoop();});
+$('btn-over-coop').addEventListener('click',()=>{Audio.click();openCoop();});
+for(const b of document.querySelectorAll('#lb-tabs [data-tab]'))b.addEventListener('click',()=>{Audio.click();lbFilter=b.dataset.tab;renderGlobalBoard(b.dataset.tab);renderBoard();});
 $('btn-board').addEventListener('click',()=>{Audio.click();openBoard();});
 $('btn-how').addEventListener('click',()=>{Audio.click();setState('how','scr-how');});
 $('btn-how-back').addEventListener('click',()=>{Audio.click();openTitle();});
 $('btn-levels-back').addEventListener('click',()=>{Audio.click();openTitle();});
 $('btn-resume').addEventListener('click',()=>{Audio.click();resumeGame();});
-$('btn-restart').addEventListener('click',()=>{Audio.click();startLevel(currentLevel);});
-$('btn-pause-map').addEventListener('click',()=>{Audio.click();renderLevels();setState('levels','scr-levels');});
+$('btn-restart').addEventListener('click',()=>{Audio.click();restartRun();});
+$('btn-pause-map').addEventListener('click',()=>{Audio.click();if(MODE==='story'){renderLevels();setState('levels','scr-levels');}else{openTitle();startRun(MODE,0,true);}});
+function renderGfxBtns(){
+  $('btn-px').textContent='PIXELS: '+(SAVE.px==='fine'?'FINE':'CHUNKY');$('btn-px').setAttribute('aria-pressed',String(SAVE.px==='fine'));
+  $('btn-fx').textContent='SHADOWS: '+(SAVE.fx!==false?'ON':'OFF');$('btn-fx').setAttribute('aria-pressed',String(SAVE.fx!==false));
+}
+$('btn-px').addEventListener('click',()=>{SAVE.px=SAVE.px==='fine'?'chunky':'fine';persist();resize();renderGfxBtns();Audio.click();});
+$('btn-fx').addEventListener('click',()=>{SAVE.fx=SAVE.fx===false;persist();setQuality(SAVE.fx?(LOWEND?1:2):0);renderGfxBtns();Audio.click();});
+if(SAVE.fx===false)setQuality(0);
+renderGfxBtns();
 $('btn-scan').addEventListener('click',()=>{
   SAVE.scan=!SAVE.scan;persist();
   $('scan').classList.toggle('off',!SAVE.scan);
@@ -2113,8 +2538,8 @@ $('btn-next').addEventListener('click',()=>{Audio.select();if(currentLevel<5)sta
 $('btn-replay').addEventListener('click',()=>{Audio.click();startLevel(currentLevel);});
 $('btn-cmp-map').addEventListener('click',()=>{Audio.click();renderLevels();setState('levels','scr-levels');});
 $('btn-cmp-board').addEventListener('click',()=>{Audio.click();openBoard();});
-$('btn-retry').addEventListener('click',()=>{Audio.select();startLevel(currentLevel);});
-$('btn-over-map').addEventListener('click',()=>{Audio.click();renderLevels();setState('levels','scr-levels');});
+$('btn-retry').addEventListener('click',()=>{Audio.select();restartRun();});
+$('btn-over-map').addEventListener('click',()=>{Audio.click();if(MODE==='story'){renderLevels();setState('levels','scr-levels');}else{startRun('road',0,true);openTitle();}});
 $('btn-over-board').addEventListener('click',()=>{Audio.click();openBoard();});
 $('btn-win-map').addEventListener('click',()=>{Audio.click();renderLevels();setState('levels','scr-levels');});
 $('btn-win-again').addEventListener('click',()=>{Audio.select();startLevel(0);});
@@ -2126,7 +2551,7 @@ $('lb-filter').addEventListener('change',e=>{lbFilter=e.target.value;Audio.click
 $('lb-sort').addEventListener('change',e=>{lbSort=e.target.value;Audio.click();renderBoard();});
 $('lb-mine').addEventListener('click',()=>{lbMine=!lbMine;Audio.click();renderBoard();});
 $('btn-board-back').addEventListener('click',()=>{Audio.click();openTitle();});
-$('btn-board-play').addEventListener('click',()=>{Audio.select();const first=SAVE.s.findIndex(s=>!s);startLevel(first<0?0:first);});
+$('btn-board-play').addEventListener('click',()=>{Audio.select();startRun(lbTab==='story'?'story':lbTab,lbTab==='story'?Math.max(0,SAVE.s.findIndex(s=>!s)):0);});
 $('btn-board-clear').addEventListener('click',()=>{
   LB=LB.filter(e=>!e.you);lbSave();renderBoard();renderTitle();Audio.bump();toast('YOUR RUNS CLEARED','bad');
 });
@@ -2143,7 +2568,7 @@ $('load-chick').innerHTML=ic('CHICK','chick',64);
 $('over-chick').innerHTML=ic('CHICK','chick',48);
 $('win-barn').innerHTML=ic('BARN','barn',56);
 $('how-move-ic').innerHTML=ic('ARR','cream',14)+' MOVE';
-$('how-lives-ic').innerHTML=ic('HEART','heart',14)+' THREE LIVES';
+$('how-lives-ic').innerHTML=ic('HEART','heart',14)+' STORY: THREE LIVES';
 $('lives-demo').innerHTML=[0,1,2].map(()=>ic('HEART','heart',22)).join('')+'<span style="font-size:7px;margin-left:8px;color:#6a5238">EVERY HIT = −1</span>';
 $('how-move-txt').innerHTML=isTouch
   ?'<span class="k">TAP</span> hop forward · <span class="k">SWIPE</span> steer up / down / left / right · the on-screen <span class="k">D-PAD</span> works too, hold it to keep hopping.'
@@ -2156,7 +2581,7 @@ renderMute();renderHearts();updateCornHUD();renderTitle();resetSubmitUI();
 /* ---------------- resize ---------------- */
 function resize(){
   W=innerWidth;H=innerHeight;
-  PX=clamp(Math.round(Math.min(W,H)/170),2,6);
+  PX=SAVE.px==='fine'?clamp(Math.round(Math.min(W,H)/320),1,3):clamp(Math.round(Math.min(W,H)/170),2,6);
   renderer.setSize(Math.ceil(W/PX),Math.ceil(H/PX),false);
   const aspect=W/H;
   let halfH=aspect>=1?6.4:8.6,halfW=halfH*aspect;
@@ -2170,7 +2595,18 @@ window.addEventListener('orientationchange',()=>setTimeout(resize,120));
 resize();
 
 /* ---------------- main loop ---------------- */
-let lastT=performance.now(),errLogged=false;
+let lastT=performance.now(),errLogged=false,lastFrame=performance.now();
+/* adaptive quality: if play can't hold ~45fps for a few seconds, drop a shadow step */
+let perfAcc=0,perfN=0,perfSlow=0;
+function perfTick(ms){
+  if(state!=='playing'||document.hidden||ms>250)return;
+  perfAcc+=ms;perfN++;
+  if(perfAcc>=2000){
+    const avg=perfAcc/perfN;perfAcc=0;perfN=0;
+    perfSlow=avg>22?perfSlow+1:0;
+    if(perfSlow>=2&&QUAL>0&&SAVE.fx!==false){setQuality(QUAL-1);perfSlow=0;}
+  }
+}
 function loop(now){
   requestAnimationFrame(loop);
   const rawDt=clamp((now-lastT)/1000,0,.05);lastT=now;
@@ -2180,8 +2616,10 @@ function loop(now){
   }
   const dt=rawDt*timeScale;
   windU.value=globalT;waterU.uTime.value=globalT;
+  blendTheme(Math.min(1,rawDt*1.6));
+  perfTick(now-lastFrame);lastFrame=now;
   try{
-    if(rowsData){
+    if(rowMap){
       streamRows();
       updateEntities(dt,globalT);
       if(state==='playing'){levelTime+=rawDt;heldKeys();checkHazards();}
@@ -2207,7 +2645,23 @@ window.__tl={
   get score(){return score;},
   get level(){return currentLevel;},
   get pos(){return{row:chicken.row,z:+chicken.z.toFixed(2)};},
-  start:()=>startLevel(0),
+  start:(m)=>startRun(m||'road'),
+  story:(i)=>startLevel(i||0),
+  get mode(){return MODE;},
+  get row(){return maxRow;},
+  get zone(){return curZone;},
+  rows:()=>rowMap?rowMap.size:0,
+  layout:()=>{const o=[];for(let i=0;i<22;i++){const d=rowData(i);o.push(d.type[0]+(d.blocked?d.blocked.size:0)+(d.corn?d.corn.length:0));}return o.join('');},
+  warp:(r)=>{genUpTo(r+24);maxRow=r-1;curZone=zoneOf(r-1);applyTheme(zoneTheme(curZone),true);
+    const d=rowData(r);if(d!==EMPTY_ROW){d.blocked.clear();d.type="grass";d.fox=null;}
+    chicken.row=r;chicken.col=0;chicken.x=0;chicken.z=-r;lastSafe={r,c:0};renderLevelChip();},
+  bird:(id)=>{applyBird(id);},
+  coop:()=>openCoop(),
+  setCorn:(n)=>{SAVE.corn=n;persist();},
+  quality:(q)=>{if(q!=null)setQuality(q);return QUAL;},
+  save:()=>SAVE,
+  dbg:()=>{let cs=0,rs=0;scene.traverse(o=>{if(o.castShadow)cs++;if(o.receiveShadow)rs++;});return{sm:renderer.shadowMap.enabled,lc:sunLight.castShadow,map:!!sunLight.shadow.map,
+    pos:sunLight.position.toArray().map(v=>+v.toFixed(1)),tp:sunLight.target.position.toArray(),cs,rs,calls:renderer.info.render.calls,tris:renderer.info.render.triangles};},
   gameOver:()=>showOver(),
   showScores:()=>openBoard(),
   saveScore:async s=>submitScore(getInits()||'TST',Math.max(1,Math.round(s))),
@@ -2216,7 +2670,8 @@ window.__tl={
   inits:()=>getInits(),
   radio:()=>({playing:typeof DSDARadio!=='undefined'&&!!DSDARadio.playing}),
 };
-startLevel(0,true);
+startRun('road',0,true);renderTitle();
+if(/[?&]dbg=1/.test(location.search))window.__dbg={THREE,scene,renderer,sunLight,hemi,fillLight,camera,TT,sunDir};
 requestAnimationFrame(loop);
 </script>
 <!-- DSDA Radio network widget (shared cross-game dial) -->
