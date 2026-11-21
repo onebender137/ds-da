@@ -6,9 +6,24 @@
  *
  * When logged in (token in localStorage `dsda-token`):
  *   - On load:  PULL  GET  /api/account/sync -> merge persistent state into the
- *     localStorage passport (union badges, max daily scores/plays/streak).
+ *     localStorage passport (union badges, max daily scores/plays/streak,
+ *     per-board bests from the account score history).
  *   - On save:  PUSH  POST /api/account/sync (debounced) on every
  *     DSDA:passport-saved event (badge earned, daily finished, score submitted).
+ *
+ * Board posts (v8, 2026-11-20): the fetch wrapper that attaches the session to
+ * /api/board/score now ALSO filters member posts — a round only reaches the
+ * cabinet board when it beats the member's personal best FOR THAT BOARD
+ * (casuals already qualify-check the same way). The per-board best lives in
+ * localStorage `dsda-board-bests`, seeded from the account-synced best
+ * (passport.scores) when the sync covers that board id. The board id comes
+ * straight from the POST body, so variant boards (dailies, skies,
+ * difficulties, dragon-slalom_journey) need no per-game wiring. The
+ * game_over gtag path (DSDA.account.submitScore) is untouched — the card's
+ * recent-games history keeps every run; only the board post is filtered.
+ * A 429'd board post is NOT dropped: it is stashed in localStorage
+ * (`dsda-board-pending`) and retried when a cabinet next loads or after the
+ * rate window resets, then cleared on success.
  *
  * Login: BRC-100 (window.CWI, preferred) or email/password. The token is a
  * stateless signed session from the board Worker.
@@ -152,6 +167,14 @@
       p.daily.streak = Math.max(p.daily.streak || 0, r.j.daily.streak || 0);
       p.daily.last = (r.j.daily.last && r.j.daily.last > (p.daily.last || '')) ? r.j.daily.last : (p.daily.last || '');
       p.plays = Math.max(p.plays || 0, r.j.plays || 0);
+      // Per-board bests from the account score history. Members seed their
+      // local board-best from this when it covers the exact board id they
+      // post to (the board gate in the fetch wrapper reads passport.scores).
+      p.scores = p.scores || {};
+      Object.keys(r.j.scores || {}).forEach(function (g) {
+        var s = Math.trunc(+r.j.scores[g] || 0);
+        if (s > (p.scores[g] || 0)) p.scores[g] = s;
+      });
       setPass(p);
       window.dispatchEvent(new CustomEvent('DSDA:passport-synced', { detail: p }));
       return p;
@@ -198,13 +221,71 @@
     return api('/scores', 'POST', { game: game, score: s });
   }
 
-  /* ---------------- board posts carry the session ----------------
+  /* ---------------- board posts carry the session (v8: + member gate + 429 queue)
      Every cabinet posts its score to <api>/api/board/score itself (it knows the
      right board id + score). When logged in, attach the session token so the
      Worker writes the row under the account handle. Expired/invalid session
      (401) -> log out and retry once as a casual so the score isn't lost.
+     Member gate: a round only reaches the board when it beats the member's
+     personal best FOR THAT BOARD (the board id is read from the POST body, so
+     variant boards are keyed correctly). Non-PB rounds return a synthetic 200
+     before hitting the network — no rate spend, no board churn. The per-board
+     best lives in localStorage `dsda-board-bests`, seeded from the
+     account-synced best (passport.scores) for members.
      Rate-limited (429) -> toast how long to wait (Retry-After, seconds per
-     the HTTP spec), so the player sees "slow down", not just "offline". */
+     the HTTP spec) AND stash the post in localStorage `dsda-board-pending` —
+     it is retried when a cabinet next loads or after the window resets, and
+     cleared on success. A 429'd score is never dropped. */
+  var BESTS_KEY = 'dsda-board-bests';
+  var PEND_KEY = 'dsda-board-pending';
+  function boardBests() { try { return JSON.parse(localStorage.getItem(BESTS_KEY) || '{}') || {}; } catch (e) { return {}; } }
+  function boardBest(boardId) {
+    var b = +boardBests()[boardId] || 0;
+    try {
+      var p = JSON.parse(localStorage.getItem(PASS_KEY) || 'null');
+      var acc = p && p.scores;
+      if (acc && typeof acc === 'object') b = Math.max(b, +acc[boardId] || 0);
+    } catch (e) {}
+    return b;
+  }
+  function liftBoardBest(boardId, s) {
+    try {
+      var b = boardBests();
+      if (s > (b[boardId] || 0)) { b[boardId] = s; localStorage.setItem(BESTS_KEY, JSON.stringify(b)); }
+    } catch (e) {}
+  }
+  function loadPend() { try { return JSON.parse(localStorage.getItem(PEND_KEY) || 'null'); } catch (e) { return null; } }
+  function savePend(p) { try { p ? localStorage.setItem(PEND_KEY, JSON.stringify(p)) : localStorage.removeItem(PEND_KEY); } catch (e) {} }
+
+  var retryTimer = null;
+  function scheduleRetry(ms) {
+    if (retryTimer) return;
+    retryTimer = setTimeout(function () { retryTimer = null; retryPending(); }, Math.max(5000, Math.min(ms, 65 * 60000)));
+  }
+  function stashPending(url, body, r) {
+    try {
+      var ra = r && r.headers && r.headers.get ? r.headers.get('Retry-After') : null;
+      var secs = ra && /^\d+$/.test(ra) ? +ra : 300;
+      secs = Math.max(60, Math.min(secs, 3600));
+      savePend({ url: url, body: body, until: Date.now() + secs * 1000, ts: Date.now() });
+      scheduleRetry(secs * 1000 + 1500);
+    } catch (e) {}
+  }
+  function retryPending() {
+    var p = loadPend();
+    if (!p) return;
+    var wait = (p.until || 0) - Date.now();
+    if (wait > 1500) { scheduleRetry(wait + 1500); return; }
+    savePend(null);
+    // window.fetch is the wrapper: it re-attaches the session (or, after a 401,
+    // falls back to casual) and re-stashes on another 429.
+    fetch(p.url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: p.body })
+      .then(function (r) {
+        // 429/401 are already re-stashed/handled by the wrapper.
+        if (r && !r.ok && r.status !== 429 && r.status !== 401) savePend(p);
+      })
+      .catch(function () { savePend(p); scheduleRetry(60000); });
+  }
   function rateToast(r) {
     try {
       var ra = r.headers && r.headers.get && r.headers.get('Retry-After');
@@ -222,8 +303,29 @@
         var url = typeof input === 'string' ? input : (input && input.url) || '';
         var method = ((init && init.method) || 'GET').toUpperCase();
         if (method === 'POST' && /\/api\/board\/score(\?|$)/.test(url)) {
-          var watch = function (r) { if (r && r.status === 429) rateToast(r); return r; };
+          var watch = function (r) {
+            if (r && r.status === 429) { rateToast(r); stashPending(url, init && init.body, r); }
+            return r;
+          };
           var t = tok();
+          if (t) {
+            // Member board gate: a round that doesn't beat the personal best
+            // for this board id never hits the network.
+            try {
+              var j = typeof init.body === 'string' ? JSON.parse(init.body) : null;
+              var s = j ? Math.trunc(+j.score || 0) : 0;
+              var g = j && typeof j.game === 'string' ? j.game : '';
+              if (g && s > 0) {
+                if (s <= boardBest(g)) {
+                  return Promise.resolve(new Response(
+                    JSON.stringify({ ok: true, deduped: true }),
+                    { status: 200, headers: { 'Content-Type': 'application/json' } }
+                  ));
+                }
+                liftBoardBest(g, s);
+              }
+            } catch (e) {}
+          }
           if (!t) return orig.call(window, input, init).then(watch);
           var h = {};
           var src = init.headers;
@@ -244,12 +346,17 @@
     window.fetch = wrapped;
   })();
 
+  // Flush a 429-stashed board post from a previous session — any cabinet page
+  // (or the hub) that loads this module can deliver it once the window resets.
+  if (loadPend()) retryPending();
+
   window.DSDA = window.DSDA || {};
   window.DSDA.account = {
     __account: true,
     loginBrc100: loginBrc100, loginEmail: loginEmail, register: register,
     forgotPassword: forgotPassword, resetPassword: resetPassword,
     logout: logout, pull: pull, push: push, submitScore: submitScore, linkWallet: linkWallet,
-    getToken: tok, getAccount: getAcc
+    getToken: tok, getAccount: getAcc,
+    boardBest: boardBest, pending: loadPend // v8: board gate / 429 queue (test hooks)
   };
 })();
