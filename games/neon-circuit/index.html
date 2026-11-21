@@ -2056,7 +2056,7 @@ const Board={
     // The shared arcade-account.js gate dedupes member sub-PB posts (fake 200,
     // deduped:true / X-DSDA-Dedup) — return "pb" so the save line is honest.
     let dedup=false;try{const j=await r.json();dedup=!!(j&&j.deduped);}catch(e){}
-    return dedup?"pb":"ok";}catch(e){}
+    return dedup?"pb":"ok";}}catch(e){}
   return"offline";
  },
  async fetch(){
