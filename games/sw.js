@@ -25,7 +25,9 @@
 // v12: board 429 -> 'slow down' toast (arcade-account.js v6).
 // v13: arcade-account.js v7 — same-origin /api/account (3f5cb3b changed the file
 //      without a version bump, so cached phones kept calling api.ds-da.ca).
-const CACHE = 'dsda-arcade-v13';
+// v14: Dragon Slalom three.js rebuild — new screenshot.png (cache-first) would
+//      otherwise stay stale on returning phones.
+const CACHE = 'dsda-arcade-v14';
 const CORE = [
   './',
   './manifest.webmanifest',
