@@ -172,9 +172,24 @@
       // post to (the board gate in the fetch wrapper reads passport.scores).
       p.scores = p.scores || {};
       Object.keys(r.j.scores || {}).forEach(function (g) {
-        var s = Math.trunc(+r.j.scores[g] || 0);
-        if (s > (p.scores[g] || 0)) p.scores[g] = s;
+        // OVERWRITE, not max: the account sync is the source of truth for a
+        // member's per-board best. A board reset (Slipstream, prize seasons)
+        // re-seeds the account score, and this overwrite is what lets the local
+        // best DROP to match — a max() ratchet would lock the member out until
+        // they beat a best that no longer exists on the board.
+        p.scores[g] = Math.trunc(+r.j.scores[g] || 0);
       });
+      // Re-seed the local board-best store from the synced boards (overwrite)
+      // so a wiped board un-locks member posts. Boards the sync doesn't cover
+      // are left alone (a fresh board the member hasn't played keeps its best).
+      try {
+        var bb = boardBests();
+        var touched = false;
+        Object.keys(r.j.scores || {}).forEach(function (g) {
+          if (bb[g] !== p.scores[g]) { bb[g] = p.scores[g]; touched = true; }
+        });
+        if (touched) localStorage.setItem(BESTS_KEY, JSON.stringify(bb));
+      } catch (e) {}
       setPass(p);
       window.dispatchEvent(new CustomEvent('DSDA:passport-synced', { detail: p }));
       return p;
@@ -317,9 +332,12 @@
               var g = j && typeof j.game === 'string' ? j.game : '';
               if (g && s > 0) {
                 if (s <= boardBest(g)) {
+                  // Honest dedupe: the round is NOT posted, but the cabinet must
+                  // say so — read `deduped` from the body (or the X-DSDA-Dedup
+                  // header) and show "Personal best stands", not "on the board ✓".
                   return Promise.resolve(new Response(
                     JSON.stringify({ ok: true, deduped: true }),
-                    { status: 200, headers: { 'Content-Type': 'application/json' } }
+                    { status: 200, headers: { 'Content-Type': 'application/json', 'X-DSDA-Dedup': '1' } }
                   ));
                 }
                 liftBoardBest(g, s);

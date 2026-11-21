@@ -689,7 +689,10 @@ async function postScore(d,inits,sc,lv){
   try{
     const r=await fetchTimeout(BOARD_API+'/score',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({initials:inits,score:Math.round(sc),secret:SCORE_SECRET,game:boardGame(d)})},6000);
-    return r.ok;
+    if(!r.ok)return false;
+    // The shared arcade-account.js gate dedupes member sub-PB posts (fake 200,
+    // deduped:true / X-DSDA-Dedup) — return it so the save line is honest.
+    try{const j=await r.json();return (j&&j.deduped)?'deduped':'ok';}catch(e){return 'ok';}
   }catch(e){return false;}
 }
 async function fetchBoard(d){
@@ -1824,8 +1827,8 @@ async function postFlight(){
   flightPosted=r.total;
   els.btnPost.disabled=true;els.saveMsg.className='save-msg';els.saveMsg.textContent='POSTING…';
   const ok=await postScore(diff,inits,r.total,level);
-  els.saveMsg.className='save-msg'+(ok?' ok':'');
-  els.saveMsg.textContent=ok?`ON THE ${DIFF_NAMES[diff].toUpperCase()} BOARD${member?' AS '+member.toUpperCase()+' \u25c6':''} ✓ · tap 🏆 Board`:'BOARD OFFLINE — SAVED ON THIS DEVICE';
+  els.saveMsg.className='save-msg'+((ok==='ok'||ok==='deduped')?' ok':'');
+  els.saveMsg.textContent=ok==='ok'?`ON THE ${DIFF_NAMES[diff].toUpperCase()} BOARD${member?' AS '+member.toUpperCase()+' \u25c6':''} ✓ · tap 🏆 Board`:ok==='deduped'?'PERSONAL BEST STANDS — NOT REPOSTED':'BOARD OFFLINE — SAVED ON THIS DEVICE';
 }
 function bankFlight(){
   // leaving mid-flight with points on the board turns it into a posted, finished flight
@@ -2465,7 +2468,7 @@ window.__pk={
 </script>
 <!-- DSDA arcade social layer (passport, share + challenge links) and the shared DSDA Radio dial.
      The radio is the music source; Poke It keeps its own SFX only. -->
-<script src="../arcade-social.js?v=11"></script>
+<script src="../arcade-social.js?v=12"></script>
 <script src="../../radio/radio.js?v=11"></script>
 <script>
   DSDARadio.init({ mount: 'radioBox', manifest: '../../radio/stations.json' });

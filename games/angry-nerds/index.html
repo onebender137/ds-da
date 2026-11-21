@@ -394,7 +394,13 @@ async function submitScore(board,sc,meta){
   try{
     const r=await fetchTimeout(BOARD_API+'/score',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({initials,score:Math.round(sc),secret:SCORE_SECRET,game:GAME_ID})},5000);
-    if(r.ok){save.posted=Math.max(save.posted||0,Math.round(sc));persist();setStatus('✅ Posted to the arcade board'+(member?' as '+member+' \u25c6':'')+'.');}
+    if(r.ok){
+      let dedup=false;try{const j=await r.json();dedup=!!(j&&j.deduped);}catch(e){}
+      save.posted=Math.max(save.posted||0,Math.round(sc));persist();
+      // The shared arcade-account.js gate dedupes member sub-PB posts (fake 200,
+      // deduped:true / X-DSDA-Dedup) — say so honestly.
+      setStatus(dedup?'Personal best stands — not reposted. ✅':'✅ Posted to the arcade board'+(member?' as '+member+' \u25c6':'')+'.');
+    }
     else setStatus('Board offline — saved on this device.');
   }catch(e){setStatus('Board offline — saved on this device.');}
 }
@@ -1600,7 +1606,7 @@ setTimeout(()=>loaderEl.classList.add('hidden'),350);
 
   <!-- DSDA Radio network widget (shared 6-station dial) -->
   <div id="radioBox"></div>
-  <script src="../arcade-social.js?v=11"></script>
+  <script src="../arcade-social.js?v=12"></script>
   <script src="../../radio/radio.js?v=11"></script>
   <script>
     // DSDA Radio — shared cross-game dial (6 stations). The radio is the music source;

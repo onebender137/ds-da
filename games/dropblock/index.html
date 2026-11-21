@@ -1935,7 +1935,12 @@ function submitGlobal(name, s) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ initials: name, score: s, secret: SCORE_SECRET, game: GAME_ID })
-  }, 5000).then(function (r) { return r.ok ? 'ok' : 'http-' + r.status; }, function () { return 'board-offline'; });
+  }, 5000).then(function (r) {
+    if (!r.ok) return 'http-' + r.status;
+    // The shared arcade-account.js gate dedupes member sub-PB posts (fake 200,
+    // deduped:true / X-DSDA-Dedup). Read it honestly for the save line.
+    return r.json().then(function (j) { return j && j.deduped ? 'deduped' : 'ok'; }, function () { return 'ok'; });
+  }, function () { return 'board-offline'; });
 }
 function saveScore() {
   const member = memberHandle();
@@ -1957,6 +1962,7 @@ function saveScore() {
   sfx.match(2);
   submitGlobal(name, score).then(res => {
     if (res === 'ok') elSavedMsg.textContent = 'Saved! On the global board' + who + ' ✓';
+    else if (res === 'deduped') elSavedMsg.textContent = 'Personal best stands — not reposted';
     else elSavedMsg.textContent = 'Saved on this device · global board unreachable right now';
   });
 }
@@ -2538,7 +2544,7 @@ try {
   elBootErr.textContent = window.__bootErr;
 }
 </script>
-<script src="../arcade-social.js?v=11"></script>
+<script src="../arcade-social.js?v=12"></script>
 <script src="../../radio/radio.js?v=11"></script>
 <script>
   // DSDA Radio — the shared cross-game dial (6 stations: Most Pit, Easy Mellow,

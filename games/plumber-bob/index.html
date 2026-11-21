@@ -1450,7 +1450,12 @@ function submitGlobal(name, s) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ initials: name, score: s, secret: SCORE_SECRET, game: GAME_ID })
-  }, 5000).then(function (r) { return r.ok ? 'ok' : 'http-' + r.status; }, function () { return 'board-offline'; });
+  }, 5000).then(function (r) {
+    if (!r.ok) return 'http-' + r.status;
+    // The shared arcade-account.js gate dedupes member sub-PB posts (fake 200,
+    // deduped:true / X-DSDA-Dedup). Read it honestly for the save line.
+    return r.json().then(function (j) { return j && j.deduped ? 'deduped' : 'ok'; }, function () { return 'ok'; });
+  }, function () { return 'board-offline'; });
 }
 
 // ---------------- share score (DSDA house card) ----------------
@@ -1637,6 +1642,7 @@ function commitScore() {
   track('score_submit', { score });
   submitGlobal(n, score).then(res => {
     if (res === 'ok') $('savedMsg').textContent = 'Saved! On the global board' + (member ? ' as ' + member + ' \u25c6' : '') + ' ✓';
+    else if (res === 'deduped') $('savedMsg').textContent = 'Personal best stands — not reposted';
     else $('savedMsg').textContent = 'Saved locally · global board: ' + res;
   });
 }
@@ -1828,7 +1834,7 @@ try {
 
   <!-- DSDA Radio network widget (shared 6-station dial) -->
   <div id="radioBox"></div>
-  <script src="../arcade-social.js?v=11"></script>
+  <script src="../arcade-social.js?v=12"></script>
   <script src="../../radio/radio.js?v=11"></script>
   <script>
     // DSDA Radio — shared cross-game dial (6 stations). The radio is the music source;

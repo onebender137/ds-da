@@ -2052,7 +2052,11 @@ const Board={
  async submit(score){
   const inits=memberHandle()?DSDA.memberInits():getInits();if(!inits)return"no-inits";if(!score||score<=this.lastPosted)return"dupe";
   try{const r=await fetchT(BOARD_API+"/score",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({initials:inits,score:Math.round(score),secret:SCORE_SECRET,game:GAME_ID})},6000);
-   if(r.ok){this.lastPosted=Math.max(this.lastPosted,score);track('score_submit',{score});return"ok"}}catch(e){}
+   if(r.ok){this.lastPosted=Math.max(this.lastPosted,score);track('score_submit',{score});
+    // The shared arcade-account.js gate dedupes member sub-PB posts (fake 200,
+    // deduped:true / X-DSDA-Dedup) — return "pb" so the save line is honest.
+    let dedup=false;try{const j=await r.json();dedup=!!(j&&j.deduped);}catch(e){}
+    return dedup?"pb":"ok";}catch(e){}
   return"offline";
  },
  async fetch(){
@@ -2073,6 +2077,7 @@ async function postScore(score){
  const i=member?DSDA.memberInits():setInits($("initsInput").value);if(!i){msg.textContent="ENTER YOUR INITIALS";$("initsInput").focus();return}
  msg.textContent="POSTING…";const r=await Board.submit(score);
  if(r==="ok"||r==="dupe"){msg.textContent="ON THE ARCADE BOARD"+(member?" AS "+member.toUpperCase()+" \u25c6":"")+" ✓";msg.classList.add("ok");$("postBtn").disabled=true;refreshTop($("resultTop"),5)}
+ else if(r==="pb"){msg.textContent="PERSONAL BEST STANDS — NOT REPOSTED";msg.classList.add("ok");}
  else msg.textContent="BOARD OFFLINE — TRY AGAIN IN A BIT";
 }
 function renderBoard(){
@@ -2302,7 +2307,7 @@ if(/[?&]test=1/.test(location.search))window.__G={
 
   <!-- DSDA Radio network widget (shared 6-station dial) -->
   <div id="radioBox"></div>
-  <script src="../arcade-social.js?v=11"></script>
+  <script src="../arcade-social.js?v=12"></script>
   <script src="../../radio/radio.js?v=11"></script>
   <script>
     // DSDA Radio — shared cross-game dial (6 stations). The radio is the music source;

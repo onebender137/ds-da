@@ -1325,7 +1325,12 @@ function fetchGlobalBoard(){
 function submitGlobal(name,s){
   /* Worker only: arcade-account.js attaches the session token when logged in */
   return fetchTimeout(BOARD_API+"/score",{method:"POST",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({initials:name,score:s,secret:SCORE_SECRET,game:BOARD_GAME})},5000).then(r=>r.ok?"ok":"http-"+r.status,()=>"board-offline");
+    body:JSON.stringify({initials:name,score:s,secret:SCORE_SECRET,game:BOARD_GAME})},5000).then(r=>{
+      if(!r.ok)return "http-"+r.status;
+      // The shared arcade-account.js gate dedupes member sub-PB posts (fake 200,
+      // deduped:true / X-DSDA-Dedup). Read it honestly for the save line.
+      return r.json().then(j=>(j&&j.deduped)?"deduped":"ok",()=>"ok");
+    },()=>"board-offline");
 }
 function scores(){try{return JSON.parse(store(LB)||"[]");}catch(e){return[];}}
 function rowsHTML(rows,empty){
@@ -1357,7 +1362,7 @@ function saveScore(){
   $("endBoard").innerHTML=rowsHTML(deviceRows(),"");$("endBoard").classList.remove("hide");
   track("score_submit",{score:sc});
   const nm=$("saveMsg");nm.textContent="Submitting to the global board…";
-  submitGlobal(init,sc).then(res=>{nm.textContent=res==="ok"?"On the global board"+(member?" as "+member+" ◆":"")+" ✓":(res==="http-429"?"Slow down — board rate limit, try again soon":"Saved locally · global: "+res);});
+  submitGlobal(init,sc).then(res=>{nm.textContent=res==="ok"?"On the global board"+(member?" as "+member+" ◆":"")+" ✓":(res==="deduped"?"Personal best stands — not reposted":(res==="http-429"?"Slow down — board rate limit, try again soon":"Saved locally · global: "+res));});
   Sfx.click();best();
 }
 /* share card (DSDA house style) */
@@ -1515,7 +1520,7 @@ window.__tl={
 
   <!-- DSDA Radio network widget (shared 6-station dial) -->
   <div id="radioBox"></div>
-  <script src="../arcade-social.js?v=11"></script>
+  <script src="../arcade-social.js?v=12"></script>
   <script src="../../radio/radio.js?v=11"></script>
   <script>
     // DSDA Radio — shared cross-game dial. The radio is the music source; the game makes SFX only.

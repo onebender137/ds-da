@@ -320,6 +320,10 @@ body.touch #stickHint{left:calc(56px + var(--sal));bottom:calc(64px + var(--sab)
 .lb-list li.lb-empty{justify-content:center;color:var(--dim);font-size:.72rem;letter-spacing:.18em;border-bottom:none}
 .lb-list li:nth-child(1) .rank{color:var(--amber)}
 .scores-live{font-family:var(--mono);font-size:.62rem;letter-spacing:.26em;color:var(--dim);margin:4px 0 10px}
+.pb-board-sec{margin:0 0 10px}
+.pb-board-head{font-family:var(--mono);font-size:.72rem;letter-spacing:.2em;margin:2px 0 2px;display:flex;align-items:baseline;gap:8px}
+.pb-board-tag{font-size:.56rem;letter-spacing:.14em;color:var(--dim);font-weight:400}
+.pb-board-sec .lb-list{max-height:132px;margin:4px 0 0}
 .scores-local-title{font-family:var(--disp);font-size:.62rem;letter-spacing:.26em;color:var(--dim);margin:14px 0 2px}
 </style>
 </head>
@@ -545,11 +549,22 @@ body.touch #stickHint{left:calc(56px + var(--sal));bottom:calc(64px + var(--sab)
 </div>
 
 <div class="ov" id="ovScores" role="dialog" aria-modal="true" aria-label="Leaderboard">
-  <div class="ov-inner" style="width:min(94vw,520px)">
+  <div class="ov-inner" style="width:min(94vw,560px)">
     <div class="kicker">DSDA ARCADE · GLOBAL BOARD</div>
     <h2 class="h-cyan">PIPEBOMBS RECORDS</h2>
     <div class="scores-live" id="scoresLive">LOADING…</div>
-    <ol class="lb-list" id="scoresList"></ol>
+    <div class="pb-board-sec">
+      <div class="pb-board-head h-cyan">CASUAL <span class="pb-board-tag">4 LIVES · SLOW LEAKS</span></div>
+      <ol class="lb-list" id="secLb0"></ol>
+    </div>
+    <div class="pb-board-sec">
+      <div class="pb-board-head h-green">STANDARD <span class="pb-board-tag">3 LIVES · FACTORY SPEC</span></div>
+      <ol class="lb-list" id="secLb1"></ol>
+    </div>
+    <div class="pb-board-sec">
+      <div class="pb-board-head h-red">OVERPRESSURE <span class="pb-board-tag">2 LIVES · MAX FLOW</span></div>
+      <ol class="lb-list" id="secLb2"></ol>
+    </div>
     <div class="scores-local-title">THIS CABINET · THIS DEVICE</div>
     <ol class="lb-list" id="scoresLocal"></ol>
     <div class="btn-row"><button class="btn btn-primary" id="btnScoresClose">CLOSE</button></div>
@@ -1797,11 +1812,21 @@ function respawn(){
    leaderboard.json. Initials live under the arcade-wide key (dsda-initials).
    Members (arcade account) post under their handle — the board renders the
    handle + ◆ badge. */
-const GAME_ID='pipebombs';
+const GAME_ID='pipebombs';   // base id: GA4 events + fallback
 const BOARD_API='/api/board';
 const SCORE_SECRET='6216cf68f4e077d3cd991f2d6bd3e878';
 const DSDA_INITS_KEY='dsda-initials';
-const LOCAL_LB_KEY='pb_local_lb';
+// Difficulty split (Machine Elves pattern): each difficulty posts to its own
+// board. The sync mirror maps STANDARD into games/pipebombs/leaderboard.json
+// (the hall counter); casual + overpressure stay in D1 (read live in-cabinet).
+const DIFF_BOARD={casual:'pipebombs_casual',standard:'pipebombs_standard',over:'pipebombs_overpressure'};
+const BOARDS=[
+  {id:'pipebombs_casual',label:'CASUAL',diff:'casual',tag:'4 LIVES · SLOW LEAKS'},
+  {id:'pipebombs_standard',label:'STANDARD',diff:'standard',tag:'3 LIVES · FACTORY SPEC'},
+  {id:'pipebombs_overpressure',label:'OVERPRESSURE',diff:'over',tag:'2 LIVES · MAX FLOW'}
+];
+function boardId(){return DIFF_BOARD[prefs.diff]||'pipebombs_standard';}
+function boardLabel(){const b=BOARDS.find(x=>x.id===boardId());return b?b.label:'STANDARD';}
 let lastPosted=0;
 function cleanInits(s){return (s||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,3);}
 function getInits(){try{return cleanInits(localStorage.getItem(DSDA_INITS_KEY)||'');}catch(e){return '';}}
@@ -1811,23 +1836,26 @@ function fetchTimeout(url,opts,ms){
   const c=new AbortController(),t=setTimeout(()=>c.abort(),ms||5000);
   return fetch(url,Object.assign({signal:c.signal},opts||{})).then(r=>{clearTimeout(t);return r;},e=>{clearTimeout(t);throw e;});
 }
-function getLocalBoard(){try{return JSON.parse(localStorage.getItem(LOCAL_LB_KEY)||'[]')||[];}catch(e){return [];}}
-function saveLocal(initials,score){
-  const lb=getLocalBoard();
+// Local (device) board is per-difficulty, matching the global split.
+function localKey(diff){return 'pb_local_lb_'+(diff||prefs.diff);}
+function getLocalBoard(diff){try{return JSON.parse(localStorage.getItem(localKey(diff))||'[]')||[];}catch(e){return [];}}
+function saveLocal(initials,score,diff){
+  const lb=getLocalBoard(diff);
   lb.push({n:initials,s:Math.round(score),d:Date.now(),h:memberHandle()||undefined});
   lb.sort((a,b)=>b.s-a.s);
   if(lb.length>10)lb.length=10;
-  try{localStorage.setItem(LOCAL_LB_KEY,JSON.stringify(lb));}catch(e){}
+  try{localStorage.setItem(localKey(diff),JSON.stringify(lb));}catch(e){}
   return lb;
 }
-function renderBoardList(el,top,me){
+function renderBoardList(el,top,me,max){
+  max=max||10;
   el.innerHTML='';
   if(!top||!top.length){
     const li=document.createElement('li');li.className='lb-empty';
     li.textContent='NO RUNS ON RECORD — FIRST SCORE GOES TO YOU';
     el.appendChild(li);return;
   }
-  top.slice(0,10).forEach((e,i)=>{
+  top.slice(0,max).forEach((e,i)=>{
     const li=document.createElement('li');
     if(me&&e.n===me)li.classList.add('you');
     const n=e.h||String(e.n||'???').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,3).padEnd(3,'?');
@@ -1839,86 +1867,47 @@ function renderBoardList(el,top,me){
     el.appendChild(li);
   });
 }
-/* ---- member personal best + 429 retry queue (TappyCat lesson) ----
-   Members post to the board ONLY on a new personal best — the board is the
-   source of truth, localStorage is the offline fallback. A 429 (rate limit)
-   or a dropped connection is not a lost score: the post is queued and
-   retried later (boot, board refresh, Retry-After timer). */
-const PQ_KEY='pb_score_queue';
-function pqKey(h){return 'pb_member_'+(h||'anon');}
-function getMemberPB(h){try{return parseInt(localStorage.getItem(pqKey(h))||'0',10)||0;}catch(e){return 0;}}
-function setMemberPB(h,sc){try{localStorage.setItem(pqKey(h),String(Math.round(sc)));}catch(e){}}
-function boardPB(top,handle){
-  let pb=0;
-  (top||[]).forEach(e=>{if(e.h===handle&&e.s>pb)pb=e.s;});
-  return pb;
-}
-function getQueue(){try{return JSON.parse(localStorage.getItem(PQ_KEY)||'[]')||[];}catch(e){return [];}}
-function saveQueue(q){try{localStorage.setItem(PQ_KEY,JSON.stringify(q));}catch(e){}}
-function enqueueScore(n,s,h){
-  const q=getQueue();
-  const i=q.findIndex(e=>e.n===n&&e.h===(h||undefined));
-  if(i>=0){if(s>(q[i].s||0))q[i].s=Math.round(s);else return;}
-  else q.push({n,s:Math.round(s),h:h||undefined,t:Date.now()});
-  q.sort((a,b)=>b.s-a.s);
-  if(q.length>10)q.length=10;
-  saveQueue(q);
-}
-let queueBusy=false;
-async function flushQueue(){
-  if(queueBusy)return;
-  if(!getQueue().length)return;
-  queueBusy=true;
-  try{
-    for(const e of getQueue()){
-      try{
-        const r=await fetchTimeout(BOARD_API+'/score',{method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({initials:e.n,score:e.s,secret:SCORE_SECRET,game:GAME_ID})},5000);
-        if(r.ok){
-          saveQueue(getQueue().filter(x=>!(x.n===e.n&&x.s===e.s&&x.h===e.h)));
-          if(e.h)setMemberPB(e.h,Math.max(getMemberPB(e.h),e.s));
-          continue;
-        }
-        if(r.status===429){
-          let ra=30;
-          try{ra=Math.max(5,parseInt(r.headers.get('Retry-After')||'30',10)||30);}catch(e2){}
-          setTimeout(flushQueue,ra*1000);
-          break;
-        }
-        break;
-      }catch(e2){break;}
-    }
-  }finally{queueBusy=false;}
-}
+/* ---- ONE gate, not two ----
+   Pipebombs used to carry its own member PB gate + pb_score_queue on top of
+   the arcade-wide one in arcade-account.js. That double-gate is gone: the
+   shared fetch wrapper (arcade-account.js) is the single source of truth —
+   it dedupes member sub-PB posts (fake 200, deduped:true / X-DSDA-Dedup),
+   lifts dsda-board-bests, and stashes + retries 429'd posts in
+   dsda-board-pending. submitScore below just posts and reads the result. */
 async function submitScore(initials,sc){
   if(!sc||sc<=0)return 'local';
   if(sc<=(lastPosted||0))return 'ok';
   const inits=cleanInits(initials||getInits());
   if(!inits)return 'no-inits';
   saveLocal(inits,sc);
-  const h=memberHandle();
   try{
     const r=await fetchTimeout(BOARD_API+'/score',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({initials:inits,score:Math.round(sc),secret:SCORE_SECRET,game:GAME_ID})},5000);
+      body:JSON.stringify({initials:inits,score:Math.round(sc),secret:SCORE_SECRET,game:boardId()})},5000);
     if(r.ok){
       lastPosted=Math.max(lastPosted||0,Math.round(sc));
-      if(h)setMemberPB(h,Math.max(getMemberPB(h),Math.round(sc)));
+      // The shared arcade-account.js gate dedupes member sub-PB posts (fake 200
+      // with deduped:true / X-DSDA-Dedup header). Read it honestly so the save
+      // line can say "Personal best stands", not "on the board ✓".
+      try{const j=await r.json();if(j&&j.deduped)return 'deduped';}catch(e){}
       return 'ok';
     }
-    if(r.status===429){enqueueScore(inits,sc,h);return 'http-429';}
+    if(r.status===429)return 'http-429';   // stashed + retried by the shared wrapper
     return 'http-'+r.status;
   }catch(e){}
-  enqueueScore(inits,sc,h);
-  return 'board-offline';
+  return 'board-offline';   // saved to the device board above; re-post from the panel
 }
-async function fetchBoard(){
+async function fetchBoard(gid){
+  gid=gid||boardId();
   try{
-    const r=await fetchTimeout(BOARD_API+'/leaderboard?game='+GAME_ID,{cache:'no-store'});
+    const r=await fetchTimeout(BOARD_API+'/leaderboard?game='+gid,{cache:'no-store'});
     if(!r.ok)throw new Error('http-'+r.status);
     const j=await r.json();
     if(j&&Array.isArray(j.top))return{top:j.top,live:true};
     throw new Error('bad shape');
   }catch(e){
+    // Static mirror holds STANDARD only (the sync mirror maps standard into
+    // games/pipebombs/leaderboard.json). Casual/overpressure have no static copy.
+    if(gid!=='pipebombs_standard')return null;
     try{
       const r=await fetch('leaderboard.json?nocache='+Date.now(),{cache:'no-store'});
       if(!r.ok)return null;
@@ -1929,7 +1918,7 @@ async function fetchBoard(){
     }catch(e2){return null;}
   }
 }
-function track(ev,params){try{if(typeof gtag==='function')gtag('event',ev,Object.assign({game:GAME_ID},params||{}));}catch(e){}}
+function track(ev,params){try{if(typeof gtag==='function')gtag('event',ev,Object.assign({game:GAME_ID,difficulty:prefs.diff},params||{}));}catch(e){}}
 /* ---- save panels (meltdown O / victory W) — house initials pattern ---- */
 function wireSavePanel(p){
   const inp=$('initsInput'+p),btn=$('btnSave'+p),msg=$('saveMsg'+p),row=$('initsRow'+p),mline=$('memberLine'+p);
@@ -1942,10 +1931,11 @@ function wireSavePanel(p){
     setMsg('POSTING…');btn.disabled=true;
     track('score_submit',{score:score});
     const res=await submitScore(inits,score);
-    if(res==='ok')setMsg('ON THE GLOBAL BOARD'+(member?' AS '+member.toUpperCase()+' ◆':'')+' ✓','ok');
+    if(res==='ok')setMsg('ON THE '+boardLabel()+' BOARD'+(member?' AS '+member.toUpperCase()+' ◆':'')+' ✓','ok');
+    else if(res==='deduped')setMsg('PERSONAL BEST STANDS — NOT REPOSTED','ok');
     else if(res==='http-429')setMsg('RATE LIMITED — QUEUED FOR RETRY','warn');
     else if(res==='no-inits')setMsg('ENTER YOUR INITIALS','warn');
-    else setMsg('BOARD OFFLINE — SAVED HERE, QUEUED FOR RETRY','warn');
+    else setMsg('BOARD OFFLINE — SAVED TO THIS CABINET','warn');
     setSaveEnabled();
   }
   inp.addEventListener('input',()=>{inp.value=cleanInits(inp.value);setSaveEnabled();});
@@ -1957,32 +1947,35 @@ function wireSavePanel(p){
     row.style.display=member?'none':'';
     mline.style.display=member?'':'none';
     if(member){mline.textContent='POSTING AS '+member.toUpperCase()+' ';const b=document.createElement('span');b.className='member-badge';b.title=member;b.textContent='◆';mline.appendChild(b);}
-    setMsg(score>0?(member?'CHECKING PERSONAL BEST…':'ENTER YOUR INITIALS TO POST'):'NOTHING TO POST — RUN THE PIPES FIRST');
+    setMsg(score>0?(member?'POSTING TO THE '+boardLabel()+' BOARD…':'ENTER YOUR INITIALS TO POST'):'NOTHING TO POST — RUN THE PIPES FIRST');
     setSaveEnabled();
     if(focus)setTimeout(()=>inp.focus({preventScroll:true}),90);
-    if(member&&score>0){
-      // TappyCat lesson: members post only on a NEW personal best.
-      const localPB=getMemberPB(member);
-      fetchBoard().then(b=>{
-        const pb=Math.max(localPB,b&&b.live?boardPB(b.top,member):0);
-        if(score>pb){setMsg('NEW PERSONAL BEST — POSTING…');doSave();}
-        else setMsg('PERSONAL BEST STANDS — '+fmt(pb)+' ON RECORD','ok');
-      });
-    }
+    // ONE gate: the shared arcade-account.js board gate dedupes member sub-PB
+    // posts (fake 200, deduped) and queues 429s. Pipebombs no longer pre-checks
+    // a local PB — the post goes out and the gate's honest response drives the
+    // save line ("Personal best stands" vs "on the board ✓").
+    if(member&&score>0)doSave();
   }
   return{prep};
 }
 const savePanels={O:wireSavePanel('O'),W:wireSavePanel('W')};
 function showScores(){
   showOv('ovScores');
-  flushQueue();
-  const me=getInits();
-  renderBoardList($('scoresList'),null,me);
-  renderBoardList($('scoresLocal'),getLocalBoard(),me);
-  fetchBoard().then(b=>{
-    if($('ovScores').classList.contains('show'))renderBoardList($('scoresList'),b?b.top:null,me);
+  const me=memberHandle()||getInits();
+  // Device board for the current difficulty + all three global boards in
+  // parallel (the score screen shows every board, independent of the selected
+  // difficulty — same as Machine Elves' two-column board).
+  renderBoardList($('scoresLocal'),getLocalBoard(prefs.diff),me,5);
+  $('scoresLive').textContent='LOADING…';
+  Promise.all(BOARDS.map(b=>fetchBoard(b.id))).then(rs=>{
+    if(!$('ovScores').classList.contains('show'))return;
+    rs.forEach((b,i)=>{
+      const el=$('secLb'+i);
+      if(b&&b.top&&b.top.length)renderBoardList(el,b.top,me,5);
+      else{el.innerHTML='';const li=document.createElement('li');li.className='lb-empty';li.textContent='NO RUNS ON RECORD — FIRST SCORE GOES TO YOU';el.appendChild(li);}
+    });
     const live=$('scoresLive');
-    if(live)live.textContent=b?(b.live?'LIVE · DSDA ARCADE BOARD':'OFFLINE · STATIC MIRROR'):'OFFLINE — BOARD UNREACHABLE';
+    live.textContent=rs.some(x=>x&&x.top&&x.top.length)?'LIVE · DSDA ARCADE BOARD':'OFFLINE — BOARD UNREACHABLE';
   });
 }
 /* ============================== flow ============================== */
@@ -2257,7 +2250,6 @@ function showError(msg){
   $('errMsg').textContent=msg;
   setState('error');showOv('ovError');
   window.__PB_BOOTED=true;
-  flushQueue();
 }
 /* ============================== input ============================== */
 function typingInInput(){
@@ -2552,7 +2544,6 @@ function boot(){
     resize();
     requestAnimationFrame(frame);
     window.__PB_BOOTED=true;
-    flushQueue();
   }catch(err){
     console.error(err);
     showError('Initialization fault: '+(err&&err.message?err.message:'WebGL unavailable on this device.'));
@@ -2569,10 +2560,8 @@ window.__tl={
   toMenu:()=>{quitToTitle();return 'menu';},
   showScores:()=>{showScores();return 'scores';},
   saveScore:(init,sc)=>submitScore(init||getInits(),sc!=null?sc:score),
-  board:()=>fetchBoard(),
-  queue:()=>getQueue(),
-  flushQueue:()=>flushQueue(),
-  memberPB:(h)=>getMemberPB(h||memberHandle()),
+  board:(gid)=>fetchBoard(gid),
+  boardId:()=>boardId(),
   dataLayer:()=>(window.dataLayer||[]).slice(),
   inits:()=>getInits(),
   setInits:v=>setInits(v),
@@ -2583,7 +2572,7 @@ window.__tl={
 
   <!-- DSDA Radio network widget (shared cross-game dial) -->
   <div id="radioBox"></div>
-  <script src="../arcade-social.js?v=11"></script>
+  <script src="../arcade-social.js?v=12"></script>
   <script src="../../radio/radio.js?v=11"></script>
   <script>
     // DSDA Radio is the music source for this cabinet; the game's own

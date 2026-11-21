@@ -2990,7 +2990,12 @@ function submitGlobal(name, s, diff) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ initials: name, score: s, secret: SCORE_SECRET, game: gid })
-  }, 5000).then(function (r) { return r.ok ? 'ok' : 'http-' + r.status; }, function () { return 'board-offline'; });
+  }, 5000).then(function (r) {
+    if (!r.ok) return 'http-' + r.status;
+    // The shared arcade-account.js gate dedupes member sub-PB posts (fake 200,
+    // deduped:true / X-DSDA-Dedup). Read it honestly for the save line.
+    return r.json().then(function (j) { return j && j.deduped ? 'deduped' : 'ok'; }, function () { return 'ok'; });
+  }, function () { return 'board-offline'; });
 }
 function saveScore() {
   if (phase !== 'over' || elSave.disabled) return;
@@ -3011,6 +3016,7 @@ function saveScore() {
   if (mine === 0 && score > 0) sfx.newHigh(); else sfx.pop(4);
   submitGlobal(name, score).then(res => {
     if (res === 'ok') elSavedMsg.textContent = 'Saved! On the global board' + (member ? ' as ' + member + ' \u25c6' : '') + ' ✓';
+    else if (res === 'deduped') elSavedMsg.textContent = 'Personal best stands — not reposted';
     else elSavedMsg.textContent = 'Saved locally · global board: ' + res;
   });
 }
@@ -3721,7 +3727,7 @@ try {
   hideLoader(); // reveal the boot error (loader sits above it at z-100)
 }
 </script>
-<script src="../arcade-social.js?v=11"></script>
+<script src="../arcade-social.js?v=12"></script>
 <script src="../../radio/radio.js?v=11"></script>
 <script>
   // DSDA Radio network — streams Polkahole (+ future stations) as in-game radio.
