@@ -129,8 +129,10 @@
         border-radius: 999px; padding: 4px 9px; font-size: 0.8rem; cursor: pointer; }
       #zooming .champ-ticker, body.zooming .champ-ticker { opacity: 0; pointer-events: none; }
       @media (max-width: 640px) { .ct-label span { display: none; } .ct-item { font-size: 0.68rem; padding: 0 12px; } }
-      /* desktop: the cabinet info cards sit right under the strip, so the ticker rides the bottom edge instead */
-      @media (min-width: 641px) { .champ-ticker { position: fixed; top: auto; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 9; } }
+      /* desktop: the ticker lives INSIDE the record strip as its third row (the cards sit right
+         under the strip and the drag hint owns the bottom edge). JS moves the node in/out. */
+      .arcade-stats > .champ-ticker { position: static; transform: none; flex-basis: 100%; width: 0; min-width: 100%; contain: inline-size;
+        margin-top: 2px; background: rgba(4, 10, 20, 0.45); }
       @media (prefers-reduced-motion: reduce) { .ct-run { animation: none; } .ct-track { overflow-x: auto; } }
       #passOv { position: fixed; inset: 0; z-index: 2000; display: none; align-items: center; justify-content: center; padding: 16px;
         background: rgba(4, 10, 20, 0.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
@@ -278,7 +280,10 @@
       function esc(x) { return String(x).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
       function ago(d) { var m = Math.max(1, Math.round((Date.now() - d) / 60000));
         return m < 60 ? m + 'm ago' : m < 1440 ? Math.round(m / 60) + 'h ago' : Math.round(m / 1440) + 'd ago'; }
+      var mq = window.matchMedia('(min-width: 641px)'), home = el.parentNode;
       function place() { var st = document.querySelector('.arcade-stats'); if (!st) return;
+        if (mq.matches) { if (el.parentNode !== st) st.appendChild(el); return; }
+        if (el.parentNode !== home) home.insertBefore(el, st.nextSibling);
         var r = st.getBoundingClientRect(), h = st.offsetParent ? st.offsetParent.getBoundingClientRect().top : 0;
         el.style.setProperty('--tickTop', Math.round(r.bottom - h + 8) + 'px'); }
       function render(all) {
