@@ -2187,10 +2187,15 @@ function updateEntities(dt,t){
 }
 function checkHazards(){
   if(state!=='playing'||inv>0||killT>0)return;
-  const zr=-chicken.z,r0=Math.floor(zr-.35),r1=Math.ceil(zr+.35);
+  /* Only rows the hen's body actually overlaps. Each row spans z ±.5; the hen's
+     hitbox is ±.22 deep, so at rest she only tests her own row — a car in the
+     next lane can't clip a hen standing on the grass strip. Mid-hop she
+     straddles two rows and tests both, as she should. */
+  const zr=-chicken.z,HZ=.22,r0=Math.ceil(zr-.5-HZ),r1=Math.floor(zr+.5+HZ);
   for(let r=r0;r<=r1;r++){
+    if(Math.abs(r-zr)>=.5+HZ)continue;
     const d=rowData(r);
-    if(d.type==='road')for(const v of d.vehicles)if(Math.abs(v.x-chicken.x)<v.half+.3){hitChicken('car',v,d.dir);return;}
+    if(d.type==='road')for(const v of d.vehicles)if(Math.abs(v.x-chicken.x)<v.half+.22){hitChicken('car',v,d.dir);return;}
     if(d.type==='rail'&&d.state==='pass'&&Math.abs(d.trainX-chicken.x)<4.95){hitChicken('train',null,d.dir);return;}
     if(d.fox&&d.fox.state==='run'&&Math.abs(d.fox.x-chicken.x)<1.05){hitChicken('fox',null,d.fox.dir);return;}
   }
