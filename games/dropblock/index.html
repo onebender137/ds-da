@@ -1636,10 +1636,15 @@ function autoTuneRadio() {
   // Polkahole is on the dial (2026-11-15: originals pulled for an EQ/filter
   // rework, universal cross-game stations coming soon) fall back to Polkahole.
   const stations = DSDARadio.manifest.stations;
-  const picks = stations.length > 1 ? stations.slice(1) : stations;
-  if (picks.length) {
-    const pick = picks[Math.floor(Math.random() * picks.length)];
-    DSDARadio.setStation(stations.indexOf(pick), Math.floor(Math.random() * pick.tracks.length));
+  const bcast = stations.filter(s => s.type === 'broadcast');
+  if (bcast.length) {
+    DSDARadio.setStation(stations.indexOf(bcast[Math.floor(Math.random() * bcast.length)]));
+  } else {
+    const picks = stations.filter(s => s.tracks && s.tracks.length);
+    if (picks.length) {
+      const pick = picks[Math.floor(Math.random() * picks.length)];
+      DSDARadio.setStation(stations.indexOf(pick), Math.floor(Math.random() * pick.tracks.length));
+    }
   }
 }
 
@@ -2544,7 +2549,7 @@ try {
   elBootErr.textContent = window.__bootErr;
 }
 </script>
-<script src="../arcade-social.js?v=13"></script>
+<script src="../arcade-social.js?v=14"></script>
 <script src="../../radio/radio.js?v=11"></script>
 <script>
   // DSDA Radio — the shared cross-game dial (6 stations: Most Pit, Easy Mellow,

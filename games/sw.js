@@ -36,7 +36,8 @@
 //      cabinet board only when it beats their personal best for that board;
 //      a 429'd post is stashed in localStorage and retried, never dropped.
 // v19: champ watch + hall ticker (arcade-social v13)
-const CACHE = 'dsda-arcade-v19';
+// v20: chicken cabinet (arcade-social v14)
+const CACHE = 'dsda-arcade-v20';
 const CORE = [
   './',
   './manifest.webmanifest',

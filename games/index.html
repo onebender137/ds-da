@@ -281,7 +281,7 @@
     </section>
 
     <div id="passOv" role="dialog" aria-modal="true" aria-label="Your arcade passport"><div class="pp" id="passPanel"></div></div>
-    <script src="arcade-social.js?v=13"></script>
+    <script src="arcade-social.js?v=14"></script>
     <script>
     /* Live score ticker: fed by the champ watch in arcade-social.js (DSDA:boards). */
     (function () {
@@ -386,7 +386,7 @@
     <script>
       // Live play counters — totals aggregated from each game's leaderboard
       (function () {
-        var boards = ['dropblock/leaderboard.json', 'shatterblock/leaderboard.json', 'popper/leaderboard.json', 'slipstream/leaderboard.json', 'stunts/leaderboard.json', 'blockcrush/leaderboard.json', 'plumber-bob/leaderboard.json', 'dragon-slalom/leaderboard.json', 'tappycat/leaderboard.json', 'angry-nerds/leaderboard.json', 'neon-circuit/leaderboard.json', 'cookie-frog/leaderboard.json', 'beaverz/leaderboard.json', 'poke-it/leaderboard.json', 'pipebombs/leaderboard.json'];
+        var boards = ['dropblock/leaderboard.json', 'shatterblock/leaderboard.json', 'popper/leaderboard.json', 'slipstream/leaderboard.json', 'stunts/leaderboard.json', 'blockcrush/leaderboard.json', 'plumber-bob/leaderboard.json', 'dragon-slalom/leaderboard.json', 'tappycat/leaderboard.json', 'angry-nerds/leaderboard.json', 'neon-circuit/leaderboard.json', 'cookie-frog/leaderboard.json', 'beaverz/leaderboard.json', 'poke-it/leaderboard.json', 'pipebombs/leaderboard.json', 'chicken/leaderboard.json'];
         Promise.all(boards.map(function (url) {
           return fetch(url, { cache: 'no-store' }).then(function (r) { return r.json(); }).catch(function () { return null; });
         })).then(function (results) {
@@ -569,17 +569,23 @@
           board: 'pipebombs/leaderboard.json', dark: false, accent: 0xff5a1f
         },
         {
+          id: 'chicken', name: 'Chicken', tag: 'Farm Road Rush · Six Farms',
+          desc: 'A Crossy Road take on the farm: hop and weave across lanes, grab corn, dodge tractors and the fox. Six farms, three lives, one very determined chicken. Keyboard, gamepad or touch.',
+          shot: 'chicken/screenshot.png', url: 'chicken/',
+          board: 'chicken/leaderboard.json', dark: false, accent: 0x8de680
+        },
+        {
           id: 'soon', name: 'Coming Soon', tag: 'Next game in development',
           desc: 'A new cabinet is being built in the DSDA workshop. The screen stays dark until it\u2019s ready.',
           shot: null, url: null, board: null, dark: true, accent: 0x64748b
         }
       ];
 
-      // infinite row: repeating 15-game pattern (15 live). Coming Soon sits past the
-      // cycle (index 15) and is not part of the wrap.
-      // NUM_CABS spans two full cycles + the centre (p = -15..+15) so every game
+      // infinite row: repeating 16-game pattern (16 live). Coming Soon sits past the
+      // cycle (index 16) and is not part of the wrap.
+      // NUM_CABS spans two full cycles + the centre (p = -16..+16) so every game
       // appears on BOTH sides of the centre.
-      const CYCLE_N = 15;                   // live cabinets in the wrap — bump when adding one
+      const CYCLE_N = 16;                   // live cabinets in the wrap — bump when adding one
       const NUM_CABS = CYCLE_N * 2 + 1;
       const SPACING = 2.3;
       const CYCLE_W = SPACING * CYCLE_N;   // wrap distance (one full cycle)
