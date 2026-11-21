@@ -133,6 +133,11 @@
          under the strip and the drag hint owns the bottom edge). JS moves the node in/out. */
       .arcade-stats > .champ-ticker { position: static; transform: none; flex-basis: 100%; width: 0; min-width: 100%; contain: inline-size;
         margin-top: 2px; background: rgba(4, 10, 20, 0.45); }
+      /* phones: ride along with the bottom pill row (above the pills) so the cabinet marquees stay clear */
+      body > .arcade-pass { flex-wrap: wrap; row-gap: 6px; }
+      .arcade-pass > .champ-ticker { position: static; transform: none; order: -1; flex-basis: 100%; width: 0; min-width: 100%;
+        contain: inline-size; background: rgba(10, 22, 40, 0.86); }
+      .arcade-pass > .champ-ticker .ct-mute { padding: 4px 9px; font-size: 0.8rem; letter-spacing: 0; }
       @media (prefers-reduced-motion: reduce) { .ct-run { animation: none; } .ct-track { overflow-x: auto; } }
       #passOv { position: fixed; inset: 0; z-index: 2000; display: none; align-items: center; justify-content: center; padding: 16px;
         background: rgba(4, 10, 20, 0.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
@@ -283,6 +288,8 @@
       var mq = window.matchMedia('(min-width: 641px)'), home = el.parentNode;
       function place() { var st = document.querySelector('.arcade-stats'); if (!st) return;
         if (mq.matches) { if (el.parentNode !== st) st.appendChild(el); return; }
+        var pass = document.querySelector('body > .arcade-pass');           /* phones: JS parks the pills on <body> */
+        if (pass) { if (el.parentNode !== pass) pass.insertBefore(el, pass.firstChild); return; }
         if (el.parentNode !== home) home.insertBefore(el, st.nextSibling);
         var r = st.getBoundingClientRect(), h = st.offsetParent ? st.offsetParent.getBoundingClientRect().top : 0;
         el.style.setProperty('--tickTop', Math.round(r.bottom - h + 8) + 'px'); }
@@ -310,7 +317,7 @@
       window.addEventListener('DSDA:boards', function (ev) { render(ev.detail); });
       window.addEventListener('resize', place);
       if (C.last()) render(C.last());
-      syncMute(); setTimeout(place, 300);
+      syncMute(); setTimeout(place, 300); setInterval(place, 2000);   /* the pills move after boot / on rotate */
     })();
     </script>
     <script>
