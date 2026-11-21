@@ -275,6 +275,22 @@ noscript{position:fixed;inset:0;z-index:99;background:var(--bg);color:var(--ink)
 @media (max-width:640px){
   #radioBox.dsda-radio{bottom:calc(10px + env(safe-area-inset-bottom));left:10px;}
 }
+/* landscape phones: collapse the HUD into one slim row so the top of the yard stays visible */
+@media (orientation:landscape) and (max-height:560px){
+  .hud-top{flex-direction:row;align-items:flex-start;gap:6px;padding-top:calc(4px + var(--sat))}
+  .topbar{display:contents}
+  #sectorLabel{display:none}
+  .brand{order:0;padding:6px 8px}.brand .b-text{display:none}
+  .hud-game{order:1;flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
+  .top-actions{order:2;gap:6px}
+  .icobtn{width:36px;height:36px;font-size:.9rem}
+  .statsrow{gap:5px;flex-wrap:nowrap}
+  .stat{padding:3px 8px;font-size:.85rem;gap:5px}
+  .stat.score{min-width:84px}.stat.score #scoreVal{font-size:.95rem}
+  .chipsrow{margin-top:0!important;gap:4px}
+  .chip{padding:2px 6px;font-size:.72rem}
+  #banner{top:22%}
+}
 /* touch: park the MOVE stick in the lower-left corner, clear of the radio pill (bottom-left) */
 body.touch #stickHint{left:calc(56px + var(--sal));bottom:calc(64px + var(--sab))}
 /* member badge on the global board (account holders) */
@@ -497,7 +513,7 @@ body.touch #stickHint{left:calc(56px + var(--sal));bottom:calc(64px + var(--sab)
     </div>
     <div class="btn-row">
       <button class="btn btn-primary" id="btnRetry"><svg class="icon"><use href="#i-restart"/></svg>RETRY RUN</button>
-      <button class="btn" id="btnOverTitle"><svg class="icon"><use href="#i-home"/></svg>TITLE</button>
+      <button class="btn" id="btnOverTitle"><svg class="icon"><use href="#i-home"/></svg>MAIN MENU</button>
     </div>
   </div>
 </div>
@@ -523,7 +539,7 @@ body.touch #stickHint{left:calc(56px + var(--sal));bottom:calc(64px + var(--sab)
     <div class="btn-col">
       <button class="btn btn-primary" id="btnEndless"><svg class="icon"><use href="#i-chev"/></svg>KEEP DESCENDING · DEEP LINES</button>
       <button class="btn" id="btnNewRun"><svg class="icon"><use href="#i-restart"/></svg>NEW RUN</button>
-      <button class="btn" id="btnWinTitle"><svg class="icon"><use href="#i-home"/></svg>TITLE</button>
+      <button class="btn" id="btnWinTitle"><svg class="icon"><use href="#i-home"/></svg>MAIN MENU</button>
     </div>
   </div>
 </div>
@@ -1429,6 +1445,7 @@ function spawnBlastCell(c){
   group.flare.position.y=.5;group.flare.userData.h=c.center?1.2:.75;
   group.ring.position.y=-.24;
   rec={key,cx:c.x,cy:c.y,delay:c.delay,life:BLAST_LIFE,age:0,armed:false,group,spawnSeq:blastSeq++,flick:rand(0,9)};
+  if(rec.delay<=0){rec.armed=true;group.grp.visible=true;}   /* centre cell: live immediately */
   blasts.set(key,rec);
   decalPool.spawn(c.x,c.y,.95);
   particles.spawn({x:wx,y:.35,z:wz,count:5,col:[1.5,.7,.25],cj:.3,vs:1.6,vy:1.8,size:.85,life:.55,g:-6,spread:.25});
@@ -1436,7 +1453,7 @@ function spawnBlastCell(c){
 }
 function updateBlasts(dt,damage){
   for(const rec of [...blasts.values()]){
-    if(rec.delay>0){rec.delay-=dt;if(rec.delay<=0){rec.armed=true;rec.group.grp.visible=true;rec.age=0}continue}
+    if(!rec.armed){rec.delay-=dt;if(rec.delay<=0){rec.armed=true;rec.group.grp.visible=true;rec.age=0}else continue}
     rec.age+=dt;rec.life-=dt;
     if(rec.life<=0){blastPool.release(rec);continue}
     const g=rec.group,scIn=Math.min(1,rec.age/.07),fade=rec.life<.18?rec.life/.18:1;
@@ -2104,6 +2121,12 @@ function fitCamera(){
   for(const p of pipes)p.visible=landscape||p.position.z<=2;
   camera.updateProjectionMatrix();
 }
+let _hudF=0,_hudT=-1;
+function hudFrac(){ /* fraction of the screen covered by the top HUD, refreshed ~2x/s */
+  if(t-_hudT>.5||_hudT<0){_hudT=t;const el=document.querySelector('.hud-top'),h=innerHeight||1;
+    _hudF=el?clamp(el.getBoundingClientRect().bottom/h,0,.45):0;}
+  return _hudF;
+}
 function addShake(n){if(!reducedMotion)trauma=Math.min(1,trauma+n)}
 function updateCamera(dt){
   zoom+=(zoomTgt-zoom)*Math.min(1,dt*6);
@@ -2115,9 +2138,10 @@ function updateCamera(dt){
     dtg.set(0,0,0);
   }else{
     clampX=Math.max(0,(W/2+.8)-L*camTan*camera.aspect);
-    clampZ=Math.max(0,(H/2+.8)-L*camTan/Math.sin(PITCH));
+    const D=2*L*camTan/Math.sin(PITCH),hf=hudFrac(),off=hf*D*.5;   /* world depth hidden under the HUD */
+    clampZ=Math.max(0,(H/2+.8)-D*(1-hf)*.5);
     const px=gx(player.x)*.42,pz=gz(player.y)*.42;
-    dtg.set(clamp(px,-clampX,clampX),0,clamp(pz,-clampZ,clampZ)-.35);
+    dtg.set(clamp(px,-clampX,clampX),0,clamp(pz,-clampZ,clampZ)-.35-off);
     dp.copy(dtg).addScaledVector(CAMD,L);
     dp.x+=Math.sin(t*.5)*.06;
     if(!reducedMotion)dp.y+=Math.sin(t*.8)*.05;
@@ -2284,11 +2308,15 @@ function bindInput(){
     if(!stick.active||e.pointerId!==stick.id)return;
     let dx=e.clientX-stick.ox,dy=e.clientY-stick.oy;
     const l=Math.hypot(dx,dy),max=52;
-    if(l>max){dx=dx/l*max;dy=dy/l*max}
+    if(l>max){ /* finger past the ring: full speed, and the base follows the thumb */
+      const over=l-max;stick.ox+=dx/l*over;stick.oy+=dy/l*over;
+      base.style.left=stick.ox+'px';base.style.top=stick.oy+'px';
+      dx=dx/l*max;dy=dy/l*max;
+    }
     thumb.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;
-    const n=Math.min(1,l/max);
+    const n=Math.min(1,l/max),cl=Math.hypot(dx,dy);
     if(n<.18){stick.vx=0;stick.vy=0}
-    else{const s=(n-.18)/.82;stick.vx=dx/Math.max(l,1)*s*1.15;stick.vy=dy/Math.max(l,1)*s*1.15}
+    else{const s=(n-.18)/.82;stick.vx=dx/Math.max(cl,1)*s;stick.vy=dy/Math.max(cl,1)*s}
     e.preventDefault();
   });
   const endStick=e=>{if(!stick.active||e.pointerId!==stick.id)return;resetStick()};
