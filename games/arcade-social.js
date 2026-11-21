@@ -123,7 +123,9 @@
     '.dsda-x-bar .s{color:#1d1200;background:linear-gradient(90deg,#ffd54a,#ffb02e)}' +
     '.dsda-x-bar .c{color:#e9fff6;background:#173a30;border:1px solid rgba(108,255,178,.45)}' +
     '.dsda-x-bar .x{color:#9fb3ad;background:transparent;padding:12px 8px}' +
-    '@media (max-width:420px){.dsda-x-bar button{font-size:12px;padding:11px 10px}}';
+    '@media (max-width:420px){.dsda-x-bar button{font-size:12px;padding:11px 10px}}' +
+    '.dsda-x-toast.champ{pointer-events:none;font-size:12px;padding:7px 13px;border-radius:999px;gap:8px;max-width:100%;color:#1d1200;background:linear-gradient(90deg,#ffe27a,#ffb02e);box-shadow:0 6px 20px rgba(0,0,0,.4),0 0 18px rgba(255,200,60,.35)}' +
+    '.dsda-x-toast.champ .i{font-size:17px}.dsda-x-toast.champ small{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}';
   function injectCSS() {
     if (document.getElementById('dsda-x-css')) return;
     var st = document.createElement('style'); st.id = 'dsda-x-css'; st.textContent = css;
@@ -134,7 +136,7 @@
     try {
       injectCSS();
       if (!toastBox) { toastBox = document.createElement('div'); toastBox.className = 'dsda-x-toasts'; document.body.appendChild(toastBox); }
-      var t = document.createElement('div'); t.className = 'dsda-x-toast' + (cool ? ' cool' : '');
+      var t = document.createElement('div'); t.className = 'dsda-x-toast' + (cool === true ? ' cool' : (cool ? ' ' + cool : ''));
       t.innerHTML = '<span class="i"></span><span><b></b><small></small></span>';
       t.querySelector('.i').textContent = icon; t.querySelector('b').textContent = title; t.querySelector('small').textContent = sub || '';
       toastBox.appendChild(t);
@@ -362,7 +364,88 @@
     streak: function () { var p = load(), d = p.daily, k = dayKey(); return (d.last === k || d.last === prevKey(k)) ? d.streak || 0 : 0; }
   };
 
+  /* ---------------- champ watch ----------------
+     Every cabinet + the hall polls /api/board/all (once a minute, only while the
+     tab is visible). When a board's #1 changes to a new, recent, higher score that
+     isn't the local player's, a small non-interactive pill says so:
+       "👑 ANG is the new champ!  Cookie Frog · 5,400"
+     The last #1 seen per board lives in localStorage, so a first visit is a silent
+     baseline, open tabs don't double up, and backdated manual restores (old `d`)
+     never fire. Mute: DSDA.champs.mute(true) — the hall ticker has a 🔔 toggle.   */
+  var CHAMP_KEY = 'dsda-champs', CHAMP_MUTE = 'dsda-champ-mute', CHAMP_FRESH = 6 * 3600e3;
+  var MODE_LABEL = { master: 'Masters', initiate: 'Initiates', casual: 'Casual', standard: 'Standard',
+    overpressure: 'Overpressure', breeze: 'Breeze', storm: 'Storm', journey: '' };
+  function boardName(id) {
+    var i = String(id).indexOf('_'), base = i < 0 ? id : id.slice(0, i), mode = i < 0 ? '' : id.slice(i + 1);
+    var name = CABINETS[base] || base;
+    var lbl = mode ? (MODE_LABEL[mode] !== undefined ? MODE_LABEL[mode] : mode.charAt(0).toUpperCase() + mode.slice(1)) : '';
+    return lbl ? name + ' · ' + lbl : name;
+  }
+  function boardEmoji(id) { var i = String(id).indexOf('_'); return EMOJI[i < 0 ? id : id.slice(0, i)] || '🕹️'; }
+  function champMuted() { try { return localStorage.getItem(CHAMP_MUTE) === '1'; } catch (e) { return false; } }
+  function isMe(e) {
+    try {
+      var m = member(); if (m && e.h && String(e.h).toLowerCase() === m.toLowerCase()) return true;
+      var ini = (localStorage.getItem('dsda-initials') || '').toUpperCase();
+      return !e.h && !!ini && e.n === ini;
+    } catch (x) { return false; }
+  }
+  var champLast = null, champAt = 0, champBusy = false;
+  function champPoll() {
+    if (champBusy || document.visibilityState === 'hidden') return;
+    champBusy = true; champAt = Date.now();
+    /* the abort only guards a connection that never answers; once headers land
+       there's no deadline (a busy page — the 3D hall, a slow phone — may take a
+       while to run the callbacks). A failed poll retries in 10 s, not 60. */
+    var ok = false, ctl = window.AbortController ? new AbortController() : null, kill = setTimeout(function () { if (ctl) ctl.abort(); }, 8000);
+    fetch('/api/board/all', { cache: 'no-store', signal: ctl ? ctl.signal : undefined })
+      .then(function (r) { clearTimeout(kill); return r.ok ? r.json() : null; })
+      .then(function (all) {
+        if (!all || typeof all !== 'object') return;
+        ok = true;
+        champLast = all;
+        try { window.dispatchEvent(new CustomEvent('DSDA:boards', { detail: all })); } catch (e) {}
+        var seen = null; try { seen = JSON.parse(localStorage.getItem(CHAMP_KEY) || 'null'); } catch (e) {}
+        var first = !seen || typeof seen !== 'object'; seen = first ? {} : seen;
+        var news = [], now = Date.now();
+        Object.keys(all).forEach(function (id) {
+          var b = all[id], t = b && b.top && b.top[0];
+          if (!t || !(t.s > 0)) return;
+          var sig = t.s + '|' + t.d, prev = seen[id];
+          if (!first && prev && prev !== sig) {
+            var prevS = +String(prev).split('|')[0] || 0;
+            if (t.s > prevS && t.d > now - CHAMP_FRESH && !isMe(t)) news.push({ id: id, t: t, prevS: prevS });
+          }
+          seen[id] = sig;
+        });
+        try { localStorage.setItem(CHAMP_KEY, JSON.stringify(seen)); } catch (e) {}
+        if (champMuted()) return;
+        news.slice(0, 3).forEach(function (x, i) {
+          setTimeout(function () {
+            toast('👑', (x.t.h || x.t.n) + ' is the new champ!',
+              boardEmoji(x.id) + ' ' + boardName(x.id) + ' · ' + fmt(x.t.s) + (x.prevS ? '  (beat ' + fmt(x.prevS) + ')' : ''), 'champ', 4500);
+          }, i * 5200);
+        });
+      })
+      .catch(function () {})
+      .then(function () { clearTimeout(kill); champBusy = false; if (!ok) setTimeout(champPoll, 10000); });
+  }
+  function champStart() {
+    var hall = /\/games\/?$/.test(location.pathname);
+    setTimeout(champPoll, hall ? 800 : 7000);
+    setInterval(champPoll, 60000);
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'visible' && Date.now() - champAt > 30000) champPoll();
+    });
+  }
+  var champs = {
+    poll: champPoll, last: function () { return champLast; }, boardName: boardName, boardEmoji: boardEmoji, isMe: isMe,
+    muted: champMuted,
+    mute: function (on) { try { on ? localStorage.setItem(CHAMP_MUTE, '1') : localStorage.removeItem(CHAMP_MUTE); } catch (e) {} return champMuted(); }
+  };
+
   window.DSDA = Object.assign(window.DSDA || {}, {
+    champs: champs,
     __social: true, CABINETS: CABINETS, BADGES: BADGES,
     passport: load, badge: badge, toast: toast, share: share,
     challenge: CH, challengeLink: challengeLink, daily: daily, fmt: fmt,
@@ -384,4 +467,5 @@
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', showChallengeCard);
   else showChallengeCard();
+  try { champStart(); } catch (e) {}
 })();

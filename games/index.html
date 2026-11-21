@@ -105,6 +105,33 @@
         .arcade-div { height: 20px; }
       }
       .arcade-pass b { color: #c9a227; }
+      /* live champ ticker — latest board entries scrolling under the record strip */
+      .champ-ticker { position: absolute; left: 50%; transform: translateX(-50%); top: var(--tickTop, 96px); z-index: 6;
+        width: min(760px, 94vw); display: flex; align-items: center; gap: 8px; padding: 5px 6px 5px 10px;
+        background: rgba(10, 22, 40, 0.72); border: 1px solid rgba(201, 162, 39, 0.25); border-radius: 999px;
+        backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); font-family: 'Inter', system-ui, sans-serif;
+        transition: opacity 0.45s ease; }
+      .champ-ticker[hidden] { display: none; }
+      .ct-label { font-size: 0.62rem; font-weight: 700; letter-spacing: 2px; color: #c9a227; white-space: nowrap; }
+      .ct-label i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #ff4d5e; margin-right: 6px;
+        box-shadow: 0 0 8px #ff4d5e; animation: ctPulse 1.6s ease-in-out infinite; vertical-align: 1px; }
+      @keyframes ctPulse { 50% { opacity: .35; } }
+      .ct-track { flex: 1; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+        mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent); }
+      .ct-run { display: inline-flex; white-space: nowrap; animation: ctScroll var(--ctDur, 60s) linear infinite; }
+      .champ-ticker:hover .ct-run { animation-play-state: paused; }
+      @keyframes ctScroll { to { transform: translateX(-50%); } }
+      .ct-item { font-size: 0.74rem; color: #cbd5e1; padding: 0 18px; }
+      .ct-item b { color: #fafaf8; font-weight: 600; } .ct-item .sc { color: #c9a227; font-variant-numeric: tabular-nums; }
+      .ct-item .ago { color: #64748b; font-size: 0.66rem; margin-left: 4px; }
+      .ct-item.champ b { color: #ffd54a; }
+      .ct-mute { flex: none; border: 1px solid rgba(201, 162, 39, 0.45); background: rgba(201, 162, 39, 0.12); color: #fafaf8;
+        border-radius: 999px; padding: 4px 9px; font-size: 0.8rem; cursor: pointer; }
+      #zooming .champ-ticker, body.zooming .champ-ticker { opacity: 0; pointer-events: none; }
+      @media (max-width: 640px) { .ct-label span { display: none; } .ct-item { font-size: 0.68rem; padding: 0 12px; } }
+      /* desktop: the cabinet info cards sit right under the strip, so the ticker rides the bottom edge instead */
+      @media (min-width: 641px) { .champ-ticker { position: fixed; top: auto; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 9; } }
+      @media (prefers-reduced-motion: reduce) { .ct-run { animation: none; } .ct-track { overflow-x: auto; } }
       #passOv { position: fixed; inset: 0; z-index: 2000; display: none; align-items: center; justify-content: center; padding: 16px;
         background: rgba(4, 10, 20, 0.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
       #passOv.on { display: flex; }
@@ -234,10 +261,53 @@
                 <a id="cardLink" href="https://ds-da.ca/account/">🎴 Your Card</a>
             </div>
         </div>
+        <div class="champ-ticker" id="champTicker" hidden aria-label="Latest scores across the arcade">
+            <span class="ct-label"><i></i>LIVE<span> SCORES</span></span>
+            <div class="ct-track"><div class="ct-run" id="ctRun"></div></div>
+            <button class="ct-mute" id="ctMute" title="Champ alerts while you play">🔔</button>
+        </div>
     </section>
 
     <div id="passOv" role="dialog" aria-modal="true" aria-label="Your arcade passport"><div class="pp" id="passPanel"></div></div>
-    <script src="arcade-social.js?v=12"></script>
+    <script src="arcade-social.js?v=13"></script>
+    <script>
+    /* Live score ticker: fed by the champ watch in arcade-social.js (DSDA:boards). */
+    (function () {
+      var el = document.getElementById('champTicker'), run = document.getElementById('ctRun'), mute = document.getElementById('ctMute');
+      var C = window.DSDA && DSDA.champs; if (!el || !C) return;
+      function esc(x) { return String(x).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+      function ago(d) { var m = Math.max(1, Math.round((Date.now() - d) / 60000));
+        return m < 60 ? m + 'm ago' : m < 1440 ? Math.round(m / 60) + 'h ago' : Math.round(m / 1440) + 'd ago'; }
+      function place() { var st = document.querySelector('.arcade-stats'); if (!st) return;
+        var r = st.getBoundingClientRect(), h = st.offsetParent ? st.offsetParent.getBoundingClientRect().top : 0;
+        el.style.setProperty('--tickTop', Math.round(r.bottom - h + 8) + 'px'); }
+      function render(all) {
+        var items = [], week = Date.now() - 7 * 864e5;
+        Object.keys(all || {}).forEach(function (id) {
+          ((all[id] && all[id].top) || []).forEach(function (e, i) { if (e && e.s > 0 && e.d > week) items.push({ id: id, e: e, rank: i + 1 }); });
+        });
+        items.sort(function (a, b) { return b.e.d - a.e.d; });
+        items = items.slice(0, 16);
+        if (!items.length) { el.hidden = true; return; }
+        var html = items.map(function (x) {
+          var who = esc(x.e.h || x.e.n), where = C.boardEmoji(x.id) + ' ' + esc(C.boardName(x.id));
+          return x.rank === 1
+            ? '<span class="ct-item champ">👑 <b>' + who + '</b> took #1 on ' + where + ' <span class="sc">' + Number(x.e.s).toLocaleString('en-US') + '</span><span class="ago">' + ago(x.e.d) + '</span></span>'
+            : '<span class="ct-item"><b>' + who + '</b> · ' + where + ' #' + x.rank + ' <span class="sc">' + Number(x.e.s).toLocaleString('en-US') + '</span><span class="ago">' + ago(x.e.d) + '</span></span>';
+        }).join('');
+        run.innerHTML = html + html;                       /* doubled for a seamless loop */
+        run.style.setProperty('--ctDur', Math.max(30, items.length * 6) + 's');
+        el.hidden = false; place();
+      }
+      function syncMute() { var m = C.muted(); mute.textContent = m ? '🔕' : '🔔';
+        mute.title = m ? 'Champ alerts are off — tap to turn on' : 'Champ alerts are on — tap to mute'; }
+      mute.addEventListener('click', function () { C.mute(!C.muted()); syncMute(); });
+      window.addEventListener('DSDA:boards', function (ev) { render(ev.detail); });
+      window.addEventListener('resize', place);
+      if (C.last()) render(C.last());
+      syncMute(); setTimeout(place, 300);
+    })();
+    </script>
     <script>
       // ---------- Arcade passport (games/arcade-social.js keeps the data) ----------
       (function () {
