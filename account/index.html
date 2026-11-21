@@ -68,6 +68,29 @@
   .id { display:flex; flex-direction:column; align-items:center; text-align:center; margin-bottom:14px; }
   .avatar { width:96px; height:96px; border-radius:50%; background:radial-gradient(circle at 50% 35%,#1a2438 0%,#0c1320 70%); border:2px solid var(--gold); box-shadow:0 0 24px rgba(201,162,39,0.35), inset 0 0 18px rgba(201,162,39,0.12); display:flex; align-items:center; justify-content:center; position:relative; }
   .avatar .glyph { font-family:"Playfair Display",serif; font-weight:800; font-size:38px; color:var(--gold-bright); letter-spacing:1px; text-shadow:0 0 16px rgba(232,198,90,0.5); }
+  .avatar.edit { cursor:pointer; }
+  .avatar.edit:hover { box-shadow:0 0 30px rgba(201,162,39,0.55), inset 0 0 18px rgba(201,162,39,0.12); }
+  .avatar .pic { width:100%; height:100%; border-radius:50%; object-fit:cover; display:block; }
+  .avatar .glyph.emoji { font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif; font-size:54px; text-shadow:none; letter-spacing:0; line-height:1; }
+  .avatar .pen { position:absolute; top:-2px; right:-4px; width:26px; height:26px; border-radius:50%; background:#0c1320; border:1px solid var(--gold); color:var(--gold-bright); font-size:12px; display:none; align-items:center; justify-content:center; }
+  .avatar.edit .pen { display:flex; }
+  #avOv { position:fixed; inset:0; z-index:3000; display:none; align-items:center; justify-content:center; padding:16px; background:rgba(4,8,14,0.78); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); }
+  #avOv.on { display:flex; }
+  #avOv .pp { width:min(420px,100%); max-height:90vh; overflow:auto; background:#0c1320; border:1px solid var(--line); border-radius:16px; padding:18px; box-shadow:0 24px 60px rgba(0,0,0,0.6); }
+  #avOv h3 { font-family:"Playfair Display",serif; font-size:20px; margin:0 0 2px; color:var(--gold-bright); }
+  #avOv .sub { font-size:11px; color:var(--muted); margin-bottom:14px; }
+  #avOv .k { font-size:9px; letter-spacing:2px; color:var(--muted); margin:14px 0 8px; }
+  .av-actions { display:flex; gap:8px; flex-wrap:wrap; }
+  .av-actions button { flex:1; min-width:140px; padding:11px 10px; border-radius:10px; border:1px solid var(--line); background:rgba(201,162,39,0.10); color:#fafaf8; font:600 12px/1 Inter,system-ui,sans-serif; letter-spacing:1px; cursor:pointer; }
+  .av-actions button.main { background:linear-gradient(90deg,#c9a227,#e8c65a); color:#0a0e14; border:0; }
+  .av-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(52px,1fr)); gap:8px; }
+  .av-grid button { aspect-ratio:1; border-radius:50%; border:1px solid var(--line); background:radial-gradient(circle at 50% 35%,#1a2438 0%,#0c1320 70%); font-size:26px; cursor:pointer; position:relative; padding:0; font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif; }
+  .av-grid button.sel { border:2px solid var(--gold-bright); box-shadow:0 0 14px rgba(232,198,90,0.5); }
+  .av-grid button.locked { filter:grayscale(1); opacity:0.35; cursor:not-allowed; }
+  .av-grid button.locked::after { content:"🔒"; position:absolute; right:-2px; bottom:-2px; font-size:12px; filter:none; }
+  #avMsg { min-height:16px; font-size:11px; margin-top:12px; color:var(--muted); }
+  #avMsg.err { color:#ff7a85; } #avMsg.ok { color:#7dffb0; }
+  .av-close { margin-top:12px; width:100%; padding:10px; border-radius:10px; border:1px solid var(--line); background:transparent; color:#fafaf8; font:600 11px Inter,sans-serif; letter-spacing:2px; cursor:pointer; }
   .avatar .tier { position:absolute; bottom:-6px; right:-6px; background:var(--gold); color:#0a0e14; font-size:9px; font-weight:700; letter-spacing:1px; padding:3px 8px; border-radius:999px; }
   .handle { margin-top:14px; display:flex; align-items:center; gap:8px; }
   .handle .name { font-family:"Playfair Display",serif; font-weight:700; font-size:24px; letter-spacing:1px; }
@@ -170,7 +193,7 @@
           <div class="season">2026 SEASON</div>
         </div>
         <div class="id">
-          <div class="avatar"><span class="glyph" id="c-glyph">?</span><span class="tier" id="c-tier">ROOKIE</span></div>
+          <div class="avatar" id="c-avatar" role="img" aria-label="Player avatar"><span class="glyph" id="c-glyph">?</span><span class="pen" aria-hidden="true">✎</span><span class="tier" id="c-tier">ROOKIE</span></div>
           <div class="handle"><span class="name" id="c-name">—</span><span class="verified" id="c-verified" style="display:none">✓</span></div>
           <div class="addr" id="c-addr">—</div>
         </div>
@@ -228,6 +251,19 @@
     </div>
   </div>
 
+  <div id="avOv" role="dialog" aria-modal="true" aria-label="Choose your avatar"><div class="pp">
+    <h3>Your avatar</h3>
+    <div class="sub">Shows on your player card. Pick an arcade icon or use your own photo.</div>
+    <div class="av-actions">
+      <button class="main" id="avUpload">📷 Upload a photo</button>
+      <button id="avClear">Use my initials</button>
+    </div>
+    <input type="file" id="avFile" accept="image/*" hidden>
+    <div class="k">ARCADE ICONS · 🔒 UNLOCK WITH PASSPORT BADGES</div>
+    <div class="av-grid" id="avGrid"></div>
+    <div id="avMsg"></div>
+    <button class="av-close" id="avClose">DONE</button>
+  </div></div>
   <div id="loading" class="loading" style="display:none">LOADING…</div>
   <div class="toast" id="toast"></div>
 
@@ -258,6 +294,108 @@
     'frog-frost': { icon: '❄️', name: 'Frog Frost' },
     'frog-marsh': { icon: '🐸', name: 'Frog Marsh' }
   };
+  /* Avatars. Stored on the account as `avatar`: null (initials) | 'p:<preset>' | 'img:<version>'.
+     Photos are served by the Worker at /api/account/avatar/<accountId>?v=<version>.
+     Badge-locked presets are checked server-side against player_badges too. */
+  var AVATARS = [
+    { id: 'frog', e: '🐸' }, { id: 'dragon', e: '🐉' }, { id: 'cat', e: '🐱' }, { id: 'beaver', e: '🦫' },
+    { id: 'elf', e: '🧝' }, { id: 'bomb', e: '💣' }, { id: 'ghost', e: '👻' }, { id: 'robot', e: '🤖' },
+    { id: 'fox', e: '🦊' }, { id: 'alien', e: '👽' }, { id: 'wrench', e: '🔧' }, { id: 'star', e: '🌟' },
+    { id: 'coin', e: '🪙', need: 'first-coin' }, { id: 'map', e: '🗺️', need: 'tourist' }, { id: 'joystick', e: '🕹️', need: 'regular' },
+    { id: 'crown', e: '👑', need: 'all-cabinets' }, { id: 'runner', e: '🏃', need: 'marathon' }, { id: 'hundred', e: '💯', need: 'century' },
+    { id: 'diver', e: '🤿', need: 'deep-diver' }, { id: 'fire', e: '🔥', need: 'streak-3' }, { id: 'comet', e: '☄️', need: 'streak-7' }
+  ];
+  var ACC_API = (window.DSDA_API_BASE || '') + '/api/account';
+  function avatarPreset(id) { for (var i = 0; i < AVATARS.length; i++) if (AVATARS[i].id === id) return AVATARS[i]; return null; }
+  function setAvatar(av, accountId, initials) {
+    var box = $('c-avatar'), glyph = $('c-glyph'), old = box.querySelector('.pic');
+    if (old) old.remove();
+    glyph.style.display = ''; glyph.className = 'glyph';
+    av = typeof av === 'string' ? av : '';
+    if (av.indexOf('p:') === 0 && avatarPreset(av.slice(2))) {
+      glyph.textContent = avatarPreset(av.slice(2)).e; glyph.className = 'glyph emoji';
+    } else if (av.indexOf('img:') === 0 && accountId) {
+      var img = document.createElement('img'); img.className = 'pic'; img.alt = '';
+      img.src = ACC_API + '/avatar/' + encodeURIComponent(accountId) + '?v=' + encodeURIComponent(av.slice(4));
+      img.onerror = function () { img.remove(); glyph.style.display = ''; glyph.textContent = initials; };
+      glyph.style.display = 'none'; box.insertBefore(img, glyph);
+    } else {
+      glyph.textContent = initials;
+    }
+  }
+  var AV = { account: null, profile: null, initials: '', current: '' };
+  function avMsg(t, cls) { var m = $('avMsg'); m.textContent = t || ''; m.className = cls || ''; }
+  function avGrid() {
+    var g = $('avGrid'), earned = (AV.profile && AV.profile.badges) || []; g.innerHTML = '';
+    AVATARS.forEach(function (a) {
+      var b = document.createElement('button'), locked = a.need && earned.indexOf(a.need) < 0;
+      b.textContent = a.e; b.type = 'button';
+      b.className = (locked ? 'locked' : '') + (AV.current === 'p:' + a.id ? ' sel' : '');
+      b.title = locked ? 'Earn the ' + ((BADGES[a.need] || {}).name || a.need) + ' badge to unlock' : a.id;
+      b.onclick = function () {
+        if (locked) { avMsg('🔒 Unlock with the ' + ((BADGES[a.need] || {}).name || a.need) + ' badge', 'err'); return; }
+        saveAvatar({ preset: a.id });
+      };
+      g.appendChild(b);
+    });
+  }
+  function openAvatarPicker() { avMsg(''); avGrid(); $('avOv').classList.add('on'); }
+  function closeAvatarPicker() { $('avOv').classList.remove('on'); }
+  function saveAvatar(body) {
+    var t = window.DSDA.account.getToken();
+    if (!t) { avMsg('Log in again to change your avatar.', 'err'); return Promise.resolve(); }
+    avMsg('Saving…');
+    return fetch(ACC_API + '/avatar', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + t }, body: JSON.stringify(body) })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { status: r.status, j: j }; }); })
+      .then(function (res) {
+        if (res.status === 404 || res.status === 405 || res.status === 501) { avMsg('Avatar saving isn\'t switched on yet — the server side is on its way.', 'err'); return; }
+        if (res.status === 413) { avMsg('That photo is too big even after shrinking — try another.', 'err'); return; }
+        if (res.status === 429) { avMsg('Easy on the changes — try again in a bit.', 'err'); return; }
+        if (res.status < 200 || res.status >= 300 || !res.j || !res.j.ok) { avMsg((res.j && res.j.error) || 'Could not save that avatar.', 'err'); return; }
+        AV.current = res.j.avatar || '';
+        setAvatar(AV.current, AV.account.id, AV.initials);
+        try { var a = JSON.parse(localStorage.getItem('dsda-account') || 'null'); if (a) { a.avatar = AV.current || null; localStorage.setItem('dsda-account', JSON.stringify(a)); } } catch (e) {}
+        avGrid(); avMsg('Saved ✓', 'ok');
+      })
+      .catch(function () { avMsg('Couldn\'t reach the server — try again.', 'err'); });
+  }
+  /* Photo → centred square, 256 px, WebP (JPEG fallback), squeezed under ~80 KB. EXIF rotation honoured. */
+  function shrinkPhoto(file) {
+    function load() {
+      if (window.createImageBitmap) return createImageBitmap(file, { imageOrientation: 'from-image' }).catch(function () { return createImageBitmap(file); });
+      return new Promise(function (res, rej) { var u = URL.createObjectURL(file), im = new Image(); im.onload = function () { res(im); }; im.onerror = rej; im.src = u; });
+    }
+    return load().then(function (src) {
+      var w = src.width, h = src.height, s = Math.min(w, h), N = 256, c = document.createElement('canvas'); c.width = c.height = N;
+      var x = c.getContext('2d'); x.imageSmoothingQuality = 'high';
+      x.drawImage(src, (w - s) / 2, (h - s) / 2, s, s, 0, 0, N, N);
+      function enc(type, q) { return new Promise(function (res) { c.toBlob(res, type, q); }); }
+      function tryQ(type, qs) {
+        return enc(type, qs[0]).then(function (b) {
+          if (b && b.type === type && (b.size <= 80000 || qs.length === 1)) return b;
+          if (b && b.type !== type) return null;                       /* browser can't encode this type */
+          return tryQ(type, qs.slice(1));
+        });
+      }
+      return tryQ('image/webp', [0.85, 0.7, 0.55]).then(function (b) { return b || tryQ('image/jpeg', [0.85, 0.7, 0.55]); });
+    }).then(function (blob) {
+      if (!blob) throw new Error('could not encode');
+      return new Promise(function (res, rej) { var fr = new FileReader(); fr.onload = function () { res({ mime: blob.type, b64: String(fr.result).split(',')[1], bytes: blob.size }); }; fr.onerror = rej; fr.readAsDataURL(blob); });
+    });
+  }
+  function bindAvatarPicker() {
+    $('avClose').onclick = closeAvatarPicker;
+    $('avOv').onclick = function (e) { if (e.target === $('avOv')) closeAvatarPicker(); };
+    $('avClear').onclick = function () { saveAvatar({ clear: true }); };
+    $('avUpload').onclick = function () { $('avFile').value = ''; $('avFile').click(); };
+    $('avFile').onchange = function () {
+      var f = this.files && this.files[0]; if (!f) return;
+      if (!/^image\//.test(f.type)) { avMsg('That file isn\'t an image.', 'err'); return; }
+      avMsg('Shrinking your photo…');
+      shrinkPhoto(f).then(function (p) { return saveAvatar({ image: p.b64, mime: p.mime }); })
+        .catch(function () { avMsg('Couldn\'t read that photo — try a JPG or PNG.', 'err'); });
+    };
+  }
   var TIER_LABEL = { rookie: 'ROOKIE', bronze: 'BRONZE', silver: 'SILVER', gold: 'GOLD', legendary: 'LEGENDARY' };
   var $ = function (id) { return document.getElementById(id); };
   function fmt(n) { try { return Math.round(n).toLocaleString('en-US'); } catch (e) { return String(n); } }
@@ -279,10 +417,16 @@
     return '<svg viewBox="0 0 21 21" shape-rendering="crispEdges"><g fill="#0a0e14">' + finders + cells + '</g></svg>';
   }
 
-  function renderCard(account, profile, sync) {
+  function renderCard(account, profile, sync, isOwner) {
     var handle = account.handle || 'PLAYER';
     var initials = handle.replace(/[^a-zA-Z0-9]/g, '').slice(0, 3).toUpperCase() || '???';
-    $('c-glyph').textContent = initials;
+    var av = profile.avatar !== undefined ? profile.avatar : account.avatar;
+    setAvatar(av, profile.id || account.id, initials);
+    AV.account = account; AV.profile = profile; AV.initials = initials; AV.current = av || '';
+    var box = $('c-avatar');
+    box.classList.toggle('edit', !!isOwner);
+    box.onclick = isOwner ? openAvatarPicker : null;
+    box.title = isOwner ? 'Change your avatar' : '';
     $('c-name').textContent = handle;
     $('c-verified').style.display = account.address ? 'flex' : 'none';
     var tier = TIER_LABEL[profile.tier] || 'ROOKIE';
@@ -398,7 +542,7 @@
         .then(function (r) { return r.json(); })
         .then(function (j) {
           if (!j || !j.profile) throw new Error('profile not found');
-          renderCard(acc, j.profile, sync);
+          renderCard(acc, j.profile, sync, true);
           show('card');
         });
     }).catch(function (e) { msg('Could not load your card: ' + e.message, 'err'); show('login'); });
@@ -425,6 +569,7 @@
 
   // ---- boot ----
   function boot() {
+    bindAvatarPicker();
     var playerParam = new URLSearchParams(location.search).get('player');
     if (playerParam) { loadPublicCard(playerParam); return; }
     if (window.DSDA.account.getToken()) loadCard();
