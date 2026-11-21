@@ -1,9 +1,24 @@
 {
-  "updated": 0,
-  "top": [],
+  "updated": 1795304238234,
+  "top": [
+    {
+      "n": "BEN",
+      "s": 265,
+      "d": 1795304238234,
+      "h": "bender"
+    },
+    {
+      "n": "BEN",
+      "s": 110,
+      "d": 1795304217846,
+      "h": "bender"
+    }
+  ],
   "stats": {
-    "saves": 0,
-    "initials": [],
-    "players": 0
+    "saves": 2,
+    "initials": [
+      "BEN"
+    ],
+    "players": 1
   }
 }
