@@ -649,7 +649,7 @@ function setSaveEnabled(src){
    handle + ◆ badge. */
 const GAME_ID='chicken';
 const BOARD_API='/api/board';
-const SCORE_SECRET='***';
+const SCORE_SECRET='***';  // arcade-wide shared board secret (one Worker BOARD_SECRET)
 const DSDA_INITS_KEY='dsda-initials';
 let lastPosted=0;
 function cleanInits(s){return (s||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,3);}
