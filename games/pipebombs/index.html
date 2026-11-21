@@ -657,6 +657,7 @@ const PUPS={
   heart:{col:0xff3355,css:'red',icon:'i-heart',name:'SPARE UNIT',desc:'+1 life',rarity:'epic',pop:'+1 LIFE'}
 };
 const ENEMY_SCORE={drip:100,valve:250,wraith:400};
+const WRAITH_SLEEP=8,WRAITH_SCATTER=5;   /* s dormant at sector start · s retreating after it kills you */
 
 let state='title',sectorIndex=0,endless=false,score=0,uiScore=0,lives=3;
 let stats={bombs:1,range:2,boots:0,shield:0,kick:false,magnet:false,pierce:false};
@@ -1293,6 +1294,9 @@ function buildSector(i,attract){
     if(spawns.every(s=>Math.abs(s[0]-c[0])+Math.abs(s[1]-c[1])>=3))spawns.push(c);
   }
   while(spawns.length<types.length&&cand.length>spawns.length)spawns.push(cand[spawns.length]);
+  /* wraiths fly through everything — give them the spawn points farthest from the player */
+  spawns.sort((a,b)=>(Math.abs(a[0]-SPAWN.x)+Math.abs(a[1]-SPAWN.y))-(Math.abs(b[0]-SPAWN.x)+Math.abs(b[1]-SPAWN.y)));
+  types.sort((a,b)=>(a==='wraith')-(b==='wraith'));
   const reserved=new Set(safe);
   for(const s of spawns){
     reserved.add(idx(s[0],s[1]));
@@ -1334,7 +1338,8 @@ function buildSector(i,attract){
     const s=spawns[k]||[W-2,H-2];
     const{g,parts}=makeEnemyMesh(type);
     const base={drip:1.35,valve:1.95,wraith:2.25}[type];
-    const e={type,x:s[0],y:s[1],r:.3,spd:base*spdMult,tx:null,ty:null,dx:0,dy:0,fx:0,fz:1,seed:rand(0,10),dead:false,mesh:g,parts,shadow:makeShadow(type==='wraith'?.5:.75),trailT:rand(0,.4)};
+    const e={type,x:s[0],y:s[1],r:.3,spd:base*spdMult,tx:null,ty:null,dx:0,dy:0,fx:0,fz:1,seed:rand(0,10),dead:false,mesh:g,parts,shadow:makeShadow(type==='wraith'?.5:.75),trailT:rand(0,.4),
+      sleep:type==='wraith'&&!attract?WRAITH_SLEEP:0,scatter:0};
     g.position.set(gx(e.x),0,gz(e.y));
     enemies.push(e);
   });
@@ -1633,7 +1638,14 @@ function updateEnemies(dt){
     if(e.dead)continue;
     if(!frozen){
       if(e.type==='wraith'){
-        const tgt=player.dead||attract?{x:SPAWN.x,y:SPAWN.y}:player;
+        if(e.sleep>0){
+          e.sleep-=dt;
+          if(e.sleep<=0&&state==='playing'){sfx.wraith();flash('#ff3df0',.14);toast('i-skull','A WRAITH STIRS — IT FLIES THROUGH WALLS','magenta');}
+          const m0=e.mesh;m0.position.set(gx(e.x),Math.sin(t*1.6+e.seed)*.08,gz(e.y));e.shadow.position.set(gx(e.x),.02,gz(e.y));continue;
+        }
+        const far={x:SPAWN.x<W/2?W-2:1,y:SPAWN.y<H/2?H-2:1};
+        if(e.scatter>0)e.scatter-=dt;
+        const tgt=attract?{x:SPAWN.x,y:SPAWN.y}:(player.dead||e.scatter>0)?far:player;
         const dx=tgt.x-e.x,dy=tgt.y-e.y,d=Math.hypot(dx,dy)||1;
         const wob=Math.sin(t*2.1+e.seed)*.55,px=-dy/d,py=dx/d;
         const vx=(dx/d+px*wob)*e.spd,vy=(dy/d+py*wob)*e.spd;
@@ -1704,7 +1716,7 @@ function spawnWraiths(){
   corners.sort((a,b)=>Math.hypot(b[0]-player.x,b[1]-player.y)-Math.hypot(a[0]-player.x,a[1]-player.y));
   for(let k=0;k<3;k++){
     const s=corners[k],{g,parts}=makeEnemyMesh('wraith');
-    const e={type:'wraith',x:s[0],y:s[1],r:.3,spd:2.45*diff.spd,tx:null,ty:null,dx:0,dy:0,fx:0,fz:1,seed:rand(0,10),dead:false,mesh:g,parts,shadow:makeShadow(.5),trailT:0};
+    const e={type:'wraith',x:s[0],y:s[1],r:.3,spd:2.45*diff.spd,tx:null,ty:null,dx:0,dy:0,fx:0,fz:1,seed:rand(0,10),dead:false,mesh:g,parts,shadow:makeShadow(.5),trailT:0,sleep:1.5,scatter:0};
     g.position.set(gx(e.x),0,gz(e.y));
     enemies.push(e);enemiesAlive++;
     particles.spawn({x:gx(e.x),y:.5,z:gz(e.y),count:14,col:[1.4,.3,1.5],cj:.2,vs:1.6,vy:1.6,size:.9,life:.8,g:-2,spread:.3});
@@ -1792,6 +1804,7 @@ function hitPlayer(){
     toast('i-shield','SHIELD VENTED — HIT ABSORBED','cyan');syncHUD(true);return;
   }
   player.dead=true;player.deathT=0;lives--;
+  for(const e of enemies)if(e.type==='wraith'&&!e.dead)e.scatter=WRAITH_SCATTER;   /* no spawn-camping */
   particles.spawn({x:gx(player.x),y:.5,z:gz(player.y),count:26,col:[.4,1.7,2],cj:.25,vs:2.8,vy:2.6,size:.9,life:.9,g:-6,spread:.2});
   particles.spawn({x:gx(player.x),y:.5,z:gz(player.y),count:10,col:[1.6,1.6,1.6],cj:.2,vs:2,vy:2,size:.7,life:.6,g:-5,spread:.2});
   sfx.hurt();flash('#ff3355',.26);addShake(.85);vibrate(70);
