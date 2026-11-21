@@ -243,6 +243,19 @@
       (function () {
         if (!window.DSDA || !DSDA.passport) return;
         var wrap = document.getElementById('arcadePass'); wrap.hidden = false;
+        // ---------- Card pill: dynamic login state ----------
+        // Not logged in -> "Log In" (the arcade page's login door); logged
+        // in -> "Your Card". The href never changes — /account/ shows the
+        // login UI (BRC-100 + email) when there's no session. Reads the
+        // same token key arcade-account.js uses, so no load-order coupling.
+        var cardLink = document.getElementById('cardLink');
+        function cardState() {
+          var logged = false;
+          try { logged = !!localStorage.getItem('dsda-token'); } catch (e) {}
+          if (cardLink) cardLink.textContent = logged ? '🎴 Your Card' : '🔑 Log In';
+        }
+        cardState();
+        window.addEventListener('DSDA:account-login', cardState);
         var strip = wrap.parentNode, mq = window.matchMedia('(max-width: 640px)');
         function place() { if (mq.matches) { if (wrap.parentNode !== document.body) document.body.appendChild(wrap); } else if (wrap.parentNode !== strip) strip.appendChild(wrap); }
         place(); if (mq.addEventListener) mq.addEventListener('change', place); else if (mq.addListener) mq.addListener(place);

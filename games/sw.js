@@ -27,7 +27,10 @@
 //      without a version bump, so cached phones kept calling api.ds-da.ca).
 // v14: Dragon Slalom three.js rebuild — new screenshot.png (cache-first) would
 //      otherwise stay stale on returning phones.
-const CACHE = 'dsda-arcade-v14';
+//      + hub card pill goes dynamic — "🔑 Log In" when signed out, "🎴 Your
+//      Card" when signed in (games/index.html inline script, no JS lib change).
+//      Both landed on the same version, so the combined deploy bumps to v15.
+const CACHE = 'dsda-arcade-v15';
 const CORE = [
   './',
   './manifest.webmanifest',
