@@ -416,7 +416,7 @@ body.touch #dpad.on{display:grid}
       <div class="stat-row"><span>BARN BONUS</span><b id="cmp-bonus">0</b></div>
       <div class="stat-row" id="cmp-total-row"><span>TOTAL</span><b id="cmp-total">0</b></div>
       <div class="lb-submit">
-        <label for="cmp-name">INITIALS</label>
+        <label class="inits-label" for="cmp-name">INITIALS</label>
         <input class="px-input" id="cmp-name" maxlength="3" placeholder="ABC" autocomplete="off" spellcheck="false">
         <button class="btn btn-corn" id="cmp-submit-btn">SUBMIT SCORE</button>
         <span class="chip gold" id="cmp-rank" style="display:none"></span>
@@ -437,7 +437,7 @@ body.touch #dpad.on{display:grid}
       <div class="stat-row"><span>SCORE</span><b id="over-score">0</b></div>
       <div class="stat-row"><span>CORN</span><b id="over-corn">0</b></div>
       <div class="lb-submit">
-        <label for="over-name">INITIALS</label>
+        <label class="inits-label" for="over-name">INITIALS</label>
         <input class="px-input" id="over-name" maxlength="3" placeholder="ABC" autocomplete="off" spellcheck="false">
         <button class="btn btn-corn" id="over-submit-btn">SUBMIT SCORE</button>
         <span class="chip gold" id="over-rank" style="display:none"></span>
@@ -589,10 +589,11 @@ function renderBoard(){
 }
 async function submitRun(src){
   if(runSubmitted)return;
-  const input=$(src+'-name');
   const member=memberHandle();
-  const name=member||cleanInits(input.value||getInits()||SAVE.name);
+  const input=$(src+'-name');
   const rk=$(src+'-rank');
+  const line=member?$(src+'-memberline'):rk;   // ONE status line: members get the member line, casuals the rank chip
+  const name=member||cleanInits(input.value||getInits()||SAVE.name);
   if(!name){rk.style.display='inline-flex';rk.textContent='ENTER YOUR INITIALS';input.focus();return;}
   setInits(name);
   SAVE.name=name;persist();
@@ -603,21 +604,32 @@ async function submitRun(src){
   Audio.star();
   renderBoard();renderTitle();
   track('score_submit',{score});
-  rk.style.display='inline-flex';
+  line.style.display='inline-flex';
   const res=await submitScore(name,score);
-  if(res==='ok')rk.textContent='ON THE BARNYARD BOARD '+(member?'AS '+member.toUpperCase()+' ◆':'')+' ✓';
-  else if(res==='deduped')rk.textContent='PERSONAL BEST STANDS — NOT REPOSTED';
-  else if(res==='http-429')rk.textContent='RATE LIMITED — QUEUED FOR RETRY';
-  else if(res==='no-inits')rk.textContent='ENTER YOUR INITIALS';
-  else rk.textContent='BOARD OFFLINE — SAVED TO THIS CABINET';
+  if(member){
+    if(res==='ok')line.textContent='POSTED AS '+name.toUpperCase()+' ';
+    else if(res==='deduped')line.textContent='PERSONAL BEST STANDS';
+    else if(res==='http-429')line.textContent='RATE LIMITED — QUEUED FOR RETRY';
+    else line.textContent='BOARD OFFLINE — SAVED TO THIS CABINET';
+    if(res==='ok'){const b=document.createElement('span');b.className='member-badge';b.title=name;b.textContent='◆';line.appendChild(b);}
+  }else{
+    if(res==='ok')rk.textContent='ON THE BARNYARD BOARD ✓';
+    else if(res==='deduped')rk.textContent='PERSONAL BEST STANDS — NOT REPOSTED';
+    else if(res==='http-429')rk.textContent='RATE LIMITED — QUEUED FOR RETRY';
+    else rk.textContent='BOARD OFFLINE — SAVED TO THIS CABINET';
+  }
   toast(rank<=3?'PODIUM FINISH! #'+rank:'SCORE SUBMITTED · RANK #'+rank,'gold');
 }
-/* Member flow: a logged-in account posts under its handle automatically
-   when a result screen opens (house pattern — no initials needed). */
+/* Member flow: a logged-in account posts under its handle automatically when a
+   result screen opens. Members never see the initials input or Submit button —
+   the panel shows a single status line ("POSTING AS X ◆" → final result). */
 function prepPanel(src){
   const member=memberHandle();
   const ml=$(src+'-memberline');
   if(member&&score>0){
+    $(src+'-name').style.display='none';
+    $(src+'-submit-btn').style.display='none';
+    $(src+'-name').closest('.lb-submit').querySelector('.inits-label').style.display='none';
     ml.textContent='POSTING AS '+member.toUpperCase()+' ';
     const b=document.createElement('span');b.className='member-badge';b.title=member;b.textContent='◆';
     ml.appendChild(b);
@@ -629,9 +641,11 @@ function resetSubmitUI(){
   runSubmitted=false;lastStars=0;
   for(const s of['cmp','over']){
     const inp=$(s+'-name');inp.disabled=false;inp.value=getInits()||cleanInits(SAVE.name)||'';
-    const b=$(s+'-submit-btn');b.disabled=!cleanInits(inp.value)&&!memberHandle();b.textContent='SUBMIT SCORE';
+    inp.style.display='';
+    $(s+'-name').closest('.lb-submit').querySelector('.inits-label').style.display='';
+    const b=$(s+'-submit-btn');b.disabled=!cleanInits(inp.value)&&!memberHandle();b.textContent='SUBMIT SCORE';b.style.display='';
     $(s+'-rank').style.display='none';
-    $(s+'-memberline').style.display='none';
+    const ml=$(s+'-memberline');ml.style.display='none';ml.textContent='';
   }
 }
 function setSaveEnabled(src){
