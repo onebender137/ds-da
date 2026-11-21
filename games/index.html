@@ -133,9 +133,14 @@
          under the strip and the drag hint owns the bottom edge). JS moves the node in/out. */
       .arcade-stats > .champ-ticker { position: static; transform: none; flex-basis: 100%; width: 0; min-width: 100%; contain: inline-size;
         margin-top: 2px; background: rgba(4, 10, 20, 0.45); }
+      /* desktop: share the pill row (right of YOUR CARD) so the strip doesn't grow over the marquees */
+      .arcade-stats .arcade-pass > .champ-ticker { position: static; transform: none; flex: 0 1 520px; width: 520px; min-width: 0;
+        padding: 0 3px 0 10px; align-self: stretch; contain: inline-size; background: rgba(4, 10, 20, 0.45); }
+      .arcade-stats .arcade-pass > .champ-ticker .ct-item { font-size: 0.7rem; }
+      .arcade-stats .arcade-pass > .champ-ticker .ct-mute { padding: 1px 7px; font-size: 0.72rem; line-height: 1.2; }
       /* phones: ride along with the bottom pill row (above the pills) so the cabinet marquees stay clear */
       body > .arcade-pass { flex-wrap: wrap; row-gap: 6px; }
-      .arcade-pass > .champ-ticker { position: static; transform: none; order: -1; flex-basis: 100%; width: 0; min-width: 100%;
+      body > .arcade-pass > .champ-ticker { position: static; transform: none; order: -1; flex-basis: 100%; width: 0; min-width: 100%;
         contain: inline-size; background: rgba(10, 22, 40, 0.86); }
       .arcade-pass > .champ-ticker .ct-mute { padding: 4px 9px; font-size: 0.8rem; letter-spacing: 0; }
       @media (prefers-reduced-motion: reduce) { .ct-run { animation: none; } .ct-track { overflow-x: auto; } }
@@ -287,7 +292,7 @@
         return m < 60 ? m + 'm ago' : m < 1440 ? Math.round(m / 60) + 'h ago' : Math.round(m / 1440) + 'd ago'; }
       var mq = window.matchMedia('(min-width: 641px)'), home = el.parentNode;
       function place() { var st = document.querySelector('.arcade-stats'); if (!st) return;
-        if (mq.matches) { if (el.parentNode !== st) st.appendChild(el); return; }
+        if (mq.matches) { var row = st.querySelector('.arcade-pass') || st; if (el.parentNode !== row) row.appendChild(el); return; }
         var pass = document.querySelector('body > .arcade-pass');           /* phones: JS parks the pills on <body> */
         if (pass) { if (el.parentNode !== pass) pass.insertBefore(el, pass.firstChild); return; }
         if (el.parentNode !== home) home.insertBefore(el, st.nextSibling);
