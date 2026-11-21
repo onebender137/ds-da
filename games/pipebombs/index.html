@@ -1984,7 +1984,7 @@ function showScores(){
     if(!$('ovScores').classList.contains('show'))return;
     rs.forEach((b,i)=>{
       const el=$('secLb'+i);
-      if(b&&b.top&&b.top.length)renderBoardList(el,b.top,me,5);
+      if(b&&b.top&&b.top.length)renderBoardList(el,b.top,me,10);
       else{el.innerHTML='';const li=document.createElement('li');li.className='lb-empty';li.textContent='NO RUNS ON RECORD — FIRST SCORE GOES TO YOU';el.appendChild(li);}
     });
     const live=$('scoresLive');
