@@ -410,7 +410,7 @@
     fetch((window.DSDA_API_BASE || 'https://api.ds-da.ca') + '/api/account/profile/' + id)
       .then(function (r) { return r.json().then(function (j) { return { status: r.status, j: j }; }); })
       .then(function (res) {
-        if (res.status !== 200 || !res.j.profile) { $('card-label').textContent = 'PLAYER NOT FOUND'; show('login'); msg('No player at that link.', 'err'); return; }
+        if (res.status !== 200 || !res.j.profile) { $('card-label').textContent = 'PLAYER NOT FOUND'; show('login'); msg(/^[\w-]{36}$/.test(id) ? 'No player at that link.' : 'That link looks cut off — the player id is incomplete. Ask for the full link.', 'err'); return; }
         var p = res.j.profile;
         // Public view: no token, no private daily/streak. Render with a stub account.
         renderCard({ id: p.id, handle: p.handle, address: p.address }, p, null);
