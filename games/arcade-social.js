@@ -31,12 +31,13 @@
     'slipstream': 'Slipstream', 'stunts': 'STUNTS', 'blockcrush': 'BlockCrush',
     'plumber-bob': 'Plumber Bob', 'dragon-slalom': 'Dragon Slalom', 'tappycat': 'TappyCat',
     'angry-nerds': 'Angry Nerds', 'neon-circuit': 'Neon Circuit', 'cookie-frog': 'Cookie Frog',
-    'beaverz': 'Beaverz', 'poke-it': 'Poke It'
+    'beaverz': 'Beaverz', 'poke-it': 'Poke It', 'pipebombs': 'Pipebombs'
   };
   var EMOJI = {
     'dropblock': '🧱', 'shatterblock': '💥', 'popper': '🍄', 'slipstream': '🏎️', 'stunts': '🚲',
     'blockcrush': '🍬', 'plumber-bob': '🪠', 'dragon-slalom': '🐉', 'tappycat': '🐱',
-    'angry-nerds': '🤓', 'neon-circuit': '🏁', 'cookie-frog': '🐸', 'beaverz': '🦫', 'poke-it': '🎈'
+    'angry-nerds': '🤓', 'neon-circuit': '🏁', 'cookie-frog': '🐸', 'beaverz': '🦫', 'poke-it': '🎈',
+    'pipebombs': '💣'
   };
 
   /* ---------------- badges ---------------- */
@@ -375,7 +376,7 @@
     if (!document.getElementById('dsda-account-script')) {
       var s = document.createElement('script');
       s.id = 'dsda-account-script';
-      s.src = '/games/arcade-account.js?v=7';
+      s.src = '/games/arcade-account.js?v=8';
       s.async = true;
       (document.head || document.documentElement).appendChild(s);
     }

@@ -25,12 +25,17 @@
 // v12: board 429 -> 'slow down' toast (arcade-account.js v6).
 // v13: arcade-account.js v7 — same-origin /api/account (3f5cb3b changed the file
 //      without a version bump, so cached phones kept calling api.ds-da.ca).
-// v14: Dragon Slalom three.js rebuild — new screenshot.png (cache-first) would
+// v15: Dragon Slalom three.js rebuild — new screenshot.png (cache-first) would
 //      otherwise stay stale on returning phones.
 //      + hub card pill goes dynamic — "🔑 Log In" when signed out, "🎴 Your
 //      Card" when signed in (games/index.html inline script, no JS lib change).
 //      Both landed on the same version, so the combined deploy bumps to v15.
-const CACHE = 'dsda-arcade-v15';
+// v16: Pipebombs cabinet — new screenshot.png (cache-first static).
+// v17: member board gate + 429 pending-post queue (arcade-account.js v8,
+//      arcade-social.js v11 bumps the injector). Members post a round to the
+//      cabinet board only when it beats their personal best for that board;
+//      a 429'd post is stashed in localStorage and retried, never dropped.
+const CACHE = 'dsda-arcade-v17';
 const CORE = [
   './',
   './manifest.webmanifest',
