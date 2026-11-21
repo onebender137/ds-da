@@ -275,8 +275,8 @@ noscript{position:fixed;inset:0;z-index:99;background:var(--bg);color:var(--ink)
 @media (max-width:640px){
   #radioBox.dsda-radio{bottom:calc(10px + env(safe-area-inset-bottom));left:10px;}
 }
-/* touch: shift the MOVE hint clear of the radio pill (bottom-left) + bomb button */
-body.touch #stickHint{left:calc(120px + var(--sal));bottom:calc(112px + var(--sab))}
+/* touch: park the MOVE stick in the lower-left corner, clear of the radio pill (bottom-left) */
+body.touch #stickHint{left:calc(56px + var(--sal));bottom:calc(64px + var(--sab))}
 /* member badge on the global board (account holders) */
 .member-badge{color:var(--gold,#c9a227);font-size:0.7em;margin-left:3px;vertical-align:middle;}
 /* save panel (meltdown / victory) */
@@ -396,7 +396,7 @@ body.touch #stickHint{left:calc(120px + var(--sal));bottom:calc(112px + var(--sa
 <div class="ov" id="ovTitle" role="dialog" aria-modal="true" aria-label="Pipebombs title screen">
   <div class="ov-inner">
     <div class="aurora a1"></div><div class="aurora a2"></div>
-    <div class="title-eyebrow">DS-DA.CA ARCADE · CABINET 07</div>
+    <div class="title-eyebrow">DS-DA.CA ARCADE · CABINET 15</div>
     <h1 class="game-title">PIPEBOMBS</h1>
     <svg class="title-pipe" viewBox="0 0 420 16" aria-hidden="true">
       <rect x="0" y="5" width="420" height="6" rx="3" fill="#0e2a3a" stroke="#1d4a5e"/>
@@ -441,7 +441,7 @@ body.touch #stickHint{left:calc(120px + var(--sal));bottom:calc(112px + var(--sa
       <div class="l-item"><svg class="icon l-green"><use href="#i-skull"/></svg>HOSTILES ARE LETHAL ON CONTACT</div>
       <div class="l-item"><svg class="icon l-red"><use href="#i-cross"/></svg>BLASTS BURN IN A CROSS — YOURS TOO</div>
     </div>
-    <div class="title-foot">ALL AUDIO SYNTHESIZED LIVE · WEBGL / THREE.JS<br>© DS-DA.CA ARCADE — CABINET 07</div>
+    <div class="title-foot">ALL AUDIO SYNTHESIZED LIVE · WEBGL / THREE.JS<br>© DS-DA.CA ARCADE — CABINET 15</div>
   </div>
 </div>
 
@@ -565,8 +565,8 @@ document.getElementById('btnReload').addEventListener('click',function(){locatio
 
 <script type="importmap">
 {"imports":{
-  "three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  "three":"../three.module.js",
+  "three/addons/":"./jsm/"
 }}
 </script>
 <script type="module">
@@ -801,7 +801,7 @@ function initThree(){
 }
 
 const TEX={},MAT={},GEO={};
-let wallInst,blockInst,aoTex,aoCtx,portal,dust,particles,blastPool,decalPool;
+let wallInst,blockInst,aoTex,aoCtx,portal,dust,particles,blastPool,decalPool,pipes=[];
 let BASE_E={};const ICE_E=new THREE.Color(0x2a6f9f);
 function makeTex(w,h,draw,srgb=true){
   const c=document.createElement('canvas');c.width=w;c.height=h;
@@ -965,7 +965,7 @@ function initAssets(){
     const a=i/8*Math.PI*2+rand(-.3,.3),r=rand(13,21);
     p.position.set(Math.cos(a)*r,rand(-6.5,-2.5),Math.sin(a)*r);
     p.rotation.set(rand(0,3),rand(0,3),Math.PI/2+rand(-.4,.4));
-    scene.add(p);
+    scene.add(p);pipes.push(p);
   }
   const ring1=new THREE.Mesh(new THREE.TorusGeometry(9,.55,10,64),new THREE.MeshStandardMaterial({color:0x120a14,emissive:0xff3df0,emissiveIntensity:.5,roughness:.6,metalness:.7}));
   ring1.position.set(-4,-7,-19);ring1.rotation.x=1.2;scene.add(ring1);
@@ -2049,7 +2049,7 @@ function gameOver(){
   $('overBest').textContent='BEST '+fmt(best.score);
   $('overRecord').classList.toggle('show',score>runBaseline&&score>0);
   showOv('ovOver');sfx.over();setMusicInt(0);
-  track('game_over',{final_score:score,level_reached:sectorIndex});
+  track('game_over',{final_score:score,level_reached:sectorIndex+1});
   savePanels.O.prep(true);
 }
 function saveBest(){
@@ -2097,6 +2097,11 @@ function fitCamera(){
   const Lw=5.6/(camTan*camera.aspect),Lh=4.6*Math.sin(PITCH)/camTan;
   baseL=clamp(Math.max(Lw,Lh),11,30);
   scene.fog.density=.02*Math.sqrt(11/baseL);
+  // Portrait: the camera sits on +Z looking over the yard — the foreground
+  // decorative pipes (camera side, z>2) block the near board rows. Hide them
+  // in portrait; keep the full ring in landscape.
+  const landscape=camera.aspect>=.8;
+  for(const p of pipes)p.visible=landscape||p.position.z<=2;
   camera.updateProjectionMatrix();
 }
 function addShake(n){if(!reducedMotion)trauma=Math.min(1,trauma+n)}
