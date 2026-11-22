@@ -1255,14 +1255,14 @@ const SFX={
   hurt(){this.hurtCycle();},
   hurtCycle(){if(!this.ok())return;const t=now();
     const v=Math.floor(Math.random()*3);
-    if(v===0){ // "Ouch!" — short sharp yelp
-      osc("sawtooth",680,t,.08,.22,420);osc("sine",880,t+.04,.07,.12,380);
-    }else if(v===1){ // "Owwie!" — longer wail
-      osc("sawtooth",520,t,.18,.18,300);osc("sine",700,t+.06,.14,.1,260);
-      osc("triangle",380,t+.12,.1,.08,200);
-    }else{ // "Oof!" — deep grunt
-      osc("square",180,t,.14,.2,90);osc("sine",260,t+.05,.1,.12,140);
-    }
+    /* v2: chesty grunts, not squeaks — a growled saw through a vocal-ish bandpass + breath */
+    const g=(f0,f1,d,form)=>{const ctx=AU.ctx,o=ctx.createOscillator(),bp=ctx.createBiquadFilter(),gg=ctx.createGain();
+      o.type="sawtooth";o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f1,t+d);
+      bp.type="bandpass";bp.frequency.value=form;bp.Q.value=1.4;env(gg,t,.012,.32,d);
+      o.connect(bp);bp.connect(gg);gg.connect(AU.sfxG);o.start(t);o.stop(t+d+.1);};
+    if(v===0){g(120,82,.16,520);noiseHit(t,.1,.08,"bandpass",900,500,1.2);}          // "Hngh!"
+    else if(v===1){g(105,70,.26,430);g(140,90,.2,900);noiseHit(t,.18,.07,"bandpass",700,350,1);}  // "Urrgh"
+    else{g(95,60,.13,380);noiseHit(t,.08,.12,"lowpass",600,200,1);}                // "Oof"
   },
   death(){if(!this.ok())return;const t=now();osc("sine",760,t,.5,.25,150);osc("sine",1140,t,.35,.1,220);},
   splash(){if(!this.ok())return;const t=now();noiseHit(t,.45,.5,"lowpass",1600,240,1);
@@ -1297,7 +1297,8 @@ const SFX={
 };
 /* ============================ VOICES ============================
    Six beaver characters (voices/*.mp3 — one sprite per character, offsets in
-   voices/voices.json). Generated with Kokoro TTS, pitched up into beaver range.
+   voices/voices.json). v2: mean old sergeants — Piper TTS (American male voices),
+   pitched down and driven through a grit/compression chain (see the v2 commit).
    Each beaver is handed a character at match start; say() picks a line from a
    category, plays it through the SFX bus (so mute + volume apply), panned by
    where the beaver stands, and returns the text so callers can subtitle it. */
@@ -1306,12 +1307,12 @@ const VOX_PRI={ko:3,drown:3,win:3,hurt:2,big:2,oops:2,turn:1,fire:1,gloat:1};
 const VOX={map:null,buf:{},loading:{},active:0};
 function voxManifest(){
   if(VOX.map||VOX.mapP)return VOX.mapP;
-  VOX.mapP=fetch("voices/voices.json?v=1").then(r=>r.json()).then(m=>{VOX.map=m;}).catch(()=>{VOX.mapP=null;});
+  VOX.mapP=fetch("voices/voices.json?v=2").then(r=>r.json()).then(m=>{VOX.map=m;}).catch(()=>{VOX.mapP=null;});
   return VOX.mapP;
 }
 function voxLoad(id){
   if(!AU.ctx||VOX.buf[id]||VOX.loading[id])return;
-  VOX.loading[id]=fetch(`voices/${id}.mp3?v=1`).then(r=>r.arrayBuffer())
+  VOX.loading[id]=fetch(`voices/${id}.mp3?v=${id==="squirrel"?1:2}`).then(r=>r.arrayBuffer())
     .then(ab=>new Promise((res,rej)=>AU.ctx.decodeAudioData(ab,res,rej)))
     .then(b=>{VOX.buf[id]=b;}).catch(()=>{VOX.loading[id]=null;});
 }
@@ -1323,7 +1324,7 @@ function assignVoices(){
   const most=Math.max(...G.teams.map(t=>t.beavers.length));
   for(let i=0;i<most;i++)for(const tm of G.teams){const b=tm.beavers[i];if(!b)continue;
     const rep=Math.floor(vi/pool.length);
-    b.voice={id:pool[vi%pool.length],rate:(rep?(vi%2?.89:1.12):1)*rand(.97,1.03)};vi++;}
+    b.voice={id:pool[vi%pool.length],rate:(rep?(vi%2?.9:.95):1)*rand(.97,1.02)};vi++;}   // repeats go DOWN, never chipmunk
   voxPrep();
 }
 function say(b,cat,o={}){
@@ -2582,10 +2583,10 @@ function beaverDist(b,x,y){const yy=clamp(y,b.y+16,b.y+58);return Math.hypot(b.x
 /* ---- beaver reactions -------------------------------------------------------
    Everything below is cosmetic: it reads beaver state (hurt/daze/cower/angry
    timers set from combat) and poses the model. Physics never reads it back. */
-const QUIPS_HIT=["OW!","OOF!","MY TAIL!","DAM IT!","RUDE!","NOT THE TEETH!","I FELT THAT!","SPLINTERS!","HEY!","YEOWCH!","WOOD YOU NOT?!","THAT STUNG!"];
-const QUIPS_LOW=["JUST A SCRATCH…","GNAW-T DONE YET!","SEEING STARS…","I'M FINE. I'M FINE."];
-const QUIPS_SELF=["OOPS.","MY BAD!","WRONG END!"];
-const QUIPS_MISS=["PHEW!","TOO CLOSE!","MISSED ME!","NYAH NYAH!"];
+const QUIPS_HIT=["AGH!","I'M HIT!","MEDIC!","GAH!","URGH!","SON OF A BEAVER!","DAM IT!","HNGH!","YOU'RE DONE, PRIVATE!","THAT'S IT!"];
+const QUIPS_LOW=["WALK IT OFF…","STILL STANDING, SIR!","JUST A FLESH WOUND!","I'VE HAD WORSE."];
+const QUIPS_SELF=["FRIENDLY FIRE!","CEASE FIRE!","MY BAD, SARGE!"];
+const QUIPS_MISS=["MISSED, ROOKIE!","IS THAT ALL?","NOT EVEN CLOSE!","HA!"];
 const IDLE_DUR={thump:1.0,hop:.62,look:1.7,scratch:1.1,chew:.9,pant:1.6,salute:1.4,check:1.5};
 function wrapAng(a){a=(a+Math.PI)%(Math.PI*2);if(a<0)a+=Math.PI*2;return a-Math.PI;}
 function beaverQuip(b,list,col){if(b.dead||b.gone||G.demo)return;popup(b.x+rand(-10,10),b.y+168,pick(list),col||"#fff6e4");}
