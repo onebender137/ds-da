@@ -38,7 +38,8 @@
 // v19: champ watch + hall ticker (arcade-social v13)
 // v20: chicken cabinet (arcade-social v14)
 // v23: Links realism pass (real ball physics, skinned golfer + golfer.glb).
-const CACHE = 'dsda-arcade-v23';
+// v24: Hustlers cabinet (8-ball pool, arcade-social v15).
+const CACHE = 'dsda-arcade-v24';
 const CORE = [
   './',
   './manifest.webmanifest',
