@@ -33,10 +33,11 @@
     }
   ],
   "stats": {
-    "saves": 5,
+    "saves": 8,
     "initials": [
-      "BEN"
+      "BEN",
+      "ANG"
     ],
-    "players": 1
+    "players": 2
   }
 }
