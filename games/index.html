@@ -587,11 +587,12 @@
         }
       ];
 
-      // infinite row: repeating 16-game pattern (16 live). Coming Soon sits past the
-      // cycle (index 16) and is not part of the wrap.
-      // NUM_CABS spans two full cycles + the centre (p = -16..+16) so every game
-      // appears on BOTH sides of the centre.
-      const CYCLE_N = 16;                   // live cabinets in the wrap — bump when adding one
+      // infinite row: repeating pattern of every live game. Coming Soon (no url)
+      // sits past the cycle and is not part of the wrap.
+      // NUM_CABS spans two full cycles + the centre so every game appears on BOTH
+      // sides of the centre. CYCLE_N counts itself — adding a game can't push the
+      // last one off the row any more (it did: Links in, Chicken gone).
+      const CYCLE_N = GAMES.filter(g => g.url).length;
       const NUM_CABS = CYCLE_N * 2 + 1;
       const SPACING = 2.3;
       const CYCLE_W = SPACING * CYCLE_N;   // wrap distance (one full cycle)
