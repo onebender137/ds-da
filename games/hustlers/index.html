@@ -625,7 +625,7 @@ kbd{font:600 10px var(--mono);background:#1a2230;border:1px solid var(--line2);b
       <div id="boardList"></div>
       <div id="boardEmpty">No hustles on this felt yet. Go run a rack.</div>
       <div class="boardfoot">
-        <span class="cr">HOUSE LEGENDS ARE SEALED · YOUR SCORES LIVE ON THIS DEVICE</span>
+        <span class="cr">ROOMS BELOW = THIS DEVICE · ARCADE HALL ABOVE = EVERYONE</span>
         <button id="btnResetBoard">CLEAR MY SCORES</button>
       </div>
     </div>
@@ -2249,18 +2249,8 @@ function aiPlaceCue(){
 }
 
 /* ═══════════════════════ LEADERBOARD ═══════════════════════ */
-const SEEDS=[
-  {name:'Minnesota Slim',score:4180,run:9,result:'WIN',theme:'parlor',diff:'shark',ts:Date.now()-3*864e5},
-  {name:'Eddie “Fast-Rails”',score:3865,run:8,result:'WIN',theme:'neon',diff:'shark',ts:Date.now()-6*864e5},
-  {name:'Madame Cue',score:3490,run:7,result:'WIN',theme:'rooftop',diff:'pro',ts:Date.now()-1*864e5},
-  {name:'The Baron',score:3120,run:7,result:'WIN',theme:'parlor',diff:'pro',ts:Date.now()-12*864e5},
-  {name:'Detroit Rico',score:2875,run:6,result:'WIN',theme:'neon',diff:'pro',ts:Date.now()-9*864e5},
-  {name:'Sable',score:2540,run:6,result:'LOSS',theme:'rooftop',diff:'shark',ts:Date.now()-4*864e5},
-  {name:'Knuckles McGraw',score:2160,run:5,result:'WIN',theme:'neon',diff:'rookie',ts:Date.now()-17*864e5},
-  {name:'Ivy Sidepocket',score:1985,run:5,result:'WIN',theme:'rooftop',diff:'pro',ts:Date.now()-22*864e5},
-  {name:'Two-Chalk Tony',score:1670,run:4,result:'LOSS',theme:'parlor',diff:'rookie',ts:Date.now()-28*864e5},
-  {name:'Ghost of Table 9',score:1425,run:4,result:'WIN',theme:'rooftop',diff:'rookie',ts:Date.now()-35*864e5},
-];
+/* No fake house scores: the Hall only shows real local runs (the DSDA arcade board above is the global one). */
+const SEEDS=[];
 let boardFilter=SETTINGS.bFilter,boardSort=SETTINGS.bSort;
 let globalBoardCache=null;
 function drawGlobal(bd){
@@ -2757,6 +2747,11 @@ addEventListener('keyup',e=>{
 /* buttons */
 $('btnSound').onclick=()=>{audioInit();audioResume();setMuted(!AU.muted);SFX.ui();};
 $('btnBoard').onclick=()=>{renderBoard();openOverlay('boardOverlay');SFX.ui();};
+/* Hall filters + sort were rendered but never wired */
+$$('.boardfilters .fchip').forEach(c=>c.addEventListener('click',()=>{
+  boardFilter=c.dataset.f;SETTINGS.bFilter=boardFilter;saveSettings();SFX.ui();renderBoard();
+}));
+$('sortSel').addEventListener('change',function(){boardSort=this.value;SETTINGS.bSort=boardSort;saveSettings();renderBoard();});
 $('btnBoardMenu').onclick=()=>{renderBoard();openOverlay('boardOverlay');SFX.ui();};
 $('btnMenu').onclick=()=>{
   SFX.ui();
