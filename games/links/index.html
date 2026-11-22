@@ -634,6 +634,8 @@ import {RenderPass} from './jsm/postprocessing/RenderPass.js';
 import {UnrealBloomPass} from './jsm/postprocessing/UnrealBloomPass.js';
 import {OutputPass} from './jsm/postprocessing/OutputPass.js';
 import {GLTFLoader} from './jsm/loaders/GLTFLoader.js';
+import {ShaderPass} from './jsm/postprocessing/ShaderPass.js';
+import {mergeGeometries} from './jsm/utils/BufferGeometryUtils.js';
 
 /* ============================== UTILS ============================== */
 const $=id=>document.getElementById(id);
@@ -802,7 +804,7 @@ const COURSES=[
  seedNames:['M. Tremblay','A. Okafor','S. Whitfield','K. Tanaka','R. Bouchard','J. MacLeod','L. Fontaine','D. Petrov','N. Sharma'],seedScores:[-5,-3,-2,-1,0,2,4,6,9]},
 {id:'hollow',title:'Cypress Hollow',holes:9,par:36,diff:2,desc:'Mist hangs in old-growth pines. Tight corridors, a cold creek, and greens that borrow the slope.',
  sky:{zen:0x4E93C8,hor:0xD8E6E4,band:0,sunCol:0xFFF2D8,sunDir:[-.40,.21,.89],stars:0},
- fog:{col:0xC9DCC9,near:60,far:340},grass:{fair:[.22,.52,.26],rough:[.15,.40,.21],green:[.27,.60,.30],fringe:[.24,.55,.28],sand:[.85,.80,.66]},
+ fog:{col:0xB9CCBC,near:85,far:380},grass:{fair:[.22,.52,.26],rough:[.15,.40,.21],green:[.27,.60,.30],fringe:[.24,.55,.28],sand:[.85,.80,.66]},
  water:{deep:0x123B33,sky:0xCFE0DA},outer:0x14301F,mtn:0x5E7F72,flag:0xF2B23E,cloudTint:0xE8F0E8,exposure:1.0,
  trees:{pine:.45,count:340,hMin:4,hMax:8},hillAmp:7,audio:{birds:'song',ocean:false,crickets:false,root:130.8},
  rows:[
@@ -818,8 +820,8 @@ const COURSES=[
  seedNames:['C. Whitecloud','H. Lindqvist','P. Deschamps','Y. Aoki','B. O\'Connell','T. Nguyen','E. Marchetti','G. Sorenson','W. Two-Rivers'],seedScores:[-4,-2,-1,0,1,3,5,8,11]},
 {id:'ridge',title:'Aurora Ridge',holes:18,par:72,diff:3,desc:'The championship. Eighteen holes under a burning dusk — long carries, big elevation, fireflies on the back nine.',
  sky:{zen:0x2B2350,hor:0xF2A65A,band:0xC75BD8,sunCol:0xFFB36B,sunDir:[-.48,.12,.87],stars:1},
- fog:{col:0x6E5A8C,near:120,far:620},grass:{fair:[.17,.44,.32],rough:[.10,.30,.22],green:[.21,.52,.34],fringe:[.19,.48,.33],sand:[.79,.73,.66]},
- water:{deep:0x1A2C4A,sky:0xE8A0C0},outer:0x171233,mtn:0x3A2F5C,flag:0xFF5A4E,cloudTint:0xE8B8D0,exposure:1.0,
+ fog:{col:0x6E5A8C,near:120,far:620},grass:{fair:[.22,.50,.30],rough:[.14,.34,.22],green:[.26,.58,.33],fringe:[.24,.54,.32],sand:[.82,.74,.64]},
+ water:{deep:0x1A2C4A,sky:0xE8A0C0},outer:0x171233,mtn:0x3A2F5C,flag:0xFF5A4E,cloudTint:0xE8B8D0,exposure:1.18,
  trees:{pine:.9,count:250,hMin:4,hMax:7.5},hillAmp:9,audio:{birds:'song',ocean:false,crickets:true,root:110},
  rows:[
  ["First Light",350,4,6,[[.5,20]],13,11,[],[[.94,8,5]]],
@@ -1039,6 +1041,16 @@ composer.addPass(new RenderPass(scene,camera));
 bloomPass=new UnrealBloomPass(new THREE.Vector2(1,1),.32,.6,1.0);
 composer.addPass(bloomPass);
 composer.addPass(new OutputPass());
+/* finishing grade: a touch of contrast + saturation, the course's light tint, and a soft vignette */
+const grade=new ShaderPass({uniforms:{tDiffuse:{value:null},uTint:{value:new THREE.Vector3(1,1,1)},uVig:{value:.32}},
+  vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+  fragmentShader:`uniform sampler2D tDiffuse;uniform vec3 uTint;uniform float uVig;varying vec2 vUv;
+    void main(){vec3 c=texture2D(tDiffuse,vUv).rgb;
+      float l=dot(c,vec3(.2126,.7152,.0722));c=mix(vec3(l),c,1.12);
+      c=(c-0.5)*1.06+0.5;c*=uTint;
+      vec2 d=vUv-0.5;c*=1.0-uVig*smoothstep(0.25,0.85,length(d*vec2(1.15,1.0)));
+      gl_FragColor=vec4(clamp(c,0.0,1.0),1.0);}`});
+composer.addPass(grade);
 function applyQuality(){
   DPR=Math.min(window.devicePixelRatio||1,SET.quality==='high'?(isMobile?1.8:2):(isMobile?1.25:1.5));
   renderer.setPixelRatio(DPR);composer.setPixelRatio(DPR);
@@ -1065,12 +1077,16 @@ dimpleTex.wrapS=dimpleTex.wrapT=THREE.RepeatWrapping;dimpleTex.repeat.set(3,2);
 
 /* ---------- sky ---------- */
 const skyUni={uZen:{value:new THREE.Color(0x2E7FB8)},uHor:{value:new THREE.Color(0xF6D9A8)},uBandCol:{value:new THREE.Color(0xC75BD8)},
-  uBand:{value:0},uSunDir:{value:new THREE.Vector3(0,1,0)},uSunCol:{value:new THREE.Color(0xFFE3B0)},uStars:{value:0},uTime:uTime};
+  uBand:{value:0},uSunDir:{value:new THREE.Vector3(0,1,0)},uSunCol:{value:new THREE.Color(0xFFE3B0)},uStars:{value:0},uTime:uTime,
+  uCloud:{value:.55},uCloudCol:{value:new THREE.Color(0xFFFFFF)},uCloudShade:{value:new THREE.Color(0x8A9AB0)}};
 const sky=new THREE.Mesh(new THREE.SphereGeometry(1000,32,20),new THREE.ShaderMaterial({
   uniforms:skyUni,side:THREE.BackSide,depthWrite:false,fog:false,
   vertexShader:'varying vec3 vDir;void main(){vDir=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
-  fragmentShader:`varying vec3 vDir;uniform vec3 uZen,uHor,uBandCol,uSunCol,uSunDir;uniform float uBand,uStars,uTime;
+  fragmentShader:`varying vec3 vDir;uniform vec3 uZen,uHor,uBandCol,uSunCol,uSunDir,uCloudCol,uCloudShade;uniform float uBand,uStars,uTime,uCloud;
   float lk_h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+  float lk_n2(vec2 p){vec2 i=floor(p),f=fract(p);vec2 u=f*f*(3.0-2.0*f);
+    return mix(mix(lk_h(i),lk_h(i+vec2(1,0)),u.x),mix(lk_h(i+vec2(0,1)),lk_h(i+vec2(1,1)),u.x),u.y);}
+  float lk_cf(vec2 p){float a=0.0,w=0.5;for(int i=0;i<5;i++){a+=w*lk_n2(p);p=p*2.03+vec2(17.1,9.3);w*=0.5;}return a;}
   void main(){float h=clamp(vDir.y,-1.0,1.0);
     float hh=max(h,0.0);
     /* blue all the way to the horizon — a low golf view only sees a thin sky
@@ -1091,6 +1107,21 @@ const sky=new THREE.Mesh(new THREE.SphereGeometry(1000,32,20),new THREE.ShaderMa
     if(uStars>0.0&&h>0.04){vec2 sp=vDir.xz/(vDir.y+0.45)*90.0;vec2 cell=floor(sp);float rnd=lk_h(cell);
       float star=step(0.986,rnd)*pow(max(0.0,1.0-length(fract(sp)-0.5)*2.0),3.0);
       col+=vec3(1.0,0.97,1.0)*star*uStars*(0.55+0.45*sin(uTime*2.0+rnd*40.0))*smoothstep(0.04,0.3,h)*1.2;}
+    /* cumulus: fbm on a flat cloud deck projected into the dome; self-shadowed away from the sun,
+       silver-lined toward it, thinning into haze at the horizon */
+    if(h>0.0&&uCloud>0.0){
+      vec2 cp=vDir.xz/(vDir.y+0.09)*0.9+vec2(uTime*0.004,uTime*0.0016);
+      float f=lk_cf(cp);
+      float cov=1.0-uCloud;
+      float d=smoothstep(cov,cov+0.28,f);
+      vec2 sdir=normalize(uSunDir.xz+vec2(1e-4));
+      float f2=lk_cf(cp+sdir*0.09);
+      float lit=clamp(0.55+(f-f2)*4.0,0.0,1.0);
+      vec3 cc=mix(uCloudShade,uCloudCol,lit);
+      cc+=uSunCol*pow(s,6.0)*0.55*(1.0-d*0.6);
+      float fade=smoothstep(0.0,0.14,h);
+      col=mix(col,cc,d*fade*0.92);
+      col=mix(col,uHor,(1.0-fade)*d*0.25);}
     gl_FragColor=vec4(col,1.0);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
@@ -1619,10 +1650,10 @@ const birds=[];
  for(let i=0;i<7;i++){const b=new THREE.Mesh(bg,bm);b.userData={a:Math.random()*TAU,r:70+Math.random()*90,y:36+Math.random()*22,sp:.05+Math.random()*.05,ph:Math.random()*TAU};scene.add(b);birds.push(b);}}
 
 /* ---------- shared instanced assets ---------- */
-const trunkGeo=new THREE.CylinderGeometry(.13,.24,1,6);trunkGeo.translate(0,.5,0);
+const trunkGeo=new THREE.CylinderGeometry(.09,.2,1,7,3);trunkGeo.translate(0,.5,0);
 const blobGeo=new THREE.IcosahedronGeometry(1,1);
 const coneGeo=new THREE.ConeGeometry(1,1,7);coneGeo.translate(0,.5,0);
-const trunkMat=new THREE.MeshStandardMaterial({color:0x5A4030,roughness:1});
+const trunkMat=new THREE.MeshStandardMaterial({color:0x4E3826,roughness:1});
 const canopyMat=new THREE.MeshStandardMaterial({color:0xFFFFFF,roughness:.95});
 const grassGeo=(()=>{const pos=[],nor=[],col=[];const r=mulberry32(9);
   for(let b=0;b<7;b++){const a=r()*TAU,ox=(r()-.5)*.5,oz=(r()-.5)*.5,w=.035+r()*.03,h=.28+r()*.32,lean=(r()-.5)*.25;
@@ -1647,8 +1678,53 @@ const reedGeo=new THREE.ConeGeometry(.05,1.3,4);reedGeo.translate(0,.65,0);
 const reedMat=new THREE.MeshStandardMaterial({color:0x3A5A2E,roughness:1});
 const rockGeo=new THREE.DodecahedronGeometry(.42);
 const rockMat=new THREE.MeshStandardMaterial({color:0x8A8478,roughness:1});
-const SHARED_GEO=new Set([trunkGeo,blobGeo,coneGeo,grassGeo,flowerGeo,reedGeo,rockGeo]);
-const SHARED_MAT=new Set([trunkMat,canopyMat,grassMat,flowerMat,reedMat,rockMat]);
+/* ---- real-shaped trees: a few variants built once, instanced per hole ----
+   pine  = 6-8 drooping, jagged skirts stacked up the trunk
+   broad = a cluster of lumpy foliage balls; normals point out from the crown so the
+           whole canopy shades softly like foliage instead of faceted rocks
+   both carry vertex AO (dark inside/underneath, sunlit tips) and sway in the wind */
+function jitterGeo(g,r,amt){const p=g.attributes.position;for(let i=0;i<p.count;i++){const k=1+(r()-.5)*amt;p.setXYZ(i,p.getX(i)*k,p.getY(i)*(1+(r()-.5)*amt*.5),p.getZ(i)*k);}return g;}
+function makePine(seed){const r=mulberry32(seed),parts=[];const tiers=6+Math.floor(r()*3);
+  for(let i=0;i<tiers;i++){const t=i/tiers,rad=Math.pow(1-t,.85)*.95+.07,hh=(1/tiers)*1.75;
+    let g=new THREE.ConeGeometry(rad,hh,12,2,true);g=g.toNonIndexed();
+    const p=g.attributes.position;
+    for(let k=0;k<p.count;k++){const y=p.getY(k);if(y<-hh*.45){/* skirt rim: droop + ragged */
+        const a=Math.atan2(p.getZ(k),p.getX(k)),jag=.82+.3*Math.abs(Math.sin(a*5+seed+i*1.7))+(r()-.5)*.12;
+        p.setXYZ(k,p.getX(k)*jag,y-r()*.07,p.getZ(k)*jag);}}
+    g.translate(0,.16+t*.86+hh*.5,0);g.rotateY(r()*TAU);parts.push(g);}
+  const g=mergeGeometries(parts);g.computeVertexNormals();
+  const p=g.attributes.position,n=g.attributes.normal,col=[];
+  for(let i=0;i<p.count;i++){const y=p.getY(i),rr=Math.hypot(p.getX(i),p.getZ(i));
+    const rmax=Math.pow(1-clamp((y-.16)/.86,0,1),.85)*.95+.07;
+    const edge=clamp(rr/rmax,0,1);const ao=.45+.55*edge*(.75+.25*y);
+    col.push(ao*(.95+r()*.1),ao*(1+r()*.08),ao*(.92+r()*.08));
+    // soften normals outward from the trunk
+    const ox=p.getX(i)/(rr||1),oz=p.getZ(i)/(rr||1);n.setXYZ(i,n.getX(i)*.5+ox*.5,n.getY(i)*.5+.35,n.getZ(i)*.5+oz*.5);}
+  g.setAttribute('color',new THREE.Float32BufferAttribute(col,3));g.normalizeNormals();return g;}
+/* phones / lite: fewer facets per foliage ball (the soft crown normals hide it) */
+const LEAF_DETAIL=SET.quality==='high'&&!isMobile?2:1;
+function makeBroad(seed){const r=mulberry32(seed),parts=[],ctr=new THREE.Vector3(0,.68,0);const n=8+Math.floor(r()*4);
+  for(let i=0;i<n;i++){const a=r()*TAU,e=r()*.55,rad=.30+r()*.22;
+    let g=new THREE.IcosahedronGeometry(rad,LEAF_DETAIL);g=jitterGeo(g,r,.28);
+    g.translate(Math.cos(a)*e*.62,.48+r()*.42+(1-e)*.1,Math.sin(a)*e*.62);parts.push(g.toNonIndexed());}
+  const g=mergeGeometries(parts);
+  const p=g.attributes.position,nor=new Float32Array(p.count*3),col=[];const v=new THREE.Vector3();
+  for(let i=0;i<p.count;i++){v.set(p.getX(i),p.getY(i),p.getZ(i)).sub(ctr);const d=v.length();v.normalize();
+    nor[i*3]=v.x;nor[i*3+1]=v.y;nor[i*3+2]=v.z;
+    const ao=clamp(.38+d*.75+v.y*.18,.32,1.12);col.push(ao*(.95+r()*.1),ao*(1+r()*.06),ao*(.9+r()*.08));}
+  g.setAttribute('normal',new THREE.BufferAttribute(nor,3));g.setAttribute('color',new THREE.Float32BufferAttribute(col,3));return g;}
+const PINE_GEOS=[makePine(11),makePine(23),makePine(37)],BROAD_GEOS=[makeBroad(5),makeBroad(17),makeBroad(29)];
+const foliageMat=new THREE.MeshStandardMaterial({color:0xFFFFFF,vertexColors:true,roughness:.88,metalness:0});
+foliageMat.onBeforeCompile=sh=>{sh.uniforms.uTime=uTime;
+  sh.vertexShader='uniform float uTime;\n'+sh.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
+   #ifdef USE_INSTANCING
+   vec3 lk_o=instanceMatrix[3].xyz;float lk_w=sin(uTime*1.3+lk_o.x*.13+lk_o.z*.11)+.4*sin(uTime*2.7+lk_o.z*.3);
+   transformed.x+=lk_w*.05*position.y*position.y;transformed.z+=lk_w*.035*position.y*position.y;
+   #endif`);
+  /* light through the leaves: a warm rim when the sun is behind the canopy */
+  sh.fragmentShader=sh.fragmentShader.replace('#include <dithering_fragment>','#include <dithering_fragment>');};
+const SHARED_GEO=new Set([trunkGeo,blobGeo,coneGeo,grassGeo,flowerGeo,reedGeo,rockGeo,...PINE_GEOS,...BROAD_GEOS]);
+const SHARED_MAT=new Set([trunkMat,canopyMat,grassMat,flowerMat,reedMat,rockMat,foliageMat]);
 
 /* ============================== HOLE BUILDER ============================== */
 let H=null; // current hole runtime
@@ -1745,7 +1821,7 @@ function buildHole(course,idx){
   /* terrain */
   const SEG=SET.quality==='high'?170:130;
   const tGeo=new THREE.PlaneGeometry(W,D,SEG,SEG);tGeo.rotateX(-Math.PI/2);
-  const tp=tGeo.attributes.position,colors=new Float32Array(tp.count*3);
+  const tp=tGeo.attributes.position,colors=new Float32Array(tp.count*3),roughA=new Float32Array(tp.count);
   const G=course.grass;
   for(let i=0;i<tp.count;i++){
     const x=tp.getX(i)+cx,z=tp.getZ(i)+cz;
@@ -1761,7 +1837,7 @@ function buildHole(course,idx){
     else if(s==='fairway'||s==='tee'){const st=Math.floor(q.t*total/7)%2?1.12:.96;const fm=1.06*(.96+fbm(x*.2,z*.2)*.08);r=G.fair[0]*st*fm;g=G.fair[1]*st*fm*1.03;b=G.fair[2]*st*fm;
       if(s==='tee'){r*=1.06;g*=1.06;b*=1.02;}}
     else{const dd=sstep(fwAt(q.t),fwAt(q.t)+3,q.d);   // first cut: a soft collar between fairway and rough
-      const f2=lerp(1.0,.86,dd);r=lerp(G.fair[0],G.rough[0],dd)*mot*f2;g=lerp(G.fair[1],G.rough[1],dd)*mot*f2;b=lerp(G.fair[2],G.rough[2],dd)*mot*f2;}
+      const f2=lerp(1.0,.86,dd);r=lerp(G.fair[0],G.rough[0],dd)*mot*f2;g=lerp(G.fair[1],G.rough[1],dd)*mot*f2;b=lerp(G.fair[2],G.rough[2],dd)*mot*f2;roughA[i]=dd;}
     // beach ring
     for(const w of ponds){const ex=(x-w.x)/w.rx,ez=(z-w.z)/w.rz,e=ex*ex+ez*ez;
       if(e<2.1&&e>1&&y<WATER_Y+1.6&&y>WATER_Y-.1){const f=sstep(2.1,1.15,e);r=lerp(r,G.sand[0]*.92,f);g=lerp(g,G.sand[1]*.92,f);b=lerp(b,G.sand[2]*.9,f);}}
@@ -1769,17 +1845,22 @@ function buildHole(course,idx){
     tp.setY(i,y);
     colors[i*3]=r;colors[i*3+1]=g;colors[i*3+2]=b;
   }
-  tGeo.setAttribute('color',new THREE.BufferAttribute(colors,3));
+  tGeo.setAttribute('color',new THREE.BufferAttribute(colors,3));tGeo.setAttribute('aRough',new THREE.BufferAttribute(roughA,1));
   tGeo.computeVertexNormals();
   const tMat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.96,metalness:0,envMapIntensity:.25});
   tMat.onBeforeCompile=sh=>{
-    sh.uniforms.uMistAmt={value:course.id==='hollow'?1.1:0};
+    sh.uniforms.uMistAmt={value:course.id==='hollow'?.42:0};
     sh.uniforms.uMistCol={value:new THREE.Color(course.fog.col).lerp(new THREE.Color(0xFFFFFF),.35)};
-    sh.vertexShader='varying vec3 vWPos;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvWPos=(modelMatrix*vec4(position,1.0)).xyz;');
-    sh.fragmentShader='varying vec3 vWPos;\nuniform vec3 uMistCol;\nuniform float uMistAmt;\nfloat lk_h2(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}\nfloat lk_n(vec2 p){vec2 i=floor(p),f=fract(p);vec2 u=f*f*(3.0-2.0*f);return mix(mix(lk_h2(i),lk_h2(i+vec2(1,0)),u.x),mix(lk_h2(i+vec2(0,1)),lk_h2(i+vec2(1,1)),u.x),u.y);}\n'+
+    sh.uniforms.uDry={value:new THREE.Color(course.id==='ridge'?0x6E6A3C:course.id==='hollow'?0x5E6A34:0xA59A58)};
+    sh.vertexShader='attribute float aRough;varying float vRough;varying vec3 vWPos;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvWPos=(modelMatrix*vec4(position,1.0)).xyz;vRough=aRough;');
+    sh.fragmentShader='varying vec3 vWPos;varying float vRough;\nuniform vec3 uMistCol,uDry;\nuniform float uMistAmt;\nfloat lk_h2(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}\nfloat lk_n(vec2 p){vec2 i=floor(p),f=fract(p);vec2 u=f*f*(3.0-2.0*f);return mix(mix(lk_h2(i),lk_h2(i+vec2(1,0)),u.x),mix(lk_h2(i+vec2(0,1)),lk_h2(i+vec2(1,1)),u.x),u.y);}\n'+
       sh.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\n{float dn=lk_n(vWPos.xz*0.9)*0.6+lk_n(vWPos.xz*3.1)*0.4;float sp=lk_h2(floor(vWPos.xz*4.0));diffuseColor.rgb*=0.88+0.20*dn+0.06*sp;'+
+      /* big soft colour drifts across the whole property + sun-dried patches and seed heads in the rough */
+      'float lk_m=lk_n(vWPos.xz*0.018)*0.6+lk_n(vWPos.xz*0.06)*0.4;diffuseColor.rgb*=0.9+0.2*lk_m;'+
+      'float lk_dry=smoothstep(0.52,0.78,lk_n(vWPos.xz*0.045+3.1)*0.7+lk_n(vWPos.xz*0.21)*0.3)*vRough;'+
+      'diffuseColor.rgb=mix(diffuseColor.rgb,uDry*(0.85+0.3*dn),lk_dry*0.55);'+
       /* ground-hugging mist: fades low terrain toward the fog color, so mist sits in the hollows between the pines */
-      'diffuseColor.rgb=mix(diffuseColor.rgb,uMistCol,uMistAmt*(1.0-smoothstep(1.2,8.0,vWPos.y))*(0.45+0.55*lk_n(vWPos.xz*0.22+7.7)));}');};
+      'diffuseColor.rgb=mix(diffuseColor.rgb,uMistCol,uMistAmt*(1.0-smoothstep(-4.0,3.0,vWPos.y))*(0.45+0.55*lk_n(vWPos.xz*0.22+7.7)));}');};
   const terrain=new THREE.Mesh(tGeo,tMat);terrain.position.set(cx,0,cz);terrain.receiveShadow=true;
   group.add(terrain);disposables.push(tGeo,tMat);
   /* water reflector */
@@ -1827,11 +1908,13 @@ function buildHole(course,idx){
   const treeCount=Math.floor(course.trees.count*(SET.quality==='high'?1:.6));
   const trunkInst=new THREE.InstancedMesh(trunkGeo,trunkMat,treeCount);
   const pineN=Math.ceil(treeCount*course.trees.pine),leafN=treeCount-pineN;
-  const coneInst=new THREE.InstancedMesh(coneGeo,canopyMat,pineN*2);
-  const blobInst=new THREE.InstancedMesh(blobGeo,canopyMat,leafN*2);
-  trunkInst.castShadow=coneInst.castShadow=blobInst.castShadow=true;
+  const pineI=PINE_GEOS.map(g=>new THREE.InstancedMesh(g,foliageMat,pineN+1));
+  const broadI=BROAD_GEOS.map(g=>new THREE.InstancedMesh(g,foliageMat,leafN+1));
+  const pc=[0,0,0],bc=[0,0,0];
+  trunkInst.castShadow=true;for(const m of[...pineI,...broadI]){m.castShadow=true;m.receiveShadow=true;m.count=0;}
+  let pi=0,bi=0;
   const M=new THREE.Matrix4(),Q=new THREE.Quaternion(),S=new THREE.Vector3(),P=new THREE.Vector3(),C=new THREE.Color();
-  let ti=0,pi=0,bi=0,guard=0;
+  let ti=0,guard=0;
   while(ti<treeCount&&guard++<treeCount*30){
     const x=minX+8+rng()*(W-16),z=minZ+8+rng()*(D-16);
     const q=closest(x,z);
@@ -1845,36 +1928,35 @@ function buildHole(course,idx){
     const y=height(x,z);if(y<WATER_Y+.5)continue;
     const h=course.trees.hMin+rng()*(course.trees.hMax-course.trees.hMin);
     const pine=rng()<course.trees.pine;
-    P.set(x,y,z);Q.setFromAxisAngle(new THREE.Vector3(0,1,0),rng()*TAU);S.set(1,h*.45,1);
-    M.compose(P,Q,S);trunkInst.setMatrixAt(ti,M);
-    const hue=.3+rng()*.09,sat=.4+rng()*.25,lit=(course.id==='ridge'?.16:.22)+rng()*.1;
-    C.setHSL(hue,sat,lit);
-    if(pine&&pi<pineN*2){
-      const cr=1.4+rng()*1.3;
-      P.set(x,y+h*.32,z);S.set(cr,h*.75,cr);M.compose(P,Q,S);coneInst.setMatrixAt(pi,M);coneInst.setColorAt(pi,C);pi++;
-      P.set(x,y+h*.62,z);S.set(cr*.66,h*.5,cr*.66);M.compose(P,Q,S);coneInst.setMatrixAt(pi,M);coneInst.setColorAt(pi,C.clone().multiplyScalar(1.15));pi++;
-      trees.push({x,z,y,r:.32,h:h*1.1,cr:cr*.85});
-    }else if(!pine&&bi<leafN*2){
-      const cr=1.6+rng()*1.6;
-      P.set(x,y+h*.55,z);S.set(cr,cr*.8,cr);M.compose(P,Q,S);blobInst.setMatrixAt(bi,M);blobInst.setColorAt(bi,C);bi++;
-      P.set(x+cr*.4,y+h*.72,z+cr*.2);S.set(cr*.6,cr*.5,cr*.6);M.compose(P,Q,S);blobInst.setMatrixAt(bi,M);blobInst.setColorAt(bi,C.clone().multiplyScalar(1.2));bi++;
-      trees.push({x,z,y,r:.3,h:h*.9+cr*.4,cr:cr*.95});
+    Q.setFromAxisAngle(new THREE.Vector3(0,1,0),rng()*TAU);
+    const v=Math.floor(rng()*3);
+    if(pine&&pi<pineN){
+      const H2=h*1.35,cr=(1.5+rng()*1.2)*(H2/6.5);
+      const hue=.29+rng()*.07,sat=.35+rng()*.2,lit=(course.id==='ridge'?.13:.17)+rng()*.07;C.setHSL(hue,sat,lit);
+      P.set(x,y-.05,z);S.set(1,H2*.4,1);M.compose(P,Q,S);trunkInst.setMatrixAt(ti,M);
+      P.set(x,y-.05,z);S.set(cr*1.6,H2,cr*1.6);M.compose(P,Q,S);const m=pineI[v];m.setMatrixAt(pc[v],M);m.setColorAt(pc[v],C);pc[v]++;pi++;
+      trees.push({x,z,y,r:.3,h:H2,cr:cr*1.25});
+    }else if(!pine&&bi<leafN){
+      const H2=h*1.25,cr=(1.7+rng()*1.5);
+      const hue=.24+rng()*.1,sat=.38+rng()*.25,lit=(course.id==='ridge'?.15:.21)+rng()*.08;C.setHSL(hue,sat,lit);
+      P.set(x,y-.05,z);S.set(1.25,H2*.62,1.25);M.compose(P,Q,S);trunkInst.setMatrixAt(ti,M);
+      P.set(x,y-.05,z);S.set(cr*1.55,H2,cr*1.55);M.compose(P,Q,S);const m=broadI[v];m.setMatrixAt(bc[v],M);m.setColorAt(bc[v],C);bc[v]++;bi++;
+      trees.push({x,z,y,r:.3,h:H2,cr:cr*1.15});
     }else continue;
     ti++;
   }
-  trunkInst.count=ti;coneInst.count=pi;blobInst.count=bi;
-  trunkInst.instanceMatrix.needsUpdate=true;coneInst.instanceMatrix.needsUpdate=true;blobInst.instanceMatrix.needsUpdate=true;
-  if(coneInst.instanceColor)coneInst.instanceColor.needsUpdate=true;
-  if(blobInst.instanceColor)blobInst.instanceColor.needsUpdate=true;
-  group.add(trunkInst,coneInst,blobInst);
+  trunkInst.count=ti;trunkInst.instanceMatrix.needsUpdate=true;group.add(trunkInst);
+  pineI.forEach((m,i)=>{m.count=pc[i];m.instanceMatrix.needsUpdate=true;if(m.instanceColor)m.instanceColor.needsUpdate=true;group.add(m);});
+  broadI.forEach((m,i)=>{m.count=bc[i];m.instanceMatrix.needsUpdate=true;if(m.instanceColor)m.instanceColor.needsUpdate=true;group.add(m);});
   /* grass tufts */
-  const grassN=SET.quality==='high'?5200:2200;
+  const grassN=SET.quality==='high'?(isMobile?6000:9000):2600;
   const grassInst=new THREE.InstancedMesh(grassGeo,grassMat,grassN);
   let gi=0;guard=0;
   while(gi<grassN&&guard++<grassN*20){
     const x=minX+10+rng()*(W-20),z=minZ+10+rng()*(D-20);
-    const q=closest(x,z);if(q.d>fwAt(q.t)+34)continue;
+    const q=closest(x,z);if(q.d>fwAt(q.t)+40)continue;
     const s=surface(x,z);if(s!=='rough')continue;
+    if(q.d<fwAt(q.t)+2.5&&rng()<.7)continue;            // keep the first cut tidy
     const y=height(x,z);if(y<WATER_Y+.4)continue;
     P.set(x,y,z);Q.setFromAxisAngle(new THREE.Vector3(0,1,0),rng()*TAU);
     const sc=.45+rng()*.45;S.set(sc,sc*(0.7+rng()*.5),sc);M.compose(P,Q,S);
@@ -1885,14 +1967,16 @@ function buildHole(course,idx){
   if(grassInst.instanceColor)grassInst.instanceColor.needsUpdate=true;
   group.add(grassInst);
   /* flowers */
-  const flowerN=SET.quality==='high'?240:110;
+  const flowerN=SET.quality==='high'?700:260;
   const flowerInst=new THREE.InstancedMesh(flowerGeo,flowerMat,flowerN);
   const fCols=[[1,.95,.85],[1,.6,.75],[.95,.78,.3],[.85,.6,.95]];
   let fi=0;guard=0;
   while(fi<flowerN&&guard++<flowerN*20){
     const x=minX+10+rng()*(W-20),z=minZ+10+rng()*(D-20);
     if(surface(x,z)!=='rough')continue;const y=height(x,z);if(y<WATER_Y+.5)continue;
-    P.set(x,y+.14,z);Q.identity();S.setScalar(.7+rng()*.8);M.compose(P,Q,S);
+    /* wildflowers grow in drifts, not salt-and-pepper */
+    if(fbm(x*.06+11,z*.06-4)<.55)continue;
+    P.set(x,y+.1+rng()*.12,z);Q.identity();S.setScalar(.45+rng()*.6);M.compose(P,Q,S);
     flowerInst.setMatrixAt(fi,M);const c=fCols[Math.floor(rng()*fCols.length)];
     flowerInst.setColorAt(fi,C.setRGB(c[0],c[1],c[2]));fi++;
   }
@@ -1972,7 +2056,7 @@ function applyCourseEnvironment(course){
   sunLight.color.set(course.sky.sunCol);sunLight.intensity=course.id==='ridge'?2.4:2.9;
   hemi.color.set(course.sky.zen).lerp(new THREE.Color(0xFFFFFF),.5);
   hemi.groundColor.set(course.grass.rough[0],course.grass.rough[1],course.grass.rough[2]);
-  hemi.intensity=course.id==='ridge'?.5:.48;
+  hemi.intensity=course.id==='ridge'?.75:.48;
   fillLight.color.set(course.sky.band||course.sky.zen);fillLight.intensity=course.id==='ridge'?.6:.45;
   scene.fog=new THREE.Fog(course.fog.col,course.fog.near,course.fog.far);
   renderer.setClearColor(course.fog.col);
@@ -1981,13 +2065,17 @@ function applyCourseEnvironment(course){
   outerMat.roughness=course.id==='dunes'?.35:.9;outerMat.metalness=course.id==='dunes'?.25:0;
   sunSprite.material.color.set(course.sky.sunCol);
   sunSprite.position.copy(sd).multiplyScalar(820);
-  for(const c of clouds){c.material.color.set(course.cloudTint);c.material.opacity=course.id==='ridge'?.3:.5;}
+  for(const c of clouds){c.material.color.set(course.cloudTint);c.material.opacity=0;c.visible=false;}   // the dome paints the clouds now
+  skyUni.uCloud.value=course.id==='ridge'?.42:course.id==='hollow'?.6:.5;
+  skyUni.uCloudCol.value.set(course.id==='ridge'?0xFFC2A6:course.id==='hollow'?0xF4F6F2:0xFFFBF2);
+  skyUni.uCloudShade.value.set(course.id==='ridge'?0x5A3E6E:course.id==='hollow'?0x9AA8A6:0x9DB0C4);
+  grade.uniforms.uTint.value.set(...(course.id==='ridge'?[1.04,.98,1.02]:course.id==='hollow'?[.98,1.01,1.0]:[1.03,1.01,.97]));
   ffMat.uniforms.uCol.value.set(course.id==='ridge'?0xFFCF7A:0xFFF4D8);
   ffMat.uniforms.uAmp.value=course.id==='ridge'?1.35:.45;
   ffMat.uniforms.uScale.value=course.id==='ridge'?2.1:1.1;
   A.setProfile(course.audio);
   bakeSkyEnv();
-  for(const m of[canopyMat,trunkMat,rockMat,grassMat,flowerMat,reedMat])m.envMapIntensity=.28;
+  for(const m of[canopyMat,trunkMat,rockMat,grassMat,flowerMat,reedMat,foliageMat])m.envMapIntensity=.28;
   hemi.intensity*=.8;
 }
 
@@ -2710,7 +2798,7 @@ function computePreview(){
   }
   for(let i=n;i<PREV_N;i++){pos[i*3]=lx;pos[i*3+1]=-999;pos[i*3+2]=lz;col[i*3]=col[i*3+1]=col[i*3+2]=0;}
   prevGeo.attributes.position.needsUpdate=true;prevGeo.attributes.color.needsUpdate=true;
-  prevPts.material.size=c.id==='PT'?.07:.55;G.ringK=c.id==='PT'?.14:1;
+  prevPts.material.size=c.id==='PT'?.07:.32;G.ringK=c.id==='PT'?.14:1;
   prevPts.visible=true;
   ring.position.set(lx,ly+(c.id==='PT'?.02:.08),lz);ring.visible=true;
   (G.prevLand||(G.prevLand=new THREE.Vector3())).set(lx,ly,lz);
