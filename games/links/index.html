@@ -192,6 +192,13 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-o
 .lie-chip.green{color:var(--ok);border-color:rgba(74,222,128,.5)}
 .lie-chip.fringe{color:var(--turf-200)}
 .lie-chip.tee{color:var(--info);border-color:rgba(76,195,240,.4)}
+.chip-row{display:flex;gap:8px;align-items:center}
+.tgt-btn{cursor:pointer;color:var(--cream);font:inherit;font-size:11px;font-weight:700;letter-spacing:.16em}
+.tgt-btn:hover{border-color:rgba(242,178,62,.6)}.tgt-btn.on{color:var(--ink);background:var(--gold);border-color:var(--gold)}
+.tgt-info{position:absolute;left:50%;top:calc(84px + var(--sat));transform:translate(-50%,-8px);padding:8px 16px;border-radius:99px;
+  font-size:11px;letter-spacing:.14em;color:var(--cream);white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:5}
+.tgt-info.on{opacity:1;transform:translate(-50%,0)}.tgt-info b{color:var(--gold);font-size:13px}
+.tgt-info .s-water{color:#6FC8F0}.tgt-info .s-sand{color:var(--sand)}.tgt-info .s-green{color:var(--ok)}.tgt-info .s-rough{color:var(--warn)}.tgt-info .s-fairway{color:var(--turf-300)}
 .club-pill{display:flex;align-items:center;gap:4px;padding:6px;border-radius:14px}
 .club-pill button{width:42px;height:46px;border-radius:10px;font-size:24px;font-weight:700;color:var(--turf-200);background:rgba(87,199,133,.08);transition:background .15s}
 .club-pill button:hover{background:rgba(87,199,133,.2)}
@@ -372,6 +379,7 @@ kbd{font-family:var(--sans);font-size:10px;font-weight:700;padding:3px 8px;borde
   .club-info{min-width:86px}.club-info b{font-size:13px}
   .club-pill button{width:36px;height:42px}
   .hint{display:none}
+  .tgt-info{top:calc(94px + var(--sat));font-size:9px;padding:6px 11px}.tgt-info b{font-size:11px}
   #radioBox.dsda-radio{right:auto;left:8px;top:calc(66px + var(--sat));width:132px}
   .lobby-main{gap:16px}
   .hero-sub br{display:none}
@@ -468,9 +476,10 @@ kbd{font-family:var(--sans);font-size:10px;font-weight:700;padding:3px 8px;borde
     </div>
   </div>
   <div class="minimap glass" id="minimap"><canvas id="mapCanvas" width="264" height="336"></canvas><small>tap · flyover</small></div>
+  <div class="tgt-info glass" id="tgtInfo"></div>
   <div class="hud-bottom">
     <div class="hud-left">
-      <div class="lie-chip tee" id="lieChip">TEE · 100%</div>
+      <div class="chip-row"><div class="lie-chip tee" id="lieChip">TEE · 100%</div><button class="lie-chip tgt-btn" id="btnTarget" aria-label="Landing view">◎ LANDING</button></div>
       <div class="club-pill glass">
         <button id="clubPrev" aria-label="Previous club">‹</button>
         <div class="club-info"><b id="clubName">DRIVER</b><small id="clubCarry">225 m carry</small></div>
@@ -567,7 +576,7 @@ kbd{font-family:var(--sans);font-size:10px;font-weight:700;padding:3px 8px;borde
   <div class="modal glass">
     <div class="modal-head"><h3>How to play Links</h3><button class="icon-btn" id="btnHelpClose" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     <div class="modal-body help-grid">
-      <div class="help-step"><div class="n">1</div><div><h4>Aim</h4><p>Drag anywhere to aim — the dotted arc and gold ring show your predicted carry with the current wind. Pinch or scroll to zoom. The compass shows where the wind pushes the ball.</p><div class="help-keys"><kbd>DRAG</kbd><kbd>A / D fine aim</kbd><kbd>WHEEL zoom</kbd><kbd>V flyover</kbd></div></div></div>
+      <div class="help-step"><div class="n">1</div><div><h4>Aim</h4><p>Drag anywhere to aim — the dotted arc and gold ring show your predicted carry with the current wind. Tap <b>◎ LANDING</b> to fly the camera out to where it'll come down, and keep aiming from there. Pinch or scroll to zoom. The compass shows where the wind pushes the ball.</p><div class="help-keys"><kbd>DRAG</kbd><kbd>A / D fine aim</kbd><kbd>WHEEL zoom</kbd><kbd>V flyover</kbd><kbd>T landing view</kbd></div></div></div>
       <div class="help-step"><div class="n">2</div><div><h4>Three-tap swing</h4><p>Tap <b>SWING</b> to start the gauge. Tap again to lock <b>power</b>. A marker slides down — tap when it crosses the <b>gold band</b> for a pure strike. Early = pull-hook left, late = push-slice right.</p><div class="help-keys"><kbd>SPACE ×3</kbd><kbd>← → aim</kbd><kbd>↑ ↓ club</kbd><kbd>ESC pause</kbd><kbd>M mute</kbd><kbd>TAB card</kbd></div></div></div>
       <div class="help-step"><div class="n">3</div><div><h4>Read the ground</h4><p>On the green the dotted line previews your putt's break — aim off-line and let the slope feed it in. Water and out-of-bounds cost <b>+1</b> and a re-drop. Rounds post <b>Stableford points</b> to the arcade board: par 2 · birdie 3 · eagle 4 · bogey 1.</p></div></div>
       <div class="help-step"><div class="n">✦</div><div><h4>Lies matter</h4><table class="lie-table">
@@ -2239,6 +2248,7 @@ function shotAction(){
   if(G.screen!=='play'||G.paused)return;
   if(G.phase==='DONE'){nextHole();return;}
   if(G.camMode==='overview'&&G.phase==='AIM'){G.camMode='orbit';updateGaugeUI();A.ui();return;}
+  if(G.camMode==='target'&&G.phase==='AIM'){G.camMode='orbit';$('tgtInfo').classList.remove('on');$('btnTarget').classList.remove('on');}
   if(G.phase==='AIM'){
     G.phase='POWER';G.gauge.t=0;G.gauge.dir=1;G.gauge.power=0;
     A.gaugeStart();A.ui();
@@ -2449,6 +2459,7 @@ function doPenalty(label,dropAt){
   onRest(true);
 }
 function onRest(fromPenalty){
+  $('tgtInfo').classList.remove('on');$('btnTarget').classList.remove('on');
   const b=G.ball;b.rest=true;b.v.set(0,0,0);b.w.set(0,0,0);b.lipped=false;
   b.p.y=H.height(b.p.x,b.p.z)+BALL_R;
   G.lie=H.surface(b.p.x,b.p.z);
@@ -2605,6 +2616,9 @@ function computePreview(){
   prevPts.material.size=c.id==='PT'?.07:.55;G.ringK=c.id==='PT'?.14:1;
   prevPts.visible=true;
   ring.position.set(lx,ly+(c.id==='PT'?.02:.08),lz);ring.visible=true;
+  (G.prevLand||(G.prevLand=new THREE.Vector3())).set(lx,ly,lz);
+  G.prevCarry=Math.hypot(lx-b.p.x,lz-b.p.z);G.prevLeft=Math.hypot(lx-H.green.x,lz-H.green.y);G.prevSurf=H.surface(lx,lz);
+  if(G.camMode==='target')updateTargetInfo();
   const landSurf=H.surface(lx,lz);
   ring.material.color.set(landSurf==='water'?0xF0503C:landSurf==='sand'?0xE8D9B5:landSurf==='green'?0x4ADE80:0xF2B23E);
 }
@@ -2632,6 +2646,13 @@ function updateCamera(dt){
   }else if(G.camMode==='overview'){
     const span=Math.max(H.total,120)*G.cam.ovZoom;
     tp.set(H.cx,span*.8+30,H.cz+span*.28);tl.set(H.cx,0,H.cz);
+  }else if(G.camMode==='target'&&G.prevLand){
+    /* landing view: hover behind and above where the ball's predicted to come down */
+    const L=G.prevLand,dx=L.x-b.p.x,dz=L.z-b.p.z,dl=Math.hypot(dx,dz)||1,ux=dx/dl,uz=dz/dl;
+    const back=clamp(10+dl*.12,10,34),up=clamp(6+dl*.07,6,22);
+    tp.set(L.x-ux*back,L.y+up,L.z-uz*back);
+    tp.y=Math.max(tp.y,H.height(tp.x,tp.z)+3);
+    tl.set(L.x+ux*back*.35,L.y,L.z+uz*back*.35);
   }else if(G.camMode==='chase'&&!b.rest&&b.hold>0){
     const a=G.aim+Math.PI;tp.set(b.p.x+Math.sin(a)*G.cam.dist*.9,b.p.y+G.cam.dist*.34+1.1,b.p.z+Math.cos(a)*G.cam.dist*.9);
     tl.set(b.p.x+Math.sin(G.aim)*5,b.p.y+.5,b.p.z+Math.cos(G.aim)*5);
@@ -2726,12 +2747,26 @@ window.addEventListener('keydown',e=>{
   else if(e.key==='q'||e.key==='Q')cycleClub(-1);
   else if(e.key==='e'||e.key==='E')cycleClub(1);
   else if(e.key==='v'||e.key==='V')toggleOverview();
+  else if(e.key==='t'||e.key==='T')toggleTarget();
   else if(e.key==='Tab'){e.preventDefault();if(G.screen==='play')openCard();}
 });
 window.addEventListener('keyup',e=>{keys[e.key]=false;});
+function toggleTarget(){
+  if(G.screen!=='play'||G.phase==='FLIGHT'||G.phase==='DONE')return;
+  G.camMode=G.camMode==='target'?'orbit':'target';G.previewDirty=true;A.ui();
+  if(G.camMode==='target')updateTargetInfo();
+  $('tgtInfo').classList.toggle('on',G.camMode==='target');$('btnTarget').classList.toggle('on',G.camMode==='target');updateGaugeUI();
+}
+function updateTargetInfo(){
+  const putt=CLUBS[G.clubIdx].id==='PT';
+  const sl={water:'WATER',sand:'BUNKER',green:'GREEN',fringe:'FRINGE',fairway:'FAIRWAY',rough:'ROUGH',tee:'TEE'}[G.prevSurf]||'';
+  $('tgtInfo').innerHTML=putt?`ROLLS OUT <b>${G.prevCarry.toFixed(1)} m</b> · <b>${G.prevLeft.toFixed(1)} m</b> FROM THE CUP`
+    :`CARRY <b>${Math.round(G.prevCarry)} m</b> · <b>${Math.round(G.prevLeft)} m</b> TO PIN · <span class="s-${G.prevSurf}">${sl}</span>`;
+}
 function toggleOverview(){
   if(G.screen!=='play'||G.phase==='FLIGHT')return;
   G.camMode=G.camMode==='overview'?'orbit':'overview';A.ui();updateGaugeUI();
+  $('tgtInfo').classList.remove('on');$('btnTarget').classList.remove('on');
 }
 function togglePause(){
   if(G.screen!=='play'&&G.screen!=='intro'&&!G.paused)return;
@@ -2749,6 +2784,7 @@ function openCard(){
 
 /* ============================== BUTTON WIRING ============================== */
 $('btnShot').addEventListener('click',()=>{A.init();A.resume();shotAction();});
+$('btnTarget').addEventListener('click',e=>{e.stopPropagation();toggleTarget();});
 $('clubPrev').addEventListener('click',()=>cycleClub(-1));
 $('clubNext').addEventListener('click',()=>cycleClub(1));
 $('btnSound').addEventListener('click',toggleSound);
