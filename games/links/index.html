@@ -1078,7 +1078,8 @@ function ridgeRing(R,hBase,hAmp,seed,shade){
 ridgeRing(640,30,190,3.7,1.0);ridgeRing(470,6,95,9.1,.78);
 const outerMat=new THREE.MeshStandardMaterial({color:0x0D4E58,roughness:.55,metalness:.1});
 const outer=new THREE.Mesh(new THREE.CircleGeometry(900,48),outerMat);
-outer.rotation.x=-Math.PI/2;outer.position.y=-3.2;scene.add(outer);
+const OUTER_Y=-3.2;
+outer.rotation.x=-Math.PI/2;outer.position.y=OUTER_Y;scene.add(outer);
 
 /* ---------- ball / trail / aim / preview / blob ---------- */
 const ballMesh=new THREE.Mesh(new THREE.SphereGeometry(BALL_R,20,16),
@@ -1645,10 +1646,15 @@ function buildHole(course,idx){
     if(ponds.length&&bunks.length)hh=Math.max(hh,WATER_Y+.2);
     for(const w of ponds){const ex=(x-w.x)/w.rx,ez=(z-w.z)/w.rz,e=ex*ex+ez*ez;
       if(e<1.6)hh=lerp(hh,-2.6,sstep(1.45,.75,e));}
+    /* the course ends in a bank down into the sea — real ground, not just a picture */
+    const ed=edgeD(x,z);if(ed<7)hh-=sstep(7,0,ed)*12;
     return hh;}
+  /* distance to the edge of the playable map, and the water level you'd meet there */
+  function edgeD(x,z){return Math.min(x-(cx-W/2),cx+W/2-x,z-(cz-D/2),cz+D/2-z);}
+  const seaY=()=>ponds.length?WATER_Y:OUTER_Y;
   function surface(x,z){
-    /* the water is one flat sheet: wherever the ground is under it, you're in the lake */
-    if(ponds.length&&height(x,z)<WATER_Y+.04)return'water';
+    /* the water is one flat sheet: wherever the ground is under it, you're in the lake (or the sea) */
+    {const y=height(x,z);if(ponds.length&&y<WATER_Y+.04)return'water';if(edgeD(x,z)<7&&y<seaY()+.04)return'water';}
     for(const b of bunks){const dx=x-b.x,dz=z-b.z;if(dx*dx+dz*dz<b.r*b.r)return'sand';}
     const gx=x-green.x,gz=z-green.y,gd=Math.sqrt(gx*gx+gz*gz);
     if(gd<cfg.gR)return'green';if(gd<cfg.gR+2.6)return'fringe';
@@ -1690,7 +1696,7 @@ function buildHole(course,idx){
     // beach ring
     for(const w of ponds){const ex=(x-w.x)/w.rx,ez=(z-w.z)/w.rz,e=ex*ex+ez*ez;
       if(e<2.1&&e>1&&y<WATER_Y+1.6&&y>WATER_Y-.1){const f=sstep(2.1,1.15,e);r=lerp(r,G.sand[0]*.92,f);g=lerp(g,G.sand[1]*.92,f);b=lerp(b,G.sand[2]*.9,f);}}
-    if(edge<7){const f=sstep(7,0,edge);y-=f*12;r=lerp(r,.16,f);g=lerp(g,.12,f);b=lerp(b,.09,f);}
+    if(edge<7){const f=sstep(7,0,edge);r=lerp(r,.16,f);g=lerp(g,.12,f);b=lerp(b,.09,f);}   // the drop itself is in height()
     tp.setY(i,y);
     colors[i*3]=r;colors[i*3+1]=g;colors[i*3+2]=b;
   }
@@ -1869,7 +1875,7 @@ function buildHole(course,idx){
     const dir=pts[1].clone().sub(pts[0]).normalize();
     tm.position.set(tee.x+dir.y*s,height(tee.x+dir.y*s,tee.y-dir.x*s)+.08,tee.y-dir.x*s);group.add(tm);disposables.push(tm.geometry,tm.material);}
   return{course,idx,cfg,group,disposables,water,pts,cum,total,tee,green,cupY,tilt,ponds,bunks,trees,
-    minX,maxX,minZ,maxZ,W,D,cx,cz,height,surface,normal,closest,fwAt,pathPoint,flag,flagGeo,
+    minX,maxX,minZ,maxZ,W,D,cx,cz,height,surface,normal,edgeD,seaY,closest,fwAt,pathPoint,flag,flagGeo,
     par:cfg.par,name:cfg.name,len:Math.round(total)};
 }
 function disposeHole(h){
@@ -2323,7 +2329,7 @@ function physStep(dt){
     const h0=H.height(p.x,p.z);
     p.yAbove=p.y-h0;
     flightStep(p,v,w,wind,dt);
-    if(h0>WATER_Y+.3&&!b.overWater)b.dry.x=px0,b.dry.z=pz0;
+    if(h0>WATER_Y+.3&&H.edgeD(px0,pz0)>7)b.dry.x=px0,b.dry.z=pz0;
     // tree collisions
     if(p.y<h0+16){const sx=p.x-px0,sz=p.z-pz0,sl2=sx*sx+sz*sz||1e-9;
       for(const t of H.trees){
@@ -2397,7 +2403,7 @@ function physStep(dt){
   G.flightT+=dt;
   if(G.flightT>28){onRest();}
 }
-function h_dryCheck(x,z){return H.height(x,z)>WATER_Y+.3;}
+function h_dryCheck(x,z){return H.height(x,z)>WATER_Y+.3&&H.edgeD(x,z)>7;}
 function onLanding(s){
   const b=G.ball;
   if(G.strokes===1&&H.par>3){
@@ -2410,9 +2416,10 @@ function onLanding(s){
 function doSplash(){
   const b=G.ball;b.splash=true;b.rest=true;b.v.set(0,0,0);
   A.splash();
-  burst(b.p.x,WATER_Y+.2,b.p.z,26,[[.5,.8,.95],[.85,.95,1],[.3,.6,.8]],3,4.5,7,.9,1);
-  burst(b.p.x,WATER_Y+.1,b.p.z,10,[[1,1,1]],1.2,2,5,.6,1);
-  b.p.y=WATER_Y-.5;
+  const wy=H.edgeD(b.p.x,b.p.z)<7?H.seaY():WATER_Y;
+  burst(b.p.x,wy+.2,b.p.z,26,[[.5,.8,.95],[.85,.95,1],[.3,.6,.8]],3,4.5,7,.9,1);
+  burst(b.p.x,wy+.1,b.p.z,10,[[1,1,1]],1.2,2,5,.6,1);
+  b.p.y=wy-.5;
   G.phase='FLIGHT';
   setTimeout(()=>{if(G.screen==='play')doPenalty('Penalty area',waterDrop());},900);
   G.ball.penaltyPending=true;
@@ -2421,17 +2428,17 @@ function doSplash(){
    land, no nearer the hole. Walk back along the line toward where the shot came
    from until we're on grass a club-length clear of the water. */
 function waterDrop(){
+  /* search outward from the entry point in rings — nearest valid spot wins */
   const b=G.ball,ex=b.dry.x,ez=b.dry.z;
-  let dx=G.lastShot.x-ex,dz=G.lastShot.z-ez;const L=Math.hypot(dx,dz)||1;dx/=L;dz/=L;
   const pinD=Math.hypot(ex-H.green.x,ez-H.green.y);
-  for(let k=0;k<=Math.min(L,120);k+=.5){
-    const x=ex+dx*k,z=ez+dz*k;
-    if(H.height(x,z)<WATER_Y+.4)continue;
-    const s=H.surface(x,z);if(s==='water'||s==='sand')continue;
-    // a club-length clear, and not nearer the hole
-    let ok=true;for(let a=0;a<8&&ok;a++){const qx=x+Math.cos(a*.785)*1.2,qz=z+Math.sin(a*.785)*1.2;if(H.height(qx,qz)<WATER_Y+.2)ok=false;}
-    if(!ok||Math.hypot(x-H.green.x,z-H.green.y)<pinD-.5)continue;
-    return new THREE.Vector3(x,H.height(x,z)+BALL_R,z);}
+  const ok=(x,z)=>{
+    if(H.height(x,z)<WATER_Y+.4||H.edgeD(x,z)<10)return false;
+    const s=H.surface(x,z);if(s==='water'||s==='sand')return false;
+    for(let a=0;a<8;a++){const qx=x+Math.cos(a*.785)*1.2,qz=z+Math.sin(a*.785)*1.2;if(H.surface(qx,qz)==='water')return false;}
+    return Math.hypot(x-H.green.x,z-H.green.y)>=pinD-.5;};
+  for(let r=0;r<=60;r+=.75){const n=Math.max(1,Math.round(r*2.5));
+    for(let i=0;i<n;i++){const a=i/n*TAU,x=ex+Math.cos(a)*r,z=ez+Math.sin(a)*r;
+      if(ok(x,z))return new THREE.Vector3(x,H.height(x,z)+BALL_R,z);}}
   return null;
 }
 function doPenalty(label,dropAt){
