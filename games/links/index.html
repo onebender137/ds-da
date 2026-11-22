@@ -238,6 +238,14 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-o
 .g-read{display:flex;flex-direction:column;align-items:center;line-height:1.1}
 .g-read b{font-size:22px;font-variant-numeric:tabular-nums;color:var(--cream);text-shadow:0 1px 8px rgba(0,0,0,.6)}
 .g-read small{font-size:9px;letter-spacing:.22em;color:var(--gold)}
+.gauge{position:relative}
+.g-result{position:absolute;left:50%;top:-30px;transform:translate(-50%,6px);padding:4px 10px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.18em;
+  white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;background:rgba(4,22,15,.85);border:1px solid var(--line)}
+.g-result.show{opacity:1;transform:translate(-50%,0)}.g-result.pure{color:#FFD27A;border-color:#FFD27A;box-shadow:0 0 16px rgba(255,210,122,.6)}
+.g-result.ok{color:var(--cream)}.g-result.bad{color:var(--flag)}
+.gauge.max .g-track{box-shadow:0 0 18px rgba(232,69,44,.7),inset 0 0 14px rgba(0,0,0,.6)}.gauge.max .g-read b{color:var(--flag)}
+.gauge.hot .g-zone{animation:zonePulse .35s ease-in-out infinite alternate}.gauge.hot .g-read b{color:#FFD27A}
+@keyframes zonePulse{from{filter:brightness(1)}to{filter:brightness(1.6)}}
 .gauge.perfect .g-track{box-shadow:0 0 26px rgba(242,178,62,.95),inset 0 0 14px rgba(0,0,0,.6)}
 .shot{position:relative;width:96px;height:96px;border-radius:50%;flex:none;
   background:radial-gradient(circle at 32% 28%,#FFD27A,var(--gold) 42%,var(--flag) 100%);
@@ -508,6 +516,7 @@ kbd{font-family:var(--sans);font-size:10px;font-weight:700;padding:3px 8px;borde
     </div>
     <div class="hud-right">
       <div class="gauge glass" id="gauge">
+        <div class="g-result" id="gResult"></div>
         <div class="g-wrap"><div class="g-track"><div class="g-ticks"></div><div class="g-early">EARLY</div><div class="g-late">LATE</div><div class="g-zone"></div><div class="g-cap" id="gCap"></div><div class="g-fill" id="gFill"></div></div><div class="g-lock" id="gLock"></div><div class="g-acc" id="gAcc"></div></div>
         <div class="g-read"><b id="gPct">—</b><small id="gPhase">READY</small></div>
       </div>
@@ -596,7 +605,7 @@ kbd{font-family:var(--sans);font-size:10px;font-weight:700;padding:3px 8px;borde
     <div class="modal-head"><h3>How to play Links</h3><button class="icon-btn" id="btnHelpClose" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     <div class="modal-body help-grid">
       <div class="help-step"><div class="n">1</div><div><h4>Aim</h4><p>Drag anywhere to aim — the dotted arc and gold ring show your predicted carry with the current wind. Tap <b>◎ LANDING</b> to fly the camera out to where it'll come down, and keep aiming from there. Pinch or scroll to zoom. The compass shows where the wind pushes the ball.</p><div class="help-keys"><kbd>DRAG</kbd><kbd>A / D fine aim</kbd><kbd>WHEEL zoom</kbd><kbd>V flyover</kbd><kbd>T landing view</kbd></div></div></div>
-      <div class="help-step"><div class="n">2</div><div><h4>Three-tap swing</h4><p>Tap <b>SWING</b> to start the gauge. Tap again to lock <b>power</b>. A marker slides down — tap when it crosses the <b>gold band</b> for a pure strike. Early = pull-hook left, late = push-slice right.</p><div class="help-keys"><kbd>SPACE ×3</kbd><kbd>← → aim</kbd><kbd>↑ ↓ club</kbd><kbd>ESC pause</kbd><kbd>M mute</kbd><kbd>TAB card</kbd></div></div></div>
+      <div class="help-step"><div class="n">2</div><div><h4>Three-tap swing</h4><p>Tap <b>SWING</b> to start the gauge. Tap again to lock <b>power</b>. A marker slides down — tap when it crosses the <b>gold band</b> for a pure strike — both meters keep cycling until you tap, but the timing marker speeds up a little each pass. Early = pull-hook left, late = push-slice right.</p><div class="help-keys"><kbd>SPACE ×3</kbd><kbd>← → aim</kbd><kbd>↑ ↓ club</kbd><kbd>ESC pause</kbd><kbd>M mute</kbd><kbd>TAB card</kbd></div></div></div>
       <div class="help-step"><div class="n">3</div><div><h4>Read the ground</h4><p>On the green the dotted line previews your putt's break — aim off-line and let the slope feed it in. Water and out-of-bounds cost <b>+1</b> and a re-drop. Rounds post <b>Stableford points</b> to the arcade board: par 2 · birdie 3 · eagle 4 · bogey 1.</p></div></div>
       <div class="help-step"><div class="n">✦</div><div><h4>Lies matter</h4><table class="lie-table">
         <tr><td style="color:var(--turf-300)">Tee / Fairway</td><td>100% power</td></tr>
@@ -739,7 +748,12 @@ const A={ctx:null,master:null,sfx:null,amb:null,mus:null,noise:null,gaugeOsc:nul
     for(let i=0;i<9;i++)this.tone({f0:700+Math.random()*1300,f1:1500+Math.random()*900,dur:.04,vol:.07,at:.1+i*.05+Math.random()*.04});},
   treeHit(){this.tone({f0:420,f1:180,dur:.07,vol:.3,type:'triangle'});this.burst({f0:4200,dur:.25,vol:.2,q:.6});this.burst({f0:1800,dur:.4,at:.05,vol:.1,q:.5});},
   lip(){this.tone({f0:640,f1:420,dur:.07,vol:.2,type:'triangle'});this.tone({f0:640,f1:380,dur:.06,vol:.14,at:.09,type:'triangle'});},
-  perfect(){this.tone({f0:659,dur:.14,vol:.18,type:'triangle'});this.tone({f0:988,dur:.24,vol:.18,at:.09,type:'triangle'});this.burst({f0:5200,type:'highpass',dur:.2,vol:.07,at:.09});},
+  perfect(n){const k=Math.pow(1.06,Math.min((n||1)-1,6));
+    this.tone({f0:659*k,dur:.14,vol:.2,type:'triangle'});this.tone({f0:988*k,dur:.24,vol:.2,at:.09,type:'triangle'});this.tone({f0:1318*k,dur:.3,vol:.12,at:.17,type:'triangle'});
+    this.burst({f0:5200,type:'highpass',dur:.2,vol:.08,at:.09});},
+  /* the marker crossing into the gold band: a bright ping that climbs with each pass */
+  zoneTick(pass){this.tone({f0:1480*Math.pow(1.06,Math.min(pass,8)),dur:.05,vol:.13,type:'sine'});this.tone({f0:2960*Math.pow(1.06,Math.min(pass,8)),dur:.03,vol:.05,type:'sine'});},
+  maxTick(){this.tone({f0:1180,dur:.05,vol:.1,type:'triangle'});},
   cup(diff){/* the drop: plastic cup clunk + a little rattle */
     this.tone({f0:260,f1:150,dur:.12,vol:.45});this.burst({f0:1100,dur:.05,vol:.3,q:4});
     [.09,.15,.19,.22].forEach((t,i)=>{this.tone({f0:1500+i*170,dur:.025,vol:.12/(i+1),at:t,type:'triangle'});this.burst({f0:2400,dur:.015,vol:.08/(i+1),at:t,q:3});});
@@ -2310,31 +2324,49 @@ function shotAction(){
     A.gaugeStart();A.ui();
     if(!G.hintDone){G.hintDone=true;$('hintLine').classList.add('gone');}
   }else if(G.phase==='POWER'){
-    G.gauge.locked=G.gauge.power;G.phase='ACC';G.gauge.acc=1;G.gauge.t=0;
+    G.gauge.locked=Math.max(G.gauge.power,.05);G.phase='ACC';G.gauge.acc=1;G.gauge.t=0;G.gauge.pass=0;G.gauge.down=true;G.gauge.hot=false;
+    $('gauge').classList.remove('max');
     A.lock();$('gLock').style.bottom=(G.gauge.locked*100)+'%';$('gLock').dataset.p=Math.round(G.gauge.locked*100)+'%';$('gLock').style.opacity=1;
   }else if(G.phase==='ACC'){
     strike();
   }
   updateGaugeUI();
 }
+/* ---- the controller ----
+   POWER: the fill rises and falls, and keeps cycling until you tap (no rush).
+   TIMING: the marker sweeps down through the gold band and back up, over and over
+   until you tap. Each pass gets a little quicker, so waiting it out isn't free. */
+const GAUGE_UP=1.35;                       // s from 0 → 100 % (putts 1.6)
+function gaugeSweep(){return CLUBS[G.clubIdx].id==='PT'?1.25:1.05;}     // s per pass of the timing marker
 function stepGauge(dt){
   const g=G.gauge;
   if(G.phase==='POWER'){
-    g.t+=dt;const cyc=g.t/.95;
-    g.power=g.dir>0?Math.min(cyc,1):Math.max(2-cyc,0);
-    if(cyc>=1&&g.dir>0)g.dir=-1;
-    if(cyc>=2){g.locked=Math.max(g.power,.08);G.phase='ACC';g.acc=1;g.t=0;A.lock();
-      $('gLock').style.bottom=(g.locked*100)+'%';$('gLock').dataset.p=Math.round(g.locked*100)+'%';$('gLock').style.opacity=1;updateGaugeUI();}
+    const up=CLUBS[G.clubIdx].id==='PT'?1.6:GAUGE_UP;
+    g.t+=dt;const ph=(g.t/up)%2;
+    const was=g.power;
+    g.power=ph<1?ph:2-ph;
+    g.dir=g.power>=was?1:-1;
+    const max=g.power>.97;
+    if(max&&!g.maxed){g.maxed=true;A.maxTick();}else if(!max)g.maxed=false;
+    $('gauge').classList.toggle('max',max);
     $('gFill').style.height=(g.power*100)+'%';
-    $('gPct').textContent=Math.round(g.power*100)+'%';
+    $('gPct').textContent=max?'MAX':Math.round(g.power*100)+'%';
     A.gaugeSet(g.power);G.previewDirty=true;
   }else if(G.phase==='ACC'){
-    g.t+=dt;g.acc=1-g.t*1.8;
+    /* acc runs 1 (top, early) → -0.32 (bottom, late) and back; |acc| ≤ .07 is pure */
+    const sweep=gaugeSweep()/Math.min(1.6,1+g.pass*.09);
+    g.t+=dt/sweep;
+    if(g.t>=1){g.t-=1;g.pass++;g.down=!g.down;}
+    const u=g.t*g.t*(3-2*g.t)*.35+g.t*.65;                    // slight ease at the turnarounds
+    g.acc=g.down?1-u*1.32:-.32+u*1.32;
     const y=clamp((g.acc+.35)/1.35,0,1);
-    $('gAcc').style.bottom=(y*100)+'%';$('gAcc').style.opacity=1;$('gAcc').classList.toggle('hot',Math.abs(g.acc)<=.07);
-    $('gPct').textContent=Math.abs(g.acc)<=.07?'NOW':g.acc>0?Math.round(g.locked*100)+'%':'LATE';
+    const hot=Math.abs(g.acc)<=.07;
+    if(hot&&!g.hot)A.zoneTick(g.pass);
+    g.hot=hot;
+    $('gAcc').style.bottom=(y*100)+'%';$('gAcc').style.opacity=1;$('gAcc').classList.toggle('hot',hot);
+    $('gauge').classList.toggle('hot',hot);
+    $('gPct').textContent=hot?'NOW':g.acc>0?'EARLY':'LATE';
     A.gaugeSet(.3+Math.max(g.acc,0)*.4);
-    if(g.acc<=-.32)strike();
   }
 }
 function strike(){
@@ -2345,10 +2377,18 @@ function strike(){
   const g=G.gauge,c=CLUBS[G.clubIdx];
   let acc=g.acc,power=g.locked;
   const perfect=Math.abs(acc)<=.07;
+  $('gauge').classList.remove('hot','max');
   if(perfect){power=Math.min(power*1.03,1);acc=0;
-    toast('PERFECT STRIKE','gold');A.perfect();
+    G.perfStreak=(G.perfStreak||0)+1;
+    toast(G.perfStreak>1?'PERFECT STRIKE · 🔥 x'+G.perfStreak:'PERFECT STRIKE','gold');A.perfect(G.perfStreak);
+    G.shake=.28+Math.min(G.perfStreak,5)*.04;
     $('gauge').classList.add('perfect');setTimeout(()=>$('gauge').classList.remove('perfect'),700);
-}
+  }else{
+    if((G.perfStreak||0)>1)toast('Streak over · '+G.perfStreak+' pure in a row','info');
+    G.perfStreak=0;
+    $('gPct').textContent=acc>0?'EARLY':'LATE';}
+  {const r=$('gResult');r.textContent=perfect?'PURE':acc>0?(acc>.3?'WAY EARLY':'EARLY'):(acc<-.2?'WAY LATE':'LATE');
+   r.className='g-result show '+(perfect?'pure':Math.abs(acc)>.25?'bad':'ok');clearTimeout(G._resT);G._resT=setTimeout(()=>r.classList.remove('show'),1600);}
   const eff=Math.max(power,.08)*lieCap();
   const windMs=G.wind.cur/3.6;
   const wind={x:Math.sin(G.wind.curDir)*windMs,z:Math.cos(G.wind.curDir)*windMs};
@@ -2739,7 +2779,10 @@ function updateCamera(dt){
     const lx=(x,z)=>[b2.x+Math.cos(a)*x+Math.sin(a)*z,b2.z-Math.sin(a)*x+Math.cos(a)*z];
     const P=lx(c[0],c[2]),L=lx(c[3],c[5]);tp.set(P[0],b2.y+c[1],P[1]);tl.set(L[0],b2.y+c[4],L[1]);}
   camPos.lerp(tp,damp);camLook.lerp(tl,damp);
-  camera.position.copy(camPos);camera.lookAt(camLook);
+  camera.position.copy(camPos);
+  if(G.shake>0){G.shake=Math.max(0,G.shake-dt);const k=G.shake*G.shake*.25;
+    camera.position.x+=(Math.random()-.5)*k;camera.position.y+=(Math.random()-.5)*k;camera.position.z+=(Math.random()-.5)*k;}
+  camera.lookAt(camLook);
   sky.position.copy(camera.position);
 }
 const _tmpA=new THREE.Vector3();
