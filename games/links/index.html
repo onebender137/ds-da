@@ -1499,7 +1499,9 @@ const golfer={group:new THREE.Group(),g:null,ready:false,club:'7I',
 golfer.group.name='golferSlot';scene.add(golfer.group);
 new GLTFLoader().load('golfer.glb',gl=>{
   try{const g=makeGolfer(gl.scene);golfer.g=g;golfer.group.add(g.group);g.setClub(golfer.club);
-    g.group.traverse(o=>{if(o.material&&o.material.isMeshStandardMaterial)o.material.envMapIntensity=.7;});
+    golfer.mats=[];
+    g.group.traverse(o=>{if(o.material){const ms=Array.isArray(o.material)?o.material:[o.material];
+      for(const m of ms){if(m.isMeshStandardMaterial)m.envMapIntensity=.7;if(!golfer.mats.includes(m)){m.userData.op0=m.opacity;golfer.mats.push(m);}}}});
     golfer.ready=true;renderer.shadowMap.needsUpdate=true;}
   catch(e){console.warn('golfer',e);}
 },undefined,e=>console.warn('golfer.glb',e));
@@ -1520,6 +1522,11 @@ function swingTick(dt){
     g.setPower(G.phase==='POWER'?G.gauge.power:G.gauge.locked);}
   else if(G.phase==='AIM'&&g.st.mode!=='address')g.toAddress();
   g.tick(dt);
+  /* putting: ghost the golfer so he never hides the cup or the line */
+  const want=putt&&G.phase!=='DONE'&&G.camMode!=='target'?.32:1;
+  golfer.alpha=golfer.alpha===undefined?1:golfer.alpha+(want-golfer.alpha)*(1-Math.exp(-dt*8));
+  if(golfer.mats&&Math.abs(golfer.alpha-(golfer.alphaSet||1))>.005){golfer.alphaSet=golfer.alpha;
+    const tr=golfer.alpha<.995;for(const m of golfer.mats){if(m.transparent!==tr){m.transparent=tr;m.needsUpdate=true;}m.opacity=(m.userData.op0||1)*golfer.alpha;}}
   if(g.st.mode!=='address'||(g.st.blend!==undefined&&g.st.blend<1))renderer.shadowMap.needsUpdate=true;
 }
 
