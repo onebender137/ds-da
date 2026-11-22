@@ -1716,6 +1716,7 @@ async function fetchGlobalBoard() {
 // refreshes while in game. No manual refreshes; board appears the instant
 // the workflow's commit lands on Pages.
 setInterval(async () => {
+  if (document.visibilityState === "hidden") return;
   const g = await fetchGlobalBoard();
   if (!g || !g.top.length) return;
   if (!elScores.classList.contains('hidden')) {

@@ -2141,6 +2141,7 @@ async function fetchGlobalBoard() {
   } catch (e) { return null; }
 }
 setInterval(async () => {
+  if (document.visibilityState === "hidden") return;
   const g = await fetchGlobalBoard();
   if (!g || !g.top.length) return;
   if (!elScores.classList.contains('hidden')) {

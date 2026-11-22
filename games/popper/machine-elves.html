@@ -2767,6 +2767,7 @@ async function fetchGlobalBoard(diff) {
 setInterval(async () => {
   // scores screen open -> refresh BOTH sections. in-game -> only the HUD's own
   // difficulty. menu up with nothing showing -> skip the request entirely.
+  if (document.visibilityState === "hidden") return;
   if (!elScores.classList.contains('hidden')) {
     renderBothBoards();
   } else if (elMenu.classList.contains('hidden')) {
