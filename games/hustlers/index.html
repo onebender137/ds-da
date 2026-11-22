@@ -2156,7 +2156,7 @@ function endMatch(){
   CAREER.best=Math.max(CAREER.best,m.score);
   CAREER.pots+=m.potsYou;
   Store.set('career',CAREER);
-  track('game_over',{final_score:m.score,level_reached:G.diff,diff:G.diff,theme:G.theme,win});
+  track('game_over',{final_score:m.score,level_reached:{rookie:1,pro:2,shark:3}[G.diff],diff:G.diff,theme:G.theme,win});
   if(win)track('match_win',{score:m.score,diff:G.diff,theme:G.theme});
   setTimeout(()=>{if(win)SFX.win();else SFX.lose();},350);
   setTimeout(()=>showEnd(win),1100);
@@ -2357,7 +2357,9 @@ function renderBoard(){
 async function postScore(){
   const m=G.match;if(!m||!m.over)return;
   const mh=memberHandle();
-  const name=mh?cleanInits(mh):cleanInits($('endName').value);
+  /* Members: the full handle shows in the cabinet (memberLine, local Hall,
+     HUD name) — initials ONLY in the POST body (submitBoard cleanInits it). */
+  const name=mh||cleanInits($('endName').value);
   if(!name){toast('CHALK YOUR NAME FIRST','gold',2200);$('endName').focus();return;}
   if(!mh)setInits(name);
   SETTINGS.name=name;saveSettings();
@@ -2369,7 +2371,7 @@ async function postScore(){
   $('btnPost').disabled=true;$('btnPost').textContent='POSTING…';
   const res=await submitBoard(GAME_ID,name,m.score);
   const msg=res==='ok'?'on the arcade hall ✓':res==='deduped'?'your best hustle stands ✓':res==='http-429'?'rate limited — queued for retry':res==='local'?'carved on this device':'hall offline — carved locally';
-  if(mh)$('memberLine').textContent=(res==='ok'?'POSTED AS ':(res==='deduped'?'STANDS AS ':'POSTING AS '))+name+' ◆';
+  if(mh)$('memberLine').textContent=(res==='ok'?'POSTED AS ':(res==='deduped'?'STANDS AS ':'POSTING AS '))+mh.toUpperCase()+' ◆';
   track('score_submit',{score:m.score,diff:G.diff,theme:G.theme});
   $('btnPost').textContent='POSTED ✓';
   closeOverlay('endOverlay');
@@ -2450,7 +2452,7 @@ function showEnd(win){
   const mh=memberHandle();
   $('endNameRow').style.display=mh?'none':'';
   $('memberLine').style.display=mh?'block':'none';
-  if(mh){$('memberLine').textContent='POSTING AS '+cleanInits(mh).toUpperCase()+' ◆';setTimeout(()=>postScore(),400);}
+  if(mh){$('memberLine').textContent='POSTING AS '+mh.toUpperCase()+' ◆';setTimeout(()=>postScore(),400);}
   openOverlay('endOverlay');
   const target=m.score,t0=performance.now();
   (function count(){
@@ -2740,11 +2742,13 @@ addEventListener('keydown',e=>{
 });
 addEventListener('blur',()=>{KEYS.l=KEYS.r=KEYS.shift=false;G.spaceCharge=false;});
 addEventListener('keyup',e=>{
-  const a=document.activeElement;
-  if(a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA'||a.isContentEditable))return;
+  /* Release bookkeeping ALWAYS runs — a guard above these would stick the
+     aim sweep if a key was released while an input had focus. */
   if(e.key==='ArrowLeft')KEYS.l=false;
   if(e.key==='ArrowRight')KEYS.r=false;
   if(e.key==='Shift')KEYS.shift=false;
+  const a=document.activeElement;
+  if(a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA'||a.isContentEditable))return;
   if(e.key===' '&&G.spaceCharge){
     G.spaceCharge=false;
     if(G.state==='aim'&&G.match?.turn==='you'&&!G.paused&&G.power>0.04)shoot(G.aim,G.power,{...G.spin},'you');
