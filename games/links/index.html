@@ -107,8 +107,9 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-o
 .modal-head h3{font-family:var(--serif);font-style:italic;font-size:24px;color:var(--cream)}
 .modal-body{padding:18px 20px;overflow-y:auto}
 /* ---------- lobby ---------- */
-#lobby{display:flex;flex-direction:column;z-index:45}
-.lobby-scrim{position:absolute;inset:0;pointer-events:none;
+#lobby{display:flex;flex-direction:column;z-index:45;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y pan-x}
+#lobby>*{flex-shrink:0}
+.lobby-scrim{position:fixed;inset:0;pointer-events:none;
   background:linear-gradient(100deg,rgba(4,22,15,.88) 0%,rgba(4,22,15,.62) 34%,rgba(4,22,15,.12) 62%,rgba(4,22,15,.35) 100%),
              linear-gradient(0deg,rgba(4,22,15,.85) 0%,transparent 34%)}
 .lobby-top{position:relative;display:flex;align-items:center;justify-content:space-between;padding:calc(14px + var(--sat)) 22px 0}
@@ -116,7 +117,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-o
 .brand-chip svg{width:30px;height:30px}
 .brand-chip span{color:var(--gold);font-size:10px;letter-spacing:.3em;border:1px solid rgba(242,178,62,.4);padding:3px 8px;border-radius:99px}
 .lobby-tools{display:flex;gap:10px}
-.lobby-main{position:relative;flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:26px;padding:0 22px;min-height:0}
+.lobby-main{position:relative;flex:1 0 auto;display:flex;flex-direction:column;justify-content:flex-end;gap:26px;padding:0 22px}
 .lobby-hero{animation:heroIn .9s cubic-bezier(.2,1,.3,1) both .15s}
 @keyframes heroIn{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
 .hero-kicker{font-size:12px;letter-spacing:.42em;text-transform:uppercase;color:var(--turf-200);margin-bottom:6px}
@@ -381,8 +382,25 @@ kbd{font-family:var(--sans);font-size:10px;font-weight:700;padding:3px 8px;borde
   .hint{display:none}
   .tgt-info{top:calc(94px + var(--sat));font-size:9px;padding:6px 11px}.tgt-info b{font-size:11px}
   #radioBox.dsda-radio{right:auto;left:8px;top:calc(66px + var(--sat));width:132px}
-  .lobby-main{gap:16px}
-  .hero-sub br{display:none}
+  .lobby-main{gap:14px;padding:0 12px;justify-content:flex-start;margin-top:10px}
+  .lobby-top{padding:calc(10px + var(--sat)) 12px 0}
+  .brand-chip{font-size:11px}.brand-chip span{display:none}
+  .lobby-tools{gap:6px}.lobby-tools .icon-btn{height:36px;min-width:36px}
+  .hero-kicker{font-size:10px;letter-spacing:.3em;margin-bottom:2px}
+  .wordmark{font-size:62px}.wordmark::after{bottom:-5px;height:4px}
+  .lobby-hero .hero-sub{display:none}
+  .hero-meta{margin-top:14px;gap:6px}.hero-meta .chip{font-size:9px;padding:4px 8px}
+  .course-rail{display:flex;flex-direction:column;overflow:visible;gap:10px;padding-bottom:6px;scroll-snap-type:none}
+  .course-card{min-width:0;flex-direction:row;align-items:stretch}
+  .card-art{width:92px;height:auto;min-height:100%}
+  .card-art svg{height:100%;object-fit:cover}
+  .card-body{padding:10px 12px;gap:6px}
+  .card-body h3{font-size:19px}
+  .card-tags .chip{font-size:9px;padding:3px 7px}
+  .card-desc{display:none}
+  .card-best{font-size:10px}
+  .card-actions .btn{padding:9px 8px;font-size:12px}
+  .lobby-foot{padding:8px 12px calc(10px + var(--sab));font-size:9px}
   .sum-stats{grid-template-columns:repeat(2,1fr)}
   .lb-date{display:none}
   #btnNext{bottom:calc(116px + var(--sab))}
@@ -398,8 +416,9 @@ kbd{font-family:var(--sans);font-size:10px;font-weight:700;padding:3px 8px;borde
   .shot{width:70px;height:70px;font-size:12px}
   .minimap{display:none}
   .lobby-hero .hero-sub,.hero-meta{display:none}
-  .wordmark{font-size:64px}
-  .card-art{height:70px}
+  .wordmark{font-size:48px}.hero-kicker{display:none}.lobby-main{gap:10px}
+  .card-art{height:56px}.card-desc{display:none}.card-body{padding:8px 12px 10px;gap:5px}.card-body h3{font-size:18px}
+  .lobby-top{padding-top:calc(8px + var(--sat))}.lobby-foot{display:none}
 }
 @media (prefers-reduced-motion:reduce){
   #grain,.shot.ready::before,#introTap{animation:none}
