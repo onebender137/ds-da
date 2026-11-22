@@ -933,48 +933,89 @@ ring.rotation.x=-Math.PI/2;scene.add(ring);
    cock on the way back. θ<0 = backswing, 0 = impact, θ>0 = follow-through. */
 const golfer=(()=>{
   const g=new THREE.Group();g.name='golfer';
-  const M=(c,r=.8)=>new THREE.MeshStandardMaterial({color:c,roughness:r,flatShading:true});
-  const skin=M(0xE0A882,.7),shirt=M(0xF4EFE3,.75),shirt2=M(0x11543A,.75),pants=M(0x2A2F38,.85),shoe=M(0xF4EFE3,.5),cap=M(0xE8452C,.7),
-    glove=M(0xFFFFFF,.6),shaftM=new THREE.MeshStandardMaterial({color:0xC8CDD4,roughness:.25,metalness:.85}),headM=new THREE.MeshStandardMaterial({color:0x30343C,roughness:.3,metalness:.7});
-  const cap_=(r,l,m)=>{const geo=new THREE.CapsuleGeometry(r,l,3,8);const me=new THREE.Mesh(geo,m);me.castShadow=true;return me;};
+  const M=(c,r=.8)=>new THREE.MeshStandardMaterial({color:c,roughness:r});   // smooth shading — no more faceted mannequin
+  const skin=M(0xE2A67F,.65),shirt=M(0xF6F1E4,.75),shirt2=M(0x11543A,.75),pants=M(0x262B34,.85),
+    shoeU=M(0xF3EFE3,.5),soleM=M(0x20232A,.9),capM=M(0xE8452C,.65),
+    glove=M(0xF8F8F8,.55),eyeM=M(0x23262E,.4),beltM=M(0x1A1D22,.8),
+    shaftM=new THREE.MeshStandardMaterial({color:0xC8CDD4,roughness:.25,metalness:.85}),
+    headM=new THREE.MeshStandardMaterial({color:0x30343C,roughness:.3,metalness:.7});
+  const cap_=(r,l,m)=>{const me=new THREE.Mesh(new THREE.CapsuleGeometry(r,l,6,14),m);me.castShadow=true;return me;};
   const S=new THREE.Vector3(.48,1.36,0);                    // shoulder centre at address
   const toBall=new THREE.Vector3().sub(S);const reach=toBall.length();toBall.normalize();
   const n=new THREE.Vector3(0,0,1).cross(toBall).normalize();     // swing-plane normal
   /* legs + hips */
   const hips=new THREE.Group();hips.position.set(.62,.92,0);g.add(hips);
-  for(const sz of[-.15,.15]){
-    const thigh=cap_(.085,.36,pants);thigh.position.set(.02,-.22,sz);thigh.rotation.z=-.12;hips.add(thigh);
-    const shin=cap_(.07,.34,pants);shin.position.set(-.02,-.62,sz*1.15);shin.rotation.z=.12;hips.add(shin);
-    const sh=new THREE.Mesh(new THREE.BoxGeometry(.28,.09,.12),shoe);sh.position.set(-.06,-.88,sz*1.2);sh.castShadow=true;hips.add(sh);}
-  const belt=new THREE.Mesh(new THREE.CylinderGeometry(.17,.17,.08,10),M(0x1A1D22));belt.position.y=.02;hips.add(belt);
-  /* torso (pivots at hips, bent toward the ball) */
+  const pelvis=new THREE.Mesh(new THREE.SphereGeometry(.185,14,10),pants);pelvis.scale.set(1,.72,.88);pelvis.position.y=.02;pelvis.castShadow=true;hips.add(pelvis);
+  for(const sz of[-1,1]){
+    const thigh=cap_(.092,.30,pants);thigh.position.set(.03,-.20,sz*.15);thigh.rotation.z=-.10;hips.add(thigh);
+    const knee=new THREE.Mesh(new THREE.SphereGeometry(.078,10,8),pants);knee.position.set(-.005,-.40,sz*.16);hips.add(knee);
+    const shin=cap_(.072,.30,pants);shin.position.set(-.02,-.60,sz*.17);shin.rotation.z=.10;hips.add(shin);
+    const sock=cap_(.062,.06,pants);sock.position.set(-.025,-.77,sz*.18);hips.add(sock);
+    /* shoe: rounded upper + toe + dark sole */
+    const shoe=new THREE.Group();shoe.position.set(-.06,-.86,sz*.19);hips.add(shoe);
+    const up=new THREE.Mesh(new THREE.CapsuleGeometry(.055,.13,4,10),shoeU);up.rotation.z=-Math.PI/2;up.position.set(-.03,.01,0);up.scale.set(1,1,.85);up.castShadow=true;shoe.add(up);
+    const toe=new THREE.Mesh(new THREE.SphereGeometry(.05,10,8),shoeU);toe.position.set(-.10,.005,0);toe.scale.set(1,.8,1);shoe.add(toe);
+    const sole=new THREE.Mesh(new THREE.BoxGeometry(.25,.035,.095),soleM);sole.position.set(-.045,-.042,0);shoe.add(sole);
+  }
+  const belt=new THREE.Mesh(new THREE.CylinderGeometry(.185,.19,.07,16),beltM);belt.position.y=.06;belt.scale.set(1,1,.88);hips.add(belt);
+  /* torso (pivots at hips, bent toward the ball) — polo: body, shoulder cap, chest stripe, collar, placket */
   const spine=new THREE.Group();spine.rotation.z=.48;hips.add(spine);
-  const chest=cap_(.17,.34,shirt);chest.position.y=.3;chest.scale.set(1,1,1.25);spine.add(chest);
-  const stripe=new THREE.Mesh(new THREE.CylinderGeometry(.176,.176,.07,10),shirt2);stripe.position.y=.38;stripe.scale.set(1,1,1.25);spine.add(stripe);
-  const neck=cap_(.05,.06,skin);neck.position.y=.6;spine.add(neck);
-  const head=new THREE.Group();head.position.y=.74;head.rotation.z=-.3;spine.add(head);
-  const skull=new THREE.Mesh(new THREE.IcosahedronGeometry(.12,1),skin);skull.castShadow=true;head.add(skull);
-  const crown=new THREE.Mesh(new THREE.SphereGeometry(.125,10,6,0,TAU,0,Math.PI/2),cap);crown.position.y=.02;head.add(crown);
-  const brim=new THREE.Mesh(new THREE.CylinderGeometry(.1,.1,.02,10,1,false,-1.2,2.4),cap);brim.position.set(-.1,.03,0);brim.scale.set(1.3,1,1);head.add(brim);
-  /* swing rig — basis X'=toward ball, Y'=plane normal */
+  const torso=cap_(.165,.30,shirt);torso.position.y=.26;torso.scale.set(1,1,1.22);spine.add(torso);
+  const shoulderC=new THREE.Mesh(new THREE.SphereGeometry(.17,14,10),shirt);shoulderC.scale.set(1,.62,1.22);shoulderC.position.y=.46;shoulderC.castShadow=true;spine.add(shoulderC);
+  const stripe=new THREE.Mesh(new THREE.CylinderGeometry(.172,.172,.06,16),shirt2);stripe.position.y=.30;stripe.scale.set(1,1,1.24);spine.add(stripe);
+  const collar=new THREE.Mesh(new THREE.TorusGeometry(.068,.02,8,16),shirt2);collar.rotation.x=Math.PI/2;collar.position.y=.56;collar.scale.set(1,1,.85);spine.add(collar);
+  const placket=new THREE.Mesh(new THREE.BoxGeometry(.014,.15,.02),shirt2);placket.position.set(-.157,.40,0);spine.add(placket);
+  const neck=cap_(.052,.07,skin);neck.position.y=.60;spine.add(neck);
+  /* head: smooth skull + jaw, a face (he looks at the ball, -X), ears, cap with forward brim */
+  const head=new THREE.Group();head.position.y=.72;head.rotation.z=-.3;spine.add(head);
+  const skull=new THREE.Mesh(new THREE.SphereGeometry(.115,18,14),skin);skull.scale.set(1,1.14,1.0);skull.castShadow=true;head.add(skull);
+  const jaw=new THREE.Mesh(new THREE.SphereGeometry(.085,14,10),skin);jaw.scale.set(1,.75,1.05);jaw.position.set(-.015,-.055,0);head.add(jaw);
+  for(const ez of[-.042,.042]){const eye=new THREE.Mesh(new THREE.SphereGeometry(.0125,8,6),eyeM);eye.position.set(-.105,.012,ez);head.add(eye);}
+  const nose=new THREE.Mesh(new THREE.SphereGeometry(.017,8,6),skin);nose.position.set(-.122,-.01,0);head.add(nose);
+  for(const ez of[-.108,.108]){const ear=new THREE.Mesh(new THREE.SphereGeometry(.02,8,6),skin);ear.position.set(.005,-.005,ez);head.add(ear);}
+  const crown=new THREE.Mesh(new THREE.SphereGeometry(.128,18,10,0,TAU,0,Math.PI/2),capM);crown.position.y=.035;crown.scale.set(1,1,1.02);head.add(crown);
+  /* cylinder theta: 0=+Z, PI/2=+X, PI=-Z, 3PI/2=-X — brim must cover the -X half */
+  const brim=new THREE.Mesh(new THREE.CylinderGeometry(.115,.115,.014,16,1,false,Math.PI*1.5-1.35,2.7),capM);brim.position.set(-.105,.055,0);brim.scale.set(1.35,1,1.05);head.add(brim);
+  const button=new THREE.Mesh(new THREE.CylinderGeometry(.014,.014,.012,8),capM);button.position.y=.16;head.add(button);
+  /* swing rig — basis X'=toward ball, Y'=plane normal.
+     Two-segment arms: upper arm (shoulder->elbow) + forearm group (elbow->hand).
+     The wrist + club hang off the left forearm, so the club follows the hand
+     exactly as the elbows bend. */
   const rig=new THREE.Group();rig.position.copy(S);g.add(rig);
   const basis=new THREE.Matrix4().makeBasis(toBall,n,new THREE.Vector3().crossVectors(toBall,n));
   const rigFrame=new THREE.Group();rigFrame.quaternion.setFromRotationMatrix(basis);rig.add(rigFrame);
   const swing=new THREE.Group();rigFrame.add(swing);
   const ARM=.6;
-  for(const sz of[-.16,.16]){
-    const a=cap_(.05,ARM-.06,shirt);
-    const from=new THREE.Vector3(0,0,sz),to=new THREE.Vector3(ARM,0,0);
-    a.position.copy(from).add(to).multiplyScalar(.5);
-    a.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),to.clone().sub(from).normalize());
-    swing.add(a);}
-  const hands=new THREE.Mesh(new THREE.IcosahedronGeometry(.065,0),glove);hands.position.set(ARM,0,0);hands.castShadow=true;swing.add(hands);
-  const wrist=new THREE.Group();wrist.position.set(ARM,0,0);swing.add(wrist);
+  const ELB=new THREE.Vector3(.40,-.03,.085),HAND=new THREE.Vector3(ARM,.01,.02);
+  const forearms=[];
+  let wrist;
+  for(const sz of[-1,1]){
+    const shP=new THREE.Vector3(0,0,sz*.155),elP=new THREE.Vector3(ELB.x,ELB.y,sz*ELB.z);
+    const upA=new THREE.Mesh(new THREE.CapsuleGeometry(.052,.24,4,10),shirt);
+    upA.position.copy(shP).add(elP).multiplyScalar(.5);
+    upA.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),elP.clone().sub(shP).normalize());
+    upA.castShadow=true;swing.add(upA);
+    const fore=new THREE.Group();fore.position.copy(elP);swing.add(fore);
+    const hdP=new THREE.Vector3(HAND.x,HAND.y,sz*HAND.z);
+    const foA=new THREE.Mesh(new THREE.CapsuleGeometry(.045,.14,4,10),skin);
+    foA.position.copy(hdP).sub(elP).multiplyScalar(.5);
+    foA.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),hdP.clone().sub(elP).normalize());
+    foA.castShadow=true;fore.add(foA);
+    const glo=new THREE.Mesh(new THREE.SphereGeometry(.05,10,8),glove);
+    glo.position.copy(hdP).sub(elP);glo.scale.set(1.15,.8,1.25);glo.castShadow=true;fore.add(glo);
+    if(sz===-1){
+      /* wrist + club hang off the left (top) hand — local pos must match that hand */
+      wrist=new THREE.Group();
+      wrist.position.set(HAND.x-ELB.x,HAND.y-ELB.y,ELB.z-HAND.z);
+      fore.add(wrist);
+    }
+    forearms.push(fore);
+  }
   const CLUB=reach-ARM;
-  const shaft=new THREE.Mesh(new THREE.CylinderGeometry(.012,.016,CLUB,6),shaftM);shaft.rotation.z=-Math.PI/2;shaft.position.x=CLUB/2;shaft.castShadow=true;wrist.add(shaft);
-  const grip=new THREE.Mesh(new THREE.CylinderGeometry(.022,.022,.22,6),M(0x1A1D22));grip.rotation.z=-Math.PI/2;grip.position.x=.06;wrist.add(grip);
+  const shaft=new THREE.Mesh(new THREE.CylinderGeometry(.012,.016,CLUB,8),shaftM);shaft.rotation.z=-Math.PI/2;shaft.position.x=CLUB/2;shaft.castShadow=true;wrist.add(shaft);
+  const grip=new THREE.Mesh(new THREE.CylinderGeometry(.022,.022,.22,8),beltM);grip.rotation.z=-Math.PI/2;grip.position.x=.06;wrist.add(grip);
   const ch=new THREE.Group();ch.position.x=CLUB;wrist.add(ch);
-  const woodHead=new THREE.Mesh(new THREE.SphereGeometry(.07,10,8),headM);woodHead.scale.set(.8,1,1.25);woodHead.position.z=.05;woodHead.castShadow=true;ch.add(woodHead);
+  const woodHead=new THREE.Mesh(new THREE.SphereGeometry(.07,14,10),headM);woodHead.scale.set(.8,1,1.25);woodHead.position.z=.05;woodHead.castShadow=true;ch.add(woodHead);
   const ironHead=new THREE.Mesh(new THREE.BoxGeometry(.05,.06,.11),new THREE.MeshStandardMaterial({color:0xD8DDE4,roughness:.2,metalness:.9}));ironHead.position.z=.05;ironHead.castShadow=true;ch.add(ironHead);
   const putterHead=new THREE.Mesh(new THREE.BoxGeometry(.05,.035,.13),headM);putterHead.position.z=.03;putterHead.castShadow=true;ch.add(putterHead);
   /* sign: which way of rotating about Y' takes the clubhead away from the target (-Z)? */
@@ -983,7 +1024,10 @@ const golfer=(()=>{
   const st={theta:0,hinge:0,anim:null,club:'DR'};
   function pose(theta,hinge){
     st.theta=theta;st.hinge=hinge;
-    swing.rotation.y=-theta*BACK;wrist.rotation.y=-hinge*BACK*(theta<0?1:-1);
+    swing.rotation.y=-theta*BACK;
+    const el=-hinge*.55;                       // elbows hinge with the wrist
+    forearms[0].rotation.z=el;forearms[1].rotation.z=el;
+    wrist.rotation.y=-hinge*BACK*(theta<0?1:-1);
     spine.rotation.y=-theta*.42*BACK*.9;hips.rotation.y=-theta*.18*BACK;
     head.rotation.y=theta<.6?0:-(theta-.6)*.6*BACK;
   }
@@ -1812,7 +1856,7 @@ function strike(){
     G.ball.curve=acc*c.curve*LIE_CURVE[G.lie];
     G.ball.wind=wind;G.ball.loft=c.loft;
   }
-  G.ball.rest=false;G.ball.landed=putt;G.ball.splash=false;G.ball.backspin=0;G.ball.treeHits=null;
+  G.ball.rest=false;G.ball.landed=putt;G.ball.reported=false;G.ball.splash=false;G.ball.backspin=0;G.ball.treeHits=null;
   G.phase='FLIGHT';G.flightT=0;G.restT=0;
   G.camMode=putt?'orbit':'chase';
   trail.visible=!putt;
@@ -1884,10 +1928,11 @@ function physStep(dt){
         A.bounce(impact,s);
         const cols=s==='sand'?[[.85,.78,.6],[.9,.85,.7]]:[[.35,.55,.28],[.55,.7,.4]];
         burst(p.x,h+.1,p.z,s==='sand'?14:8,cols,1.6,1.6,5,.55,2);
-        if(!b.landed){b.landed=true;onLanding(s);}
+        if(!b.reported){b.reported=true;onLanding(s);}   // stays airborne — real bounce
       }else{
         // stick / roll
-        b.landed=true;onLanding(s);
+        b.landed=true;
+        if(!b.reported){b.reported=true;onLanding(s);}
         _v.copy(_n).multiplyScalar(v.dot(_n));v.sub(_v);
       }
     }
@@ -1955,7 +2000,7 @@ function doPenalty(label){
   G.ball.penaltyPending=false;
   G.strokes++;G.scores[G.holeIdx].strokes=G.strokes;
   toast(label+' · +1 penalty','bad');
-  G.ball.p.copy(G.lastShot);G.ball.v.set(0,0,0);G.ball.rest=true;G.ball.landed=true;G.ball.splash=false;
+  G.ball.p.copy(G.lastShot);G.ball.v.set(0,0,0);G.ball.rest=true;G.ball.landed=true;G.ball.reported=true;G.ball.splash=false;
   onRest(true);
 }
 function onRest(fromPenalty){
@@ -2447,6 +2492,9 @@ function loop(now){
 
 window.__lk={get G(){return G;},get H(){return H;},start:i=>startRound(COURSES[i||0]),finish:()=>{for(let i=0;i<G.course.holes;i++)G.scores[i]={strokes:G.course.rows[i][2]-(i%3===0?1:0),putts:2,fw:true};finishRound();},
   shot:()=>shotAction(),golfer,placeGolfer,hole:i=>loadHole(i),
+  step:ms=>{lastT=performance.now()-(ms||16);loop(performance.now());},
+  phys:()=>{physStep(1/120);},
+  gstep:dt=>stepGauge(dt||1/60),
   audit:()=>{const out=[];for(const c of COURSES){for(let i=0;i<c.holes;i++){const h=buildHole(c,i);
     let wet=0,n=0;for(let k=0;k<=60;k++){const p=h.pathPoint(k/60,0);for(const off of[-8,0,8]){const q=h.pathPoint(k/60,off);const y=h.height(q.x,q.y);const s=h.surface(q.x,q.y);n++;if(s!=='water'&&y<WATER_Y+.05&&h.ponds.length)wet++;}}
     out.push(c.id+(i+1)+':'+(h.ponds.length?'P':'-')+' tee'+h.height(h.tee.x,h.tee.y).toFixed(1)+' grn'+h.cupY.toFixed(1)+' wet'+wet);disposeHole(h);}}return out.join(' | ');}};
