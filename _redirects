@@ -1,3 +1,2 @@
-# Natural-guess URLs -> real pages. Keeps the 404s honest.
-/card/  /account/  301
-/radio/  /radio/stations/  301
+/card/ /account/ 301
+/radio/ /radio/stations/ 301
