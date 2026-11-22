@@ -687,9 +687,9 @@ const A={ctx:null,master:null,sfx:null,amb:null,mus:null,noise:null,gaugeOsc:nul
 /* row: [name, len, par, elev, dogs[[t,deg]], fw, gR, water[[t,off,rx,rz]], bunk[[t,off,r]] ] */
 const COURSES=[
 {id:'dunes',title:'Emerald Dunes',holes:9,par:36,diff:1,desc:'Golden morning over a seaside links. Salt wind, dune grass, and water that mirrors the sky.',
- sky:{zen:0x2E7FB8,hor:0xF6D9A8,band:0,sunCol:0xFFE3B0,sunDir:[-.55,.40,.42],stars:0},
+ sky:{zen:0x2E7FB8,hor:0xF6D9A8,band:0,sunCol:0xFFE3B0,sunDir:[-.20,.17,.96],stars:0},
  fog:{col:0xE8D3B0,near:130,far:540},grass:{fair:[.30,.60,.28],rough:[.23,.45,.22],green:[.37,.70,.34],fringe:[.33,.64,.31],sand:[.91,.84,.63]},
- water:{deep:0x0E5E66,sky:0xBFE3E8},outer:0x0D4E58,mtn:0x7FA8B8,flag:0xE8452C,cloudTint:0xFFF4E0,exposure:1.12,
+ water:{deep:0x0E5E66,sky:0xBFE3E8},outer:0x0D4E58,mtn:0x7FA8B8,flag:0xE8452C,cloudTint:0xFFF4E0,exposure:1.05,
  trees:{pine:.7,count:130,hMin:3,hMax:5.5},hillAmp:5,audio:{birds:'gull',ocean:true,crickets:false,root:146.8},
  rows:[
  ["Opening Drive",340,4,2,[],14,11,[],[[.62,10,6]]],
@@ -703,9 +703,9 @@ const COURSES=[
  ["Homeward Bound",380,4,1,[[.65,16]],15,12,[[.75,24,28,16]],[[.95,8,6]]]],
  seedNames:['M. Tremblay','A. Okafor','S. Whitfield','K. Tanaka','R. Bouchard','J. MacLeod','L. Fontaine','D. Petrov','N. Sharma'],seedScores:[-5,-3,-2,-1,0,2,4,6,9]},
 {id:'hollow',title:'Cypress Hollow',holes:9,par:36,diff:2,desc:'Mist hangs in old-growth pines. Tight corridors, a cold creek, and greens that borrow the slope.',
- sky:{zen:0x6FA8C8,hor:0xDCE8DC,band:0,sunCol:0xFFF2D8,sunDir:[.35,.62,-.3],stars:0},
- fog:{col:0xC9DCC9,near:80,far:390},grass:{fair:[.22,.52,.26],rough:[.15,.40,.21],green:[.27,.60,.30],fringe:[.24,.55,.28],sand:[.85,.80,.66]},
- water:{deep:0x123B33,sky:0xCFE0DA},outer:0x14301F,mtn:0x5E7F72,flag:0xF2B23E,cloudTint:0xE8F0E8,exposure:1.05,
+ sky:{zen:0x4E93C8,hor:0xD8E6E4,band:0,sunCol:0xFFF2D8,sunDir:[-.40,.21,.89],stars:0},
+ fog:{col:0xC9DCC9,near:60,far:340},grass:{fair:[.22,.52,.26],rough:[.15,.40,.21],green:[.27,.60,.30],fringe:[.24,.55,.28],sand:[.85,.80,.66]},
+ water:{deep:0x123B33,sky:0xCFE0DA},outer:0x14301F,mtn:0x5E7F72,flag:0xF2B23E,cloudTint:0xE8F0E8,exposure:1.0,
  trees:{pine:.45,count:340,hMin:4,hMax:8},hillAmp:7,audio:{birds:'song',ocean:false,crickets:false,root:130.8},
  rows:[
  ["Moss Gate",330,4,0,[[.55,-26]],12,11,[],[[.95,7,5]]],
@@ -719,7 +719,7 @@ const COURSES=[
  ["Lantern Green",355,4,5,[[.6,-20]],13,11,[],[[.93,8,6],[.93,-8,6]]]],
  seedNames:['C. Whitecloud','H. Lindqvist','P. Deschamps','Y. Aoki','B. O\'Connell','T. Nguyen','E. Marchetti','G. Sorenson','W. Two-Rivers'],seedScores:[-4,-2,-1,0,1,3,5,8,11]},
 {id:'ridge',title:'Aurora Ridge',holes:18,par:72,diff:3,desc:'The championship. Eighteen holes under a burning dusk — long carries, big elevation, fireflies on the back nine.',
- sky:{zen:0x2B2350,hor:0xF2A65A,band:0xC75BD8,sunCol:0xFFB36B,sunDir:[-.7,.20,-.35],stars:1},
+ sky:{zen:0x2B2350,hor:0xF2A65A,band:0xC75BD8,sunCol:0xFFB36B,sunDir:[-.48,.12,.87],stars:1},
  fog:{col:0x6E5A8C,near:120,far:620},grass:{fair:[.17,.44,.32],rough:[.10,.30,.22],green:[.21,.52,.34],fringe:[.19,.48,.33],sand:[.79,.73,.66]},
  water:{deep:0x1A2C4A,sky:0xE8A0C0},outer:0x171233,mtn:0x3A2F5C,flag:0xFF5A4E,cloudTint:0xE8B8D0,exposure:1.0,
  trees:{pine:.9,count:250,hMin:4,hMax:7.5},hillAmp:9,audio:{birds:'song',ocean:false,crickets:true,root:110},
@@ -811,7 +811,7 @@ scene.add(sunLight);scene.add(sunLight.target);
 fillLight=new THREE.DirectionalLight(0x88B8D8,.5);fillLight.position.set(60,40,-80);scene.add(fillLight);
 composer=new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene,camera));
-bloomPass=new UnrealBloomPass(new THREE.Vector2(1,1),.38,.7,.82);
+bloomPass=new UnrealBloomPass(new THREE.Vector2(1,1),.32,.6,1.0);
 composer.addPass(bloomPass);
 composer.addPass(new OutputPass());
 function applyQuality(){
@@ -847,21 +847,32 @@ const sky=new THREE.Mesh(new THREE.SphereGeometry(1000,32,20),new THREE.ShaderMa
   fragmentShader:`varying vec3 vDir;uniform vec3 uZen,uHor,uBandCol,uSunCol,uSunDir;uniform float uBand,uStars,uTime;
   float lk_h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
   void main(){float h=clamp(vDir.y,-1.0,1.0);
-    vec3 col=mix(uHor,uZen,pow(max(h,0.0),0.55));
-    col=mix(col,uHor*1.07,pow(1.0-abs(h),6.0)*0.6);
+    float hh=max(h,0.0);
+    /* blue all the way to the horizon — a low golf view only sees a thin sky
+       sliver at the horizon, so blue must reach down; a narrow warm band sits
+       right on the horizon line, and the sun's azimuth adds a local glow. */
+    vec3 col=uZen;
+    col=mix(col,uZen*1.14,pow(hh,0.4)*0.4);
+    float hband=exp(-pow((hh-0.012)*24.0,2.0));
+    col=mix(col,uHor,hband*0.85);
     col=mix(col,uBandCol,exp(-pow((h-0.16)*4.0,2.0))*uBand*0.55);
     float s=max(dot(normalize(vDir),normalize(uSunDir)),0.0);
     col+=uSunCol*(pow(s,900.0)*1.3+pow(s,18.0)*0.26);
+    /* azimuthal glow: warm horizon light in the sun's compass bearing, so the
+       sky shows where the sun is even when the disc is off-frame */
+    vec2 dxz=vDir.xz,sxz=uSunDir.xz;
+    float azp=clamp(dot(dxz/max(length(dxz),1e-3),sxz/max(length(sxz),1e-3)),0.0,1.0);
+    col+=uSunCol*pow(azp,5.0)*exp(-max(h,0.0)*7.0)*0.30;
     if(uStars>0.0&&h>0.04){vec2 sp=vDir.xz/(vDir.y+0.45)*90.0;vec2 cell=floor(sp);float rnd=lk_h(cell);
-      float star=step(0.992,rnd)*pow(max(0.0,1.0-length(fract(sp)-0.5)*2.0),3.0);
-      col+=vec3(0.85,0.88,1.0)*star*uStars*(0.55+0.45*sin(uTime*2.0+rnd*40.0))*smoothstep(0.04,0.3,h);}
+      float star=step(0.986,rnd)*pow(max(0.0,1.0-length(fract(sp)-0.5)*2.0),3.0);
+      col+=vec3(1.0,0.97,1.0)*star*uStars*(0.55+0.45*sin(uTime*2.0+rnd*40.0))*smoothstep(0.04,0.3,h)*1.2;}
     gl_FragColor=vec4(col,1.0);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
   }`}));
 sky.frustumCulled=false;sky.renderOrder=-10;scene.add(sky);
-const sunSprite=new THREE.Sprite(new THREE.SpriteMaterial({map:dotTex,color:0xFFE8C0,transparent:true,opacity:.85,blending:THREE.AdditiveBlending,depthWrite:false,fog:false}));
-sunSprite.scale.set(160,160,1);scene.add(sunSprite);
+const sunSprite=new THREE.Sprite(new THREE.SpriteMaterial({map:dotTex,color:0xFFE8C0,transparent:true,opacity:.95,blending:THREE.AdditiveBlending,depthWrite:false,fog:false}));
+sunSprite.scale.set(190,190,1);scene.add(sunSprite);
 
 /* ---------- clouds / mountains / outer ---------- */
 const clouds=[];
@@ -1043,8 +1054,24 @@ function stepParts(dt){
 const FF_N=130;
 const ffGeo=new THREE.BufferGeometry();
 const ffPos=new Float32Array(FF_N*3),ffBase=[],ffPh=[];
-ffGeo.setAttribute('position',new THREE.BufferAttribute(ffPos,3));
-const ffMat=new THREE.PointsMaterial({size:.4,map:dotTex,color:0xFFCF7A,transparent:true,opacity:.8,blending:THREE.AdditiveBlending,depthWrite:false});
+ffGeo.setAttribute('position',new THREE.BufferAttribute(ffPos,3).setUsage(THREE.DynamicDrawUsage));
+const ffSize=new Float32Array(FF_N),ffBr=new Float32Array(FF_N);
+for(let i=0;i<FF_N;i++){ffSize[i]=.5+Math.random()*1.1;ffBr[i]=.5+Math.random()*.5;}
+ffGeo.setAttribute('aSize',new THREE.BufferAttribute(ffSize,1));
+ffGeo.setAttribute('aBr',new THREE.BufferAttribute(ffBr,1));
+const ffMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
+  uniforms:{uTime:uTime,uCol:{value:new THREE.Color(0xFFCF7A)},uAmp:{value:.4},uScale:{value:1},uPx:{value:190}},
+  vertexShader:`attribute float aSize,aBr;uniform float uTime,uScale,uPx;varying float vA;
+    void main(){vec4 mv=modelViewMatrix*vec4(position,1.0);
+      float tw=.5+.5*sin(uTime*1.6+position.x*1.7+position.z*1.3);
+      vA=(.35+.65*tw)*aBr;
+      gl_PointSize=aSize*uScale*tw*uPx/max(1.0,-mv.z);
+      gl_Position=projectionMatrix*mv;}`,
+  fragmentShader:`varying float vA;uniform vec3 uCol;
+    void main(){float d=length(gl_PointCoord-0.5)*2.0;
+      float a=pow(max(0.0,1.0-d),2.2)*vA;
+      if(a<0.004)discard;
+      gl_FragColor=vec4(uCol*(0.6+1.6*pow(max(0.0,1.0-d),3.0)),a);}`});
 const fireflies=new THREE.Points(ffGeo,ffMat);fireflies.frustumCulled=false;scene.add(fireflies);
 /* birds */
 const birds=[];
@@ -1190,9 +1217,13 @@ function buildHole(course,idx){
   tGeo.computeVertexNormals();
   const tMat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.96,metalness:0,envMapIntensity:.25});
   tMat.onBeforeCompile=sh=>{
+    sh.uniforms.uMistAmt={value:course.id==='hollow'?1.1:0};
+    sh.uniforms.uMistCol={value:new THREE.Color(course.fog.col).lerp(new THREE.Color(0xFFFFFF),.35)};
     sh.vertexShader='varying vec3 vWPos;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvWPos=(modelMatrix*vec4(position,1.0)).xyz;');
-    sh.fragmentShader='varying vec3 vWPos;\nfloat lk_h2(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}\nfloat lk_n(vec2 p){vec2 i=floor(p),f=fract(p);vec2 u=f*f*(3.0-2.0*f);return mix(mix(lk_h2(i),lk_h2(i+vec2(1,0)),u.x),mix(lk_h2(i+vec2(0,1)),lk_h2(i+vec2(1,1)),u.x),u.y);}\n'+
-      sh.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\n{float dn=lk_n(vWPos.xz*0.9)*0.6+lk_n(vWPos.xz*3.1)*0.4;float sp=lk_h2(floor(vWPos.xz*4.0));diffuseColor.rgb*=0.88+0.20*dn+0.06*sp;}');};
+    sh.fragmentShader='varying vec3 vWPos;\nuniform vec3 uMistCol;\nuniform float uMistAmt;\nfloat lk_h2(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}\nfloat lk_n(vec2 p){vec2 i=floor(p),f=fract(p);vec2 u=f*f*(3.0-2.0*f);return mix(mix(lk_h2(i),lk_h2(i+vec2(1,0)),u.x),mix(lk_h2(i+vec2(0,1)),lk_h2(i+vec2(1,1)),u.x),u.y);}\n'+
+      sh.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\n{float dn=lk_n(vWPos.xz*0.9)*0.6+lk_n(vWPos.xz*3.1)*0.4;float sp=lk_h2(floor(vWPos.xz*4.0));diffuseColor.rgb*=0.88+0.20*dn+0.06*sp;'+
+      /* ground-hugging mist: fades low terrain toward the fog color, so mist sits in the hollows between the pines */
+      'diffuseColor.rgb=mix(diffuseColor.rgb,uMistCol,uMistAmt*(1.0-smoothstep(1.2,8.0,vWPos.y))*(0.45+0.55*lk_n(vWPos.xz*0.22+7.7)));}');};
   const terrain=new THREE.Mesh(tGeo,tMat);terrain.position.set(cx,0,cz);terrain.receiveShadow=true;
   group.add(terrain);disposables.push(tGeo,tMat);
   /* water reflector */
@@ -1382,10 +1413,10 @@ function applyCourseEnvironment(course){
   skyUni.uSunCol.value.set(course.sky.sunCol);skyUni.uStars.value=course.sky.stars;
   const sd=new THREE.Vector3(...course.sky.sunDir).normalize();
   skyUni.uSunDir.value.copy(sd);
-  sunLight.color.set(course.sky.sunCol);sunLight.intensity=course.id==='ridge'?2.0:2.3;
+  sunLight.color.set(course.sky.sunCol);sunLight.intensity=course.id==='ridge'?2.4:2.9;
   hemi.color.set(course.sky.zen).lerp(new THREE.Color(0xFFFFFF),.5);
   hemi.groundColor.set(course.grass.rough[0],course.grass.rough[1],course.grass.rough[2]);
-  hemi.intensity=course.id==='ridge'?.55:.8;
+  hemi.intensity=course.id==='ridge'?.5:.48;
   fillLight.color.set(course.sky.band||course.sky.zen);fillLight.intensity=course.id==='ridge'?.6:.45;
   scene.fog=new THREE.Fog(course.fog.col,course.fog.near,course.fog.far);
   renderer.setClearColor(course.fog.col);
@@ -1395,9 +1426,9 @@ function applyCourseEnvironment(course){
   sunSprite.material.color.set(course.sky.sunCol);
   sunSprite.position.copy(sd).multiplyScalar(820);
   for(const c of clouds){c.material.color.set(course.cloudTint);c.material.opacity=course.id==='ridge'?.3:.5;}
-  ffMat.color.set(course.id==='ridge'?0xFFCF7A:0xFFF4D8);
-  ffMat.opacity=course.id==='ridge'?.9:.45;
-  ffMat.size=course.id==='ridge'?.45:.3;
+  ffMat.uniforms.uCol.value.set(course.id==='ridge'?0xFFCF7A:0xFFF4D8);
+  ffMat.uniforms.uAmp.value=course.id==='ridge'?1.35:.45;
+  ffMat.uniforms.uScale.value=course.id==='ridge'?2.1:1.1;
   A.setProfile(course.audio);
   bakeSkyEnv();
   for(const m of[canopyMat,trunkMat,rockMat,grassMat,flowerMat,reedMat])m.envMapIntensity=.28;
@@ -2405,7 +2436,7 @@ function loop(now){
     ffPos[i*3+1]=f.y+Math.sin(uTime.value*.8+ph*2)*1.1;
     ffPos[i*3+2]=f.z+Math.cos(uTime.value*.4+ph)*2.2;}
     ffGeo.attributes.position.needsUpdate=true;
-    ffMat.opacity=(G.course&&G.course.id==='ridge'?.75:.35)+Math.sin(uTime.value*2.2)*.2;}
+    ffMat.uniforms.uAmp.value=(G.course&&G.course.id==='ridge'?1.0:.4)*(.82+.18*Math.sin(uTime.value*2.2));}
   stepParts(dt);
   updateCamera(dt);
   A.tick(dt,G.wind.cur,G.screen==='play'||G.screen==='lobby');
