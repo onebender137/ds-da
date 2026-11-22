@@ -827,6 +827,8 @@ const GRAV=9.81, BALL_R=.03;   // drawn ~1.4x regulation so you can find it; the
 const CUP_R=.062;              // regulation cup is 54 mm — a hair of forgiveness for the gauge
 const LIE_CAP={tee:1,fairway:1,fringe:.92,rough:.72,sand:.5,green:1};
 const LIE_CURVE={tee:1,fairway:1,fringe:1.1,rough:1.5,sand:1.35,green:1};
+/* the putter doesn't dig into the grass: no lie penalty, just the slower roll */
+function lieCap(){return CLUBS[G.clubIdx].id==='PT'?1:LIE_CAP[G.lie];}
 const LIE_SPIN={tee:1,fairway:1,fringe:.9,rough:.55,sand:.6,green:1};   // grass/sand between face and ball = flyers
 /* ============================== BALL PHYSICS (real units) ==============================
    Regulation ball: 45.93 g, 42.67 mm. Aero = drag + Magnus lift from a spin vector,
@@ -2210,10 +2212,20 @@ function cycleClub(dir){
   const onGreen=G.lie==='green'||G.lie==='fringe';
   let i=G.clubIdx;
   for(let k=0;k<CLUBS.length;k++){i=(i+dir+CLUBS.length)%CLUBS.length;
-    if(CLUBS[i].id==='PT'&&!onGreen)continue;break;}
-  G.clubIdx=i;updateClubUI();G.previewDirty=true;A.ui();
+    break;}
+  G.clubIdx=i;updateClubUI();updateGaugeUI();G.previewDirty=true;A.ui();
 }
-function updateClubUI(){const c=CLUBS[G.clubIdx];
+function puttRollOut(v0){const b=G.ball.p,a=Math.atan2(H.green.x-b.x,H.green.y-b.z);
+  const p={x:b.x,z:b.z},v={x:Math.sin(a)*v0,y:0,z:Math.cos(a)*v0},w={x:0,y:0,z:0};let d=0;
+  for(let i=0;i<1200;i++){H.normal(p.x,p.z,_n);const s=H.surface(p.x,p.z);if(s==='water')return d+50;
+    const st=rollStep(v,w,_n,s,1/30);const sp=Math.hypot(v.x,v.z);p.x+=v.x/30;p.z+=v.z/30;d+=sp/30;if(st)break;}
+  return d;}
+function calcPuttMax(){const key=G.ball.p.x.toFixed(2)+','+G.ball.p.z.toFixed(2);if(G.puttKey===key)return;G.puttKey=key;
+  const want=distToPin()*1.3+1.2;
+  if(G.lie==='green'){G.puttMax=clamp(puttSpeedFor(want),1.6,11);return;}
+  let lo=1,hi=24;for(let k=0;k<14;k++){const m=(lo+hi)/2;if(puttRollOut(m)>want)hi=m;else lo=m;}
+  G.puttMax=clamp((lo+hi)/2,1.6,24);}
+function updateClubUI(){const c=CLUBS[G.clubIdx];if(c.id==='PT'&&H)calcPuttMax();
   $('clubName').textContent=c.name;
   $('clubCarry').textContent=c.id==='PT'?'roll · read the break':Math.round(c.carry*LIE_CAP[G.lie])+' m carry';
 }
@@ -2245,7 +2257,7 @@ function updateWindHUD(){
 
 /* ============================== SHOT GAUGE ============================== */
 function updateGaugeUI(){
-  const g=G.gauge,cap=LIE_CAP[G.lie];
+  const g=G.gauge,cap=lieCap();
   $('gCap').style.bottom=(cap*100)+'%';
   const btn=$('btnShot'),lbl=$('shotLabel');
   btn.classList.remove('busy','ready','putt');
@@ -2311,7 +2323,7 @@ function strike(){
     toast('PERFECT STRIKE','gold');A.perfect();
     $('gauge').classList.add('perfect');setTimeout(()=>$('gauge').classList.remove('perfect'),700);
 }
-  const eff=Math.max(power,.08)*LIE_CAP[G.lie];
+  const eff=Math.max(power,.08)*lieCap();
   const windMs=G.wind.cur/3.6;
   const wind={x:Math.sin(G.wind.curDir)*windMs,z:Math.cos(G.wind.curDir)*windMs};
   G.lastShot.copy(G.ball.p);G.shotStart.copy(G.ball.p);
@@ -2495,7 +2507,7 @@ function onRest(fromPenalty){
   autoClub();
   if(G.lie==='green'){
     const d=distToPin();
-    G.puttMax=clamp(puttSpeedFor(d*1.3+1.2),1.6,11);
+    G.puttKey=null;calcPuttMax();
     if(!fromPenalty)toast('On the green · '+d.toFixed(1)+' m','ok');
     G.cam.dist=isMobile?5.2:4.2;G.cam.pitch=.3;
   }else{
@@ -2598,7 +2610,7 @@ function computePreview(){
   if(!H||G.phase==='FLIGHT'||G.phase==='DONE')return;
   const c=CLUBS[G.clubIdx],b=G.ball;
   const power=G.phase==='POWER'?Math.max(G.gauge.power,.05):G.phase==='ACC'?G.gauge.locked:.92;
-  const eff=power*LIE_CAP[G.lie];
+  const eff=power*lieCap();
   const pos=prevGeo.attributes.position.array,col=prevGeo.attributes.color.array;
   const windMs=G.wind.cur/3.6;
   const wind={x:Math.sin(G.wind.curDir)*windMs,z:Math.cos(G.wind.curDir)*windMs};
@@ -2609,7 +2621,8 @@ function computePreview(){
     const dt=1/30;
     for(let i=0;i<900;i++){
       H.normal(p.x,p.z,_n);
-      const st=rollStep(v,w,_n,H.surface(p.x,p.z)==='green'?'green':'fringe',dt);
+      const sf=H.surface(p.x,p.z);if(sf==='water')break;
+      const st=rollStep(v,w,_n,sf,dt);
       p.x+=v.x*dt;p.z+=v.z*dt;
       if(st)break;
       if(i%6===0&&n<PREV_N){pos[n*3]=p.x;pos[n*3+1]=H.height(p.x,p.z)+.03;pos[n*3+2]=p.z;
