@@ -1089,6 +1089,14 @@ const outerMat=new THREE.MeshStandardMaterial({color:0x0D4E58,roughness:.55,meta
 const outer=new THREE.Mesh(new THREE.CircleGeometry(900,48),outerMat);
 const OUTER_Y=-3.2;
 outer.rotation.x=-Math.PI/2;outer.position.y=OUTER_Y;scene.add(outer);
+/* the distant ridgelines + sea are a ring around the HOLE, not the world origin — long holes used to
+   run straight into the inner ridge (Aurora Ridge #3 had a wall across the green). Centre the ring on
+   the hole and widen it so it always clears the playing area with room to spare. */
+function placeBackdrop(h){
+  const need=Math.hypot(h.W,h.D)/2+60,k=Math.max(1,need/470);
+  mtnGroup.position.set(h.cx,0,h.cz);mtnGroup.scale.set(k,1,k);
+  outer.position.set(h.cx,Math.min(OUTER_Y,h.seaY()-(h.ponds.length?2.4:0)),h.cz);
+}
 
 /* ---------- ball / trail / aim / preview / blob ---------- */
 const ballMesh=new THREE.Mesh(new THREE.SphereGeometry(BALL_R,20,16),
@@ -1640,7 +1648,11 @@ function buildHole(course,idx){
   function height(x,z){
     const q=closest(x,z);
     const base=(fbm(x*.02+3,z*.02+7)-.5)*2*course.hillAmp+(fbm(x*.08+9,z*.08)-.5)*2.4;
-    let hh=lerp(base,elevAt(q.t),sstep(fwAt(q.t)+18,fwAt(q.t)*.75,q.d));
+    /* hills beside the corridor are fine, cliffs aren't: the further off the short grass, the more the
+       land may rise or fall — no more banks that hide the green from the fairway */
+    const ce=elevAt(q.t),lim=1.2+Math.max(0,q.d-fwAt(q.t))*.16;
+    const baseC=ce+clamp(base-ce,-lim,lim);
+    let hh=lerp(baseC,ce,sstep(fwAt(q.t)+18,fwAt(q.t)*.75,q.d));
     const gx=x-green.x,gz=z-green.y,gd=Math.sqrt(gx*gx+gz*gz);
     const tf=sstep(.9,3,gd);
     hh=lerp(hh,cfg.elev+(tilt.x*gx+tilt.z*gz)*tf,sstep(cfg.gR+7,cfg.gR*.85,gd));
@@ -1660,7 +1672,13 @@ function buildHole(course,idx){
     return hh;}
   /* distance to the edge of the playable map, and the water level you'd meet there */
   function edgeD(x,z){return Math.min(x-(cx-W/2),cx+W/2-x,z-(cz-D/2),cz+D/2-z);}
-  const seaY=()=>ponds.length?WATER_Y:OUTER_Y;
+  /* sea level for this hole: the backdrop sea must sit BELOW the lowest ground in play (Aurora #5's
+     green is 6 m under the old fixed sea line and vanished under it) */
+  let seaLevel=null;
+  const seaY=()=>{if(ponds.length)return WATER_Y;
+    if(seaLevel===null){let lo=1e9;for(let i=0;i<=40;i++)for(let j=0;j<=40;j++){const x=cx-W/2+W*i/40,z=cz-D/2+D*j/40;
+        if(edgeD(x,z)<7.5)continue;lo=Math.min(lo,height(x,z));}seaLevel=Math.min(OUTER_Y,lo-1.5);}
+    return seaLevel;};
   function surface(x,z){
     /* the water is one flat sheet: wherever the ground is under it, you're in the lake (or the sea) */
     {const y=height(x,z);if(ponds.length&&y<WATER_Y+.04)return'water';if(edgeD(x,z)<7&&y<seaY()+.04)return'water';}
@@ -2135,7 +2153,7 @@ function startRound(course){
 function loadHole(idx){
   disposeHole(H);
   G.holeIdx=idx;
-  H=buildHole(G.course,idx);
+  H=buildHole(G.course,idx);placeBackdrop(H);
   applyCourseEnvironment(G.course);
   // wind
   const wr=mulberry32(G.holeWindSeed+idx*31);
@@ -2847,7 +2865,7 @@ function goLobby(){
   fadeSwap(()=>{
     disposeHole(H);
     const c=courseById('dunes');
-    H=buildHole(c,5); // Tidepool — reflective showcase
+    H=buildHole(c,5);placeBackdrop(H); // Tidepool — reflective showcase
     applyCourseEnvironment(c);
     G.course=c;
     const t=H.tee;G.ball.p.set(t.x,H.height(t.x,t.y)+BALL_R,t.y);
@@ -2986,6 +3004,19 @@ window.__lk={get G(){return G;},get H(){return H;},start:i=>startRound(COURSES[i
   step:ms=>{lastT=performance.now()-(ms||16);loop(performance.now());},
   phys:()=>{physStep(1/120);},
   gstep:dt=>stepGauge(dt||1/60),
+  drown:()=>{const out=[];for(const c of COURSES)for(let i=0;i<c.holes;i++){const h=buildHole(c,i);
+      const sy=Math.min(OUTER_Y,h.seaY()-(h.ponds.length?2.4:0));let n=0;
+      for(let a=0;a<=60;a++)for(let b=0;b<=60;b++){const x=h.cx-h.W/2+h.W*a/60,z=h.cz-h.D/2+h.D*b/60;if(h.edgeD(x,z)<7.5)continue;
+        const y=h.height(x,z);if(y<sy&&h.surface(x,z)!=='water')n++;}
+      out.push(c.id+(i+1)+':sea'+sy.toFixed(1)+(n?' DROWNED'+n:''));disposeHole(h);}return out.join(' ');},
+  sight:()=>{/* how badly does terrain block the view of the cup from shots in play? */
+    const out=[];for(const c of COURSES)for(let i=0;i<c.holes;i++){const h=buildHole(c,i);let worst=0,wt=0,woff=0;
+      for(let k=2;k<=48;k++){const t=k/50;for(const f of[-1.6,-1,-.5,0,.5,1,1.6]){const off=f*h.fwAt(t);const p=h.pathPoint(t,off);
+        if(h.surface(p.x,p.y)==='water')continue;const y0=h.height(p.x,p.y)+1.6,y1=h.cupY+1.2;
+        for(let j=1;j<40;j++){const u=j/40,x=p.x+(h.green.x-p.x)*u,z=p.y+(h.green.y-p.y)*u;const e=h.height(x,z)-(y0+(y1-y0)*u);
+          if(e>worst){worst=e;wt=t;woff=f;}}}}
+      out.push(c.id+(i+1)+':'+worst.toFixed(1)+'@'+wt.toFixed(2)+'/'+woff);disposeHole(h);}
+    return out.join(' ');},
   audit:()=>{const out=[];for(const c of COURSES){for(let i=0;i<c.holes;i++){const h=buildHole(c,i);
     let wet=0,n=0;for(let k=0;k<=60;k++){const p=h.pathPoint(k/60,0);for(const off of[-8,0,8]){const q=h.pathPoint(k/60,off);const y=h.height(q.x,q.y);const s=h.surface(q.x,q.y);n++;if(s!=='water'&&y<WATER_Y+.05&&h.ponds.length)wet++;}}
     out.push(c.id+(i+1)+':'+(h.ponds.length?'P':'-')+' tee'+h.height(h.tee.x,h.tee.y).toFixed(1)+' grn'+h.cupY.toFixed(1)+' wet'+wet);disposeHole(h);}}return out.join(' | ');}};
@@ -2995,7 +3026,7 @@ function boot(){
   renderSoundIcons();
   refreshCards();
   const c=courseById('dunes');
-  H=buildHole(c,5);
+  H=buildHole(c,5);placeBackdrop(H);
   applyCourseEnvironment(c);
   G.course=c;
   const t=H.tee;G.ball.p.set(t.x,H.height(t.x,t.y)+BALL_R,t.y);
