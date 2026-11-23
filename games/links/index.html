@@ -193,7 +193,12 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-o
 .lie-chip.green{color:var(--ok);border-color:rgba(74,222,128,.5)}
 .lie-chip.fringe{color:var(--turf-200)}
 .lie-chip.tee{color:var(--info);border-color:rgba(76,195,240,.4)}
-.chip-row{display:flex;gap:8px;align-items:center}
+.chip-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.aim-nudge{display:flex;align-items:center;gap:2px;padding:0 4px!important}
+.aim-nudge button{background:none;border:0;color:var(--cream);font:inherit;font-size:11px;font-weight:700;letter-spacing:.14em;padding:6px 9px;cursor:pointer;touch-action:none;border-radius:99px}
+.aim-nudge button:active{background:rgba(244,239,227,.15)}
+.aim-nudge #aimFine.on{background:var(--gold);color:var(--ink)}
+#btnShot{touch-action:none;-webkit-tap-highlight-color:transparent;user-select:none}
 .tgt-btn{cursor:pointer;color:var(--cream);font:inherit;font-size:11px;font-weight:700;letter-spacing:.16em}
 .tgt-btn:hover{border-color:rgba(242,178,62,.6)}.tgt-btn.on{color:var(--ink);background:var(--gold);border-color:var(--gold)}
 .tgt-info{position:absolute;left:50%;top:calc(84px + var(--sat));transform:translate(-50%,-8px);padding:8px 16px;border-radius:99px;
@@ -506,7 +511,8 @@ kbd{font-family:var(--sans);font-size:10px;font-weight:700;padding:3px 8px;borde
   <div class="tgt-info glass" id="tgtInfo"></div>
   <div class="hud-bottom">
     <div class="hud-left">
-      <div class="chip-row"><div class="lie-chip tee" id="lieChip">TEE · 100%</div><button class="lie-chip tgt-btn" id="btnTarget" aria-label="Landing view">◎ LANDING</button></div>
+      <div class="chip-row"><div class="lie-chip tee" id="lieChip">TEE · 100%</div><button class="lie-chip tgt-btn" id="btnTarget" aria-label="Landing view">◎ LANDING</button>
+        <div class="aim-nudge lie-chip"><button id="aimL" aria-label="Aim left">◀</button><button id="aimFine" aria-label="Fine aim">FINE</button><button id="aimR" aria-label="Aim right">▶</button></div></div>
       <div class="club-pill glass">
         <button id="clubPrev" aria-label="Previous club">‹</button>
         <div class="club-info"><b id="clubName">DRIVER</b><small id="clubCarry">225 m carry</small></div>
@@ -604,7 +610,7 @@ kbd{font-family:var(--sans);font-size:10px;font-weight:700;padding:3px 8px;borde
   <div class="modal glass">
     <div class="modal-head"><h3>How to play Links</h3><button class="icon-btn" id="btnHelpClose" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     <div class="modal-body help-grid">
-      <div class="help-step"><div class="n">1</div><div><h4>Aim</h4><p>Drag anywhere to aim — the dotted arc and gold ring show your predicted carry with the current wind. Tap <b>◎ LANDING</b> to fly the camera out to where it'll come down, and keep aiming from there. Pinch or scroll to zoom. The compass shows where the wind pushes the ball.</p><div class="help-keys"><kbd>DRAG</kbd><kbd>A / D fine aim</kbd><kbd>WHEEL zoom</kbd><kbd>V flyover</kbd><kbd>T landing view</kbd></div></div></div>
+      <div class="help-step"><div class="n">1</div><div><h4>Aim</h4><p>Drag anywhere to aim (slow drags are fine-grained; ◀ FINE ▶ for exact nudges) — the dotted arc and gold ring show your predicted carry with the current wind. Tap <b>◎ LANDING</b> to fly the camera out to where it'll come down, and keep aiming from there. Pinch or scroll to zoom. The compass shows where the wind pushes the ball.</p><div class="help-keys"><kbd>DRAG</kbd><kbd>A / D fine aim</kbd><kbd>WHEEL zoom</kbd><kbd>V flyover</kbd><kbd>T landing view</kbd></div></div></div>
       <div class="help-step"><div class="n">2</div><div><h4>Three-tap swing</h4><p>Tap <b>SWING</b> to start the gauge. Tap again to lock <b>power</b>. A marker slides down — tap when it crosses the <b>gold band</b> for a pure strike — both meters keep cycling until you tap, but the timing marker speeds up a little each pass. Early = pull-hook left, late = push-slice right.</p><div class="help-keys"><kbd>SPACE ×3</kbd><kbd>← → aim</kbd><kbd>↑ ↓ club</kbd><kbd>ESC pause</kbd><kbd>M mute</kbd><kbd>TAB card</kbd></div></div></div>
       <div class="help-step"><div class="n">3</div><div><h4>Read the ground</h4><p>On the green the dotted line previews your putt's break — aim off-line and let the slope feed it in. Water and out-of-bounds cost <b>+1</b> and a re-drop. Rounds post <b>Stableford points</b> to the arcade board: par 2 · birdie 3 · eagle 4 · bogey 1.</p></div></div>
       <div class="help-step"><div class="n">✦</div><div><h4>Lies matter</h4><table class="lie-table">
@@ -1549,7 +1555,7 @@ function makeGolfer(model){
     apply(pose);
   }
   function startSwing(){st.mode='back';st.u=0;st.power=0;}
-  function strike(putt){st.mode='down';st.k=0;st.dur=putt?.32:.27;st.u=Math.max(st.u,.06);return st.dur;}
+  function strike(putt){st.mode='down';st.k=0;st.dur=putt?.24:.2;st.u=Math.max(st.u,.06);return st.dur;}
   const _bl=mkPose();
   function toAddress(){if(st.mode!=='address'){lerpPose(pose,pose,0,_bl);st.blend=0;}st.mode='address';st.u=0;}
   return{setGround:f=>{ground=f;},THUMB,GRIP,curl,gripFingers,group:root,club,st,setClub,tick,startSwing,strike,toAddress,apply,B,setPower:p=>{st.power=p;},keyPose,trackPose,mkPose,
@@ -2461,7 +2467,7 @@ function strike(){
   A.gaugeStop();
   {const putt=CLUBS[G.clubIdx].id==='PT';
    /* the ball leaves when the club gets there: downswing ~0.27 s, putt ~0.32 s */
-   G.ball.hold=golfer.g?golfer.g.strike(putt):(putt?.32:.27);}
+   G.ball.hold=golfer.g?golfer.g.strike(putt):(putt?.24:.2);}
   const g=G.gauge,c=CLUBS[G.clubIdx];
   let acc=g.acc,power=g.locked;
   const perfect=Math.abs(acc)<=.07;
@@ -2880,7 +2886,7 @@ cv.addEventListener('pointerdown',e=>{
   pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
   if(pointers.size===2){const it=[...pointers.values()];pinchD=Math.hypot(it[0].x-it[1].x,it[0].y-it[1].y);}
   dragState={x:e.clientX,y:e.clientY,moved:0,t:performance.now(),btn:e.button};
-  cv.setPointerCapture(e.pointerId);
+  try{cv.setPointerCapture(e.pointerId);}catch(err){}
 });
 cv.addEventListener('pointermove',e=>{
   if(!pointers.has(e.pointerId))return;
@@ -2896,13 +2902,16 @@ cv.addEventListener('pointermove',e=>{
   if(!dragState)return;
   dragState.moved+=Math.abs(dx)+Math.abs(dy);
   lastUserDrag=G.time;
-  const fine=keys['Shift']?.25:1;
+  /* precision: Shift / the FINE toggle quarter the speed, and slow drags slow down on their own */
+  const now=performance.now(),mdt=Math.max(1,now-(dragState.lt||now-16));dragState.lt=now;
+  const spd=Math.abs(dx)/mdt,accel=clamp(spd/.8,.22,1);
+  const fine=(keys['Shift']||G.fineAim?.25:1)*accel;
   if(G.screen==='play'&&!G.paused){
     if(G.camMode==='overview'){G.cam.ovZoom=clamp(G.cam.ovZoom*(1+dy*.002),.45,1.6);return;}
     const freeLook=G.phase==='FLIGHT'||dragState.btn===2;
     if(freeLook){G.cam.yawOff+=dx*.005;G.cam.pitch=clamp(G.cam.pitch+dy*.004,.06,1.25);}
     else if(G.phase==='AIM'||G.phase==='POWER'||G.phase==='ACC'){
-      G.aim+=dx*.0045*fine;
+      G.aim-=dx*(isMobile?.003:.0045)*fine;
       G.cam.pitch=clamp(G.cam.pitch+dy*.003,.1,1.1);
       G.previewDirty=true;}
   }
@@ -2971,7 +2980,18 @@ function openCard(){
 }
 
 /* ============================== BUTTON WIRING ============================== */
-$('btnShot').addEventListener('click',()=>{A.init();A.resume();shotAction();});
+$('btnShot').addEventListener('pointerdown',e=>{e.preventDefault();A.init();A.resume();shotAction();});
+$('btnShot').addEventListener('click',e=>e.preventDefault());
+$('btnShot').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();shotAction();}});
+/* aim nudges (hold to repeat) + FINE toggle — precision aiming without a Shift key */
+function nudgeAim(sign){if(G.screen!=='play'||G.paused||!(G.phase==='AIM'||G.phase==='POWER'||G.phase==='ACC'))return;
+  G.aim-=sign*(G.fineAim?.05:.25)*D2R;G.previewDirty=true;}
+for(const [id,sg] of [['aimL',-1],['aimR',1]]){const b=$(id);let rt=null,iv=null;
+  const stop=()=>{clearTimeout(rt);clearInterval(iv);rt=iv=null;};
+  b.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();nudgeAim(sg);A.ui();
+    rt=setTimeout(()=>{iv=setInterval(()=>nudgeAim(sg),45);},320);});
+  for(const ev of['pointerup','pointercancel','pointerleave'])b.addEventListener(ev,stop);}
+$('aimFine').addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();G.fineAim=!G.fineAim;$('aimFine').classList.toggle('on',G.fineAim);A.ui();});
 $('btnTarget').addEventListener('click',e=>{e.stopPropagation();toggleTarget();});
 $('clubPrev').addEventListener('click',()=>cycleClub(-1));
 $('clubNext').addEventListener('click',()=>cycleClub(1));
