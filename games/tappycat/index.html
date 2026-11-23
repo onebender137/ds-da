@@ -579,6 +579,16 @@ let blinkTimer = 2;
 let birdTimer = 5, birdSwoop = null;
 let worldSpeed = 0;         // how fast the scenery is passing (0 on menus)
 
+// --- Phase 0: fixed-timestep sim (sim.js) -------------------------
+// The sim owns ALL gameplay state; the renderer mirrors it each frame
+// for the cosmetic code paths. One sim rate (60 Hz) on every device —
+// identical in log, sim and replayd.
+let simState = null, simPrev = null;
+let pendingFlap = false;    // consumed by the FIRST sim step after press
+let simAcc = 0;
+const cukeMeshes = new Map();   // sim cuke id -> THREE.Group
+const dogMeshes = new Map();    // sim dog id -> THREE.Group
+
 const CAT_X = -4;
 const GRAVITY = -35;
 const JUMP_FORCE = 13.5;
@@ -1482,32 +1492,22 @@ function cucumberGeometry(length) {
     return g;
 }
 
-function createCucumber(opts = {}) {
+// Renderer-only mesh builder — gameplay state (position, length,
+// scored/skipped) lives in sim.js. This builds the visuals.
+function buildCukeMesh(length) {
     const cucumber = new THREE.Group();
-    const length = opts.length || (3.5 + Math.random() * 1.5);
-
     const body = new THREE.Mesh(cucumberGeometry(length), cukeMats[(Math.random() * cukeMats.length) | 0]);
     body.castShadow = true;
     body.receiveShadow = true;
     cucumber.add(body);
     add(cucumber, cukeStemGeo, cukeStemMat, length / 2 + 0.44, 0, 0);
-
-    const x = (opts.x !== undefined) ? opts.x : 22;
-    let y;
-    if (opts.y !== undefined) {
-        y = opts.y;
-    } else {
-        // Keep the next ledge within fair reach of the last one
-        y = THREE.MathUtils.clamp(lastSpawnY + (Math.random() * 5.2 - 3.0), -2.5, 5);
-    }
-    lastSpawnY = y;
-
-    cucumber.position.set(x, y, 0);
-    cucumber.rotation.x = Math.random() * 6.3;
-    cucumber.userData.length = length;
-    cucumber.userData.scored = !!opts.scored;
-    cucumber.userData.skipped = false;
-
+    cucumber.rotation.x = Math.random() * 6.3;   // cosmetic spin
+    return cucumber;
+}
+// Menu helper (start-screen tableau only — not sim state)
+function createCucumber(opts = {}) {
+    const cucumber = buildCukeMesh(opts.length || (3.5 + Math.random() * 1.5));
+    cucumber.position.set(opts.x !== undefined ? opts.x : 22, opts.y !== undefined ? opts.y : -1.2, 0);
     scene.add(cucumber);
     cucumbers.push(cucumber);
     return cucumber;
@@ -1712,16 +1712,16 @@ function animateDog(d, t) {
     c.geometry.computeVertexNormals();
 }
 
-function spawnDog() {
+// Renderer-only: build a dog mesh for a sim dog. The sim owns
+// position / t / barked2 / dodged; the mesh carries the warn element
+// and the cosmetic animation.
+function spawnDogMesh(id, y) {
     const dog = dogPool.pop() || createDog();
     scene.add(dog);
-    const y = THREE.MathUtils.clamp(cat.position.y + (Math.random() * 4 - 2), -1.5, 6);
     dog.position.set(26, y, 0.6);
     dog.rotation.set(0, 0, 0);
     dog.userData.baseY = y;
     dog.userData.t = 0;
-    dog.userData.barked2 = false;
-    dog.userData.dodged = false;
 
     const warn = document.createElement('div');
     warn.className = 'dog-warn';
@@ -1730,6 +1730,7 @@ function spawnDog() {
     dog.userData.warnEl = warn;
 
     dogs.push(dog);
+    dogMeshes.set(id, dog);
     playBark(0.6);
     playDogFlyby((26 - CAT_X) / (worldSpeed * 1.7));
 }
@@ -1740,32 +1741,18 @@ function removeDogWarn(d) {
 function clearDogs() {
     dogs.forEach(d => { removeDogWarn(d); scene.remove(d); dogPool.push(d); });
     dogs = [];
+    dogMeshes.clear();
 }
 
-function updateDogs(delta, speed) {
-    if (gameState !== 'PLAYING') return;
-
-    if (score >= 6) {
-        dogTimer += delta;
-        const interval = Math.max(5, 10 - score * 0.06);
-        if (dogTimer > interval) { dogTimer = 0; spawnDog(); }
-    }
-
-    for (let i = dogs.length - 1; i >= 0; i--) {
+// Cosmetic dog pass — the sim owns movement / collision / dodge
+// (sim.js). This keeps mesh rotation, cape animation and the edge
+// warning in sync.
+function updateDogsVisual() {
+    for (let i = 0; i < dogs.length; i++) {
         const d = dogs[i];
-        d.userData.t += delta;
-        const t = d.userData.t;
-        d.position.x -= speed * 1.7 * delta;
-        d.position.y = d.userData.baseY + Math.sin(t * 3) * 0.5;
-        d.rotation.z = Math.sin(t * 3) * 0.1;
+        d.rotation.z = Math.sin(d.userData.t * 3) * 0.1;
         d.rotation.x = 0.18;                       // slight bank so the cape reads from the side
-        animateDog(d, t);
-
-        // Bark again mid-flight
-        if (!d.userData.barked2 && d.position.x < 9) {
-            d.userData.barked2 = true;
-            playBark(0.2);
-        }
+        animateDog(d, d.userData.t);
 
         // Blinking edge warning while still off-screen
         if (d.userData.warnEl) {
@@ -1775,32 +1762,6 @@ function updateDogs(delta, speed) {
             } else {
                 removeDogWarn(d);
             }
-        }
-
-        // Collision — hop over or duck under!
-        const dx = d.position.x - cat.position.x;
-        const dy = d.position.y - cat.position.y;
-        if (grace <= 0 && Math.sqrt(dx * dx + dy * dy) < 1.2) {
-            removeDogWarn(d);
-            spawnParticles(d.position.clone(), 0xd9a44a, 14);
-            spawnFeathers(cat.position.clone(), 8, [0xe9973a, 0xf6e2c4]);
-            gameOver('dog');
-            return;
-        }
-
-        // Clean dodge = bonus
-        if (!d.userData.dodged && d.position.x < CAT_X - 2.5) {
-            d.userData.dodged = true;
-            addScore(2);
-            showPopup('DODGED! +2', '#88ff88');
-            playDodge();
-        }
-
-        if (d.position.x < -18) {
-            removeDogWarn(d);
-            scene.remove(d);
-            dogPool.push(d);
-            dogs.splice(i, 1);
         }
     }
 }
@@ -3450,6 +3411,7 @@ function onVisibility() {
 function clearCucumbers() {
     cucumbers.forEach(c => { scene.remove(c); disposeGroup(c); });
     cucumbers = [];
+    cukeMeshes.clear();
 }
 // Title-screen tableau: the cat parked on a cucumber, eyeing the bird
 function resetStartPose() {
@@ -3467,16 +3429,18 @@ function startGame() {
     track('game_start');
 
     gameState = 'PLAYING';
-    score = 0;
-    streak = 0;
-    catVelocity = 0;
-    isGrounded = true;
-    airTime = 0;
-    spawnTimer = 0;
-    grace = 1.0;
-    lastSpawnY = -1.2;
-    birdTimer = 5;
-    birdSwoop = null;
+
+    // Phase 0: the sim owns gameplay state. Normal play seeds from
+    // crypto.getRandomValues on every run, so public board play stays
+    // exactly as random as it is today; challenge runs will pass the
+    // challenge seed instead (Phase 1).
+    const seed = (window.crypto && crypto.getRandomValues)
+        ? crypto.getRandomValues(new Uint32Array(1))[0]
+        : ((Date.now() ^ (Math.random() * 0xffffffff)) >>> 0);
+    simState = TappySim.init(seed);
+    simPrev = null;
+    simAcc = 0;
+    pendingFlap = false;
 
     cat.rotation.set(0, 0, 0);
     squashY = 1;
@@ -3485,18 +3449,10 @@ function startGame() {
     particles.forEach(p => scene.remove(p));
     particles = [];
     clearDogs();
-    dogTimer = 0;
     const s0 = stageForScore(0);
     currentStageN = s0.n;
     world.warp = 0;
     if (currentStage !== s0.idx || world.cur !== s0.idx || world.trans) applyStage(s0.idx, true);
-
-    // Safe start: a long freebie ledge right under the cat, then a fair runway
-    const starter = createCucumber({ x: CAT_X, y: -1.2, length: 7, scored: true });
-    cat.position.set(CAT_X, starter.position.y + 0.95, 0);
-    createCucumber({ x: 4,  y: -0.8 });
-    createCucumber({ x: 11, y: 0.2 });
-    createCucumber({ x: 18, y: -0.4 });
 
     scoreDisplay.innerText = '0';
     bestDisplay.innerText = 'BEST ' + best;
@@ -3574,8 +3530,7 @@ let lastTouchTime = 0;
 
 function flap() {
     if (gameState !== 'PLAYING') return;
-    catVelocity = JUMP_FORCE;
-    isGrounded = false;
+    pendingFlap = true;    // the sim consumes it on its next tick
     squashY = 1.25;
     playJumpSound();
     spawnParticles(new THREE.Vector3(cat.position.x - 0.3, cat.position.y - 0.5, 0), 0xf3ead8, 4, 0.55);
@@ -3653,155 +3608,25 @@ function showBanner(top, name) {
     bannerEl.classList.add('show');
 }
 
-function addScore(points) {
-    score += points;
-    scoreDisplay.innerText = score;
-    scoreDisplay.classList.add('bump');
-    setTimeout(() => scoreDisplay.classList.remove('bump'), 100);
-    checkStage();
-}
+// Scoring lives in sim.js (the 'score' event drives the display,
+// popups, combo UI and stage checks in drainSimEvents below).
 
 // ============================================================
-//  PHYSICS & GAME LOGIC  (unchanged from v1 — do not retune
-//  without resetting the leaderboard)
+//  PHYSICS & GAME LOGIC — now in sim.js (Phase 0)
+//  (values unchanged from v1 — do not retune without resetting
+//  the leaderboard; sim.test.js proves equivalence at 60 Hz)
 // ============================================================
-function updatePhysics(delta) {
-    if (gameState !== 'PLAYING') return;
 
-    if (grace > 0) grace -= delta;
-
-    const speed = BASE_SPEED + Math.min(score * 0.07, 6);
-    worldSpeed = speed;
-
-    // Gravity + ceiling
-    catVelocity += GRAVITY * delta;
-    cat.position.y += catVelocity * delta;
-    if (cat.position.y > CEILING) {
-        cat.position.y = CEILING;
-        if (catVelocity > 0) catVelocity = 0;
-    }
-
-    const targetRot = THREE.MathUtils.clamp(catVelocity * 0.04, -0.45, 0.55);   // visual pitch only
-    cat.rotation.z = THREE.MathUtils.lerp(cat.rotation.z, targetRot, 0.1);
-
-    // Spawning — interval tightens as score climbs
-    spawnTimer += delta;
-    const interval = Math.max(1.05, 1.7 - score * 0.012);
-    if (spawnTimer > interval) {
-        spawnTimer = 0;
-        createCucumber();
-    }
-
-    // Cucumber movement + collision
-    const wasGrounded = isGrounded;
-    isGrounded = false;
-    const catBottom = cat.position.y - 0.5;
-    const catTop = cat.position.y + 0.5;
-
-    for (let i = cucumbers.length - 1; i >= 0; i--) {
-        const c = cucumbers[i];
-        c.position.x -= speed * delta;
-        c.rotation.x += delta * 0.4;
-
-        const halfLen = c.userData.length / 2;
-        const top = c.position.y + 0.45;
-        const bottom = c.position.y - 0.45;
-        const overlapX = Math.abs(CAT_X - c.position.x) < halfLen + 0.6;
-
-        if (overlapX) {
-            // Landing: falling onto the top face, generous window
-            if (catVelocity <= 0 && catBottom <= top + 0.15 && catBottom >= top - 0.95) {
-                cat.position.y = top + 0.5;
-                catVelocity = 0;
-                isGrounded = true;
-
-                if (!wasGrounded && airTime > 0.15) {
-                    playLandSound();
-                    squashY = 0.72;
-                    spawnParticles(new THREE.Vector3(CAT_X, top, 0), 0xa9d06a, 5, 0.5);
-                }
-
-                if (!c.userData.scored) {
-                    c.userData.scored = true;
-                    streak++;
-                    const points = Math.min(streak, 5);
-                    addScore(points);
-                    playScoreSound(streak);
-                    showPopup('+' + points, '#00f0ff');
-                    if (streak >= 2) {
-                        comboDisplay.innerText = 'COMBO x' + streak;
-                        comboDisplay.classList.add('visible');
-                        if (streak >= 3) showPopup('COMBO x' + streak, '#ff2e88');
-                    }
-                    if (score % 10 === 0) showMockery();
-                }
-            }
-            // Bonk: slamming into the side/underside
-            else if (grace <= 0 && catBottom < top - 0.95 && catTop > bottom) {
-                gameOver('bonk');
-                return;
-            }
-        }
-
-        // Skipped a cucumber without landing → combo breaks
-        if (!c.userData.scored && !c.userData.skipped && c.position.x + halfLen < CAT_X - 1.5) {
-            c.userData.skipped = true;
-            if (streak >= 2) { showPopup('COMBO LOST', '#ff5566'); playComboLost(); }
-            streak = 0;
-            comboDisplay.classList.remove('visible');
-        }
-
-        if (c.position.x < -16) {
-            scene.remove(c);
-            disposeGroup(c);
-            cucumbers.splice(i, 1);
-        }
-    }
-
-    airTime = isGrounded ? 0 : airTime + delta;
-
-    // The void
-    if (cat.position.y < -10) {
-        gameOver('fall');
-        return;
-    }
-
-    updateBird(delta);
-    updateDogs(delta, speed);
-}
-
-function updateBird(delta) {
-    const t = clock.getElapsedTime();
-
-    if (birdSwoop) {
-        // Swooping through the play area — pounce it for +10!
-        birdSwoop.t += delta;
-        const p = birdSwoop.t / birdSwoop.dur;
-        if (p >= 1) {
-            birdSwoop = null;
-            birdTimer = 0;
-        } else {
-            bird.position.x = THREE.MathUtils.lerp(18, -14, p);
-            bird.position.y = birdSwoop.baseY + Math.sin(p * Math.PI * 2) * 2;
-            bird.position.z = 0;
-            bird.rotation.y = 0;   // model faces -x: beak-first through the dive
-            const vy = Math.cos(p * Math.PI * 2) * Math.PI * 4 / birdSwoop.dur;
-            animateBird(delta, t, 'swoop', -Math.atan2(vy, 32 / birdSwoop.dur) * 0.9);
-
-            const dx = bird.position.x - cat.position.x;
-            const dy = bird.position.y - cat.position.y;
-            if (Math.sqrt(dx * dx + dy * dy) < 1.4) {
-                addScore(10);
-                playGotchaSound();
-                showPopup('GOTCHA! +10', '#ffd700');
-                spawnParticles(bird.position.clone(), 0xffd700, 10, 0.7);
-                spawnFeathers(bird.position.clone(), 16, [0x8a8d93, 0xf2efe6, 0x3a3c42]);
-                birdSwoop = null;
-                birdTimer = -4; // longer cooldown after a catch
-                bird.position.set(12, 4, -2);
-                showMockery(true);
-            }
-        }
+// Cosmetic bird pass — the sim owns swoop timing / position / the
+// +10 pounce (sim.js). The swoop position is set in syncFromSim;
+// this keeps the model animation and the hover pose in sync.
+function updateBirdVisual(delta, t) {
+    if (simState && simState.swoop) {
+        const sw = simState.swoop;
+        const p = sw.t / sw.dur;
+        bird.rotation.y = 0;   // model faces -x: beak-first through the dive
+        const vy = Math.cos(p * Math.PI * 2) * Math.PI * 4 / sw.dur;   // visual wing angle only
+        animateBird(delta, t, 'swoop', -Math.atan2(vy, 32 / sw.dur) * 0.9);
     } else {
         // Hovering off to the side, mocking
         bird.position.y = 4 + Math.sin(t * 2) * 1.5;
@@ -3809,12 +3634,6 @@ function updateBird(delta) {
         bird.position.z = THREE.MathUtils.lerp(bird.position.z, 0, delta * 2);
         bird.rotation.y = Math.sin(t) * 0.2;
         animateBird(delta, t, 'hover', 0);
-
-        birdTimer += delta;
-        if (birdTimer > 9 + Math.random() * 5) {
-            birdSwoop = { t: 0, dur: 3.2, baseY: Math.random() * 4 };
-            showMockery();
-        }
     }
 }
 
@@ -3911,6 +3730,152 @@ function renderLeaderboard(target, max) {
 }
 
 // ============================================================
+//  SIM SYNC — mirror sim state onto the meshes each frame
+// ============================================================
+// Positional snapshot for interpolation (prev tick -> this tick).
+function snapshotSim(s) {
+    return {
+        catY: s.catY,
+        cuke: new Map(s.cuks.map(c => [c.id, { x: c.x, y: c.y }])),
+        dog: new Map(s.dogs.map(d => [d.id, { x: d.x, y: d.y }])),
+    };
+}
+
+// Push sim state to the renderer: scalars + interpolated positions.
+// Called once per frame after the step loop.
+function syncFromSim(delta) {
+    const s = simState;
+    // scalar mirrors (cosmetic code paths read these)
+    score = s.score;
+    streak = s.streak;
+    catVelocity = s.catV;
+    isGrounded = s.grounded;
+    airTime = s.airTime;
+    grace = s.grace;
+    spawnTimer = s.spawnTimer;
+    lastSpawnY = s.lastSpawnY;
+    birdTimer = s.birdTimer;
+    birdSwoop = s.swoop;
+    dogTimer = s.dogTimer;
+    worldSpeed = s.worldSpeed;
+    scoreDisplay.innerText = score;
+
+    const alpha = simPrev ? Math.min(simAcc / TappySim.DT, 1) : 1;
+
+    // cat — position + visual pitch (the pitch lerp stays frame-based)
+    const pyc = simPrev ? simPrev.catY : s.catY;
+    cat.position.y = pyc + (s.catY - pyc) * alpha;
+    const targetRot = THREE.MathUtils.clamp(s.catV * 0.04, -0.45, 0.55);   // visual pitch only
+    cat.rotation.z = THREE.MathUtils.lerp(cat.rotation.z, targetRot, 0.1);
+
+    // cucumbers
+    for (const c of s.cuks) {
+        let m = cukeMeshes.get(c.id);
+        if (!m) { m = buildCukeMesh(c.len); scene.add(m); cukeMeshes.set(c.id, m); }
+        const pc = simPrev ? simPrev.cuke.get(c.id) : null;
+        m.position.x = pc ? pc.x + (c.x - pc.x) * alpha : c.x;
+        m.position.y = c.y;
+        m.rotation.x += delta * 0.4;   // cosmetic spin
+    }
+    for (const [id, m] of [...cukeMeshes]) {
+        if (!s.cuks.some(c => c.id === id)) {
+            scene.remove(m); disposeGroup(m); cukeMeshes.delete(id);
+        }
+    }
+    cucumbers = [...cukeMeshes.values()];
+
+    // dogs
+    for (const d of s.dogs) {
+        let m = dogMeshes.get(d.id);
+        if (!m) { m = dogPool.pop() || createDog(); scene.add(m); dogMeshes.set(d.id, m); m.position.set(d.x, d.y, 0.6); }
+        const pd = simPrev ? simPrev.dog.get(d.id) : null;
+        m.position.x = pd ? pd.x + (d.x - pd.x) * alpha : d.x;
+        m.position.y = d.y;
+        m.userData.t = d.t;
+    }
+    for (const [id, m] of [...dogMeshes]) {
+        if (!s.dogs.some(d => d.id === id)) {
+            removeDogWarn(m);
+            scene.remove(m); dogPool.push(m); dogMeshes.delete(id);
+        }
+    }
+    dogs = [...dogMeshes.values()];
+
+    // bird swoop position (hover pose is set in updateBirdVisual)
+    if (s.swoop) {
+        const p = s.swoop.t / s.swoop.dur;
+        bird.position.x = 18 + (p * -32);
+        bird.position.y = s.swoop.baseY + TappySim.sinLUT(p * 6.283185307179586) * 2;
+        bird.position.z = 0;
+    }
+}
+
+// Drain sim events -> sounds, particles, popups, UI.
+function drainSimEvents() {
+    const evs = simState.events;
+    for (const e of evs) {
+        switch (e.type) {
+            case 'cuke':
+                if (!cukeMeshes.has(e.id)) {
+                    const m = buildCukeMesh(e.len);
+                    scene.add(m);
+                    cukeMeshes.set(e.id, m);
+                }
+                break;
+            case 'dog':
+                if (!dogMeshes.has(e.id)) spawnDogMesh(e.id, e.y);
+                break;
+            case 'score':
+                scoreDisplay.classList.add('bump');
+                setTimeout(() => scoreDisplay.classList.remove('bump'), 100);
+                playScoreSound(e.streak);
+                showPopup('+' + e.pts, '#00f0ff');
+                if (e.streak >= 2) {
+                    comboDisplay.innerText = 'COMBO x' + e.streak;
+                    comboDisplay.classList.add('visible');
+                    if (e.streak >= 3) showPopup('COMBO x' + e.streak, '#ff2e88');
+                }
+                if (e.score % 10 === 0) showMockery();
+                checkStage();
+                break;
+            case 'land':
+                playLandSound();
+                squashY = 0.72;
+                spawnParticles(new THREE.Vector3(e.x, e.y, 0), 0xa9d06a, 5, 0.5);
+                break;
+            case 'combo-lost':
+                showPopup('COMBO LOST', '#ff5566');
+                playComboLost();
+                comboDisplay.classList.remove('visible');
+                break;
+            case 'gotcha':
+                playGotchaSound();
+                showPopup('GOTCHA! +10', '#ffd700');
+                spawnParticles(new THREE.Vector3(e.x, e.y, 0), 0xffd700, 10, 0.7);
+                spawnFeathers(new THREE.Vector3(e.x, e.y, 0), 16, [0x8a8d93, 0xf2efe6, 0x3a3c42]);
+                bird.position.set(12, 4, -2);
+                showMockery(true);
+                checkStage();
+                break;
+            case 'swoop-start':
+                showMockery();
+                break;
+            case 'bark2':
+                playBark(0.2);
+                break;
+            case 'dodge':
+                showPopup('DODGED! +2', '#88ff88');
+                playDodge();
+                checkStage();
+                break;
+            case 'over':
+                break;   // handled by the animate loop
+        }
+    }
+    evs.length = 0;
+}
+
+// ============================================================
 //  MAIN LOOP
 // ============================================================
 function animate() {
@@ -3918,8 +3883,28 @@ function animate() {
     const delta = Math.min(clock.getDelta(), 0.1);
     const t = clock.getElapsedTime();
 
-    if (gameState === 'PLAYING') {
-        updatePhysics(delta);
+    if (gameState === 'PLAYING' && simState) {
+        // Fixed 60 Hz sim — one rate on every device (log, sim and
+        // replayd all agree). Paused while the tab is hidden; the old
+        // 0.1 s dt clamp is now a 6-step backlog cap.
+        if (!document.hidden) {
+            simAcc += delta;
+            let steps = 0;
+            while (simAcc >= TappySim.DT && steps < 6) {
+                const bits = pendingFlap ? 1 : 0;
+                pendingFlap = false;        // consumed by the FIRST step
+                simPrev = snapshotSim(simState);
+                TappySim.step(simState, bits);
+                simAcc -= TappySim.DT;
+                steps++;
+                if (simState.state !== 'PLAYING') break;
+            }
+            if (steps === 6) simAcc = 0;
+            drainSimEvents();
+            syncFromSim(delta);
+            if (simState.state === 'GAMEOVER') gameOver(simState.reason);
+        }
+        updateBirdVisual(delta, t);
     } else {
         worldSpeed = 0;
         if (gameState === 'GAMEOVER') {
@@ -3937,6 +3922,7 @@ function animate() {
 
     updateParticles(delta);
     updateCatLife(delta, t);
+    updateDogsVisual();
     tickWorld(delta, t, worldSpeed);
     tickAudio(delta);
 
@@ -3987,7 +3973,13 @@ window.__tl = {
     state: () => ({ gameState, score, best, streak, stage: currentStage, world: world.cur }),
     start: () => { startGame(); return 'started'; },
     flap: () => { flap(); return 'flap'; },
-    gameOver: (reason) => { if (gameState === 'PLAYING') gameOver(reason || 'fall'); return 'gameover'; },
+    gameOver: (reason) => {
+        if (gameState === 'PLAYING') {
+            if (simState && simState.state === 'PLAYING') { simState.state = 'GAMEOVER'; simState.reason = reason || 'fall'; }
+            gameOver(reason || 'fall');
+        }
+        return 'gameover';
+    },
     saveScore: (init) => { if (init) nameInput.value = init; saveScore(); return 'saved'; },
     shareText: () => shareText(score),
     shareCard: (s) => makeScoreCard(String(s || score), 'BEST ' + best + ' · CUCUMBER CHASE').then(c => c.toDataURL('image/png')),
@@ -3995,7 +3987,20 @@ window.__tl = {
     globalBoard: () => fetchGlobalBoard(),
     submitGlobal: (n, s) => submitGlobal(n, s),
     // scenery-only: jump the backdrop to world i (0-5) without touching the score
-    stage: (i, instant) => { applyStage(clamp(i | 0, 0, STAGES.length - 1), !!instant); return STAGES[currentStage].name; }
+    stage: (i, instant) => { applyStage(clamp(i | 0, 0, STAGES.length - 1), !!instant); return STAGES[currentStage].name; },
+    // Phase 0: live sim state
+    sim: () => simState ? { state: simState.state, score: simState.score, tick: simState.tick, reason: simState.reason, catY: simState.catY, cuks: simState.cuks.length, dogs: simState.dogs.length } : null,
+    // Phase 0: run a full sim headless in-page. Log format:
+    // [[tick, inputBits], ...] change-events (the Phase 2 log format).
+    headless: (seed, events) => {
+        const s = TappySim.init((seed >>> 0) || 1);
+        let bits = 0, ei = 0;
+        for (let tick = 0; tick < 36000 && s.state === 'PLAYING'; tick++) {
+            while (ei < (events || []).length && events[ei][0] === tick) { bits = events[ei][1]; ei++; }
+            TappySim.step(s, bits);
+        }
+        return { score: s.score, ticks: s.tick, reason: s.reason };
+    }
 };
 
 init();
@@ -4005,6 +4010,7 @@ init();
   <div id="radioBox"></div>
   <script src="../arcade-social.js?v=15"></script>
   <script src="../../radio/radio.js?v=11"></script>
+  <script src="sim.js?v=1"></script>
   <script>
     // DSDA Radio — shared cross-game dial (6 stations). The radio is the music source;
     // the game's own procedural music is disabled.
