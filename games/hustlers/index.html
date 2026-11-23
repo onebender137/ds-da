@@ -1346,6 +1346,7 @@ function applyTableTheme(theme){
   cushionMat.map=a.cloth;cushionMat.color.setScalar(0.82);cushionMat.needsUpdate=true;
   woodMat.map=a.wood;woodMat.needsUpdate=true;
   rimMat.color.set(T.rim);
+  BALL_U.clothTint.value.set(T.cloth);
   legMat.color.set(theme==='parlor'?0x3a2210:theme==='neon'?0x6a6f7a:0x2c3038);
   legMat.metalness=theme==='parlor'?0.1:0.7;
 }
@@ -1357,14 +1358,42 @@ const balls=[];
    are soft and offset; this is what makes a ball look like it's ON the cloth. */
 const aoTex=canvasTex(128,128,(ctx,w,h)=>{
   const g=ctx.createRadialGradient(w/2,h/2,0,w/2,h/2,w/2);
-  g.addColorStop(0,'rgba(0,0,0,0.95)');g.addColorStop(0.22,'rgba(0,0,0,0.7)');g.addColorStop(0.45,'rgba(0,0,0,0.28)');
-  g.addColorStop(0.75,'rgba(0,0,0,0.07)');g.addColorStop(1,'rgba(0,0,0,0)');
+  /* tight near-black core where the ball touches, then a short soft penumbra */
+  g.addColorStop(0,'rgba(0,0,0,1)');g.addColorStop(0.14,'rgba(0,0,0,0.95)');g.addColorStop(0.3,'rgba(0,0,0,0.62)');
+  g.addColorStop(0.5,'rgba(0,0,0,0.26)');g.addColorStop(0.75,'rgba(0,0,0,0.07)');g.addColorStop(1,'rgba(0,0,0,0)');
   ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
 },false);
-const aoGeo=new THREE.PlaneGeometry(R*3.3,R*3.3);aoGeo.rotateX(-Math.PI/2);
+const aoGeo=new THREE.PlaneGeometry(R*2.9,R*2.9);aoGeo.rotateX(-Math.PI/2);
+/* Ball grounding. The studio env map lights a ball's underside as brightly as its top,
+   so balls looked like they hovered. Real balls on felt: the ambient/IBL falls off toward
+   the bottom (the table blocks it), the underside picks up green bounce from the cloth,
+   and reflections there show dark felt, not a bright room. Done per-fragment from the
+   world normal; the lamps' direct light is untouched. */
+const BALL_U={clothTint:{value:new THREE.Color(0x1d6a44)}};
+function groundBall(mat){
+  mat.onBeforeCompile=sh=>{
+    sh.uniforms.clothTint=BALL_U.clothTint;
+    sh.fragmentShader=sh.fragmentShader
+      .replace('#include <common>','#include <common>\nuniform vec3 clothTint;')
+      .replace('#include <aomap_fragment>',`#include <aomap_fragment>
+      {
+        vec3 wN=inverseTransformDirection(normal,viewMatrix);
+        float up=smoothstep(-0.85,0.45,wN.y);                    /* 0 at the contact point, 1 on top */
+        float occ=mix(0.1,1.0,up);
+        vec3 bounce=mix(clothTint*1.6,vec3(1.0),up);             /* felt-coloured fill underneath */
+        reflectedLight.indirectDiffuse*=occ*bounce;
+        reflectedLight.indirectSpecular*=mix(0.18,1.0,up)*mix(clothTint*2.0,vec3(1.0),up);
+        #ifdef USE_CLEARCOAT
+        clearcoatSpecularIndirect*=mix(0.15,1.0,up);
+        #endif
+      }`);
+  };
+  mat.customProgramCacheKey=()=>'groundBall1';
+  return mat;
+}
 function makeBalls(){
   for(let n=0;n<=15;n++){
-    const mat=phy({map:ballTex(n),roughness:0.13,clearcoat:1,clearcoatRoughness:0.08,envMapIntensity:0.9});
+    const mat=groundBall(phy({map:ballTex(n),roughness:0.13,clearcoat:1,clearcoatRoughness:0.08,envMapIntensity:0.9}));
     const mesh=new THREE.Mesh(ballGeo,mat);
     mesh.castShadow=true;
     scene.add(mesh);
@@ -2317,7 +2346,7 @@ function syncBallMeshes(dt){
       }
       b.mesh.position.set(b.x,BY,b.z);
       b.ao.position.set(b.x,TY+0.0007,b.z);b.ao.visible=b.mesh.visible;
-      b.ao.material.opacity=0.75*(b.mesh.material.transparent?b.mesh.material.opacity:1);
+      b.ao.material.opacity=0.88*(b.mesh.material.transparent?b.mesh.material.opacity:1);
     }else if(b.state==='sink'){
       moving=true;
       b.sinkT+=dt/0.45;
@@ -2325,7 +2354,7 @@ function syncBallMeshes(dt){
       const kc=1-Math.exp(-dt*16);b.x=lerp(b.x,b.sinkP.x,kc);b.z=lerp(b.z,b.sinkP.z,kc);
       /* drop into the throat under gravity; no shrinking, the pocket hides it */
       b.mesh.position.set(b.x,BY-t*t*0.13,b.z);
-      b.ao.material.opacity=0.75*(1-Math.min(1,t*3));
+      b.ao.material.opacity=0.88*(1-Math.min(1,t*3));
       if(t>=1){b.state='potted';b.mesh.visible=false;}
     }
     if(b.state==='potted'||!b.mesh.visible)b.ao.visible=false;
