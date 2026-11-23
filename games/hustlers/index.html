@@ -574,7 +574,7 @@ kbd{font:600 10px var(--mono);background:#1a2230;border:1px solid var(--line2);b
   <div class="modal">
     <div class="modal-head"><h2>HOW TO HUSTLE</h2><span class="sub">bar rules · winner takes all</span><button class="xbtn" data-close="helpOverlay">✕</button></div>
     <div class="modal-body">
-      <div class="helprow"><div class="helpicon">🎯</div><div><h4>Aim & strike</h4><p><b>Move</b> the mouse to aim — in the CUE camera it steers by feel, in TOP/TV it points where you look. <b>Click</b> once to lock the aim so you can reach the spin pad or power bar without knocking it off line. Slow mouse moves aim finer than fast ones. Arrow keys nudge (tap) or sweep (hold); hold <b>SHIFT</b> with the mouse or arrows for hair-thin in any camera. <b>Press and pull back</b> to load the cue, release to strike — drag back to zero to cancel. Or hold <b>SPACE</b>, or set the power bar and hit <b>SHOOT</b>. On touch: tap to point, then drag slowly to fine-tune (dragging far from the cue ball is finer still); pull back from the cue ball to fire.</p></div></div>
+      <div class="helprow"><div class="helpicon">🎯</div><div><h4>Aim & strike</h4><p><b>Move</b> the mouse to aim — in the CUE camera it steers by feel, in TOP/TV it points where you look. <b>Click</b> once to lock the aim so you can reach the spin pad or power bar without knocking it off line. Slow mouse moves aim finer than fast ones. Arrow keys nudge (tap) or sweep (hold); hold <b>SHIFT</b> with the mouse or arrows for hair-thin in any camera. <b>Press and pull back</b> to load the cue, release to strike — drag back to zero to cancel. Or hold <b>SPACE</b>, or set the power bar and hit <b>SHOOT</b>. On touch: <b>tap</b> the cloth to point the cue there (TOP/TV), <b>drag anywhere</b> to fine-tune the line (slow drags are finer). To shoot, put your finger <b>on the cue ball</b> and pull straight back, then let go; pull back to zero or slide off to the side to cancel. Pinch to zoom never touches your shot. Or set the power bar and hit <b>SHOOT</b>.</p></div></div>
       <div class="helprow"><div class="helpicon">🌀</div><div><h4>English</h4><p>Drag the red dot on the cue-ball widget. <b>Top</b> = follow through the object ball, <b>bottom</b> = draw back, <b>sides</b> = kick off cushions at bent angles. It resets after every strike.</p></div></div>
       <div class="helprow"><div class="helpicon">🎱</div><div><h4>Bar-rules 8-ball</h4><p>Break, then the table is <b>open</b> until someone legally pots — that ball picks your group (<b>solids 1–7</b> or <b>stripes 9–15</b>). Clear your seven, then sink the <b>8</b> to win. Pot the 8 early, or scratch while potting it, and you lose on the spot.</p></div></div>
       <div class="helprow"><div class="helpicon">⚠️</div><div><h4>Fouls & the clock</h4><p>Scratch, wrong ball first, no contact, or no rail after contact = <b>foul</b>: The Hustler gets <b>ball in hand</b> (tap the cloth to place yours). You have <b>35 seconds</b> a shot. An 8 potted on the break is re-spotted.</p></div></div>
@@ -2432,7 +2432,7 @@ function bannerForState(){
   const target=on8?'THE 8-BALL':gtxt;
   switch(G.state){
     case 'place':setBanner(m.shot?.wasBreakNext?'BREAK · <span class="hl">BALL IN HAND</span>':'<span class="hl">BALL IN HAND</span> · TAP THE CLOTH','PLACE THE CUE ANYWHERE LEGAL · CLICK / TAP TO CONFIRM');break;
-    case 'aim':setBanner(`YOUR SHOT · <span class="hl">${target}</span>${G.aimLocked?' · 🔒':''}`,COARSE?'DRAG TO AIM · PULL BACK FROM THE CUE BALL OR USE THE POWER BAR':
+    case 'aim':setBanner(`YOUR SHOT · <span class="hl">${target}</span>${G.aimLocked?' · 🔒':''}`,COARSE?'TAP OR DRAG TO AIM · PULL STRAIGHT BACK FROM THE CUE BALL OR USE THE POWER BAR':
       G.aimLocked?'AIM LOCKED · CLICK TO UNLOCK · ←→ NUDGE · DRAG BACK / SPACE / SHOOT TO FIRE':'MOVE: AIM · CLICK: LOCK AIM · DRAG BACK: POWER · SPACE: CHARGE · SHIFT: FINE');break;
     case 'striking':case 'sim':setBanner(m.turn==='you'?'<span class="hl">ROLLING…</span>':'THE HUSTLER’S BALLS ROLL…','');break;
     case 'aiPlace':setBanner('THE HUSTLER · <span class="hl">BALL IN HAND</span>','HE PLACES IT WHERE IT HURTS');break;
@@ -3175,7 +3175,14 @@ cv.addEventListener('pointerdown',e=>{
   audioInit();audioResume();
   cv.setPointerCapture(e.pointerId);
   pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(pointers.size>2)return;                     /* a third finger changes nothing */
   if(pointers.size===2){
+    /* second finger = pinch zoom: undo whatever the first finger started */
+    if(dragMode==='pull'||dragMode==='aimdrag'||dragMode==='pending'){
+      if(G.charging){G.power=G.powerBeforePull;updatePowerUI();}
+      G.aim=aimAtDown;
+    }
+    if(dragMode==='place'&&G.placeBefore){cue.x=G.placeBefore.x;cue.z=G.placeBefore.z;cue.mesh.position.set(cue.x,BY,cue.z);}
     dragMode='pinch';G.charging=false;
     const pts=[...pointers.values()];
     pinchD=Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y);
@@ -3189,6 +3196,7 @@ cv.addEventListener('pointerdown',e=>{
   if(CAM.mode==='orbit'||G.state==='menu'||G.state==='over'){dragMode='orbit';stage.classList.add('orbiting');return;}
   if(G.state==='place'&&G.match?.turn==='you'){
     dragMode='place';
+    G.placeBefore={x:cue.x,z:cue.z};
     if(CAM.mode!=='cue'||e.pointerType==='touch')placeMoveTo(downWorld); /* a tap drops it where you tapped */
     return;
   }
@@ -3200,10 +3208,13 @@ cv.addEventListener('pointerdown',e=>{
     G.pullDir=vl>4?{x:vx/vl,y:vy/vl}:{x:0,y:-1};
     G.powerBeforePull=G.power;
     if(e.pointerType==='touch'){
-      const near=Math.hypot(e.clientX-s0.x,e.clientY-s0.y)<95;
-      dragMode=near?'pull':'aimdrag';
-      /* tap points the cue, then dragging fine-steers from there */
-      if(!near&&CAM.mode!=='cue')aimAt(downWorld);
+      /* Touch waits to see where the finger goes before deciding. It's a pull only if
+         it started ON the cue ball and moves mostly straight back along the shot line;
+         anything else is aiming. (It used to be "within 95px = pull", which turned
+         thumb aim-drags near the ball into shots.) A tap with no drag points the cue. */
+      const sr=Math.hypot(worldToScreen(cue.x+R,BY,cue.z).x-s0.x,worldToScreen(cue.x+R,BY,cue.z).y-s0.y);
+      G.touchNear=Math.hypot(e.clientX-s0.x,e.clientY-s0.y)<Math.max(48,sr*2.6);
+      dragMode='pending';
       G.touchPrev=downWorld;
     }else{
       dragMode='pull';
@@ -3211,11 +3222,13 @@ cv.addEventListener('pointerdown',e=>{
   }else dragMode=null;
 });
 cv.addEventListener('pointermove',e=>{
-  const mdx=hoverLast?e.clientX-hoverLast.x:0, mdy=hoverLast?e.clientY-hoverLast.y:0;
-  hoverLast={x:e.clientX,y:e.clientY};
+  let mdx=hoverLast?e.clientX-hoverLast.x:0, mdy=hoverLast?e.clientY-hoverLast.y:0;
   const rec=pointers.get(e.pointerId);
+  /* touch tracks each finger on its own; a second finger must not kick the aim */
+  if(e.pointerType!=='touch'||pointers.size<2)hoverLast={x:e.clientX,y:e.clientY};
   if(rec){
     const dx=e.clientX-rec.x,dy=e.clientY-rec.y;
+    if(e.pointerType==='touch'){mdx=dx;mdy=dy;}
     rec.x=e.clientX;rec.y=e.clientY;
     movedPx+=Math.abs(dx)+Math.abs(dy);
     if(dragMode==='pinch'&&pointers.size===2){
@@ -3244,10 +3257,25 @@ cv.addEventListener('pointermove',e=>{
     return;
   }
   if(G.state!=='aim'||G.match?.turn!=='you')return;
+  if(dragMode==='pending'&&downScreen){
+    const px=e.clientX-downScreen.x,py=e.clientY-downScreen.y;
+    if(Math.hypot(px,py)<10)return;
+    const back=-(px*G.pullDir.x+py*G.pullDir.y), side=Math.abs(px*G.pullDir.y-py*G.pullDir.x);
+    dragMode=(G.touchNear&&back>0&&back>side*1.5)?'pull':'aimdrag';
+    if(dragMode==='aimdrag'){mdx=px;mdy=py;}      /* don't lose the first 10px of the drag */
+  }
   if(dragMode==='pull'&&downScreen){
     const px=e.clientX-downScreen.x,py=e.clientY-downScreen.y;
     const back=-(px*G.pullDir.x+py*G.pullDir.y);
-    if(!G.charging&&back>12)G.charging=true;   /* dead zone: a wobbly click never fires */
+    if(e.pointerType==='touch'){
+      /* a pull that wanders well off the shot line wasn't a pull: drop it quietly */
+      const side=Math.abs(px*G.pullDir.y-py*G.pullDir.x);
+      if(side>48&&side>Math.max(back,0)*0.9){
+        if(G.charging){G.power=G.powerBeforePull;updatePowerUI();G.charging=false;}
+        dragMode='dead';return;
+      }
+    }
+    if(!G.charging&&back>12){G.charging=true;G.pullT0=performance.now();}   /* dead zone: a wobbly click never fires */
     if(G.charging){
       G.power=clamp((back-12)/pullScale(),0,1);
       updatePowerUI();
@@ -3267,7 +3295,7 @@ function endPointer(e){
   pointers.delete(e.pointerId);
   if(pointers.size<2&&dragMode==='pinch')dragMode=null;
   stage.classList.remove('orbiting');
-  if(dragMode==='place'&&G.state==='place'&&G.match?.turn==='you'&&!G.paused){
+  if(dragMode==='place'&&e.type!=='pointercancel'&&G.state==='place'&&G.match?.turn==='you'&&!G.paused){
     const behind=!G.match.broken;
     if(validPlace(cue.x,cue.z,behind)&&movedPx<400){
       cue.mesh.material.transparent=false;cue.mesh.material.opacity=1;
@@ -3278,9 +3306,14 @@ function endPointer(e){
     }
   }
   const live=G.state==='aim'&&G.match?.turn==='you'&&!G.paused;
+  const cancelled=e.type==='pointercancel';   /* OS stole the touch: never a shot */
+  /* touch tap with no drag: point the cue there (TOP/TV) */
+  if(dragMode==='pending'&&live&&!cancelled&&CAM.mode!=='cue'&&downWorld)aimAt(downWorld);
   if(dragMode==='pull'){
     if(G.charging){
-      if(G.power>0.04&&live)shoot(G.aim,G.power,{...G.spin},'you');
+      /* touch also needs a deliberate pull: held a beat and real power, so a flick can't fire */
+      const deliberate=e.pointerType!=='touch'||(performance.now()-(G.pullT0||0)>140&&G.power>0.06);
+      if(G.power>0.04&&live&&!cancelled&&deliberate)shoot(G.aim,G.power,{...G.spin},'you');
       else{G.power=G.powerBeforePull;updatePowerUI();} /* pulled back to zero = cancel */
       G.charging=false;
     }else if(movedPx<6&&e.pointerType!=='touch'&&live){
