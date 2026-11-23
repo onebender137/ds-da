@@ -3990,6 +3990,40 @@ window.__tl = {
     stage: (i, instant) => { applyStage(clamp(i | 0, 0, STAGES.length - 1), !!instant); return STAGES[currentStage].name; },
     // Phase 0: live sim state
     sim: () => simState ? { state: simState.state, score: simState.score, tick: simState.tick, reason: simState.reason, catY: simState.catY, cuks: simState.cuks.length, dogs: simState.dogs.length } : null,
+    // Phase 2: input log recorder — wraps TappySim.step and records
+    // [tick, bits] change-events: exactly what step() received.
+    recordStart: () => {
+        const L = { events: [], bits: 0, steps: 0, t0: null, tEnd: null };
+        const orig = TappySim.step;
+        TappySim.step = (s, b) => {
+            const now = performance.now();
+            if (L.t0 === null) L.t0 = now;
+            L.tEnd = now;
+            L.steps++;
+            if (b !== L.bits) { L.events.push([s.tick, b]); L.bits = b; }
+            return orig(s, b);
+        };
+        L.restore = () => { TappySim.step = orig; };
+        window.__rec = L;
+        return 'recording';
+    },
+    recordStop: () => {
+        const L = window.__rec;
+        if (L && L.restore) L.restore();
+        window.__rec = null;
+        const s = simState;
+        // wall time from first step start to last step end (includes final step's 1/60 s)
+        const wallSec = (L.t0 !== null) ? ((L.tEnd - L.t0) / 1000 + (1 / 60)) : 0;
+        return {
+            seed: s ? s.seed : null,
+            events: L ? L.events : [],
+            score: s ? s.score : 0,
+            ticks: s ? s.tick : 0,
+            reason: s ? s.reason : null,
+            wallSec: +wallSec.toFixed(3),
+            rate: wallSec > 0 ? +(L.steps / wallSec).toFixed(4) : null,
+        };
+    },
     // Phase 0: run a full sim headless in-page. Log format:
     // [[tick, inputBits], ...] change-events (the Phase 2 log format).
     headless: (seed, events) => {
