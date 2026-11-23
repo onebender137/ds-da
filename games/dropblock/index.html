@@ -862,7 +862,11 @@ const fxList = [];    // rings + float text
 let dangerBar = null, backGlow = null, stars = null, nebulae = [];
 let guideBeam = null, guidePad = null;
 let previewMesh = null, previewLabel = null;
-// board mesh pool — the renderer reconciles these from simState every frame
+// board mesh pool — meshes follow CANDY IDENTITY (the sim's cd object), like v1:
+// finishClear compaction moves the same cd to a new grid slot, and its mesh
+// moves with it (geometry + halo stay bound to the candy, never to a position).
+// cdMesh is the truth; cellMeshes is a derived position→mesh view for FX code.
+const cdMesh = new Map();
 const cellMeshes = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
 let fallingMesh = null;
 
@@ -1258,36 +1262,49 @@ function restRowOf(s, col) {
 function syncFromSim() {
   const s = simState;
   if (!s) return;
-  // 1. board cells — create/update/remove meshes to match the sim grid
+  // preview: refresh whenever a NEW piece spawns. Lock→spawn and settle→spawn
+  // both create a fresh s.falling object; the grid sig does NOT change for
+  // settle-spawn (the piece spawns above the board), so keying on falling-object
+  // identity covers every spawn path in one check.
+  if (syncFromSim._lastFalling !== undefined && syncFromSim._lastFalling !== s.falling && s.falling) {
+    updatePreview();
+  }
+  syncFromSim._lastFalling = s.falling;
+  // 1. board cells — meshes follow candy identity (cd → mesh), like v1.
+  //    A clear compaction moves the same cd object to a new slot; its mesh
+  //    moves with it (no per-position recycling, no material/geometry swap).
+  const seenCd = new Set();
   for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
     const cd = s.grid[r][c];
     const key = r + ',' + c;
-    let m = cellMeshes[r][c];
+    let m = null;
     if (cd) {
-      const y = (s.phase === 'settling' && s.settle) ? (s.settle[key] !== undefined ? s.settle[key] : cd.ty) : cd.ty;
+      seenCd.add(cd);
+      m = cdMesh.get(cd);
       if (!m) {
         m = makeCandy(cd.color);
+        cdMesh.set(cd, m);
         boardGroup.add(m);
-        cellMeshes[r][c] = m;
       }
-      if (s.phase !== 'clearing') {
-        if (m.material !== mats[cd.color]) m.material = mats[cd.color];
-        m.rotation.z = 0;
-        m.scale.setScalar(1);
-      }
+      const y = (s.phase === 'settling' && s.settle) ? (s.settle[key] !== undefined ? s.settle[key] : cd.ty) : cd.ty;
       m.position.set(xOf(c), y, 0);
-    } else if (m) {
-      boardGroup.remove(m);
-      cellMeshes[r][c] = null;
     }
+    cellMeshes[r][c] = m;
   }
-  // 2. falling piece — one mesh, follows sim falling.col/y (clamped to rest row)
+  // drop meshes whose candy left the grid (cleared)
+  for (const [cd, m] of cdMesh) {
+    if (!seenCd.has(cd)) { boardGroup.remove(m); cdMesh.delete(cd); }
+  }
+  // 2. falling piece — a FRESH mesh per s.falling object. Lock→spawn happens
+  //    in the same tick, so s.falling is never null at sync; tagging the mesh
+  //    with its source cd catches the new piece (geometry + halo + rotation).
   if (s.falling) {
-    if (!fallingMesh) {
+    if (!fallingMesh || fallingMesh.userData.src !== s.falling) {
+      if (fallingMesh) boardGroup.remove(fallingMesh);
       fallingMesh = makeCandy(s.falling.color);
+      fallingMesh.userData.src = s.falling;
       boardGroup.add(fallingMesh);
     }
-    fallingMesh.material = mats[s.falling.color];
     const ty = restRowOf(s, s.falling.col) * CELL + CELL / 2;
     fallingMesh.position.set(xOf(s.falling.col), Math.max(s.falling.y, ty), 0);
     fallingMesh.rotation.y += (1 / 60) * 1.4;
@@ -1320,6 +1337,8 @@ function syncFromSim() {
         const now = sig[(r * COLS + c)] , was = prevGridSig[(r * COLS + c)];
         if (now !== '.' && was === '.') onPieceLockedFX(s, r, c);
       }
+      // preview refresh happens on falling-identity change (see top of sync),
+      // which also catches settle→spawn where no grid cell appears.
     }
     prevGridSig = sig;
   }
@@ -1427,6 +1446,7 @@ function clearBoard() {
   for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
     if (cellMeshes[r][c]) { boardGroup.remove(cellMeshes[r][c]); cellMeshes[r][c] = null; }
   }
+  cdMesh.clear();
   if (fallingMesh) { boardGroup.remove(fallingMesh); fallingMesh = null; }
   for (const p of particles) scene.remove(p.m);
   particles = [];
@@ -2374,6 +2394,31 @@ window.__vocals = Vocals;
 window.__tl = {
   pause() { cancelAnimationFrame(rafId); },
   resume() { clock.getDelta(); animate(); },
+  // renderer integrity probe: every candy mesh's geometry + halo must match
+  // its colour (shape 0..5 = Box/Sphere/Icosa/Octa/Cone/Torus, geos[] order)
+  meshAudit() {
+    const GEO = ['BoxGeometry', 'SphereGeometry', 'IcosahedronGeometry', 'OctahedronGeometry', 'ConeGeometry', 'TorusGeometry'];
+    const out = { board: 0, bad: [] };
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      const m = cellMeshes[r][c];
+      if (!m) continue;
+      out.board++;
+      const cd = simState.grid[r][c];
+      if (m.geometry.type !== GEO[cd.color] || (m.children[0] && m.children[0].material.color.getHex() !== new THREE.Color(COLORS[cd.color].c).getHex()))
+        out.bad.push({ cell: r + ',' + c, want: cd.color, geo: m.geometry.type });
+    }
+    if (fallingMesh && simState.falling) {
+      out.falling = { want: simState.falling.color, geo: fallingMesh.geometry.type, ok: fallingMesh.geometry.type === GEO[simState.falling.color] };
+    }
+    if (previewMesh) {
+      const nc = simState ? simState.nextColor : -1;
+      out.preview = { want: nc, geo: previewMesh.geometry.type, ok: nc < 0 || previewMesh.geometry.type === GEO[nc] };
+    }
+    return out;
+  },
+  gridColors() {
+    return simState ? simState.grid.map(row => row.map(c => c ? c.color : -1)) : null;
+  },
   rawFrame() { cancelAnimationFrame(rafId); renderer.render(scene, camera); },
   pixel(x, y) { const c = renderer.domElement; const sx = c.width / window.innerWidth, sy = c.height / window.innerHeight; const px = Math.round(x * sx), py = Math.round(y * sy); const gl = c.getContext('webgl2') || c.getContext('webgl'); const b = new Uint8Array(4); gl.readPixels(px, c.height - py, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, b); return [b[0], b[1], b[2], b[3]]; },
   demo() { return { on: menuDemo.on, t: Math.round(menuDemo.t * 100) / 100, states: menuDemo.blocks.map(b => b.state) }; },
@@ -2515,7 +2560,7 @@ window.__tl = {
       combo: simState ? simState.combo : 0,
       level: simState ? simState.level : 0,
       filled,
-      falling: (simState && simState.falling) ? { col: simState.falling.col, y: +simState.falling.y.toFixed(2) } : null,
+      falling: (simState && simState.falling) ? { col: simState.falling.col, y: +simState.falling.y.toFixed(2), color: simState.falling.color } : null,
       fps: Math.round(fps),
     };
   },
