@@ -2202,17 +2202,21 @@ function update(dt) {
   if (keysDown.has('down') && now - lastDownT > KEY_TIMEOUT) keysDown.delete('down');
   // Fixed-timestep sim: step the deterministic game at 60 Hz, then reconcile meshes.
   // rAF delta never reaches step() directly — the accumulator quantizes it to 60 Hz.
+  // A dead game ('over') stops ticking — the tick count freezes at the game-over
+  // tick (same as TappyCat's GAMEOVER), so recorded logs replay to an exact tick.
   if (simState) {
-    simAcc += dt;
-    let steps = 0;
-    while (simAcc >= DropBlockSim.TICK && steps < 6) {
-      DropBlockSim.step(simState, encodeBits());
-      pendingPress.clear();   // presses apply to the tick in which the keydown occurred
-      touchPress = false;     // bit7 (touch source) is consumed with the presses
-      simAcc -= DropBlockSim.TICK;
-      steps++;
+    if (simState.phase !== 'over') {
+      simAcc += dt;
+      let steps = 0;
+      while (simAcc >= DropBlockSim.TICK && steps < 6) {
+        DropBlockSim.step(simState, encodeBits());
+        pendingPress.clear();   // presses apply to the tick in which the keydown occurred
+        touchPress = false;     // bit7 (touch source) is consumed with the presses
+        simAcc -= DropBlockSim.TICK;
+        steps++;
+      }
+      if (steps === 6) simAcc = 0; // can't keep up — drop the frame
     }
-    if (steps === 6) simAcc = 0; // can't keep up — drop the frame
     syncFromSim();
   }
 }
