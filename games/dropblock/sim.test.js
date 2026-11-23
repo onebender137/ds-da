@@ -54,9 +54,10 @@ function makeBot(seed) {
   return { keys, events, i: 0 };
 }
 
-// 7-bit encoding: press bits = keydown this tick; hold bits = FINAL held state
+// 8-bit encoding: press bits = keydown this tick; hold bits = FINAL held state
 // after the tick's events (sub-tick press+release → press=1, hold=0).
-function toBits(events, prev) {
+// bit7 = touch source, set on any tick whose press came from touch (mode 'touch').
+function toBits(events, prev, touch) {
   let lP = 0, lH = prev.l, rP = 0, rH = prev.r, dP = 0, dH = prev.d, hP = 0;
   for (const e of events) {
     if (e.key === 'left') { lP = 1; lH = e.type === 'down' ? 1 : 0; }
@@ -64,7 +65,9 @@ function toBits(events, prev) {
     else if (e.key === 'down') { dP = 1; dH = e.type === 'down' ? 1 : 0; }
     else if (e.key === 'hard') hP = 1;
   }
-  return (lP | (lH << 1) | (rP << 2) | (rH << 3) | (dP << 4) | (dH << 5) | (hP << 6));
+  let b = lP | (lH << 1) | (rP << 2) | (rH << 3) | (dP << 4) | (dH << 5) | (hP << 6);
+  if (touch && (lP || rP || dP || hP)) b |= 128;  // bit7 = touch source
+  return b;
 }
 
 function gridColors(g) {
@@ -74,15 +77,16 @@ function gridColors(g) {
 function drive(seed, mode) {
   const ref = V1.create(seed, mode);
   ref.start();
-  const s = Sim.init(seed, mode === 'touch' ? { dasInit: 14, dasRep: 6 } : {});
+  const s = Sim.init(seed);  // DAS profile is set per-press from bit7, not at init
   Sim.start(s);
   const bot = makeBot(seed);
 
   let prev = { l: false, r: false, d: false };
+  const touch = mode === 'touch';
   for (let t = 1; t <= TICKS_PER_RUN; t++) {
     while (bot.i < bot.keys.length && bot.keys[bot.i] <= t) bot.i++;
     const due = bot.keys[bot.i] === t ? (bot.events[t] || []) : [];
-    const bits = toBits(due, prev);
+    const bits = toBits(due, prev, touch);
 
     ref.tick(due);
     Sim.step(s, bits);

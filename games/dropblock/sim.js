@@ -1,11 +1,15 @@
 // DropBlock sim — pure deterministic 60 Hz. House rules (Phase 0): no DOM/three/audio/window,
-// one mulberry32 for all state randomness, tick-only time, per-tick input bitmask (7 bits):
+// one mulberry32 for all state randomness, tick-only time, per-tick input bitmask (8 bits):
 //   bit0 left press · bit1 left held (final) · bit2 right press · bit3 right held (final)
-//   bit4 down press · bit5 down held (final) · bit6 hard drop press
+//   bit4 down press · bit5 down held (final) · bit6 hard drop press · bit7 touch source
 // press bit = a keydown event arrived this tick (v1 keydown: immediate move + DAS re-arm);
 // hold bit = the key's FINAL held state after all events of the tick. A sub-tick
 // press+release yields press=1, hold=0 — v1's immediate move and re-arm both happen,
 // which a pure level mask would lose.
+// bit7 (touch source) is set on any tick whose press came from touch. On a left/right
+// press edge the sim switches the DAS profile to match v1: keyboard 8/4 ticks, touch 14/6.
+// It must be in the bit stream (not set at init) so replays reproduce the same profile —
+// a touchscreen device can play with keyboard AND touch, and each press carries its source.
 //
 // v1 functions are COPIED from games/dropblock/index.html @ c0e30ea (state lines verbatim;
 // mesh/audio/FX lines stripped — the grid stores {color, ty} | null, exactly v1's shape,
@@ -207,6 +211,14 @@
     const rPress = bits & 4, rHold = bits & 8;
     const dPress = bits & 16, dHold = bits & 32;
     const hard = bits & 64;
+    const touch = bits & 128;
+    // DAS profile switches per left/right press edge — exactly like v1 (keyboard
+    // 0.13/0.055 s → 8/4 ticks, touch 0.22/0.09 s → 14/6 ticks). bit7 = touch source;
+    // it's in the bit stream so a replay reproduces the same profile on the same edges.
+    if (lPress || rPress) {
+      if (touch) { s.dasInit = 14; s.dasRep = 6; }
+      else { s.dasInit = 8; s.dasRep = 4; }
+    }
     if (lPress && s.phase === 'falling' && s.falling) {
       s.heldDir = -1;
       tryMove(s, -1);
@@ -275,7 +287,7 @@
   const score = (s) => s.score;
   const done = (s) => s.phase === 'over';
 
-  const api = { init, start, step, score, done, COLS, ROWS, CELL,
+  const api = { init, start, step, score, done, COLS, ROWS, CELL, TICK,
     DAS_INIT, DAS_REP, CLEAR_TICKS, SETTLE_CAP };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.DropBlockSim = api;

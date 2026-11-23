@@ -421,6 +421,8 @@
 <div id="booterr" class="hidden"></div>
 <noscript><p style="position:fixed;top:40%;width:100%;text-align:center">JavaScript is required.</p></noscript>
 
+<script src="sim.js?v=1"></script>
+
 <script type="module">
 'use strict';
 // vendored three r160 (precached by ../sw.js) — CDN only if the local copy is missing
@@ -825,23 +827,27 @@ const MusicSys = {
 };
 
 // ---------------- game state ----------------
-let grid = null;
-let falling = null;
-let phase = 'menu'; // menu | falling | clearing | settling | over
-let score = 0, combo = 0, level = 0, fallingSpeed = 2.3;
-let clearT = 0, clearDur = 0.38, clearList = [];
-let softAcc = 0;
+// Phase 0: ALL gameplay state lives in sim.js (DropBlockSim) — deterministic 60 Hz,
+// one mulberry32, tick-only time. The renderer owns the meshes + cosmetics and syncs
+// from simState every frame (syncFromSim). Genesis lock: mechanic changes need
+// Cory's sign-off; sim.test.js proves equivalence vs v1 at 60 Hz.
+let simState = null;          // DropBlockSim.init(seed) — DAS profile set per-press via bit7
+let simAcc = 0;               // fixed-timestep accumulator (rAF delta -> 60 Hz steps)
+let challengeSeed = null;     // set by the challenge harness; null = crypto seed per run
+let lastSeed = null;          // seed of the current run (the 8-bit gate recorder needs it)
+let phase = 'menu'; // menu | paused | over  (falling/clearing/settling mirror simState.phase)
 let fps = 0;
 const keysDown = new Set();
-let heldLeft = false, heldRight = false, moveTimer = 0, moveArmed = false;
-let dasInit = 0.13, dasRep = 0.055; // auto-repeat timing per input source (touch sets gentler values)
-let heldDir = 0, lastKeyT = 0, lastDownT = 0;
+let heldLeft = false, heldRight = false;
+const pendingPress = new Set(); // keys pressed since the last sim step (press bits)
+let touchPress = false;         // a press this tick came from touch → sim bit7 (DAS source)
+let lastKeyT = 0, lastDownT = 0;
 const KEY_TIMEOUT = 1.5; // self-heals phantom keys (lost keyups happen on remote sessions)
 let menuSel = 0;
 const menuButtons = [];
 const titleCandies = [];
 let menuTime = 0;
-let maxChain = 0, pausedFrom = null, dangerOn = false, dangerT = 0;
+let pausedFrom = null, dangerOn = false, dangerT = 0;
 let shakeAmp = 0, shakeT = 0;
 let wobbleAmp = 0, wobbleT = 0;  // horizontal board wobble (decays to idle sway)
 let swingAmp = 0, swingT = 0;    // pendulum swing (pivot above the board)
@@ -855,7 +861,10 @@ const impacts = [];   // squash/stretch tweens
 const fxList = [];    // rings + float text
 let dangerBar = null, backGlow = null, stars = null, nebulae = [];
 let guideBeam = null, guidePad = null;
-let nextColor = -1, previewMesh = null, previewLabel = null;
+let previewMesh = null, previewLabel = null;
+// board mesh pool — the renderer reconciles these from simState every frame
+const cellMeshes = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
+let fallingMesh = null;
 
 // ---------------- candy assets (primitives, no external files) ----------------
 const geos = [
@@ -1029,9 +1038,10 @@ function buildGuide() {
   boardGroup.add(guidePad);
 }
 function updateGuide(t) {
-  if (!falling || phase !== 'falling') { guideBeam.visible = guidePad.visible = false; return; }
-  const col = falling.col, row = restRowFor(col);
-  const c = COLORS[falling.color].c;
+  const s = simState;
+  if (!s || !s.falling || phase !== 'falling') { guideBeam.visible = guidePad.visible = false; return; }
+  const col = s.falling.col, row = restRowOf(s, col);
+  const c = COLORS[s.falling.color].c;
   guideBeam.visible = guidePad.visible = true;
   guideBeam.position.x = xOf(col);
   guideBeam.material.color.setHex(c);
@@ -1061,6 +1071,7 @@ function previewPos() {
 }
 function updatePreview() {
   if (previewMesh) { scene.remove(previewMesh); previewMesh = null; }
+  const nextColor = simState ? simState.nextColor : -1;
   const show = nextColor >= 0 && phase !== 'menu' && phase !== 'over';
   const dot = $('nextDot');
   if (!show) { previewLabel.visible = false; dot.style.background = '#334'; dot.style.boxShadow = 'none'; return; }
@@ -1227,138 +1238,121 @@ function buildStars() {
   });
 }
 
-// ---------------- core game logic ----------------
-function restRowFor(col) {
-  for (let r = ROWS - 1; r >= 0; r--) if (grid[r][col]) return r + 1;
+// ---------------- core game logic — now in sim.js (DropBlockSim) ----------------
+// The sim owns restRowFor/spawnPiece/tryMove/hardDrop/lockPiece/findMatches/
+// startClear/finishClear/gameOver/bumpLevel (deterministic 60 Hz). The renderer
+// reconciles its meshes from simState every frame and fires the FX on state
+// transitions, all in syncFromSim() below.
+
+// ---- renderer sync: reconcile board/falling meshes + fire FX from sim state ----
+let prevSimPhase = null, prevGridSig = '';
+function gridSig(s) {
+  let out = '';
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) out += s.grid[r][c] ? s.grid[r][c].color : '.';
+  return out;
+}
+function restRowOf(s, col) {
+  for (let r = ROWS - 1; r >= 0; r--) if (s.grid[r][col]) return r + 1;
   return 0;
 }
-
-function spawnPiece() {
-  const col = (Math.random() * COLS) | 0;
-  if (grid[ROWS - 1][col]) { gameOver(); return; }
-  if (nextColor < 0) nextColor = (Math.random() * COLORS.length) | 0;
-  const color = nextColor;
-  nextColor = (Math.random() * COLORS.length) | 0;
-  const mesh = makeCandy(color);
-  const y = ROWS * CELL + 1.4;
-  mesh.position.set(xOf(col), y, 0);
-  boardGroup.add(mesh);  // swings with the well
-  falling = { color, col, y, mesh };
-  phase = 'falling';
-  updatePreview();
-}
-
-function tryMove(dir) {
-  if (phase !== 'falling' || !falling) return;
-  const nc = falling.col + dir;
-  if (nc < 0 || nc >= COLS) return;
-  // collide against the piece's CURRENT bottom row, not its landing row,
-  // so a piece can slide over shorter stacks to reach the side lanes
-  const r = Math.min(ROWS - 1, Math.max(0, Math.floor(falling.y - 0.5)));
-  if (grid[r][nc]) return;
-  falling.col = nc;
-  falling.mesh.position.x = xOf(nc);
-  sfx.move();
-  buzz(8);
-}
-
-function hardDrop() {
-  if (phase !== 'falling' || !falling) return;
-  buzz(15);
-  const row = restRowFor(falling.col);
-  const ty = row * CELL + CELL / 2;
-  falling.dropDist = Math.max(0, falling.y - ty);
-  falling.y = ty;
-  falling.mesh.position.y = falling.y;
-  score += 2;
-  sfx.hardDrop(falling.dropDist);
-  lockPiece();
-}
-
-function lockPiece() {
-  const row = restRowFor(falling.col);
-  const mesh = falling.mesh;
-  mesh.rotation.set(0, 0, 0);
-  if (row >= ROWS) {
-    boardGroup.remove(mesh);
-    falling = null;
-    gameOver();
-    return;
+function syncFromSim() {
+  const s = simState;
+  if (!s) return;
+  // 1. board cells — create/update/remove meshes to match the sim grid
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+    const cd = s.grid[r][c];
+    const key = r + ',' + c;
+    let m = cellMeshes[r][c];
+    if (cd) {
+      const y = (s.phase === 'settling' && s.settle) ? (s.settle[key] !== undefined ? s.settle[key] : cd.ty) : cd.ty;
+      if (!m) {
+        m = makeCandy(cd.color);
+        boardGroup.add(m);
+        cellMeshes[r][c] = m;
+      }
+      if (s.phase !== 'clearing') {
+        if (m.material !== mats[cd.color]) m.material = mats[cd.color];
+        m.rotation.z = 0;
+        m.scale.setScalar(1);
+      }
+      m.position.set(xOf(c), y, 0);
+    } else if (m) {
+      boardGroup.remove(m);
+      cellMeshes[r][c] = null;
+    }
   }
-  mesh.position.set(xOf(falling.col), row * CELL + CELL / 2, 0);
-  grid[row][falling.col] = { color: falling.color, mesh, ty: row * CELL + CELL / 2 };
-  const dist = falling.dropDist || 0;
-  const hard = Math.min(1, dist / 8);
-  squash(mesh, 0.35 + hard * 0.5);
-  spawnDust(mesh.position, falling.color);
-  if (hard > 0.15) shake(0.08 + hard * 0.22);
-  // thump the candy it landed on too
-  if (row > 0 && grid[row - 1][falling.col]) squash(grid[row - 1][falling.col].mesh, 0.18 + hard * 0.2);
-  falling = null;
-  sfx.lock();
-  updateHud();
-  const m = findMatches();
-  if (m.size) startClear(m, 1);
-  else spawnPiece();
-}
-
-function findMatches() {
-  const matched = new Set();
-  const scanRun = (cells) => {
-    let run = 1;
-    for (let i = 1; i <= cells.length; i++) {
-      const same = i < cells.length
-        && grid[cells[i][0]][cells[i][1]] && grid[cells[i - 1][0]][cells[i - 1][1]]
-        && grid[cells[i][0]][cells[i][1]].color === grid[cells[i - 1][0]][cells[i - 1][1]].color;
-      if (same) run++;
-      else {
-        if (run >= 3) for (let k = i - run; k < i; k++) matched.add(cells[k][0] + ',' + cells[k][1]);
-        run = 1;
+  // 2. falling piece — one mesh, follows sim falling.col/y (clamped to rest row)
+  if (s.falling) {
+    if (!fallingMesh) {
+      fallingMesh = makeCandy(s.falling.color);
+      boardGroup.add(fallingMesh);
+    }
+    fallingMesh.material = mats[s.falling.color];
+    const ty = restRowOf(s, s.falling.col) * CELL + CELL / 2;
+    fallingMesh.position.set(xOf(s.falling.col), Math.max(s.falling.y, ty), 0);
+    fallingMesh.rotation.y += (1 / 60) * 1.4;
+    fallingMesh.rotation.x += (1 / 60) * 0.5;
+  } else if (fallingMesh) {
+    boardGroup.remove(fallingMesh);
+    fallingMesh = null;
+  }
+  // 3. clearing FX — white-hot flash + swell-then-pop scale/spin (v1 animation)
+  if (s.phase === 'clearing' && s.clearList) {
+    const k = Math.min(1, s.clearTicks / DropBlockSim.CLEAR_TICKS);
+    const sc = k < 0.25 ? 1 + 1.4 * k : Math.max(0.001, 1.35 * (1 - Math.pow((k - 0.25) / 0.75, 0.8)));
+    for (const [r, c] of s.clearList) {
+      const m = cellMeshes[r][c];
+      const cd = s.grid[r][c];
+      if (m && cd) { m.material = flashMats[cd.color]; m.scale.setScalar(sc); m.rotation.z = (s.clearTicks / 60) * 9; }
+    }
+  }
+  // 4. state-transition FX
+  if (s.phase !== prevSimPhase) {
+    if (s.phase === 'clearing') onClearStartedFX(s);
+    if (s.phase === 'over') onGameOverUI();
+    prevSimPhase = s.phase;
+  }
+  // lock FX: a grid cell appeared (piece landed) while not clearing/settling
+  const sig = gridSig(s);
+  if (sig !== prevGridSig) {
+    if (s.phase === 'falling' || s.phase === 'clearing') {
+      for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+        const now = sig[(r * COLS + c)] , was = prevGridSig[(r * COLS + c)];
+        if (now !== '.' && was === '.') onPieceLockedFX(s, r, c);
       }
     }
-  };
-  // horizontal
-  for (let r = 0; r < ROWS; r++) scanRun(Array.from({ length: COLS }, (_, c) => [r, c]));
-  // vertical
-  for (let c = 0; c < COLS; c++) scanRun(Array.from({ length: ROWS }, (_, r) => [r, c]));
-  // diagonals (both directions)
-  for (let d = -(COLS - 1); d < ROWS; d++) { // r - c = d  (top-left → bottom-right)
-    const cells = [];
-    for (let r = 0; r < ROWS; r++) { const c = r - d; if (c >= 0 && c < COLS) cells.push([r, c]); }
-    if (cells.length >= 3) scanRun(cells);
+    prevGridSig = sig;
   }
-  for (let s = 0; s < ROWS + COLS - 1; s++) { // r + c = s  (top-right → bottom-left)
-    const cells = [];
-    for (let r = 0; r < ROWS; r++) { const c = s - r; if (c >= 0 && c < COLS) cells.push([r, c]); }
-    if (cells.length >= 3) scanRun(cells);
-  }
-  return matched;
+  // mirror the sim phase into the game-level phase var (UI reads it)
+  if (phase !== 'menu' && phase !== 'paused') phase = s.phase;
+  bumpLevel();
 }
-
-function startClear(matched, n) {
-  combo = n;
-  score += matched.size * 10 * n;
-  phase = 'clearing';
-  clearT = 0;
-  clearList = [];
+function onPieceLockedFX(s, r, c) {
+  const m = cellMeshes[r][c];
+  if (!m) return;
+  const color = s.grid[r][c] ? s.grid[r][c].color : 0;
+  squash(m, 0.35);
+  spawnDust(m.position, color);
+  shake(0.1);
+  if (r > 0 && s.grid[r - 1][c] && cellMeshes[r - 1][c]) squash(cellMeshes[r - 1][c], 0.18);
+  sfx.lock();
+  updateHud();
+}
+function onClearStartedFX(s) {
+  const n = s.combo;
+  const gain = s.clearList ? s.clearList.length * 10 * n : 0;
   const centroid = new THREE.Vector3();
   let cnt = 0, mainColor = 0;
-  matched.forEach(key => {
-    const idx = key.indexOf(',');
-    const r = +key.slice(0, idx), c = +key.slice(idx + 1);
-    const cd = grid[r][c];
-    if (!cd) return;
-    clearList.push({ cd, r, c });
-    for (let i = impacts.length - 1; i >= 0; i--) if (impacts[i].mesh === cd.mesh) impacts.splice(i, 1);
-    cd.mesh.material = flashMats[cd.color];           // white-hot while it pops
-    spawnBurst(cd.mesh.position, cd.color);
-    spawnRing(cd.mesh.position, cd.color, 2.4, 0.4);
-    centroid.add(cd.mesh.position); cnt++; mainColor = cd.color;
-  });
+  if (s.clearList) for (const [r, c] of s.clearList) {
+    const m = cellMeshes[r][c];
+    const cd = s.grid[r][c];
+    if (!m || !cd) continue;
+    centroid.add(m.position); cnt++; mainColor = cd.color;
+  }
   if (cnt) {
     centroid.multiplyScalar(1 / cnt);
     const hex = '#' + COLORS[mainColor].c.toString(16).padStart(6, '0');
-    spawnFloatText(centroid, '+' + (matched.size * 10 * n), n >= 2 ? '#ffd24d' : hex, false);
+    spawnFloatText(centroid, '+' + gain, n >= 2 ? '#ffd24d' : hex, false);
     if (n >= 2) {
       const up = centroid.clone(); up.y += 1.0;
       spawnFloatText(up, '×' + n + ' CHAIN', '#ffffff', true);
@@ -1366,9 +1360,8 @@ function startClear(matched, n) {
       shake(0.12 + Math.min(0.3, n * 0.06));
     }
     if (n >= 3) { showBanner(n >= 5 ? '×' + n + ' INSANE!' : n === 4 ? '×4 UNREAL!' : '×3 CHAIN!'); sfx.chainBig(n); }
-    if (backGlow) backGlow.material.opacity = 0.22 + Math.min(0.5, 0.12 * n + matched.size * 0.03);
+    if (backGlow) backGlow.material.opacity = 0.22 + Math.min(0.5, 0.12 * n + s.clearList.length * 0.03);
   }
-  if (n > maxChain) maxChain = n;
   // board wobble on every match — quick horizontal turn, dramatic + scales hard with chain
   wobbleT = 0;
   wobbleAmp = Math.min(0.50, 0.10 + n * 0.08);
@@ -1380,54 +1373,22 @@ function startClear(matched, n) {
   Vocals.match(n);
   updateHud();
 }
-
-function finishClear() {
-  for (const it of clearList) {
-    boardGroup.remove(it.cd.mesh);
-    grid[it.r][it.c] = null;
-  }
-  clearList = [];
-  for (let c = 0; c < COLS; c++) {
-    let w = 0;
-    for (let r = 0; r < ROWS; r++) {
-      const cd = grid[r][c];
-      if (!cd) continue;
-      grid[r][c] = null;
-      grid[w][c] = cd;
-      cd.ty = w * CELL + CELL / 2;
-      w++;
-    }
-  }
-  phase = 'settling';
-}
-
-function countUp(el, target, dur = 950) {
-  const start = performance.now();
-  function tick(now) {
-    const p = Math.min(1, (now - start) / dur);
-    const eased = 1 - Math.pow(1 - p, 3);  // ease-out cubic
-    el.textContent = Math.round(target * eased);
-    if (p < 1) requestAnimationFrame(tick);
-  }
-  requestAnimationFrame(tick);
-}
-function gameOver() {
-  track('game_over', { final_score: score, level_reached: level });
-  phase = 'over';
-  if (falling) { boardGroup.remove(falling.mesh); falling = null; }
+function onGameOverUI() {
+  const s = simState;
+  track('game_over', { final_score: s.score, level_reached: s.level });
   sfx.over();
   Vocals.play('tryagain');
   if (DSDARadio) { radioWasPlaying = false; DSDARadio.pause(); }  // music stops on game over
-  countUp(elFinal, score);  // dramatic count-up reveal
+  countUp(elFinal, s.score);  // dramatic count-up reveal
   elInitials.value = dsdaInits();
   setSaveEnabled();
   elSavedMsg.textContent = '';
   elShareMsg.textContent = '';
   const top = loadScores();
-  const isHigh = score > 0 && score >= (top[0] ? top[0].s : 0);
+  const isHigh = s.score > 0 && s.score >= (top[0] ? top[0].s : 0);
   elNewHigh.classList.toggle('hidden', !isHigh);
   if (isHigh) sfx.newHigh();
-  $('finalStats').textContent = 'LEVEL ' + (1 + level) + ' · BEST CHAIN ×' + Math.max(1, maxChain);
+  $('finalStats').textContent = 'LEVEL ' + (1 + s.level) + ' · BEST CHAIN ×' + Math.max(1, s.maxChain);
   renderTopList(elTopList, top.slice(0, 10));
   shake(0.35);
   setDanger(false);
@@ -1440,8 +1401,19 @@ function gameOver() {
   const lbl = document.querySelector('label[for="initials"]');
   elInitials.style.display = elSave.style.display = member ? 'none' : '';
   if (lbl) lbl.style.display = member ? 'none' : '';
-  if (member) { if (score > 0) { elSave.disabled = false; saveScore(); } }
+  if (member) { if (s.score > 0) { elSave.disabled = false; saveScore(); } }
   else elInitials.focus();
+}
+
+function countUp(el, target, dur = 950) {
+  const start = performance.now();
+  function tick(now) {
+    const p = Math.min(1, (now - start) / dur);
+    const eased = 1 - Math.pow(1 - p, 3);  // ease-out cubic
+    el.textContent = Math.round(target * eased);
+    if (p < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
 }
 function memberHandle() { try { return (window.DSDA && DSDA.member && DSDA.member()) || ''; } catch (e) { return ''; } }
 function setDanger(on) {
@@ -1451,18 +1423,21 @@ function setDanger(on) {
 }
 
 function clearBoard() {
-  if (grid) for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
-    const cd = grid[r][c];
-    if (cd) boardGroup.remove(cd.mesh);
+  // remove all board + falling meshes and reset the mesh pool
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+    if (cellMeshes[r][c]) { boardGroup.remove(cellMeshes[r][c]); cellMeshes[r][c] = null; }
   }
-  if (falling) { boardGroup.remove(falling.mesh); falling = null; }
+  if (fallingMesh) { boardGroup.remove(fallingMesh); fallingMesh = null; }
   for (const p of particles) scene.remove(p.m);
   particles = [];
   for (const f of fxList) scene.remove(f.m);
   fxList.length = 0; impacts.length = 0;
-  clearList = [];
-  grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
-  score = 0; combo = 0; level = 0; fallingSpeed = 2.3; softAcc = 0; maxChain = 0; nextColor = -1;
+  simState = null;
+  simAcc = 0;
+  prevSimPhase = null; prevGridSig = '';
+  pendingPress.clear();
+  touchPress = false;
+  heldLeft = heldRight = false; keysDown.clear();
   setDanger(false);
   updatePreview();
   updateHud();
@@ -1470,7 +1445,19 @@ function clearBoard() {
 
 function resetGame() {
   clearBoard();
-  spawnPiece();
+  // Seed source: challenge runs use the challenge seed; normal play seeds from
+  // crypto.getRandomValues() per run. The randomizer diff is seed source ONLY.
+  let seed;
+  if (challengeSeed != null) { seed = challengeSeed >>> 0; }
+  else { const a = new Uint32Array(1); crypto.getRandomValues(a); seed = a[0] >>> 0; }
+  // DAS profile is set per-press from bit7 (touch source), not at init — so a
+  // touchscreen device can play with keyboard (8/4) AND touch (14/6).
+  simState = DropBlockSim.init(seed);
+  lastSeed = seed;
+  DropBlockSim.start(simState);
+  phase = 'falling';
+  updatePreview();
+  updateHud();
 }
 
 // ---------------- main menu & high scores ----------------
@@ -1870,6 +1857,7 @@ async function makeScoreCard(scoreLine, subLine) {
 
 async function shareScore() {
   if (phase !== 'over') return;
+  const score = simState ? simState.score : 0;
   const text = shareText(score);
   const payload = { title: 'DropBlock — High Scorer', text, url: SHARE_URL };
   if (navigator.share) {
@@ -1951,6 +1939,7 @@ function submitGlobal(name, s) {
 function saveScore() {
   const member = memberHandle();
   if (phase !== 'over' || elSave.disabled) return;
+  const score = simState ? simState.score : 0;
   track('score_submit', { score });
   let name = member ? DSDA.memberInits() : elInitials.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
   if (!name) name = dsdaInits();
@@ -1982,6 +1971,9 @@ function playAgain() {
 
 // ---------------- HUD ----------------
 function updateHud() {
+  const score = simState ? simState.score : 0;
+  const level = simState ? simState.level : 0;
+  const combo = simState ? simState.combo : 0;
   if (elScore.textContent !== String(score)) { elScore.classList.remove('pop'); void elScore.offsetWidth; elScore.classList.add('pop'); }
   elScore.textContent = score;
   elLevel.textContent = 1 + level;
@@ -1996,12 +1988,16 @@ function updateHud() {
     elCombo.classList.remove('hot');
   }
 }
+let prevLevel = 0;
 function bumpLevel() {
-  const lv = Math.min(12, Math.floor(score / 400));
-  if (lv !== level) {
-    const up = lv > level;
-    level = lv; fallingSpeed = 2.3 + level * 0.55; updateHud(); track('level_up', { level: level });
-    if (up && phase !== 'menu') { sfx.levelUp(); Vocals.play('levelup'); showBanner('LEVEL ' + (1 + level)); if (backGlow) backGlow.material.opacity = 0.6; }
+  // Level is owned by the sim; the renderer only fires the level-up FX on change.
+  if (!simState) return;
+  const lv = simState.level;
+  if (lv !== prevLevel) {
+    const up = lv > prevLevel;
+    prevLevel = lv;
+    updateHud(); track('level_up', { level: lv });
+    if (up && phase !== 'menu') { sfx.levelUp(); Vocals.play('levelup'); showBanner('LEVEL ' + (1 + lv)); if (backGlow) backGlow.material.opacity = 0.6; }
   }
 }
 
@@ -2030,15 +2026,16 @@ function onKey(e) {
     return;
   }
   if (e.code === 'ArrowLeft') {
-    heldLeft = true; heldDir = -1; lastKeyT = now;
-    if (!e.repeat) { dasInit = 0.13; dasRep = 0.055; moveTimer = 0; moveArmed = false; tryMove(-1); }
+    heldLeft = true; lastKeyT = now;
+    if (!e.repeat) pendingPress.add('left');   // press bit -> sim: immediate move + DAS re-arm
   } else if (e.code === 'ArrowRight') {
-    heldRight = true; heldDir = 1; lastKeyT = now;
-    if (!e.repeat) { dasInit = 0.13; dasRep = 0.055; moveTimer = 0; moveArmed = false; tryMove(1); }
+    heldRight = true; lastKeyT = now;
+    if (!e.repeat) pendingPress.add('right');
   } else if (e.code === 'ArrowDown') {
     keysDown.add('down'); lastDownT = now;
+    pendingPress.add('down');
   } else if (e.code === 'Space' || e.code === 'ArrowUp') {
-    if (!e.repeat) hardDrop();
+    if (!e.repeat) pendingPress.add('hard');
   } else if (e.code === 'KeyM') {
     if (!e.repeat) MusicSys.next();
   }
@@ -2046,10 +2043,8 @@ function onKey(e) {
 function onKeyUp(e) {
   if (e.code === 'ArrowLeft') {
     heldLeft = false;
-    if (!heldRight) { moveTimer = 0; moveArmed = false; }
   } else if (e.code === 'ArrowRight') {
     heldRight = false;
-    if (!heldLeft) { moveTimer = 0; moveArmed = false; }
   } else if (e.code === 'ArrowDown') {
     keysDown.delete('down');
   }
@@ -2058,7 +2053,7 @@ function onWindowBlur() {
   if (phase === 'falling' || phase === 'clearing' || phase === 'settling') togglePause();
   heldLeft = false; heldRight = false;
   keysDown.clear();
-  moveTimer = 0; moveArmed = false;
+  pendingPress.clear();
   tId = null;
 }
 
@@ -2087,24 +2082,25 @@ function touchMove(e) {
   if (Math.abs(dx) < SWIPE_DIST && Math.abs(dy) < SWIPE_DIST) return;
   const now = performance.now() / 1000;
   if (Math.abs(dx) > Math.abs(dy) * 1.3) {
-    // horizontal: step in swipe direction + arm auto-repeat (hold to slide)
-    if (dx < 0) { heldLeft = true; heldRight = false; }
-    else { heldRight = true; heldLeft = false; }
-    heldDir = dx < 0 ? -1 : 1; lastKeyT = now;
-    dasInit = 0.22; dasRep = 0.09; // touch slide: gentler than keyboard
-    moveTimer = 0; moveArmed = false;
-    tryMove(heldDir);
+    // horizontal: step in swipe direction + arm auto-repeat (hold to slide).
+    // Touch DAS (14/6 ticks) is set by the sim on the press edge (bit7 = touch source).
+    if (dx < 0) { heldLeft = true; heldRight = false; pendingPress.add('left'); }
+    else { heldRight = true; heldLeft = false; pendingPress.add('right'); }
+    touchPress = true;
+    lastKeyT = now;
     tMoved = true;
     tX = e.clientX; // rebase — next step needs a fresh swipe
   } else if (dy > 0) {
     // swipe down: soft drop while held
     if (!keysDown.has('down')) keysDown.add('down');
+    pendingPress.add('down');
+    touchPress = true;
     lastDownT = now;
     tMoved = true;
     tY = e.clientY;
   } else {
     // swipe up: hard drop (once per touch)
-    if (!tMoved) { hardDrop(); tMoved = true; }
+    if (!tMoved) { pendingPress.add('hard'); touchPress = true; tMoved = true; }
     tY = e.clientY;
   }
 }
@@ -2114,7 +2110,10 @@ function touchEnd(e) {
   // a plain tap (no swipe) does nothing — accidental taps can't drop the block
   heldLeft = false; heldRight = false;
   keysDown.delete('down');
-  moveTimer = 0; moveArmed = false;
+  // NOTE: pendingPress is NOT cleared here — a press is consumed only when a
+  // sim step runs (v1 applied the swipe move immediately). A fast flick that
+  // lifts the finger before the next 60 Hz tick must carry to that tick,
+  // not be wiped; the hold bits are already off, so no auto-repeat follows.
 }
 function toggleSound() {
   sfx.on = !sfx.on;
@@ -2190,69 +2189,57 @@ function update(dt) {
   updateImpacts(dt);
   updateGuide(menuTime);
   if (previewMesh) { previewMesh.rotation.y += dt * 1.2; previewMesh.rotation.x = Math.sin(menuTime * 1.5) * 0.25; previewMesh.position.y = previewPos().y + Math.sin(menuTime * 2.2) * 0.08; }
-  // danger: stack within 3 rows of the top
-  if (phase !== 'menu' && phase !== 'over' && grid) {
+  // danger: stack within 3 rows of the top (read from the sim)
+  if (phase !== 'menu' && phase !== 'over' && simState) {
     let hi = -1;
-    for (let r = ROWS - 1; r >= 0 && hi < 0; r--) for (let c = 0; c < COLS; c++) if (grid[r][c]) { hi = r; break; }
+    for (let r = ROWS - 1; r >= 0 && hi < 0; r--) for (let c = 0; c < COLS; c++) if (simState.grid[r][c]) { hi = r; break; }
     setDanger(hi >= ROWS - 3);
     if (dangerOn) { dangerT += dt; if (dangerT > 0.95) { dangerT = 0; sfx.danger(); } }
   }
+  // key timeout: clear a stale hold if no input event for KEY_TIMEOUT
   const now = performance.now() / 1000;
-  if ((heldLeft || heldRight) && now - lastKeyT > KEY_TIMEOUT) {
-    heldLeft = false; heldRight = false; moveTimer = 0; moveArmed = false;
-  }
+  if ((heldLeft || heldRight) && now - lastKeyT > KEY_TIMEOUT) { heldLeft = false; heldRight = false; }
   if (keysDown.has('down') && now - lastDownT > KEY_TIMEOUT) keysDown.delete('down');
-  if (phase === 'falling' && falling) {
-    const dir = (heldLeft && !heldRight) ? -1 : (heldRight && !heldLeft) ? 1 : (heldLeft && heldRight ? heldDir : 0);
-    if (dir !== 0) {
-      moveTimer += dt;
-      if (moveTimer >= (moveArmed ? dasRep : dasInit)) {
-        tryMove(dir);
-        moveTimer = 0;
-        moveArmed = true;
-      }
-    } else {
-      moveTimer = 0; moveArmed = false;
+  // Fixed-timestep sim: step the deterministic game at 60 Hz, then reconcile meshes.
+  // rAF delta never reaches step() directly — the accumulator quantizes it to 60 Hz.
+  if (simState) {
+    simAcc += dt;
+    let steps = 0;
+    while (simAcc >= DropBlockSim.TICK && steps < 6) {
+      DropBlockSim.step(simState, encodeBits());
+      pendingPress.clear();   // presses apply to the tick in which the keydown occurred
+      touchPress = false;     // bit7 (touch source) is consumed with the presses
+      simAcc -= DropBlockSim.TICK;
+      steps++;
     }
-    const v = fallingSpeed * (keysDown.has('down') ? 6 : 1);
-    falling.y -= v * dt;
-    if (keysDown.has('down')) {
-      softAcc += v * dt;
-      while (softAcc >= 1) { softAcc -= 1; score += 1; }
-    }
-    const row = restRowFor(falling.col);
-    const ty = row * CELL + CELL / 2;
-    falling.mesh.position.y = Math.max(falling.y, ty);
-    falling.mesh.rotation.y += dt * 1.4;
-    falling.mesh.rotation.x += dt * 0.5;
-    if (falling.y <= ty) lockPiece();
-  } else if (phase === 'clearing') {
-    clearT += dt;
-    const k = Math.min(1, clearT / clearDur);
-    // swell, then pop: 1 -> 1.35 over the first quarter, then collapse with spin
-    const sc = k < 0.25 ? 1 + 1.4 * k : Math.max(0.001, 1.35 * (1 - Math.pow((k - 0.25) / 0.75, 0.8)));
-    for (const it of clearList) { it.cd.mesh.scale.setScalar(sc); it.cd.mesh.rotation.z += dt * 9; }
-    if (k >= 1) finishClear();
-  } else if (phase === 'settling') {
-    let all = true;
-    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
-      const cd = grid[r][c];
-      if (!cd) continue;
-      const dy = cd.ty - cd.mesh.position.y;
-      if (Math.abs(dy) > 0.004) {
-        all = false;
-        cd.mesh.position.y += dy * Math.min(1, dt * 14);
-      } else if (dy !== 0) {
-        cd.mesh.position.y = cd.ty;
-      }
-    }
-    if (all) {
-      const m = findMatches();
-      if (m.size) startClear(m, combo + 1);
-      else { combo = 0; updateHud(); spawnPiece(); }
-    }
+    if (steps === 6) simAcc = 0; // can't keep up — drop the frame
+    syncFromSim();
   }
-  bumpLevel();
+}
+
+// 8-bit input mask for the sim:
+//   bit0 L-press  bit1 L-hold  bit2 R-press  bit3 R-hold
+//   bit4 D-press  bit5 D-hold  bit6 hard-press  bit7 touch-source
+// Press bit = keydown this tick (immediate move / hard drop + DAS re-arm);
+// hold bit  = final held state after all events this tick.
+// bit7 = a press this tick came from touch; on a L/R press edge the sim switches
+// the DAS profile (8/4 keyboard, 14/6 touch). It's in the bit stream so replays
+// reproduce the profile — a touchscreen device can play keyboard AND touch.
+function encodeBits() {
+  let b = 0;
+  if (heldLeft) b |= 2;
+  if (heldRight) b |= 8;
+  if (keysDown.has('down')) b |= 32;
+  let press = 0;
+  for (const p of pendingPress) {
+    if (p === 'left') press |= 1;
+    else if (p === 'right') press |= 4;
+    else if (p === 'down') press |= 16;
+    else if (p === 'hard') press |= 64;
+  }
+  b |= press;
+  if (press && touchPress) b |= 128;  // bit7 = touch source (only meaningful with a press)
+  return b;
 }
 
 function animate() {
@@ -2367,7 +2354,6 @@ function boot() {
   buildTitleCandies();
   buildMenuDemo();
 
-  grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
   renderTopList(elHudTop, loadScores().slice(0, 10));
   updateMusicUI();
   updateHud();
@@ -2424,13 +2410,48 @@ window.__tl = {
   },
   inputState() {
     return {
-      heldLeft, heldRight, heldDir, down: keysDown.has('down'),
+      heldLeft, heldRight, down: keysDown.has('down'),
       keyAge: +(performance.now() / 1000 - lastKeyT).toFixed(2),
       frozen: inputFrozen,
       touchActive: tId !== null,
     };
   },
-  hardDrop() { if (phase === 'falling' && falling) hardDrop(); },
+  hardDrop() { if (simState && simState.falling) pendingPress.add('hard'); },
+  // Phase 0 gate: 8-bit input log recorder — wraps DropBlockSim.step and
+  // records [tick, bits] change-events: exactly what step() received (the
+  // 8-bit mask; bit7 = touch source). Dev-only, __tl-driven.
+  recordStart() {
+    const L = { events: [], bits: 0, steps: 0, t0: null, tEnd: null };
+    const orig = DropBlockSim.step;
+    DropBlockSim.step = (s, b) => {
+      const now = performance.now();
+      if (L.t0 === null) L.t0 = now;
+      L.tEnd = now;
+      L.steps++;
+      if (b !== L.bits) { L.events.push([s.tick, b]); L.bits = b; }
+      return orig(s, b);
+    };
+    L.restore = () => { DropBlockSim.step = orig; };
+    window.__rec = L;
+    return 'recording';
+  },
+  recordStop() {
+    const L = window.__rec;
+    if (L && L.restore) L.restore();
+    window.__rec = null;
+    const s = simState;
+    // wall time from first step start to last step end (includes final step's 1/60 s)
+    const wallSec = (L.t0 !== null) ? ((L.tEnd - L.t0) / 1000 + (1 / 60)) : 0;
+    return {
+      seed: lastSeed,
+      events: L ? L.events : [],
+      score: s ? s.score : 0,
+      ticks: s ? s.tick : 0,
+      phase: s ? s.phase : null,
+      wallSec: +wallSec.toFixed(3),
+      rate: wallSec > 0 ? +(L.steps / wallSec).toFixed(4) : null,
+    };
+  },
   touchTap() {
     const c = renderer.domElement, r = c.getBoundingClientRect();
     const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
@@ -2453,92 +2474,95 @@ window.__tl = {
   toMenu() { backToMenu(); },
   menuSel() { return menuSel; },
   seedBoard(pat) {
-    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
-      const cd = grid[r][c];
-      if (cd) { boardGroup.remove(cd.mesh); grid[r][c] = null; }
-    }
-    if (falling) { boardGroup.remove(falling.mesh); falling = null; }
+    if (!simState) return 'no sim';
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) simState.grid[r][c] = null;
     for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
       if (!pat || !pat[r] || pat[r][c] == null || pat[r][c] < 0) continue;
-      const mesh = makeCandy(pat[r][c]);
-      mesh.position.set(xOf(c), r * CELL + CELL / 2, 0);
-      boardGroup.add(mesh);
-      grid[r][c] = { color: pat[r][c], mesh, ty: r * CELL + CELL / 2 };
+      simState.grid[r][c] = { color: pat[r][c], ty: r * CELL + CELL / 2 };
     }
+    syncFromSim();
     return 'seeded';
   },
   seedFalling(col, y, color) {
-    if (falling) { boardGroup.remove(falling.mesh); falling = null; }
+    if (!simState) return 'no sim';
     const c = (color === undefined) ? 2 : color;
-    const mesh = makeCandy(c);
-    mesh.position.set(xOf(col), y, 0);
-    boardGroup.add(mesh);
-    falling = { color: c, col, y, mesh };
-    phase = 'falling';
+    simState.falling = { color: c, col, y };
+    simState.phase = 'falling';
+    syncFromSim();
     return 'ok';
   },
-  setScore(s, cb) { score = s; combo = cb || 0; updateHud(); return 'ok'; },
+  setScore(s, cb) { if (simState) { simState.score = s; simState.combo = cb || 0; updateHud(); } return 'ok'; },
   gridDump() {
     const g = [];
     for (let r = 0; r < ROWS; r++) {
       const row = [];
-      for (let c = 0; c < COLS; c++) row.push(grid[r][c] ? grid[r][c].color : -1);
+      for (let c = 0; c < COLS; c++) row.push(simState && simState.grid[r][c] ? simState.grid[r][c].color : -1);
       g.push(row);
     }
     return g;
   },
   state() {
     let filled = 0;
-    if (grid) for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (grid[r][c]) filled++;
+    if (simState) for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (simState.grid[r][c]) filled++;
     return {
-      phase, score, combo, level, filled,
-      falling: falling ? { col: falling.col, y: +falling.y.toFixed(2) } : null,
+      phase: simState ? simState.phase : phase,
+      score: simState ? simState.score : 0,
+      combo: simState ? simState.combo : 0,
+      level: simState ? simState.level : 0,
+      filled,
+      falling: (simState && simState.falling) ? { col: simState.falling.col, y: +simState.falling.y.toFixed(2) } : null,
       fps: Math.round(fps),
     };
   },
   debugClear() {
-    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
-      const cd = grid[r][c];
-      if (cd) { boardGroup.remove(cd.mesh); grid[r][c] = null; }
-    }
-    if (falling) { boardGroup.remove(falling.mesh); falling = null; }
+    if (!simState) return 0;
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) simState.grid[r][c] = null;
     const pat = [
       [0, 0, 0, 1, 2, 3],
       [4, 1, 5, 1, 2, 5],
       [2, 1, 1, 3, 4, 0],
     ];
     for (let r = 0; r < pat.length; r++) for (let c = 0; c < COLS; c++) {
-      const mesh = makeCandy(pat[r][c]);
-      mesh.position.set(xOf(c), r * CELL + CELL / 2, 0);
-      boardGroup.add(mesh);
-      grid[r][c] = { color: pat[r][c], mesh, ty: r * CELL + CELL / 2 };
+      simState.grid[r][c] = { color: pat[r][c], ty: r * CELL + CELL / 2 };
     }
-    combo = 0;
-    const m = findMatches();
-    if (m.size) startClear(m, 1);
-    return m.size;
+    simState.combo = 0;
+    simState.falling = null;
+    simState.settle = {};
+    for (let r = 0; r < pat.length; r++) for (let c = 0; c < COLS; c++) {
+      const cd = simState.grid[r][c];
+      if (cd) simState.settle[r + ',' + c] = cd.ty;
+    }
+    simState.phase = 'settling';  // the sim detects the match on the next tick
+    DropBlockSim.step(simState, 0);
+    syncFromSim();
+    return simState.clearList ? simState.clearList.length : 0;
   },
   debugGameOver() {
+    if (!simState) return;
     for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
-      if (!grid[r][c]) {
+      if (!simState.grid[r][c]) {
         const color = (r + c) % COLORS.length;
-        const mesh = makeCandy(color);
-        mesh.position.set(xOf(c), r * CELL + CELL / 2, 0);
-        boardGroup.add(mesh);
-        grid[r][c] = { color, mesh, ty: r * CELL + CELL / 2 };
+        simState.grid[r][c] = { color, ty: r * CELL + CELL / 2 };
       }
     }
-    phase = 'falling';
-    spawnPiece();
+    simState.falling = null;
+    simState.settle = {};
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      const cd = simState.grid[r][c];
+      if (cd) simState.settle[r + ',' + c] = cd.ty;
+    }
+    simState.phase = 'settling';  // settle -> spawnPiece -> top row full -> game over
+    DropBlockSim.step(simState, 0);
+    syncFromSim();
   },
   async shareCard(s) {
-    const sc = (s === undefined) ? score : s;
+    const sc = (s === undefined) ? (simState ? simState.score : 0) : s;
     try {
       const cv = await makeScoreCard(String(sc), 'Think you can beat me?');
       return cv.toDataURL('image/png');
     } catch (e) { return 'err:' + e; }
   },
-  shareText: () => shareText(score),
+  shareText: () => shareText(simState ? simState.score : 0),
   reset: resetGame,
 };
 
