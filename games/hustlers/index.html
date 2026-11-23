@@ -560,7 +560,7 @@ kbd{font:600 10px var(--mono);background:#1a2230;border:1px solid var(--line2);b
   <div class="modal">
     <div class="modal-head"><h2>HOW TO HUSTLE</h2><span class="sub">bar rules · winner takes all</span><button class="xbtn" data-close="helpOverlay">✕</button></div>
     <div class="modal-body">
-      <div class="helprow"><div class="helpicon">🎯</div><div><h4>Aim & strike</h4><p><b>Move</b> the mouse to aim — in the CUE camera it steers by feel, in TOP/TV it points where you look. <b>Click</b> once to lock the aim so you can reach the spin pad or power bar without knocking it off line. Arrow keys nudge (tap) or sweep (hold); add <b>SHIFT</b> for hair-thin. <b>Press and pull back</b> to load the cue, release to strike — drag back to zero to cancel. Or hold <b>SPACE</b>, or set the power bar and hit <b>SHOOT</b>. On touch: drag to aim, pull back from the cue ball to fire.</p></div></div>
+      <div class="helprow"><div class="helpicon">🎯</div><div><h4>Aim & strike</h4><p><b>Move</b> the mouse to aim — in the CUE camera it steers by feel, in TOP/TV it points where you look. <b>Click</b> once to lock the aim so you can reach the spin pad or power bar without knocking it off line. Slow mouse moves aim finer than fast ones. Arrow keys nudge (tap) or sweep (hold); hold <b>SHIFT</b> with the mouse or arrows for hair-thin in any camera. <b>Press and pull back</b> to load the cue, release to strike — drag back to zero to cancel. Or hold <b>SPACE</b>, or set the power bar and hit <b>SHOOT</b>. On touch: tap to point, then drag slowly to fine-tune (dragging far from the cue ball is finer still); pull back from the cue ball to fire.</p></div></div>
       <div class="helprow"><div class="helpicon">🌀</div><div><h4>English</h4><p>Drag the red dot on the cue-ball widget. <b>Top</b> = follow through the object ball, <b>bottom</b> = draw back, <b>sides</b> = kick off cushions at bent angles. It resets after every strike.</p></div></div>
       <div class="helprow"><div class="helpicon">🎱</div><div><h4>Bar-rules 8-ball</h4><p>Break, then the table is <b>open</b> until someone legally pots — that ball picks your group (<b>solids 1–7</b> or <b>stripes 9–15</b>). Clear your seven, then sink the <b>8</b> to win. Pot the 8 early, or scratch while potting it, and you lose on the spot.</p></div></div>
       <div class="helprow"><div class="helpicon">⚠️</div><div><h4>Fouls & the clock</h4><p>Scratch, wrong ball first, no contact, or no rail after contact = <b>foul</b>: The Hustler gets <b>ball in hand</b> (tap the cloth to place yours). You have <b>35 seconds</b> a shot. An 8 potted on the break is re-spotted.</p></div></div>
@@ -1967,6 +1967,7 @@ function legalTargets(who){
   return balls.filter(b=>b.state==='active'&&groupOf(b.id)===g);
 }
 function autoAim(){
+  G.absFreeze=null;
   const ts=legalTargets('you');
   if(!ts.length){G.aim=0;return;}
   let best=null,bd=1e9;
@@ -2500,10 +2501,34 @@ const ray=new THREE.Raycaster();
 const ndc=new THREE.Vector2();
 const pointers=new Map();
 let dragMode=null,downScreen=null,downWorld=null,aimAtDown=0,pinchD=0,pinchBase=0,movedPx=0,hoverLast=null;
-const AIM_SENS=0.0035, AIM_SENS_FINE=0.0006;
+/* Aim precision (rad per px). Relative aim runs a speed curve: a slow hand gets
+   hair-line control (~0.02°/px), a fast flick still swings the cue around.
+   SHIFT drops to ~0.007°/px in every camera. */
+const AIM_SLOW=0.0004, AIM_FAST=0.0026, AIM_FINE=0.00012;
+const wrapA=a=>Math.atan2(Math.sin(a),Math.cos(a));
+function aimGain(px){const t=clamp((Math.abs(px)-1)/24,0,1);return AIM_SLOW+(AIM_FAST-AIM_SLOW)*t*t;}
 /* cue cam rides the aim, so absolute "point at the cloth" aiming feeds back on itself.
    In cue cam we aim by relative pointer motion instead; other cams stay absolute. */
-function aimRel(dxPx,fine){G.aim+=dxPx*(fine?AIM_SENS_FINE:AIM_SENS);}
+function aimRel(dxPx,fine){G.aim+=dxPx*(fine?AIM_FINE:aimGain(dxPx));}
+/* touch drag in TOP/TV: steer by the finger's angle around the cue ball, damped when
+   the finger is close to the ball (where pointing is coarse) or moving slowly */
+function aimSteer(p0,p1,spPx){
+  if(!p0||!p1||cue.state!=='active')return;
+  const a0=Math.atan2(p0.z-cue.z,p0.x-cue.x),a1=Math.atan2(p1.z-cue.z,p1.x-cue.x);
+  const d=Math.hypot(p1.x-cue.x,p1.z-cue.z);
+  const g=clamp(d/0.9,0.3,1)*(0.2+0.8*clamp((spPx-1)/20,0,1));
+  G.aim+=wrapA(a1-a0)*g;
+}
+/* mouse in TOP/TV: plain move points the cue at the cursor; SHIFT switches to fine
+   relative aim, and on release we hold that line until the mouse clearly moves away */
+function aimMouseAbs(p,e,mdx){
+  if(e.shiftKey){aimRel(mdx,true);G.absFreeze={x:e.clientX,y:e.clientY};return;}
+  if(G.absFreeze){
+    if(Math.hypot(e.clientX-G.absFreeze.x,e.clientY-G.absFreeze.y)<60)return;
+    G.absFreeze=null;
+  }
+  aimAt(p);
+}
 function pullScale(){return Math.max(140,Math.min(innerWidth,innerHeight)*0.38);}
 function placeMoveTo(p){
   if(!p)return;
@@ -2567,14 +2592,16 @@ cv.addEventListener('pointerdown',e=>{
     if(e.pointerType==='touch'){
       const near=Math.hypot(e.clientX-s0.x,e.clientY-s0.y)<95;
       dragMode=near?'pull':'aimdrag';
+      /* tap points the cue, then dragging fine-steers from there */
       if(!near&&CAM.mode!=='cue')aimAt(downWorld);
+      G.touchPrev=downWorld;
     }else{
       dragMode='pull';
     }
   }else dragMode=null;
 });
 cv.addEventListener('pointermove',e=>{
-  const mdx=hoverLast?e.clientX-hoverLast.x:0;
+  const mdx=hoverLast?e.clientX-hoverLast.x:0, mdy=hoverLast?e.clientY-hoverLast.y:0;
   hoverLast={x:e.clientX,y:e.clientY};
   const rec=pointers.get(e.pointerId);
   if(rec){
@@ -2618,11 +2645,12 @@ cv.addEventListener('pointermove',e=>{
     return;
   }
   if(dragMode==='aimdrag'){
-    if(CAM.mode==='cue')aimRel(mdx,e.shiftKey);else aimAt(p);
+    if(CAM.mode==='cue')aimRel(mdx,e.shiftKey);
+    else{aimSteer(G.touchPrev,p,Math.hypot(mdx,mdy));if(p)G.touchPrev=p;}
     return;
   }
   if(!dragMode&&e.pointerType!=='touch'&&!G.aimLocked){
-    if(CAM.mode==='cue')aimRel(mdx,e.shiftKey);else aimAt(p);
+    if(CAM.mode==='cue')aimRel(mdx,e.shiftKey);else aimMouseAbs(p,e,mdx);
   }
 });
 function endPointer(e){
@@ -2715,7 +2743,8 @@ addEventListener('keydown',e=>{
       if(left?KEYS.l:KEYS.r)break;           /* ignore OS auto-repeat; the loop handles holds */
       if(left)KEYS.l=true;else KEYS.r=true;
       KEYS.t=0;
-      if(G.state==='aim'&&G.match?.turn==='you')G.aim+=(left?-1:1)*(e.shiftKey?0.0015:0.012);
+      /* tap: ~0.17° nudge, ~0.02° with SHIFT */
+      if(G.state==='aim'&&G.match?.turn==='you'){G.aim+=(left?-1:1)*(e.shiftKey?0.0004:0.003);G.absFreeze={x:hoverLast?.x??0,y:hoverLast?.y??0};}
       break;
     }
     case 'ArrowUp':e.preventDefault();G.power=clamp(G.power+0.04,0,1);updatePowerUI();break;
@@ -2870,7 +2899,8 @@ function loop(now){
           const kd=(KEYS.r?1:0)-(KEYS.l?1:0);
           if(kd){
             KEYS.t+=dt;
-            if(KEYS.t>0.18)G.aim+=kd*dt*(KEYS.shift?0.045:Math.min(1.1,0.3+(KEYS.t-0.18)*1.2));
+            /* hold: starts at ~3.5°/s and ramps to ~40°/s over ~1s; SHIFT creeps at ~0.7°/s */
+            if(KEYS.t>0.25)G.aim+=kd*dt*(KEYS.shift?0.012:Math.min(0.7,0.06+(KEYS.t-0.25)*0.65));
           }
           if(G.spaceCharge){
             G.power+=G.chargeDir*dt*0.85;
