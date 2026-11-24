@@ -80,6 +80,7 @@
     logStart: 0,
     finishing: false
   };
+  var bootPromise = null; // set by boot() — provider awaits it to avoid a race
   window.__dsdaChallengeActive = true;   // gates public board + account posts
 
   /* ---------------- input log ----------------
@@ -105,19 +106,49 @@
 
   /* ---------------- seed provider (called by the cabinet's start fn) ---------------- */
   window.__dsdaGetChallengeSeed = function (gameKey) {
-    if (!state.active || state.gameKeys.indexOf(gameKey) < 0) return Promise.resolve(null);
-    if (state.current && state.current.game_key === gameKey) return Promise.resolve(state.current.seed); // already started this run
-    return api('/' + state.id + '/run/start', 'POST', { game_key: gameKey }).then(function (r) {
-      if (!r.ok) { toast('⚠️', 'CHALLENGE RUN', (r.j && r.j.error) || ('HTTP ' + r.status), 4200); return null; }
-      state.current = { run_id: r.j.run_id, seed: r.j.seed, attempt_no: r.j.attempt_no, game_key: gameKey };
-      state.log = []; state.logStart = Date.now(); state.finishing = false;
-      document.addEventListener('keydown', onKey, { passive: true });
-      document.addEventListener('touchstart', onPointer, { passive: true });
-      document.addEventListener('pointerdown', onPointer, { passive: true });
-      refreshStandings();
-      return r.j.seed;
+    // Await the boot promise so a fast tap before boot finishes doesn't get
+    // a null seed (which the cabinet reads as "not a challenge" → crypto seed
+    // → silent non-counting game). Only a missing ?c= resolves null.
+    return (bootPromise || Promise.resolve()).then(function () {
+      if (!state.active || state.gameKeys.indexOf(gameKey) < 0) return null;
+      if (state.current && state.current.game_key === gameKey) return state.current.seed; // already started this run
+      return api('/' + state.id + '/run/start', 'POST', { game_key: gameKey }).then(function (r) {
+        if (!r.ok) {
+          showRunStartError((r.j && r.j.error) || ('HTTP ' + r.status));
+          return { blocked: true };
+        }
+        state.current = { run_id: r.j.run_id, seed: r.j.seed, attempt_no: r.j.attempt_no, game_key: gameKey };
+        state.log = []; state.logStart = Date.now(); state.finishing = false;
+        document.addEventListener('keydown', onKey, { passive: true });
+        document.addEventListener('touchstart', onPointer, { passive: true });
+        document.addEventListener('pointerdown', onPointer, { passive: true });
+        refreshStandings();
+        return r.j.seed;
+      });
     });
   };
+
+  // Full-screen block when run/start fails: the player should never get a
+  // silent non-counting game. Shows the reason and a button back to the
+  // challenge page where they can accept (if invited) or see the status.
+  function showRunStartError(err) {
+    var existing = document.getElementById('dsda-run-error');
+    if (existing) existing.remove();
+    // Map server errors to player-facing text
+    var msg = err;
+    if (err === 'not in this challenge') msg = 'Accept the challenge first';
+    else if (err === 'no attempts left') msg = 'No attempts left';
+    else if (err === 'challenge closed') msg = 'Challenge closed';
+    var modal = document.createElement('div');
+    modal.id = 'dsda-run-error';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:2147483000;background:rgba(8,14,22,.96);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;padding:24px;text-align:center;';
+    modal.innerHTML =
+      '<div style="font-size:48px;">⚠️</div>' +
+      '<div style="font:700 16px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#fff;letter-spacing:.06em;">CANNOT START RUN</div>' +
+      '<div style="font:400 13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#9fb3ad;max-width:340px;">' + esc(msg) + '</div>' +
+      '<a href="/challenge/?c=' + state.id + '" style="font:600 13px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#6cffb2;border:1px solid rgba(108,255,178,.5);padding:12px 28px;border-radius:10px;text-decoration:none;background:rgba(108,255,178,.08);">← BACK TO CHALLENGE</a>';
+    document.body.appendChild(modal);
+  }
 
   /* ---------------- finish (game_over) ---------------- */
   function finishRun(score) {
@@ -219,7 +250,7 @@
 
   /* ---------------- boot ---------------- */
   function boot() {
-    api('/' + state.id, 'GET').then(function (r) {
+    bootPromise = api('/' + state.id, 'GET').then(function (r) {
       if (!r.ok) {
         toast('⚠️', 'CHALLENGE', (r.j && r.j.error) || 'Not found — is the link right?', 5200);
         window.__dsdaChallengeActive = false;

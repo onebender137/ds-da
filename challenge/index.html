@@ -165,9 +165,15 @@
         else html += '<a class="btn gold" href="/games/challenge-login.html?next=' + encodeURIComponent(location.pathname + location.search) + '">LOG IN TO JOIN</a>';
       }
       if (isMember && st !== 'settled') {
-        (d.games || []).forEach(function (g) {
-          html += '<a class="btn" href="' + CH.playUrl(g, d.id) + '">▶ PLAY ' + CH.gameLabel(g).toUpperCase() + '</a>';
-        });
+        var myPlayer = (d.players || []).find(function (p) { return p.handle === myHandle; });
+        var isAccepted = myPlayer && myPlayer.status === 'accepted';
+        if (isAccepted) {
+          (d.games || []).forEach(function (g) {
+            html += '<a class="btn" href="' + CH.playUrl(g, d.id) + '">▶ PLAY ' + CH.gameLabel(g).toUpperCase() + '</a>';
+          });
+        } else {
+          html += '<button class="btn gold" id="b-accept" style="font-size:15px;padding:16px;">✓ ACCEPT CHALLENGE</button>';
+        }
       }
       html += '<button class="btn ghost" id="b-copy">COPY LINK</button>';
       html += '</div>';
@@ -184,6 +190,14 @@
         CH.api('/' + d.id + '/accept', 'POST', {}).then(function (r) {
           if (r.ok) { document.getElementById('actions').innerHTML = '<div style="width:100%;text-align:center;color:var(--green);font-size:13px;">✓ You\'re in — hit PLAY above.</div>'; load(); }
           else { join.disabled = false; join.textContent = 'JOIN CHALLENGE'; flash('join', (r.j && r.j.error) || 'Could not join.'); }
+        });
+      };
+      var accept = document.getElementById('b-accept');
+      if (accept) accept.onclick = function () {
+        accept.disabled = true; accept.textContent = 'ACCEPTING…';
+        CH.api('/' + d.id + '/accept', 'POST', {}).then(function (r) {
+          if (r.ok) { load(); }
+          else { accept.disabled = false; accept.textContent = '✓ ACCEPT CHALLENGE'; flash('accept', (r.j && r.j.error) || 'Could not accept.'); }
         });
       };
       function copy() {
