@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Log in — DSDA Arcade</title>
+<style>
+  :root { --bg:#080e14; --panel:rgba(10,16,24,.96); --line:rgba(108,255,178,.4); --txt:#eaf6ff; --mut:#9fb3ad; --acc:#6cffb2; --gold:#ffd54a; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; height:100%; }
+  body {
+    background:radial-gradient(1200px 600px at 50% -10%, #0e1a26 0%, var(--bg) 60%);
+    color:var(--txt);
+    font:400 15px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .card {
+    width:min(92vw,420px); background:var(--panel); border:1px solid var(--line);
+    border-radius:18px; padding:26px 24px; box-shadow:0 20px 60px rgba(0,0,0,.55); backdrop-filter:blur(10px);
+  }
+  .t { font-weight:800; letter-spacing:.06em; color:var(--gold); font-size:18px; text-align:center; }
+  .sub { color:var(--mut); font-size:12px; text-align:center; margin:6px 0 18px; }
+  .tabs { display:flex; gap:8px; margin-bottom:16px; }
+  .tab { flex:1; text-align:center; padding:8px 0; border-radius:10px; border:1px solid var(--line);
+         color:var(--mut); font-size:12px; font-weight:700; letter-spacing:.05em; cursor:pointer; }
+  .tab.on { color:#0d2b3d; background:var(--acc); border-color:var(--acc); }
+  label { display:block; color:var(--mut); font-size:11px; letter-spacing:.04em; margin:12px 0 4px; }
+  input { width:100%; padding:11px 12px; border-radius:10px; border:1px solid rgba(108,255,178,.25);
+          background:rgba(255,255,255,.04); color:var(--txt); font:inherit; outline:none; }
+  input:focus { border-color:var(--acc); }
+  .row-hide { display:none; }
+  button { width:100%; margin-top:18px; padding:12px 0; border-radius:12px; border:none; cursor:pointer;
+           background:var(--acc); color:#0d2b3d; font:800 14px/1 ui-monospace,monospace; letter-spacing:.06em; }
+  button:disabled { opacity:.5; cursor:default; }
+  .msg { text-align:center; font-size:12px; margin-top:14px; min-height:16px; color:var(--mut); }
+  .msg.err { color:#ff8f8f; } .msg.ok { color:var(--acc); }
+  .back { display:block; text-align:center; margin-top:16px; color:var(--mut); font-size:11px; text-decoration:none; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="t">🎯 DSDA ARCADE</div>
+    <div class="sub" id="sub">Log in to join this challenge</div>
+    <div class="tabs">
+      <div class="tab on" id="tabLogin">LOG IN</div>
+      <div class="tab" id="tabSignup">SIGN UP</div>
+    </div>
+    <form id="form" autocomplete="off">
+      <label>EMAIL</label>
+      <input type="email" id="email" required autocomplete="username">
+      <div id="handleWrap">
+        <label>HANDLE (2–16 chars)</label>
+        <input type="text" id="handle" class="row-hide" minlength="2" maxlength="16" autocomplete="username">
+      </div>
+      <label>PASSWORD</label>
+      <input type="password" id="password" required autocomplete="current-password">
+      <button type="submit" id="go">LOG IN</button>
+    </form>
+    <div class="msg" id="msg"></div>
+    <a class="back" id="back" href="#">← keep playing as a guest</a>
+  </div>
+<script src="/games/arcade-account.js?v=10"></script>
+<script>
+(function () {
+  'use strict';
+  var next = '';
+  try { next = new URLSearchParams(location.search).get('next') || ''; } catch (e) {}
+  // next must be a same-origin ABSOLUTE PATH: a single "/" followed by a
+  // non-slash, non-backslash char. This rejects protocol-relative (//evil.com),
+  // backslash tricks (/\evil.com, \\evil.com), schemes (javascript:...), and
+  // URL-encoded variants (%2F%2F...). Anything else falls back to /games/.
+  var backHref = '/games/';
+  if (typeof next === 'string' && /^\/[^/\\]/.test(next)) {
+    backHref = next;
+  }
+  document.getElementById('back').href = backHref;
+  var mode = 'login';
+  var tabLogin = document.getElementById('tabLogin'), tabSignup = document.getElementById('tabSignup');
+  var handle = document.getElementById('handle'), go = document.getElementById('go'), msg = document.getElementById('msg');
+  function setMode(m) {
+    mode = m;
+    tabLogin.classList.toggle('on', m === 'login');
+    tabSignup.classList.toggle('on', m === 'signup');
+    handle.classList.toggle('row-hide', m === 'login');
+    handle.required = (m === 'signup');
+    go.textContent = (m === 'signup') ? 'SIGN UP' : 'LOG IN';
+  }
+  tabLogin.onclick = function () { setMode('login'); };
+  tabSignup.onclick = function () { setMode('signup'); };
+  function say(t, cls) { msg.textContent = t || ''; msg.className = 'msg' + (cls ? ' ' + cls : ''); }
+  document.getElementById('form').onsubmit = function (e) {
+    e.preventDefault();
+    var email = document.getElementById('email').value.trim();
+    var pw = document.getElementById('password').value;
+    var h = handle.value.trim();
+    go.disabled = true; say('');
+    var p = (mode === 'signup')
+      ? window.DSDA.account.register(email, h, pw)
+      : window.DSDA.account.loginEmail(email, pw);
+    p.then(function (r) {
+      if (r && r.ok) { say('welcome, ' + (r.account.handle || email) + '…', 'ok'); setTimeout(function () { location.replace(backHref); }, 350); }
+      else { say((r && r.error) || 'that did not work', 'err'); go.disabled = false; }
+    }).catch(function (err) { say(String(err), 'err'); go.disabled = false; });
+  };
+})();
+</script>
+</body>
+</html>
