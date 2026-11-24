@@ -233,7 +233,17 @@
     }).join('  ');
     var stand = (d.standings || []).map(function (s) {
       var me = s.handle === member();
-      return '<span class="' + (me ? 'me' : '') + '">' + (me ? '★ ' : '') + esc(s.handle) + ' ' + (s.points != null ? s.points + 'pt' : '') + (s.best != null ? ' (best ' + s.best + ')' : '') + '</span>';
+      var bestStr = '';
+      if (s.best && typeof s.best === 'object') {
+        var parts = [];
+        (state.gameKeys || []).forEach(function (g) {
+          if (s.best[g] != null) parts.push((EM[g] || g) + ' ' + s.best[g]);
+        });
+        bestStr = parts.length ? ' (' + parts.join(' ') + ')' : '';
+      } else if (s.best != null) {
+        bestStr = ' (best ' + s.best + ')';
+      }
+      return '<span class="' + (me ? 'me' : '') + '">' + (me ? '★ ' : '') + esc(s.handle) + ' ' + (s.points != null ? s.points + 'pt' : '') + bestStr + '</span>';
     }).join('  ');
     var used = 0, tot = 0;
     (state.gameKeys).forEach(function (g) { tot += (d.games || []).filter(function (x) { return x.game_key === g; })[0] ? 1 : 0; });
