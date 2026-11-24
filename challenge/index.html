@@ -122,7 +122,17 @@
         d.players.forEach(function (p) {
           var role = p.is_creator ? 'CREATOR' : (p.status === 'accepted' ? 'IN' : p.status === 'invited' ? 'INVITED' : 'JOINED');
           var you = p.handle === myHandle ? ' you' : '';
-          html += '<div class="player"><span>' + CH.esc(p.handle) + (you ? ' <span class="you">·YOU</span>' : '') + '</span><span class="role">' + role + '</span></div>';
+          // attempts used per game (e.g. "1/1")
+          var attStr = '';
+          if (p.attempts_used && typeof p.attempts_used === 'object') {
+            var attParts = [];
+            (d.games || []).forEach(function (g) {
+              var used = p.attempts_used[g] || 0;
+              attParts.push(used + '/' + (d.attempts || 1));
+            });
+            if (attParts.length) attStr = ' · ' + attParts.join(' ');
+          }
+          html += '<div class="player"><span>' + CH.esc(p.handle) + (you ? ' <span class="you">·YOU</span>' : '') + '</span><span class="role">' + role + attStr + '</span></div>';
         });
       } else {
         html += '<div class="player"><span style="color:var(--dim)">No one in yet</span></div>';
@@ -169,7 +179,13 @@
         var isAccepted = myPlayer && myPlayer.status === 'accepted';
         if (isAccepted) {
           (d.games || []).forEach(function (g) {
-            html += '<a class="btn" href="' + CH.playUrl(g, d.id) + '">▶ PLAY ' + CH.gameLabel(g).toUpperCase() + '</a>';
+            var used = (myPlayer.attempts_used && myPlayer.attempts_used[g]) || 0;
+            var maxAtt = d.attempts || 1;
+            if (used >= maxAtt) {
+              html += '<div style="flex:1;min-width:140px;text-align:center;padding:13px 16px;border-radius:10px;font-size:13px;letter-spacing:.08em;border:1px solid rgba(255,255,255,.18);color:var(--dim);background:transparent;">All attempts used ✓</div>';
+            } else {
+              html += '<a class="btn" href="' + CH.playUrl(g, d.id) + '">▶ PLAY ' + CH.gameLabel(g).toUpperCase() + '</a>';
+            }
           });
         } else {
           html += '<button class="btn gold" id="b-accept" style="font-size:15px;padding:16px;">✓ ACCEPT CHALLENGE</button>';
