@@ -1410,29 +1410,74 @@ function onGameOverUI() {
   Vocals.play('tryagain');
   if (DSDARadio) { radioWasPlaying = false; DSDARadio.pause(); }  // music stops on game over
   countUp(elFinal, s.score);  // dramatic count-up reveal
-  elInitials.value = dsdaInits();
-  setSaveEnabled();
   elSavedMsg.textContent = '';
   elShareMsg.textContent = '';
   const top = loadScores();
   const isHigh = s.score > 0 && s.score >= (top[0] ? top[0].s : 0);
-  elNewHigh.classList.toggle('hidden', !isHigh);
-  if (isHigh) sfx.newHigh();
-  $('finalStats').textContent = 'LEVEL ' + (1 + s.level) + ' · BEST CHAIN ×' + Math.max(1, s.maxChain);
-  renderTopList(elTopList, top.slice(0, 10));
+  // --- challenge mode: different game-over UI ---
+  const chActive = window.__dsdaChallengeActive && window.DSDA && window.DSDA.challengeRun;
+  if (chActive) {
+    const cr = window.DSDA.challengeRun;
+    const attNo = cr.current ? cr.current.attempt_no : 0;
+    const maxAtt = (cr.data && cr.data.attempts) || 1;
+    elNewHigh.classList.remove('hidden');
+    elNewHigh.textContent = '🎯 CHALLENGE RUN IN · Attempt ' + attNo + ' of ' + maxAtt;
+    elNewHigh.style.color = '#6cffb2';
+    $('finalStats').textContent = 'LEVEL ' + (1 + s.level) + ' · BEST CHAIN ×' + Math.max(1, s.maxChain);
+    renderTopList(elTopList, top.slice(0, 10));
+    // hide initials/save (challenge runs don't save to account history)
+    const lbl = document.querySelector('label[for="initials"]');
+    elInitials.style.display = elSave.style.display = 'none';
+    if (lbl) lbl.style.display = 'none';
+    // share → challenge link
+    elShare.onclick = function () {
+      const url = location.origin + '/challenge/?c=' + cr.id;
+      if (navigator.clipboard) navigator.clipboard.writeText(url).then(function () { elShareMsg.textContent = 'Link copied'; });
+      else elShareMsg.textContent = url;
+    };
+    // play again only if attempts remain
+    const used = (cr.data && cr.data.players && cr.data.players.find(function (p) { return p.handle === memberHandle(); })) ;
+    const attUsed = used && used.attempts_used && used.attempts_used['dropblock'] ? used.attempts_used['dropblock'] : 0;
+    elPlayAgain.style.display = attUsed >= maxAtt ? 'none' : '';
+    // add back-to-challenge button
+    let btCh = document.getElementById('dsda-back-ch');
+    if (!btCh) {
+      btCh = document.createElement('a');
+      btCh.id = 'dsda-back-ch';
+      btCh.className = 'primary';
+      btCh.style.cssText = 'display:block;width:100%;text-align:center;margin-top:10px;text-decoration:none;';
+      btCh.textContent = '← BACK TO CHALLENGE';
+      elPlayAgain.parentNode.insertBefore(btCh, elPlayAgain);
+    }
+    btCh.href = '/challenge/?c=' + cr.id;
+    btCh.style.display = '';
+  } else {
+    elNewHigh.style.color = '';
+    elNewHigh.classList.toggle('hidden', !isHigh);
+    if (isHigh) sfx.newHigh();
+    elInitials.value = dsdaInits();
+    setSaveEnabled();
+    $('finalStats').textContent = 'LEVEL ' + (1 + s.level) + ' · BEST CHAIN ×' + Math.max(1, s.maxChain);
+    renderTopList(elTopList, top.slice(0, 10));
+    elPlayAgain.style.display = '';
+    var btCh2 = document.getElementById('dsda-back-ch');
+    if (btCh2) btCh2.style.display = 'none';
+  }
   shake(0.35);
   setDanger(false);
   updatePreview();
   elOverlay.classList.remove('hidden');
   // Logged-in members: no initials prompt — auto-save through the normal board
   // post; arcade-account.js attaches the session so the Worker files it under
-  // the account handle.
-  const member = memberHandle();
-  const lbl = document.querySelector('label[for="initials"]');
-  elInitials.style.display = elSave.style.display = member ? 'none' : '';
-  if (lbl) lbl.style.display = member ? 'none' : '';
-  if (member) { if (s.score > 0) { elSave.disabled = false; saveScore(); } }
-  else elInitials.focus();
+  // the account handle. (Skipped in challenge mode.)
+  if (!chActive) {
+    const member = memberHandle();
+    const lbl = document.querySelector('label[for="initials"]');
+    elInitials.style.display = elSave.style.display = member ? 'none' : '';
+    if (lbl) lbl.style.display = member ? 'none' : '';
+    if (member) { if (s.score > 0) { elSave.disabled = false; saveScore(); } }
+    else elInitials.focus();
+  }
 }
 
 function countUp(el, target, dur = 950) {
@@ -2650,7 +2695,7 @@ try {
 }
 </script>
 <script src="../arcade-social.js?v=16"></script>
-<script src="../arcade-challenge.js?v=2"></script>
+<script src="../arcade-challenge.js?v=3"></script>
 <script src="../../radio/radio.js?v=11"></script>
 <script>
   // DSDA Radio — the shared cross-game dial (6 stations: Most Pit, Easy Mellow,

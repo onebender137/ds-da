@@ -1,7 +1,7 @@
 /* DSDA Arcade — AUTHORITATIVE challenges (Phase 1, no stakes).
  *
  * Drop-in for eligible cabinets (TappyCat, DropBlock):
- *   <script src="../arcade-challenge.js?v=1"></script>
+ *   <script src="../arcade-challenge.js?v=3"></script>
  *
  * A no-op unless the URL has ?c=<challengeId>. When it does:
  *   - Loads the challenge (GET /api/challenge/<id>, session-authed) and shows a
@@ -119,6 +119,7 @@
         }
         state.current = { run_id: r.j.run_id, seed: r.j.seed, attempt_no: r.j.attempt_no, game_key: gameKey };
         state.log = []; state.logStart = Date.now(); state.finishing = false;
+        setCollapsed(true); // slim pill while running
         document.addEventListener('keydown', onKey, { passive: true });
         document.addEventListener('touchstart', onPointer, { passive: true });
         document.addEventListener('pointerdown', onPointer, { passive: true });
@@ -159,6 +160,7 @@
     document.removeEventListener('keydown', onKey);
     document.removeEventListener('touchstart', onPointer);
     document.removeEventListener('pointerdown', onPointer);
+    setCollapsed(false); // expand HUD on game over
     var s = Math.round(+score || 0);
     api('/' + state.id + '/run/' + run.run_id + '/finish', 'POST', { score: s, log: log })
       .then(function (r) {
@@ -193,21 +195,31 @@
 
   /* ---------------- HUD ---------------- */
   var hud = null;
+  var hudCollapsed = false;
   function injectCSS() {
     if (document.getElementById('dsda-ch-css')) return;
     var css = '' +
       '.dsda-ch{position:fixed;left:50%;top:calc(8px + env(safe-area-inset-top));transform:translateX(-50%);z-index:2147481000;width:min(94vw,460px);' +
       'font:600 11px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.03em;color:#eaf6ff;background:rgba(8,14,22,.92);' +
       'border:1px solid rgba(108,255,178,.4);border-radius:14px;padding:9px 12px;box-shadow:0 10px 30px rgba(0,0,0,.5);backdrop-filter:blur(8px);' +
-      'display:flex;flex-direction:column;gap:5px;pointer-events:none}' +
+      'display:flex;flex-direction:column;gap:5px;pointer-events:auto;cursor:pointer;transition:all .25s ease}' +
+      '.dsda-ch.collapsed{width:auto;padding:5px 14px;border-radius:999px;gap:0}' +
+      '.dsda-ch.collapsed .row{display:flex!important}' +
+      '.dsda-ch.collapsed .pl,.dsda-ch.collapsed .sb{display:none}' +
       '.dsda-ch .row{display:flex;gap:8px;align-items:center;justify-content:space-between}' +
-      '.dsda-ch .t{font-weight:800;letter-spacing:.06em;color:#ffd54a;font-size:12px}' +
-      '.dsda-ch .st{font-weight:800;font-size:10px;padding:2px 8px;border-radius:999px;letter-spacing:.08em}' +
+      '.dsda-ch .t{font-weight:800;letter-spacing:.06em;color:#ffd54a;font-size:12px;white-space:nowrap}' +
+      '.dsda-ch.collapsed .t{font-size:11px}' +
+      '.dsda-ch .st{font-weight:800;font-size:10px;padding:2px 8px;border-radius:999px;letter-spacing:.08em;white-space:nowrap}' +
       '.dsda-ch .st.open{color:#0d2b3d;background:#6cffb2}.dsda-ch .st.live{color:#1d1200;background:#ffd54a}.dsda-ch .st.settled{color:#eaf6ff;background:#22384a}' +
       '.dsda-ch .pl{color:#9fb3ad;font-size:10px}.dsda-ch .sb{color:#eaf6ff;font-size:10px}.dsda-ch .sb b{color:#6cffb2}' +
-      '.dsda-ch .me{color:#ffd54a}';
+      '.dsda-ch .me{color:#ffd54a}' +
+      '.dsda-ch .nrun{color:#5a6b6e;font-style:italic}';
     var st = document.createElement('style'); st.id = 'dsda-ch-css'; st.textContent = css;
     (document.head || document.documentElement).appendChild(st);
+  }
+  function setCollapsed(c) {
+    hudCollapsed = c;
+    if (hud) hud.classList.toggle('collapsed', c);
   }
   function statusLabel(d) {
     if (!d) return '';
@@ -223,7 +235,11 @@
   }
   function renderHUD() {
     injectCSS();
-    if (!hud) { hud = document.createElement('div'); hud.className = 'dsda-ch'; document.body.appendChild(hud); }
+    if (!hud) {
+      hud = document.createElement('div'); hud.className = 'dsda-ch';
+      hud.addEventListener('click', function () { setCollapsed(!hudCollapsed); });
+      document.body.appendChild(hud);
+    }
     var d = state.data;
     if (!d) { hud.innerHTML = '<div class="row"><span class="t">🎯 CHALLENGE</span><span class="st open">LOADING</span></div>'; return; }
     var st = statusLabel(d);
@@ -239,19 +255,24 @@
         (state.gameKeys || []).forEach(function (g) {
           if (s.best[g] != null) parts.push((EM[g] || g) + ' ' + s.best[g]);
         });
-        bestStr = parts.length ? ' (' + parts.join(' ') + ')' : '';
+        bestStr = parts.length ? ' (' + parts.join(' ') + ')' : ' <span class="nrun">no runs yet</span>';
       } else if (s.best != null) {
         bestStr = ' (best ' + s.best + ')';
+      } else {
+        bestStr = ' <span class="nrun">no runs yet</span>';
       }
       return '<span class="' + (me ? 'me' : '') + '">' + (me ? '★ ' : '') + esc(s.handle) + ' ' + (s.points != null ? s.points + 'pt' : '') + bestStr + '</span>';
     }).join('  ');
-    var used = 0, tot = 0;
-    (state.gameKeys).forEach(function (g) { tot += (d.games || []).filter(function (x) { return x.game_key === g; })[0] ? 1 : 0; });
-    hud.innerHTML =
-      '<div class="row"><span class="t">🎯 ' + esc((d.title || 'CHALLENGE').slice(0, 40)) + '</span>' +
-      '<span class="st ' + st + '">' + st.toUpperCase() + '</span></div>' +
-      (players ? '<div class="pl">' + players + '</div>' : '') +
-      (stand ? '<div class="sb">▸ ' + stand + '</div>' : '');
+    // Collapsed: slim pill with title + status only
+    if (hudCollapsed) {
+      hud.innerHTML = '<div class="row"><span class="t">🎯 CHALLENGE</span><span class="st ' + st + '">' + st.toUpperCase() + '</span></div>';
+    } else {
+      hud.innerHTML =
+        '<div class="row"><span class="t">🎯 ' + esc((d.title || 'CHALLENGE').slice(0, 40)) + '</span>' +
+        '<span class="st ' + st + '">' + st.toUpperCase() + '</span></div>' +
+        (players ? '<div class="pl">' + players + '</div>' : '') +
+        (stand ? '<div class="sb">▸ ' + stand + '</div>' : '');
+    }
   }
   function refreshStandings() {
     if (!state.active) return;

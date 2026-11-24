@@ -3520,26 +3520,65 @@ function gameOver(reason) {
 
     finalScoreEl.innerText = score;
     finalBestEl.innerText = 'BEST ' + best;
-    newRecordEl.classList.toggle('hidden', !isRecord);
 
     const lb = getLeaderboard();
     const qualifies = score > 0 && (lb.length < 10 || score > lb[lb.length - 1].score);
-    // Logged-in members: no initials prompt — every run auto-saves; arcade-account.js
-    // attaches the session so the Worker files it under the account handle.
     const member = memberHandle();
-    initialsEntry.classList.toggle('hidden', !qualifies || !!member);
-    nameInput.value = dsdaInits();
-    setSaveEnabled();
     saveMsgEl.innerText = '';
     shareMsgEl.innerText = '';
+
+    // --- challenge mode: different game-over UI ---
+    const chActive = window.__dsdaChallengeActive && window.DSDA && window.DSDA.challengeRun;
+    if (chActive) {
+        const cr = window.DSDA.challengeRun;
+        const attNo = cr.current ? cr.current.attempt_no : 0;
+        const maxAtt = (cr.data && cr.data.attempts) || 1;
+        newRecordEl.classList.remove('hidden');
+        newRecordEl.textContent = '🎯 CHALLENGE RUN IN · Attempt ' + attNo + ' of ' + maxAtt;
+        newRecordEl.style.color = '#6cffb2';
+        initialsEntry.classList.add('hidden');
+        // share → challenge link
+        document.getElementById('share-btn').onclick = function () {
+            var url = location.origin + '/challenge/?c=' + cr.id;
+            if (navigator.clipboard) navigator.clipboard.writeText(url).then(function () { shareMsgEl.innerText = 'Link copied'; });
+            else shareMsgEl.innerText = url;
+        };
+        // play again only if attempts remain
+        var used = (cr.data && cr.data.players && cr.data.players.find(function (p) { return p.handle === memberHandle(); }));
+        var attUsed = used && used.attempts_used && used.attempts_used['tappycat'] ? used.attempts_used['tappycat'] : 0;
+        document.getElementById('restart-btn').style.display = attUsed >= maxAtt ? 'none' : '';
+        // add back-to-challenge button
+        var btCh = document.getElementById('dsda-back-ch');
+        if (!btCh) {
+            btCh = document.createElement('a');
+            btCh.id = 'dsda-back-ch';
+            btCh.className = 'btn secondary';
+            btCh.style.cssText = 'display:block;width:100%;text-align:center;margin-top:10px;text-decoration:none;';
+            btCh.textContent = '← BACK TO CHALLENGE';
+            document.getElementById('restart-btn').parentNode.insertBefore(btCh, document.getElementById('restart-btn'));
+        }
+        btCh.href = '/challenge/?c=' + cr.id;
+        btCh.style.display = '';
+    } else {
+        newRecordEl.style.color = '';
+        newRecordEl.classList.toggle('hidden', !isRecord);
+        initialsEntry.classList.toggle('hidden', !qualifies || !!member);
+        nameInput.value = dsdaInits();
+        setSaveEnabled();
+        document.getElementById('restart-btn').style.display = '';
+        var btCh2 = document.getElementById('dsda-back-ch');
+        if (btCh2) btCh2.style.display = 'none';
+    }
 
     setTimeout(() => {
         hud.classList.remove('visible');
         gameoverScreen.classList.remove('hidden');
         renderLeaderboard(leaderboardList, 10);
         loadGlobalBoard();
-        if (member) { if (score > 0) saveScore(); }
-        else if (qualifies) nameInput.focus();
+        if (!chActive) {
+            if (member) { if (score > 0) saveScore(); }
+            else if (qualifies) nameInput.focus();
+        }
     }, 900);
 }
 function memberHandle() { try { return (window.DSDA && DSDA.member && DSDA.member()) || ''; } catch (e) { return ''; } }
@@ -4064,7 +4103,7 @@ init();
   <!-- DSDA Radio network widget (shared 6-station dial) -->
   <div id="radioBox"></div>
   <script src="../arcade-social.js?v=16"></script>
-  <script src="../arcade-challenge.js?v=2"></script>
+  <script src="../arcade-challenge.js?v=3"></script>
   <script src="../../radio/radio.js?v=11"></script>
   <script src="sim.js?v=1"></script>
   <script>
