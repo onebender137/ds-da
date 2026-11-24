@@ -3434,26 +3434,30 @@ async function startGame() {
     initAudio();
     track('game_start');
 
-    gameState = 'PLAYING';
-
     // Phase 0: the sim owns gameplay state. Normal play seeds from
     // crypto.getRandomValues on every run, so public board play stays
     // exactly as random as it is today. Challenge runs (Phase 1) await the
     // seed provider, which burns an attempt on the Worker and returns the
     // per-attempt seed (both players get the same sequence for a fair run).
     let seed;
+    let blocked = false;
     if (typeof window.__dsdaGetChallengeSeed === 'function') {
         const cs = await window.__dsdaGetChallengeSeed('tappycat');
-        seed = (cs != null)
-            ? (cs >>> 0)
-            : ((window.crypto && crypto.getRandomValues)
+        if (cs && cs.blocked) { blocked = true; }
+        else if (cs != null) { seed = cs >>> 0; }
+        else {
+            seed = (window.crypto && crypto.getRandomValues)
                 ? crypto.getRandomValues(new Uint32Array(1))[0]
-                : ((Date.now() ^ (Math.random() * 0xffffffff)) >>> 0));
+                : ((Date.now() ^ (Math.random() * 0xffffffff)) >>> 0);
+        }
     } else {
         seed = (window.crypto && crypto.getRandomValues)
             ? crypto.getRandomValues(new Uint32Array(1))[0]
             : ((Date.now() ^ (Math.random() * 0xffffffff)) >>> 0);
     }
+    if (blocked) return; // run/start failed — modal is showing, don't start
+
+    gameState = 'PLAYING';
     simState = TappySim.init(seed);
     simPrev = null;
     simAcc = 0;

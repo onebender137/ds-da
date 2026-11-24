@@ -1481,12 +1481,16 @@ async function resetGame() {
   // seeds from crypto.getRandomValues() per run. The randomizer diff is seed
   // source ONLY.
   let seed;
+  let blocked = false;
   if (typeof window.__dsdaGetChallengeSeed === 'function') {
     const cs = await window.__dsdaGetChallengeSeed('dropblock');
-    seed = (cs != null) ? (cs >>> 0) : (challengeSeed != null ? challengeSeed >>> 0 : (await cryptoSeed()));
+    if (cs && cs.blocked) { blocked = true; }
+    else if (cs != null) { seed = cs >>> 0; }
+    else { seed = (challengeSeed != null) ? challengeSeed >>> 0 : (await cryptoSeed()); }
   } else {
     seed = (challengeSeed != null) ? challengeSeed >>> 0 : await cryptoSeed();
   }
+  if (blocked) return; // run/start failed — modal is showing, don't start
   // DAS profile is set per-press from bit7 (touch source), not at init — so a
   // touchscreen device can play with keyboard (8/4) AND touch (14/6).
   simState = DropBlockSim.init(seed);
