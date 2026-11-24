@@ -586,6 +586,9 @@ let worldSpeed = 0;         // how fast the scenery is passing (0 on menus)
 let simState = null, simPrev = null;
 let pendingFlap = false;    // consumed by the FIRST sim step after press
 let simAcc = 0;
+// Phase 1 challenges: the shared arcade-challenge.js reads the current sim
+// tick to timestamp the [tick,bits] input log (deterministic, replayable).
+window.__dsdaTick = () => (simState && simState.tick != null) ? simState.tick : 0;
 const cukeMeshes = new Map();   // sim cuke id -> THREE.Group
 const dogMeshes = new Map();    // sim dog id -> THREE.Group
 
@@ -662,6 +665,9 @@ function fetchGlobalBoard() {
     });
 }
 function submitGlobal(name, s) {
+    // Challenge runs (Phase 1) do NOT post to the public board — the score
+    // goes to the challenge run/finish instead. Return a distinct honest tag.
+    if (window.__dsdaChallengeActive) return Promise.resolve('challenge');
     // Worker only: arcade-account.js attaches the session token when logged in (and
     // retries once as casual on a 401). Honest result for the save line: 'ok',
     // 'http-<status>' (http-429 = rate limited), or 'board-offline'.
@@ -3424,7 +3430,7 @@ function resetStartPose() {
     cat.rotation.set(0, 0, 0);
 }
 
-function startGame() {
+async function startGame() {
     initAudio();
     track('game_start');
 
@@ -3432,11 +3438,22 @@ function startGame() {
 
     // Phase 0: the sim owns gameplay state. Normal play seeds from
     // crypto.getRandomValues on every run, so public board play stays
-    // exactly as random as it is today; challenge runs will pass the
-    // challenge seed instead (Phase 1).
-    const seed = (window.crypto && crypto.getRandomValues)
-        ? crypto.getRandomValues(new Uint32Array(1))[0]
-        : ((Date.now() ^ (Math.random() * 0xffffffff)) >>> 0);
+    // exactly as random as it is today. Challenge runs (Phase 1) await the
+    // seed provider, which burns an attempt on the Worker and returns the
+    // per-attempt seed (both players get the same sequence for a fair run).
+    let seed;
+    if (typeof window.__dsdaGetChallengeSeed === 'function') {
+        const cs = await window.__dsdaGetChallengeSeed('tappycat');
+        seed = (cs != null)
+            ? (cs >>> 0)
+            : ((window.crypto && crypto.getRandomValues)
+                ? crypto.getRandomValues(new Uint32Array(1))[0]
+                : ((Date.now() ^ (Math.random() * 0xffffffff)) >>> 0));
+    } else {
+        seed = (window.crypto && crypto.getRandomValues)
+            ? crypto.getRandomValues(new Uint32Array(1))[0]
+            : ((Date.now() ^ (Math.random() * 0xffffffff)) >>> 0);
+    }
     simState = TappySim.init(seed);
     simPrev = null;
     simAcc = 0;
@@ -3705,7 +3722,7 @@ function saveScore() {
     track('score_submit', { score: score });
     saveMsgEl.innerText = 'SUBMITTING TO GLOBAL…';
     submitGlobal(name, score).then(res => {
-        saveMsgEl.innerText = res === 'ok' ? 'ON THE GLOBAL BOARD' + (member ? ' AS ' + member.toUpperCase() + ' \u25c6' : '') + ' ✓' : res === 'deduped' ? 'PERSONAL BEST STANDS — NOT REPOSTED' : 'SAVED LOCALLY · GLOBAL: ' + res;
+        saveMsgEl.innerText = res === 'ok' ? 'ON THE GLOBAL BOARD' + (member ? ' AS ' + member.toUpperCase() + ' \u25c6' : '') + ' ✓' : res === 'deduped' ? 'PERSONAL BEST STANDS — NOT REPOSTED' : res === 'challenge' ? 'CHALLENGE RUN — NOT ON GLOBAL BOARD' : 'SAVED LOCALLY · GLOBAL: ' + res;
         if (res === 'ok') loadGlobalBoard();   // the over-screen board was fetched before this post landed
     });
 }
@@ -4042,7 +4059,8 @@ init();
 
   <!-- DSDA Radio network widget (shared 6-station dial) -->
   <div id="radioBox"></div>
-  <script src="../arcade-social.js?v=15"></script>
+  <script src="../arcade-social.js?v=16"></script>
+  <script src="../arcade-challenge.js?v=1"></script>
   <script src="../../radio/radio.js?v=11"></script>
   <script src="sim.js?v=1"></script>
   <script>

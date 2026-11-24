@@ -835,6 +835,17 @@ let simState = null;          // DropBlockSim.init(seed) — DAS profile set per
 let simAcc = 0;               // fixed-timestep accumulator (rAF delta -> 60 Hz steps)
 let challengeSeed = null;     // set by the challenge harness; null = crypto seed per run
 let lastSeed = null;          // seed of the current run (the 8-bit gate recorder needs it)
+// Phase 1: crypto 32-bit seed (normal play). resetGame() awaits this.
+function cryptoSeed() { const a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] >>> 0; }
+// Phase 1 challenges: arcade-challenge.js reads the sim tick to timestamp the
+// [tick,bits] input log (deterministic, replayable).
+window.__dsdaTick = () => (simState && simState.tick != null) ? simState.tick : 0;
+// Test hook (module scope): let the browser E2E start a run the way a player
+// would (menu -> play). Harmless in prod; no-op until the menu exists.
+window.__dbStart = () => { if (phase === 'menu') startGameFromMenu(); };
+window.__dbPhase = () => phase;
+window.__dbGameOver = () => { if (simState && simState.phase === 'over') onGameOverUI(); };
+window.__dbSubmit = (n, s) => submitGlobal(n, s);  // test hook: exercise the public board post path
 let phase = 'menu'; // menu | paused | over  (falling/clearing/settling mirror simState.phase)
 let fps = 0;
 const keysDown = new Set();
@@ -1463,13 +1474,19 @@ function clearBoard() {
   updateHud();
 }
 
-function resetGame() {
+async function resetGame() {
   clearBoard();
-  // Seed source: challenge runs use the challenge seed; normal play seeds from
-  // crypto.getRandomValues() per run. The randomizer diff is seed source ONLY.
+  // Seed source: challenge runs (Phase 1) await the seed provider, which burns
+  // an attempt on the Worker and returns the per-attempt seed. Normal play
+  // seeds from crypto.getRandomValues() per run. The randomizer diff is seed
+  // source ONLY.
   let seed;
-  if (challengeSeed != null) { seed = challengeSeed >>> 0; }
-  else { const a = new Uint32Array(1); crypto.getRandomValues(a); seed = a[0] >>> 0; }
+  if (typeof window.__dsdaGetChallengeSeed === 'function') {
+    const cs = await window.__dsdaGetChallengeSeed('dropblock');
+    seed = (cs != null) ? (cs >>> 0) : (challengeSeed != null ? challengeSeed >>> 0 : (await cryptoSeed()));
+  } else {
+    seed = (challengeSeed != null) ? challengeSeed >>> 0 : await cryptoSeed();
+  }
   // DAS profile is set per-press from bit7 (touch source), not at init — so a
   // touchscreen device can play with keyboard (8/4) AND touch (14/6).
   simState = DropBlockSim.init(seed);
@@ -1942,6 +1959,9 @@ function renderTopList(el, top) {
   });
 }
 function submitGlobal(name, s) {
+  // Challenge runs (Phase 1) do NOT post to the public board — the score goes
+  // to the challenge run/finish instead. Distinct honest tag for the save line.
+  if (window.__dsdaChallengeActive) return Promise.resolve('challenge');
   // Worker only: arcade-account.js attaches the session token when logged in (and
   // retries once as casual on a 401). Honest result for the save line: 'ok',
   // 'http-<status>' (http-429 = rate limited), or 'board-offline'.
@@ -1978,6 +1998,7 @@ function saveScore() {
   submitGlobal(name, score).then(res => {
     if (res === 'ok') elSavedMsg.textContent = 'Saved! On the global board' + who + ' ✓';
     else if (res === 'deduped') elSavedMsg.textContent = 'Personal best stands — not reposted';
+    else if (res === 'challenge') elSavedMsg.textContent = 'Challenge run — not on the global board';
     else elSavedMsg.textContent = 'Saved on this device · global board unreachable right now';
   });
 }
@@ -2624,7 +2645,8 @@ try {
   elBootErr.textContent = window.__bootErr;
 }
 </script>
-<script src="../arcade-social.js?v=15"></script>
+<script src="../arcade-social.js?v=16"></script>
+<script src="../arcade-challenge.js?v=1"></script>
 <script src="../../radio/radio.js?v=11"></script>
 <script>
   // DSDA Radio — the shared cross-game dial (6 stations: Most Pit, Easy Mellow,

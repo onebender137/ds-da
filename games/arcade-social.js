@@ -257,8 +257,11 @@
     if (score != null && score > (g.best || 0)) { g.best = Math.round(score); newBest = true; }
     if (lvl > (g.bestLevel || 0)) g.bestLevel = lvl;
     save(p);
-    // Opt-in: submit the score to the account (wallet-signed or session; no-op if not logged in)
-    if (score != null && score > 0 && window.DSDA.account && window.DSDA.account.submitScore) {
+    // Opt-in: submit the score to the account (wallet-signed or session; no-op if not logged in).
+    // Challenge runs (Phase 1) skip this — their scores go to the challenge
+    // run/finish, not the account score history (window.__dsdaChallengeActive
+    // is set by arcade-challenge.js on ?c= URLs).
+    if (score != null && score > 0 && !window.__dsdaChallengeActive && window.DSDA.account && window.DSDA.account.submitScore) {
       window.DSDA.account.submitScore(game, score);
     }
     var played = Object.keys(p.games).length;
