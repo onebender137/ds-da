@@ -30,7 +30,7 @@
     var LINKS = [
         { href: '/proof/', html: 'Proof<span class="dsda-bar-wide"> of Creation</span>' },
         { href: '/games/', html: 'Arcade' },
-        { href: '/pocket/', html: 'Pocket' }
+        { href: '/fundy/', html: 'Fundy' }
     ];
     var onHub = /^\/radio\/stations\/?(index\.html)?$/.test(location.pathname);
 

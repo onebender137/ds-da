@@ -73,7 +73,7 @@
   }
   function loginBrc100() {
     if (!window.CWI || typeof window.CWI.getPublicKey !== 'function') {
-      return Promise.resolve({ ok: false, error: 'no wallet (open in BSV Browser / Pocket Wallet)' });
+      return Promise.resolve({ ok: false, error: 'no wallet (open in Fundy Wallet or BSV Browser)' });
     }
     return api('/nonce').then(function (n) {
       var nonce = n.j.nonce;
@@ -121,7 +121,7 @@
   function linkWallet() {
     if (!tok()) return Promise.resolve({ ok: false, error: 'not logged in' });
     if (!window.CWI || typeof window.CWI.getPublicKey !== 'function') {
-      return Promise.resolve({ ok: false, error: 'no wallet (open in BSV Browser / Pocket Wallet)' });
+      return Promise.resolve({ ok: false, error: 'no wallet (open in Fundy Wallet or BSV Browser)' });
     }
     return api('/nonce?purpose=link').then(function (n) {
       var nonce = n.j.nonce;

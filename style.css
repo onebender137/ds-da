@@ -492,7 +492,7 @@ html.dark .nav a.nav-radio:hover { color: #0a1628; }
 }
 @media (prefers-reduced-motion: reduce) { .nav-dot { animation: none; } }
 
-/* Pocket Wallet: full-width featured card at the top of the "What we do" grid */
+/* Fundy Wallet: full-width featured card at the top of the "What we do" grid */
 .service-card-wide { grid-column: 1 / -1; }
 .new-badge {
     display: inline-block; vertical-align: middle; margin-left: 8px;
