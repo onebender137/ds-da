@@ -1933,8 +1933,9 @@ $('coop-back').addEventListener('click',()=>{Audio.click();if(coopSel!==SAVE.bir
 function startHop(col,row,dur=.15,arc=.52){
   hop={t:0,dur,x0:chicken.x,z0:chicken.z,x1:col,z1:-row,row,col,arc};
   const dx=col-chicken.x,dz=-row-chicken.z;
-  if(Math.abs(dx)>Math.abs(dz))facingYaw=dx>0?Math.PI/2:-Math.PI/2;
-  else facingYaw=dz>0?0:Math.PI;
+  /* model's beak points down local -z, so yaw 0 = forward (-z), PI = back */
+  if(Math.abs(dx)>Math.abs(dz))facingYaw=dx>0?-Math.PI/2:Math.PI/2;
+  else facingYaw=dz<0?0:Math.PI;
   onLog=null;Audio.hop();
   if(birdDef.trail)burst(chicken.x,.4,chicken.z,{count:4,colors:['#ffd94a','#fff0a0','#ffffff'],speed:.6,up:1.2,g:1.5,size:.07,ttl:.7,flut:true,drag:.95});
 }
