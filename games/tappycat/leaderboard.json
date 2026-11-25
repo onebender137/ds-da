@@ -1,5 +1,5 @@
 {
-  "updated": 1795544733018,
+  "updated": 1795230423000,
   "top": [
     {
       "n": "CJR",
@@ -63,7 +63,7 @@
     }
   ],
   "stats": {
-    "saves": 63,
+    "saves": 60,
     "initials": [
       "CJR",
       "AKH",
@@ -71,9 +71,8 @@
       "AAA",
       "ANG",
       "BEN",
-      "DAN",
       "TOD"
     ],
-    "players": 8
+    "players": 7
   }
 }
