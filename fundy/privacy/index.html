@@ -77,6 +77,7 @@
                 <li><strong>No analytics, ads or tracking</strong> inside the app.</li>
                 <li><strong>Your keys and recovery phrase never leave your phone.</strong> We can&rsquo;t see them, and we can&rsquo;t recover them for you.</li>
                 <li><strong>We don&rsquo;t run any server that receives your wallet data.</strong> To use the BSV blockchain, Fundy talks to public blockchain services run by other companies, listed below.</li>
+                <li><strong>Your wallet is backed up encrypted.</strong> A locked copy of your wallet database is stored with a BSV Association backup service. Only your recovery phrase can unlock it. They can&rsquo;t read it, and neither can we.</li>
                 <li><strong>Blockchain transactions are public and permanent.</strong> That&rsquo;s how the network works, for every wallet.</li>
             </ul>
         </div>
@@ -88,7 +89,7 @@
             <li><strong>Browser data:</strong> bookmarks, history, open tabs and the permissions you&rsquo;ve given to websites.</li>
             <li><strong>Your settings.</strong></li>
         </ul>
-        <p>Fundy opts out of Android&rsquo;s cloud backup and device-transfer features, and it does not use any online wallet backup service. If you lose your phone, your recovery phrase (or your printed recovery shares) is the only way back into your wallet. Keep it safe and offline.</p>
+        <p>Fundy opts out of Android&rsquo;s cloud backup and device-transfer features. Instead it keeps its own encrypted backup, described below. If you lose your phone, your recovery phrase (or your printed recovery shares) is still the only way back into your wallet: the backup is useless without it. Keep it safe and offline.</p>
 
         <h2>What leaves your phone, and why</h2>
         <p>A wallet has to talk to the blockchain to show your balance, find payments sent to you, and send money. When it does, the services involved can see your device&rsquo;s IP address and the addresses or transactions being looked up. Fundy uses these kinds of services:</p>
@@ -99,6 +100,7 @@
             <li><strong>Person-to-person payments:</strong> when you pay or get paid by another wallet user directly, the payment details travel as encrypted messages through the BSV Association&rsquo;s MessageBox service, addressed to the wallets&rsquo; identity keys.</li>
             <li><strong>NFTs:</strong> to show your NFTs, Fundy looks up your addresses with the 1Sat Ordinals service (api.1sat.app) and loads the NFT content from it.</li>
             <li><strong>Currency display:</strong> Fundy fetches exchange rates so it can show your balance in your chosen currency.</li>
+            <li><strong>Encrypted wallet backup:</strong> some of the records Fundy needs to spend your coins can&rsquo;t be rebuilt from your recovery phrase alone. So Fundy sends an encrypted copy of your wallet database to the BSV Association&rsquo;s backup service (backup.bsvblockchain.tech), and restores it when you set Fundy up again with your phrase. It&rsquo;s encrypted on your phone, with a key made from your recovery phrase, before it&rsquo;s sent. The service never sees your phrase, your keys or the contents of the backup. It does see your IP address, when you back up, how big the backup is, and an anonymous ID made from your wallet.</li>
         </ul>
         <p>These services are run by third parties under their own privacy policies. We don&rsquo;t control them and we don&rsquo;t receive the data you send them.</p>
 
