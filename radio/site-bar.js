@@ -28,10 +28,9 @@
     var themed = !!(me && me.hasAttribute('data-themed'));
 
     var LINKS = [
-        { href: 'https://hopes-and-dreams.ca', html: 'Hopes &amp; Dreams' },
-        { href: 'https://polkahole.ca', html: 'Polkahole' },
         { href: '/proof/', html: 'Proof<span class="dsda-bar-wide"> of Creation</span>' },
-        { href: '/games/', html: 'Arcade' }
+        { href: '/games/', html: 'Arcade' },
+        { href: '/fundy/', html: 'Fundy' }
     ];
     var onHub = /^\/radio\/stations\/?(index\.html)?$/.test(location.pathname);
 
