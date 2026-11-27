@@ -2169,7 +2169,7 @@ function charPlay(c,name,fade,ts,paused,at){
   c.cur=name;
 }
 /* ---- player ---- */
-const P_WALK_MS=1.77,P_IDLE_T=.27;    // Walking clip: 1.82 m per 1.03 s; idle = the passing pose of the stride, held
+const P_WALK_MS=1.77,P_RUN_MS=2.94,P_IDLE_T=.27;   // Walking: 1.82 m / 1.03 s · Running: 3.73 m / 1.27 s; idle = walk's passing pose, held
 let plantT=0;
 function attachRealPlayer(){
   if(!REAL.player||realP||!player.mesh)return;
@@ -2190,12 +2190,15 @@ function animRealPlayer(dt,moving,spd){
     return;
   }
   realP.model.rotation.x=0;realP.root.position.y=0;
-  if(moving)charPlay(realP,'walk',.18,clamp(spd/(P_WALK_MS/REAL.player.mPerU),1,2.3),false);
+  const mpu=REAL.player.mPerU;
+  if(moving&&spd>1.8&&realP.acts.run)charPlay(realP,'run',.14,clamp(spd/(P_RUN_MS/mpu),.8,3.4),false);   // rate matched to ground speed: feet stay planted
+  else if(moving)charPlay(realP,'walk',.18,clamp(spd/(P_WALK_MS/mpu),.8,2.3),false);
+  else if(realP.cur!=='walk')charPlay(realP,'walk',.15,1,true,P_IDLE_T);
   else{const a=realP.acts.walk;if(!a.paused){a.paused=true;a.time=P_IDLE_T}}
   plantT=Math.max(0,plantT-dt);
   const w=plantT>0?Math.sin(Math.PI*(1-plantT/.38)):0;     // dip down, plant, come back up
   if(realP.acts.crouch)realP.acts.crouch.setEffectiveWeight(w);
-  realP.acts.walk.setEffectiveWeight(1-w);
+  if(realP.cur&&realP.acts[realP.cur])realP.acts[realP.cur].setEffectiveWeight(1-w);
   realP.mixer.update(dt);
   // a little breathing when he's standing still
   realP.root.position.y=moving?0:Math.sin(t*2.2)*.006;
