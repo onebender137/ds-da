@@ -34,7 +34,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='14' cy='19' r='10' fill='%2322e0ff'/%3E%3Cpath d='M20 11l5-5' stroke='%23ffb020' stroke-width='3' stroke-linecap='round'/%3E%3Ccircle cx='26' cy='5' r='3' fill='%23ff5a1f'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Chakra+Petch:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Kaushan+Script&family=Chakra+Petch:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#04101a; --bg2:#071c26; --surface:#0b2230; --surface2:#0e2a3a; --line:#143646; --line2:#1d4a5e;
@@ -325,6 +325,80 @@ body.touch #stickHint{left:calc(56px + var(--sal));bottom:calc(64px + var(--sab)
 .pb-board-tag{font-size:.56rem;letter-spacing:.14em;color:var(--dim);font-weight:400}
 .pb-board-sec .lb-list{max-height:132px;margin:4px 0 0}
 .scores-local-title{font-family:var(--disp);font-size:.62rem;letter-spacing:.26em;color:var(--dim);margin:14px 0 2px}
+
+/* ================= poster skin (2026-11-27): rusted riveted steel, fire glow, teal neon — matches the PIPEBOMBS poster ================= */
+:root{
+  --rust:#8a4a22;--rust2:#5a2e16;--steel:#2a2622;--steel2:#1a1714;--fire:#ff8a1e;--fire2:#ffd23f;--neon:#35f0e0;
+  --noise:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  --rivet:radial-gradient(circle at 40% 35%,#d8c4a8 0 1.5px,#6b5440 2.5px,#2a1e14 4px,transparent 4.6px);
+}
+#ovTitle{background:linear-gradient(180deg,rgba(8,6,4,.82),rgba(8,6,4,.5) 22%,rgba(8,6,4,.72) 62%,rgba(6,4,2,.94)),url(poster.jpg) 50% 46%/cover no-repeat}
+.ov{background:radial-gradient(ellipse at 50% 35%,rgba(14,10,6,.62),rgba(8,6,4,.92) 78%)}
+.ov-inner{
+  background:var(--rivet) 10px 10px/0 0 no-repeat,
+    var(--rivet) left 8px top 8px/12px 12px no-repeat,var(--rivet) right 8px top 8px/12px 12px no-repeat,
+    var(--rivet) left 8px bottom 8px/12px 12px no-repeat,var(--rivet) right 8px bottom 8px/12px 12px no-repeat,
+    var(--noise),
+    radial-gradient(ellipse at 18% 8%,rgba(138,74,34,.28),transparent 55%),radial-gradient(ellipse at 90% 96%,rgba(138,74,34,.22),transparent 50%),
+    linear-gradient(165deg,rgba(40,35,30,.95),rgba(22,19,16,.97) 55%,rgba(30,25,20,.96));
+  border:1px solid #4a3a2c;
+  box-shadow:0 0 0 1px rgba(0,0,0,.7),0 30px 80px rgba(0,0,0,.75),inset 0 1px 0 rgba(255,220,180,.10),inset 0 0 40px rgba(0,0,0,.45);
+  scrollbar-color:var(--rust) var(--steel2);
+}
+.ov-inner::before{content:"";display:block;height:7px;margin:-26px calc(-1*clamp(16px,4vw,40px)) 20px;
+  background:repeating-linear-gradient(-45deg,#f0b81c 0 12px,#15120e 12px 24px);box-shadow:0 2px 0 rgba(0,0,0,.5)}
+.ov-inner::-webkit-scrollbar-thumb{background:linear-gradient(180deg,var(--fire),var(--rust))}
+.title-eyebrow{color:#b8a48c}
+.title-eyebrow::before,.title-eyebrow::after{background:linear-gradient(90deg,transparent,var(--fire))}
+.title-eyebrow::after{background:linear-gradient(90deg,var(--fire),transparent)}
+/* the wordmark: rusted plate steel, dark bevel, fire licking the edges */
+.game-title{font-family:'Russo One',var(--disp);letter-spacing:.04em;
+  background:var(--noise),linear-gradient(180deg,#f6ecdc 0%,#d9c2a4 22%,#a98563 40%,#6e4a30 56%,#9a6a42 70%,#e0a060 86%,#ffd08a 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-stroke:1.5px #1a0f08;
+  filter:drop-shadow(0 2px 0 #1a0f08) drop-shadow(0 5px 0 #0a0603) drop-shadow(0 0 14px rgba(255,120,30,.55)) drop-shadow(0 0 32px rgba(255,80,10,.35));
+  animation:firelick 2.6s ease-in-out infinite}
+@keyframes firelick{0%,100%{filter:drop-shadow(0 2px 0 #1a0f08) drop-shadow(0 5px 0 #0a0603) drop-shadow(0 0 14px rgba(255,120,30,.55)) drop-shadow(0 0 32px rgba(255,80,10,.35))}
+  45%{filter:drop-shadow(0 2px 0 #1a0f08) drop-shadow(0 5px 0 #0a0603) drop-shadow(0 0 20px rgba(255,150,40,.75)) drop-shadow(0 0 44px rgba(255,90,10,.5))}
+  60%{filter:drop-shadow(0 2px 0 #1a0f08) drop-shadow(0 5px 0 #0a0603) drop-shadow(0 0 11px rgba(255,110,30,.45)) drop-shadow(0 0 28px rgba(255,70,10,.3))}}
+@media (prefers-reduced-motion:reduce){.game-title{animation:none}}
+.title-pipe .flow{stroke:var(--fire)}
+/* "Don't box yourself in" — the poster's brush script */
+.tagline{font-family:'Kaushan Script',cursive;font-weight:400;font-size:clamp(1.5rem,5.4vw,2.5rem);letter-spacing:.01em;margin:2px 0 6px;transform:rotate(-3deg);
+  background:linear-gradient(180deg,#fff3a0 10%,#ffd23f 45%,#ff8a1e 78%,#e0501a);-webkit-background-clip:text;background-clip:text;color:transparent;
+  -webkit-text-stroke:.6px #3a1404;filter:drop-shadow(0 2px 0 #1a0a02) drop-shadow(0 0 12px rgba(255,140,30,.55))}
+.tagline-sub{color:#b8a48c;letter-spacing:.06em}
+/* steel-plate cards and buttons */
+.diff{background:var(--noise),linear-gradient(180deg,#2e2924,#1b1815);border-color:#4a3a2c;color:#a8957e}
+.diff .d-name{color:#ece0cc}
+.diff:hover{border-color:#7a5a3c}
+.diff.sel{border-color:var(--fire);color:var(--fire2);box-shadow:0 0 18px rgba(255,138,30,.3),inset 0 0 18px rgba(255,138,30,.08)}
+.diff.sel .d-name{color:var(--fire2);text-shadow:0 0 12px rgba(255,170,40,.7)}
+.btn{background:var(--noise),linear-gradient(180deg,#332d27,#1c1916);border-color:#4f3e2e;color:#e8dcc8}
+.btn:hover{border-color:var(--neon);color:#fff}
+.btn:focus-visible{outline-color:var(--fire)}
+.btn-primary{background:var(--noise),linear-gradient(135deg,#ffe36a,#ffb020 30%,#ff6a1a 72%,#d8321a);color:#200c00}
+.best-line{color:var(--fire2)}
+.guide,.codex .cx,.legend .l-item{border-color:#3e3226!important}
+.guide h3,.codex-head{color:var(--neon)!important}
+.keycap{color:var(--fire2);border-color:#5a4632;background:#1e1a16}
+/* ONLY ON DS-DA.CA — the neon sign in its hazard-striped steel frame */
+.neon-sign{position:relative;margin:18px auto 14px;width:min(100%,460px);padding:14px 18px 12px;display:flex;justify-content:center;gap:.5em;flex-wrap:wrap;
+  font-family:'Russo One',var(--disp);font-size:clamp(1.25rem,4.4vw,2rem);letter-spacing:.06em;line-height:1;
+  background:linear-gradient(rgba(0,0,0,.25),rgba(0,0,0,.25)),repeating-linear-gradient(0deg,rgba(53,240,224,.05) 0 1px,transparent 1px 4px),linear-gradient(180deg,#0b1416,#060b0c);
+  border:2px solid #4a4038;box-shadow:inset 0 0 0 2px #15110d,inset 0 0 22px rgba(0,0,0,.8),0 4px 14px rgba(0,0,0,.6)}
+.neon-sign::before,.neon-sign::after{content:"";position:absolute;top:-7px;width:64px;height:7px;background:repeating-linear-gradient(-45deg,#f0b81c 0 6px,#15120e 6px 12px)}
+.neon-sign::before{left:10px}.neon-sign::after{right:10px}
+.neon-sign .n-c{color:#c8fff8;text-shadow:0 0 4px #35f0e0,0 0 12px #35f0e0,0 0 26px rgba(53,240,224,.7);animation:neonbuzz 5s infinite}
+.neon-sign .n-o{color:#ffe7b0;text-shadow:0 0 4px #ff9a1e,0 0 12px #ff8a1e,0 0 26px rgba(255,120,20,.75)}
+@keyframes neonbuzz{0%,91%,95%,100%{opacity:1}92%,94%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.neon-sign .n-c{animation:none}}
+/* in-game callouts: sector banner as a stencilled steel plate, READY / GO with a burnt outline */
+#banner{background:var(--noise),linear-gradient(90deg,transparent,rgba(30,25,20,.94) 14%,rgba(30,25,20,.94) 86%,transparent);border-top:3px solid transparent;
+  border-image:repeating-linear-gradient(-45deg,#f0b81c 0 10px,#15120e 10px 20px) 3}
+#bannerKicker{color:var(--fire)}
+#bannerName{background:linear-gradient(180deg,#f6ecdc,#c9a37c 55%,#e09a52);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-stroke:.6px #1a0f08;
+  text-shadow:none;filter:drop-shadow(0 2px 0 #0a0603) drop-shadow(0 0 12px rgba(255,120,30,.45))}
+#announcer{-webkit-text-stroke:1.5px rgba(20,10,4,.85)}
 </style>
 </head>
 <body data-state="title">
@@ -425,8 +499,8 @@ body.touch #stickHint{left:calc(56px + var(--sal));bottom:calc(64px + var(--sab)
       <circle cx="412" cy="8" r="6" fill="#143646" stroke="#ffb020" stroke-width="2"/>
       <circle cx="210" cy="8" r="7" fill="#0b2230" stroke="#22e0ff" stroke-width="2"/>
     </svg>
-    <p class="tagline">Light the fuse. Purge the leaks. Ride the pressure out.</p>
-    <p class="tagline-sub">A neon pipe-yard bomber for one brave maintenance unit.</p>
+    <p class="tagline">Don&rsquo;t box yourself in</p>
+    <p class="tagline-sub">Light the fuse. Clear the yard. Ride the blast out.</p>
     <div class="diff-row" id="diffRow">
       <button class="diff" data-d="casual"><span class="d-name">CASUAL</span><span class="d-desc">4 LIVES · SLOW LEAKS</span></button>
       <button class="diff sel" data-d="standard"><span class="d-name">STANDARD</span><span class="d-desc">3 LIVES · FACTORY SPEC</span></button>
@@ -461,6 +535,7 @@ body.touch #stickHint{left:calc(56px + var(--sal));bottom:calc(64px + var(--sab)
       <div class="l-item"><svg class="icon l-green"><use href="#i-skull"/></svg>HOSTILES ARE LETHAL ON CONTACT</div>
       <div class="l-item"><svg class="icon l-red"><use href="#i-cross"/></svg>BLASTS BURN IN A CROSS — YOURS TOO</div>
     </div>
+    <div class="neon-sign" aria-label="Only on ds-da.ca"><span class="n-c">ONLY ON</span><span class="n-o">DS-DA.CA</span></div>
     <div class="title-foot">ALL AUDIO SYNTHESIZED LIVE · WEBGL / THREE.JS<br>© DS-DA.CA ARCADE — CABINET 15</div>
   </div>
 </div>
@@ -1475,7 +1550,9 @@ function robotMats(){
 }
 function makeEnemyMesh(type){
   const g=new THREE.Group(),parts={};
-  if(type==='drip'&&REAL.enemy){
+  if(type==='wraith'&&REAL.enemy){
+    const c=makeGhost();g.add(c.root);parts.real=c;
+  }else if(type==='drip'&&REAL.enemy){
     const c=charPool.pop()||instChar(REAL.enemy);
     c.model.rotation.set(0,0,0);c.root.position.set(0,0,0);c.cur=null;
     g.add(c.root);parts.real=c;charPlay(c,'walk',0,1);
@@ -1960,7 +2037,7 @@ function updateEnemies(dt){
         if(e.sleep>0){
           e.sleep-=dt;
           if(e.sleep<=0&&state==='playing'){sfx.wraith();flash('#ff3df0',.14);toast('i-skull','A WRAITH STIRS — IT FLIES THROUGH WALLS','magenta');}
-          const m0=e.mesh;m0.position.set(gx(e.x),Math.sin(t*1.6+e.seed)*.08,gz(e.y));e.shadow.position.set(gx(e.x),.02,gz(e.y));continue;
+          const m0=e.mesh;m0.position.set(gx(e.x),Math.sin(t*1.6+e.seed)*.08,gz(e.y));e.shadow.position.set(gx(e.x),.02,gz(e.y));if(e.parts.real)animGhost(e,dt);continue;
         }
         const far={x:SPAWN.x<W/2?W-2:1,y:SPAWN.y<H/2?H-2:1};
         if(e.scatter>0)e.scatter-=dt;
@@ -2003,7 +2080,8 @@ function updateEnemies(dt){
       e.parts.wheel.rotation.y+=dt*(frozen?.4:4+e.spd*2);
     }else{
       m.position.y=Math.sin(t*3+e.seed)*.12+.1;
-      e.parts.tail.scale.x=e.parts.tail.scale.z=1+Math.sin(t*5+e.seed)*.15;
+      if(e.parts.real){animGhost(e,dt);if(Math.random()<dt*14)smoke.spawn(m.position.x,.35,m.position.z,1,{col:[.05,.18,.22],size:.45,life:.5,a:.5,lift:.4})}   // trailing wisps
+      else e.parts.tail.scale.x=e.parts.tail.scale.z=1+Math.sin(t*5+e.seed)*.15;
     }
     e.shadow.position.set(gx(e.x),.02,gz(e.y));
     e.trailT-=dt;
@@ -2162,6 +2240,7 @@ async function loadRealChars(){
     REAL.enemy=prepChar(ge,1.71);
     attachRealPlayer();
     for(const e of enemies)if(e.type==='drip'&&!e.parts.real&&!e.dead)upgradeEnemy(e);
+    for(const e of enemies)if(e.type==='wraith'&&!e.parts.real&&!e.dead){for(const ch of [...e.mesh.children])e.mesh.remove(ch);const c=makeGhost();e.mesh.add(c.root);e.parts={real:c}}
   }catch(err){console.warn('[pipebombs] mocap characters not loaded — keeping the original cast',err)}
 }
 function prepChar(g,mPerU){
@@ -2233,6 +2312,29 @@ function animRealPlayer(dt,moving,spd){
   // a little breathing when he's standing still
   realP.root.position.y=moving?0:Math.sin(t*2.2)*.006;
 }
+/* ---- the wraith (2026-11-27): a dead trooper's ghost — the gas-mask model in translucent cyan, gear glowing, hovering ---- */
+function ghostMat(){                            // per-ghost: glowing fresnel spectre, drawn through walls (it phases)
+  const m=new THREE.MeshStandardMaterial({color:0x000000,emissive:MAT.wraith.emissive.clone(),emissiveIntensity:1,
+    transparent:true,opacity:.6,depthWrite:false,depthTest:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide});
+  m.onBeforeCompile=sh=>{sh.fragmentShader=sh.fragmentShader.replace('#include <emissivemap_fragment>',
+    '#include <emissivemap_fragment>\n float gFr=pow(1.-abs(dot(normalize(normal),normalize(vViewPosition))),2.2);\n totalEmissiveRadiance*=(.55+gFr*2.6);')};
+  m.customProgramCacheKey=()=>'pbghost';m.userData.ghost=true;return m;
+}
+function makeGhost(){
+  const c=instChar(REAL.enemy);c.ghost=true;const gm=ghostMat();c.gmats=[gm];
+  c.model.traverse(o=>{if(o.isMesh){o.material=gm;o.renderOrder=9}});
+  c.ring.material=c.ring.material.clone();c.ring.material.color.setRGB(.3,1.4,1.8);c.ring.material.opacity=.45;c.ring.material.depthTest=false;c.ring.renderOrder=8;
+  c.root.position.y=.12;
+  charPlay(c,'sneak',0,.4);                     // a slow hunched creep while it glides — legs barely keeping up
+  return c;
+}
+function animGhost(e,dt){
+  const c=e.parts.real;if(!c)return;
+  c.mixer.update(dt*(freezeEnemiesT>0?0:1));
+  const k=e.sleep>0?.35:1;                      // dormant: barely there
+  for(const m of c.gmats){m.emissive.copy(MAT.wraith.emissive);m.opacity=(.55+Math.sin(t*9+e.seed)*.08)*k}
+  c.root.position.y=.12+Math.sin(t*2.4+e.seed)*.05;
+}
 /* ---- gas-mask trooper (the first hostile type: 'drip') ---- */
 const E_SNEAK_MS=1.39,E_WALK_MS=1.77,E_TURN_T=.55;   // Crouched Walking 1.43 m / 1.03 s · Walking 1.82 m / 1.03 s · Turn 180 at ~1.8x
 function upgradeEnemy(e){
@@ -2260,6 +2362,7 @@ function updateCorpses(dt){
   for(let i=corpses.length-1;i>=0;i--){
     const k=corpses[i];k.t+=dt;
     const m=k.e.mesh,f=Math.min(1,k.t/.3);
+    if(k.c.ghost){m.position.y+=dt*1.6;k.c.model.scale.multiplyScalar(1-dt*1.8);if(k.t>.7){scene.remove(m);corpses.splice(i,1)}continue}
     k.c.model.rotation.x=-1.5*easeOutCubic(f);
     m.position.x+=Math.sin(k.away)*dt*(1-f)*2.2;m.position.z+=Math.cos(k.away)*dt*(1-f)*2.2;
     m.position.y=k.t<.3?Math.sin(f*Math.PI)*.35:-Math.max(0,k.t-.8)*.9;
@@ -2269,7 +2372,7 @@ function updateCorpses(dt){
 function releaseChar(c){
   if(!c)return;for(const a of Object.values(c.acts))a.stop();c.cur=null;if(c.ring)c.ring.visible=true;c.model.rotation.set(0,0,0);
   if(c.root.parent)c.root.parent.remove(c.root);
-  if(charPool.length<10)charPool.push(c);
+  if(!c.ghost&&charPool.length<10)charPool.push(c);
 }
 function respawn(){
   player.x=SPAWN.x;player.y=SPAWN.y;player.dead=false;player.deathT=0;player.invuln=2.2;
