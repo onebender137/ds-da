@@ -2351,6 +2351,7 @@ function onKey(e) {
     if (e.code === 'Enter' || e.code === 'Space') { e.preventDefault(); activateMenu(); return; }
     return;
   }
+  if (phase === 'countdown' && countdown > 3 && (e.code === 'Enter' || e.code === 'Space')) { e.preventDefault(); countdown = 3.0; return; }   // skip the chat
   if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
   else if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
 }
@@ -2414,9 +2415,11 @@ function startRace() {
   if (sfx.on) { try { window.ssRadioAuto && window.ssRadioAuto(); } catch (e) {} }   // car stereo comes on with a random DSDA Radio station
   // countdown
   phase = 'countdown';
-  countdown = 3.0;
+  countdown = 3.0 + INTRO;                // a beat of chat with the starter before the "3"
   lastCount = 4;
-  showBanner('3');
+  hideBanner();
+  goT = -1;
+  if (starter) { starter.kissed = false; starter.heartT = -1; starter.heart.visible = false; starter.yaw = Math.PI / 2; }
   updateHud();
 }
 function clearWorld() {
@@ -3009,6 +3012,7 @@ function updateBody(dt, rolling) {
 function update(dt) {
   menuTime += dt;
   updateMood(dt);
+  updateStarter(dt);
   if (bannerTimer > 0) { bannerTimer -= dt; if (bannerTimer <= 0 && phase !== 'countdown') hideBanner(); }
   updateParticles(dt);
   if (shake > 0) shake = Math.max(0, shake - dt * 2.2);
@@ -3029,14 +3033,14 @@ function update(dt) {
     countdown -= dt;
     const n = Math.ceil(countdown);
     if (n !== lastCount && n > 0 && n <= 3) { showBanner(String(n)); sfx.count(); lastCount = n; drive.blip = 2600 + (3 - n) * 900; }   // rev it on every light
-    if (countdown <= 0) { phase = 'play'; showBanner('GO!'); sfx.go(); lastCount = 0; drive.gear = 1; pitchV += 1.2; }
+    if (countdown <= 0) { phase = 'play'; goT = 0; showBanner('GO!'); sfx.go(); lastCount = 0; drive.gear = 1; pitchV += 1.2; }
     scrollFeatures(playerDist);
     updateHazardPositions(playerDist);
     updateOncoming(dt, playerDist, 0);
     placeTraffic(dt);
     updateDrive(dt, 0, false);
     updateBody(dt, false);
-    updateCameraPlay(dt);
+    updateCameraIntro(dt);
     updateHud();
     return;
   }
@@ -3191,6 +3195,179 @@ function placeTraffic(dt) {
     for (const w of c.wheels) w.spin.rotation.x -= c.speed * dt / c.car.T.r;
   }
 }
+// ---------------- the starter (2026-11-27): chats at your window, blows a kiss, walks out and flags you off ----------------
+// Original low-poly character built from primitives, jointed so the gestures read. Built at human scale (1.7 m)
+// and shrunk to the game's world scale. Lives in track coordinates once the race is on, so you leave her behind.
+const INTRO = 1.0;                                    // seconds of chat before the "3" (Enter / Space skips it)
+const STARTER_S = 0.69;
+const ST_WIN = { x: -0.97, p: -0.35 };                // at the driver's window (p = -z at the start line)
+const ST_SPOT = { x: -2.9, p: 2.6 };                  // on the lane line ahead-left of your nose
+const ST_BACK = { x: -4.55, p: 2.6 };                 // steps back to the shoulder at GO
+let starter = null, goT = -1;
+const heartTex = canvasTex(64, 64, (x, w, h) => {
+  x.translate(w / 2, h / 2 + 4); x.fillStyle = '#ff4f8b'; x.shadowColor = '#ff9ec0'; x.shadowBlur = 8;
+  x.beginPath(); x.moveTo(0, 18); x.bezierCurveTo(-34, -6, -18, -30, 0, -14); x.bezierCurveTo(18, -30, 34, -6, 0, 18); x.fill();
+});
+function buildStarter() {
+  const M = (color, o) => new THREE.MeshStandardMaterial(Object.assign({ color, roughness: 0.65 }, o || {}));
+  const skin = M(0xc58c66, { roughness: 0.55 }), hair = M(0x2a1912, { roughness: 0.45 }), jacket = M(0xf3f3f5, { roughness: 0.45 }),
+        trim = M(0xff6a1a, { emissive: 0xff4a00, emissiveIntensity: 0.25 }), pants = M(0x15161b, { roughness: 0.6 }),
+        shoe = M(0xf7f7f7, { roughness: 0.5 }), lips = M(0xb0283a, { roughness: 0.35 }), eye = M(0x0d0d10, { roughness: 0.2 });
+  const mesh = (geo, mat, x, y, z, parent) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; parent.add(m); return m; };
+  const grp = (x, y, z, parent) => { const g = new THREE.Group(); g.position.set(x, y, z); parent.add(g); return g; };
+  const root = new THREE.Group();
+  const body = grp(0, 0, 0, root);                    // everything; root carries world position + facing
+  const hips = grp(0, 0.93, 0, body);
+  mesh(new THREE.SphereGeometry(0.155, 14, 10), pants, 0, 0, 0, hips).scale.set(1.08, 0.62, 0.82);
+  mesh(new THREE.CylinderGeometry(0.145, 0.15, 0.035, 16), trim, 0, 0.06, 0, hips);              // belt
+  const legs = [];
+  for (const s of [1, -1]) {
+    const hip = grp(s * 0.085, -0.02, 0, hips);
+    mesh(new THREE.CapsuleGeometry(0.066, 0.34, 4, 10), pants, 0, -0.22, 0, hip);
+    const knee = grp(0, -0.44, 0, hip);
+    mesh(new THREE.CapsuleGeometry(0.05, 0.34, 4, 10), pants, 0, -0.21, 0, knee);
+    mesh(new THREE.BoxGeometry(0.095, 0.075, 0.23), shoe, 0, -0.44, 0.04, knee);
+    legs.push({ hip, knee });
+  }
+  const spine = grp(0, 0.04, 0, hips);
+  mesh(new THREE.CylinderGeometry(0.118, 0.14, 0.2, 16), jacket, 0, 0.1, 0, spine);               // waist
+  const chest = mesh(new THREE.CylinderGeometry(0.168, 0.118, 0.3, 16), jacket, 0, 0.34, 0, spine); chest.scale.z = 0.78;
+  mesh(new THREE.TorusGeometry(0.06, 0.016, 6, 14), trim, 0, 0.5, 0, spine).rotation.x = Math.PI / 2;  // collar
+  mesh(new THREE.CylinderGeometry(0.042, 0.048, 0.1, 10), skin, 0, 0.53, 0, spine);
+  const head = grp(0, 0.58, 0, spine);
+  mesh(new THREE.SphereGeometry(0.1, 16, 14), skin, 0, 0.1, 0.005, head).scale.set(0.9, 1.12, 0.98);
+  mesh(new THREE.SphereGeometry(0.108, 16, 12, 0, Math.PI * 2, 0, 1.75), hair, 0, 0.118, -0.012, head).rotation.x = -0.35;
+  for (const s of [1, -1]) mesh(new THREE.SphereGeometry(0.012, 8, 6), eye, s * 0.034, 0.118, 0.088, head);
+  mesh(new THREE.SphereGeometry(0.016, 10, 6), lips, 0, 0.05, 0.091, head).scale.set(1.55, 0.6, 0.6);
+  const pony = grp(0, 0.17, -0.085, head);
+  mesh(new THREE.TorusGeometry(0.026, 0.01, 6, 10), trim, 0, 0, 0, pony).rotation.x = 1.2;
+  const tail = mesh(new THREE.CapsuleGeometry(0.038, 0.2, 4, 8), hair, 0, -0.13, -0.035, pony); tail.rotation.x = 0.25;
+  const arms = [];
+  for (const s of [1, -1]) {                          // s = +1: her left (+x when she faces +z)
+    const sh = grp(s * 0.2, 0.46, 0, spine);
+    mesh(new THREE.CapsuleGeometry(0.044, 0.2, 4, 8), jacket, 0, -0.14, 0, sh);
+    const el = grp(0, -0.29, 0, sh);
+    mesh(new THREE.CapsuleGeometry(0.037, 0.18, 4, 8), jacket, 0, -0.11, 0, el);
+    mesh(new THREE.CylinderGeometry(0.041, 0.041, 0.03, 10), trim, 0, -0.22, 0, el);           // cuff
+    const hand = grp(0, -0.26, 0, el);
+    mesh(new THREE.SphereGeometry(0.042, 10, 8), skin, 0, -0.01, 0, hand).scale.set(0.8, 1.15, 0.7);
+    arms.push({ sh, el, hand });
+  }
+  // the flag, in her right hand: pole runs on down the line of the arm, cloth hangs off the tip
+  const flag = grp(0, -0.02, 0.01, arms[1].hand);
+  mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.56, 6), M(0x2b2c30, { metalness: 0.6, roughness: 0.4 }), 0, -0.26, 0, flag);
+  const clothGeo = new THREE.PlaneGeometry(0.44, 0.3, 10, 2); clothGeo.translate(0.22, 0, 0);
+  const cloth = new THREE.Mesh(clothGeo, new THREE.MeshStandardMaterial({ map: checkTex, side: THREE.DoubleSide, roughness: 0.8 }));
+  cloth.position.set(0, -0.4, 0); cloth.castShadow = true; flag.add(cloth);   // pole along the arm, cloth off to the side
+  const heart = new THREE.Sprite(new THREE.SpriteMaterial({ map: heartTex, color: new THREE.Color(2.4, 1.2, 1.6), transparent: true, depthWrite: false }));
+  heart.visible = false; heart.renderOrder = 7;
+  root.scale.setScalar(STARTER_S);
+  scene.add(root); scene.add(heart);
+  const base = clothGeo.attributes.position.array.slice();
+  starter = { root, body, hips, spine, head, pony, legs, arms, cloth, base, heart, heartT: -1, heartV: new THREE.Vector3(), hx: ST_WIN.x, hp: ST_WIN.p, yaw: Math.PI / 2, step: 0 };
+}
+const _ease = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
+const _span = (u, a, b) => _ease((u - a) / (b - a));
+const _wrapA = a => Math.atan2(Math.sin(a), Math.cos(a));
+const _hv = new THREE.Vector3();
+function poseStarter(t, P) {                          // P: target joint angles; anything unset relaxes to standing
+  const S = starter, L = S.arms[0], R = S.arms[1];
+  const g = (k, d) => (P[k] !== undefined ? P[k] : d);
+  S.spine.rotation.set(g('spX', 0), g('spY', 0), g('spZ', 0));
+  S.hips.rotation.set(0, g('hipY', 0), g('hipZ', 0));
+  S.head.rotation.set(g('hdX', 0), g('hdY', 0), g('hdZ', 0));
+  L.sh.rotation.set(g('lsX', 0.05), 0, g('lsZ', 0.14)); L.el.rotation.set(g('leX', -0.18), 0, g('leZ', 0));
+  R.sh.rotation.set(g('rsX', 0.05), 0, g('rsZ', -0.14)); R.el.rotation.set(g('reX', -0.18), 0, 0);
+  S.legs[0].hip.rotation.set(g('lhX', 0), 0, g('lhZ', 0)); S.legs[0].knee.rotation.x = g('lkX', 0);
+  S.legs[1].hip.rotation.set(g('rhX', 0), 0, g('rhZ', 0)); S.legs[1].knee.rotation.x = g('rkX', 0);
+  S.pony.rotation.set(0.15 + g('pnX', 0), 0, g('pnZ', 0));
+  // cloth: a travelling ripple, bigger at the free edge
+  const A = S.cloth.geometry.attributes.position, B = S.base, wav = g('wave', 0.4);
+  for (let i = 0; i < A.count; i++) { const x = B[i * 3]; A.array[i * 3 + 2] = Math.sin(x * 15 - t * 13) * 0.045 * wav * (x / 0.44); }
+  A.needsUpdate = true;
+}
+function updateStarter(dt) {
+  if (!starter) return;
+  const S = starter, t = menuTime;
+  const show = phase === 'countdown' || (phase === 'play' && goT >= 0);
+  // heart sprite: floats off toward the driver, swells and fades
+  if (S.heartT >= 0) {
+    S.heartT += dt;
+    const k = S.heartT / 1.2;
+    S.heart.position.addScaledVector(S.heartV, dt); S.heartV.y += 0.25 * dt;
+    S.heart.scale.setScalar((0.1 + 0.18 * Math.min(1, k * 2.5)) * (1 + 0.08 * Math.sin(S.heartT * 18)));
+    S.heart.material.opacity = 1 - _ease((k - 0.55) / 0.45);
+    S.heart.visible = k < 1 && show;
+    if (k >= 1) S.heartT = -1;
+  }
+  if (!show) { S.root.visible = false; return; }
+  let P = {}, u;
+  if (phase === 'countdown') {
+    u = (3 + INTRO) - countdown;                       // 0 .. 4
+    if (u < 1.0) {                                     // leaning in at the window, chatting
+      S.hx = ST_WIN.x; S.hp = ST_WIN.p; S.yaw = Math.PI / 2;
+      P = { spX: 0.34 + 0.03 * Math.sin(t * 2.1), hdX: -0.32 + 0.07 * Math.sin(t * 5.3), hdZ: 0.13 * Math.sin(t * 1.4),
+            lsX: -1.2, lsZ: 0.05, leX: -0.55, rsX: -0.45 + 0.28 * Math.sin(t * 3.1), rsZ: -0.2, reX: -1.15 + 0.4 * Math.sin(t * 4.4 + 1),
+            lhZ: -0.1, rhX: 0.12, rkX: 0.25, hipZ: 0.05, pnZ: 0.12 * Math.sin(t * 2.4) };
+    } else if (u < 1.75) {                             // blow a kiss
+      const a = _span(u, 1.0, 1.28), b = _span(u, 1.3, 1.58);
+      P = { spX: lerp(0.34, 0.12, a), hdX: lerp(-0.32, -0.12, a) + 0.1 * b, hdZ: 0.1 * a,
+            lsX: lerp(lerp(-1.2, -1.95, a), -1.45, b), lsZ: lerp(lerp(0.05, -0.45, a), 0.12, b), leX: lerp(lerp(-0.55, -2.25, a), -0.2, b),
+            rsX: -0.2, rsZ: -0.18, reX: -0.5, lhZ: -0.1, rhX: 0.12, rkX: 0.25, wave: 0.2 };
+      if (u >= 1.38 && S.heartT < 0 && !S.kissed) {
+        S.kissed = true; S.heartT = 0;
+        S.arms[0].hand.getWorldPosition(_hv); S.heart.position.copy(_hv); S.heart.position.y += 0.05;
+        S.heartV.set(0.9, 0.35, 0.35);               // toward the car (+x), up, and a touch toward camera
+      }
+    } else if (u < 3.1) {                              // walk out to the line
+      const w = _span(u, 1.75, 3.05);
+      S.hx = lerp(ST_WIN.x, ST_SPOT.x, w); S.hp = lerp(ST_WIN.p, ST_SPOT.p, w);
+      const walkYaw = Math.atan2(ST_SPOT.x - ST_WIN.x, -(ST_SPOT.p - ST_WIN.p));
+      S.yaw = lerp(Math.PI / 2, Math.PI / 2 + _wrapA(walkYaw - Math.PI / 2), _span(u, 1.75, 2.05));
+      const moving = Math.min(_span(u, 1.75, 1.95), 1 - _span(u, 2.85, 3.08)), ph = (u - 1.75) * 9.5;
+      P = { lhX: -0.5 * Math.sin(ph) * moving, rhX: 0.5 * Math.sin(ph) * moving, lkX: Math.max(0, Math.sin(ph + 1.2)) * 0.7 * moving,
+            rkX: Math.max(0, -Math.sin(ph + 1.2)) * 0.7 * moving, lsX: 0.4 * Math.sin(ph) * moving, rsX: -0.25 * Math.sin(ph) * moving - 0.15,
+            hipY: 0.16 * Math.sin(ph) * moving, hipZ: 0.06 * Math.cos(ph) * moving, spY: -0.1 * Math.sin(ph) * moving, pnZ: 0.25 * Math.sin(ph) * moving,
+            hdY: 0.1 * Math.sin(ph * 0.5), wave: 0.6 };
+    } else {                                           // flag up, waving; other hand on her hip
+      S.hx = ST_SPOT.x; S.hp = ST_SPOT.p;
+      const faceYaw = Math.atan2(0 - ST_SPOT.x, ST_SPOT.p - 0.6);   // looking down the grid at you
+      S.yaw = lerp(S.yaw, faceYaw, 1 - Math.exp(-dt * 12));
+      const r = _span(u, 3.1, 3.4);
+      P = { spX: -0.06, hdX: -0.05, hdZ: 0.08, rsZ: lerp(-0.2, -2.72 + 0.32 * Math.sin(t * 10) * r, r), rsX: 0, reX: -0.15,
+            lsZ: 0.62, lsX: 0.18, leZ: -1.5, leX: -0.3, lhZ: 0.05, rhZ: -0.05, hipZ: 0.06, wave: 1.4, pnZ: 0.15 * Math.sin(t * 7) };
+    }
+  } else {                                             // GO: snap the flag down, then step back to the shoulder
+    goT += dt;
+    const d = _ease(goT / 0.2), back = _span(goT, 0.25, 0.8);
+    S.hx = lerp(ST_SPOT.x, ST_BACK.x, back); S.hp = ST_SPOT.p;
+    P = { spX: 0.18 * d - 0.06, hdX: 0.1 * d, rsZ: lerp(-2.72, -0.45, d), rsX: lerp(0, -1.05, d), reX: -0.1,
+          lsZ: 0.62, lsX: 0.18, leZ: -1.5, leX: -0.3, wave: 2.2 - goT, lhX: back > 0 && back < 1 ? 0.3 * Math.sin(goT * 18) : 0 };
+    if (goT > 6) { goT = -1; }
+  }
+  poseStarter(t, P);
+  const z = playerDist - S.hp;
+  S.root.position.set(S.hx + bendOff(S.hp), 0, z);
+  S.root.rotation.y = S.yaw;
+  S.root.visible = z < 14;
+}
+// countdown camera: opens close on her at the window, pulls wide as she walks out, lands on the chase cam at GO
+const _cA = new THREE.Vector3(), _cL = new THREE.Vector3(), _cP = new THREE.Vector3(), _cT = new THREE.Vector3();
+function updateCameraIntro(dt) {
+  updateCameraPlay(dt);                                // the chase pose (also keeps headlights / post in step)
+  if (!starter) return;
+  const u = (3 + INTRO) - countdown;
+  const chasePos = _cP.copy(camera.position), chaseLook = _cT.set(camX * 0.35 + carX * 0.3 + bendOff(playerDist + 16) * 0.9, 1.0, -13);
+  const A = [0.3, 1.02, -2.35], AL = [-0.45, 0.86, 0.25];                       // off your front fender, looking back at her face
+  const B = [-0.9, 2.35, 5.3], BL = [-2.5, 0.65, -2.4];                         // wide and high: her on the line, your car
+  const drift = u * 0.12;
+  const ab = _span(u, 1.55, 2.6), bc = _span(u, 3.15, 4.0);
+  _cA.set(lerp(A[0] - drift, B[0], ab), lerp(A[1], B[1], ab), lerp(A[2] - drift * 0.5, B[2], ab));
+  _cL.set(lerp(AL[0], BL[0], ab), lerp(AL[1], BL[1], ab), lerp(AL[2], BL[2], ab));
+  _cA.lerp(chasePos, bc); _cL.lerp(chaseLook, bc);
+  camera.position.copy(_cA); camera.lookAt(_cL);
+  Post.motion = 0.01;
+}
 function updatePedAnimation(dt) {
   for (const p of peds) {
     if (!p.mesh || !p.rig) continue;
@@ -3334,6 +3511,7 @@ function boot() {
   buildOncoming();
   buildParticles();
   buildStreaks();
+  buildStarter();
 
   // player car
   const pc = buildCar(0x9c0a10, { player: true, plate: 'DSDA 137' });
