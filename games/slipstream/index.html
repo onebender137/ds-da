@@ -2070,6 +2070,14 @@ function buildHazardMeshes() {
     scene.add(m); w.mesh = m;
   }
   for (const pd of peds) if (!pd.mesh) {
+    if (realPed && GFX.tier !== 'low') {           // mocap pedestrian (pooled clone of models/ped.glb)
+      const r = acquirePed();
+      pd.real = r; pd.mesh = r.root; pd.evT = -1;
+      pd.speed = Math.min(pd.speed, PED_REAL_SPEED * rand(0.85, 1.0));   // a walk, not a sprint: matches the stride
+      r.root.rotation.y = pd.dir > 0 ? Math.PI / 2 : -Math.PI / 2;
+      scene.add(r.root);
+      continue;
+    }
     const b = buildPed(PED_COLS[_pedN++ % PED_COLS.length]);
     b.group.rotation.y = pd.dir > 0 ? Math.PI / 2 : -Math.PI / 2;   // facing the way they walk
     scene.add(b.group); pd.mesh = b.group; pd.rig = b;
@@ -2120,7 +2128,7 @@ function streamHazards(dist) {
   if (dirt.some(d => d.pEnd < behind) || walls.some(w => w.p < behind) || peds.some(p => p.p < behind) || boosts.some(b => b.p < behind)) {
     dirt = dirt.filter(d => { if (d.pEnd >= behind) return true; if (d.mesh) { scene.remove(d.mesh); d.mesh.geometry.dispose(); } return false; });
     walls = walls.filter(w => { if (w.p >= behind) return true; if (w.mesh) scene.remove(w.mesh); return false; });
-    peds = peds.filter(p => { if (p.p >= behind) return true; if (p.mesh) { scene.remove(p.mesh); p.mesh.traverse(o => { if (o.geometry) o.geometry.dispose(); }); } return false; });
+    peds = peds.filter(p => { if (p.p >= behind) return true; if (p.mesh) { scene.remove(p.mesh); if (p.real) releasePed(p.real); else p.mesh.traverse(o => { if (o.geometry) o.geometry.dispose(); }); } return false; });
     boosts = boosts.filter(b => { if (b.p >= behind) return true; if (b.mesh) scene.remove(b.mesh); return false; });
   }
 }
@@ -2428,7 +2436,7 @@ function startRace() {
 function clearWorld() {
   for (const d of dirt) if (d.mesh) { scene.remove(d.mesh); d.mesh.geometry.dispose(); }
   for (const w of walls) if (w.mesh) scene.remove(w.mesh);
-  for (const p of peds) if (p.mesh) { scene.remove(p.mesh); p.mesh.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
+  for (const p of peds) if (p.mesh) { scene.remove(p.mesh); if (p.real) releasePed(p.real); else p.mesh.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
   for (const c of traffic) if (c.mesh) scene.remove(c.mesh);
   for (const b of boosts) if (b.mesh) scene.remove(b.mesh);
   if (finishGate) { scene.remove(finishGate); finishGate = null; }
@@ -2923,7 +2931,8 @@ function updateHazardPositions(offset) {
     const z = offset - p.p, flying = p.kt >= 0 && p.kt < 1.4;
     p.mesh.position.z = z; p.mesh.position.x = p.x + bendOff(p.p);
     p.mesh.visible = (p.alive || flying) && z < WRAP_NEAR && z > -WRAP_FAR;
-    if (flying) { const t = p.kt; p.mesh.position.y = Math.max(0, 3.4 * t - 5.5 * t * t); p.mesh.rotation.z = -p.kx * Math.min(1.5, t * 4); }
+    if (flying && !p.real) { const t = p.kt; p.mesh.position.y = Math.max(0, 3.4 * t - 5.5 * t * t); p.mesh.rotation.z = -p.kx * Math.min(1.5, t * 4); }
+    if (p.real) p.mesh.visible = (p.alive || flying || p.evT !== -1) && z < WRAP_NEAR && z > -WRAP_FAR;
   }
   if (finishGate) { const gp = gateP(); finishGate.position.z = offset - gp; finishGate.position.x = bendOff(gp); finishGate.rotation.y = bendYaw(gp); }
 }
@@ -3102,7 +3111,17 @@ function update(dt) {
     for (const p of peds) {
       if (p.kt >= 0) { p.kt += dt; p.x += p.kx * 5 * dt; p.p += Math.max(0, 9 - p.kt * 8) * dt; }
       if (!p.alive) continue;
-      if (p.wait) { if (p.p - playerDist < Math.max(45, speed * 3.1)) p.wait = false; else continue; }   // step out so they're mid-road as you arrive
+      if (p.wait) { if (p.p - playerDist < Math.max(45, speed * (p.real ? 5.0 / p.speed : 3.1))) p.wait = false; else continue; }   // step out so they're mid-road as you arrive
+      if (p.real && p.evT >= 0) {                     // mid-dodge: he's not walking anywhere
+        p.evT += dt; if (p.evT > 2.5) p.evT = -2;
+        if (Math.abs(carX - p.x) < PED_TOL_X && Math.abs(playerDist - p.p) < PED_TOL_Z) hitPed(p);
+        continue;
+      }
+      // near miss: you're about to blow past within a car-width -> he corkscrews out of the way
+      if (p.real && p.evT === -1) {
+        const ahead = p.p - playerDist, dx = Math.abs(carX - p.x);
+        if (ahead > 0 && ahead < Math.max(2.5, speed * 0.32) && dx >= PED_TOL_X && dx < 2.6) { p.evT = 0; sfx.whoosh(clamp((p.x - carX) * 0.4, -1, 1), 0.5, speed); }
+      }
       p.x += p.dir * p.speed * dt;
       p.t += dt;
       if (p.x < -(ROAD_HALF + 1.2) || p.x > ROAD_HALF + 1.2) { p.alive = false; continue; }
@@ -3212,9 +3231,7 @@ const RS_HEIGHT = 1.17;                               // world units: matches th
 async function loadRealStarter() {
   if (GFX.tier === 'low' || !renderer) return;        // old phones keep the low-poly starter
   try {
-    const [{ GLTFLoader }, { MeshoptDecoder }] = await Promise.all([import('./vendor/GLTFLoader.js'), import('./vendor/meshopt_decoder.module.js')]);
-    const L = new GLTFLoader(); L.setMeshoptDecoder(MeshoptDecoder);
-    const g = await L.loadAsync('models/starter.glb');
+    const g = await (await gltfLoader()).loadAsync('models/starter.glb');
     const model = g.scene;
     model.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; o.frustumCulled = false; if (o.material) o.material.envMapIntensity = 0.7; } });
     const box = new THREE.Box3().setFromObject(model, true), k = RS_HEIGHT / Math.max(0.001, box.max.y - box.min.y);
@@ -3468,8 +3485,67 @@ function updateCameraIntro(dt) {
   camera.position.copy(_cA); camera.lookAt(_cL);
   Post.motion = 0.01;
 }
+// ---------------- mocap pedestrian (Mixamo "The Boss": borrowed walk, Jumping Up on a hit, Corkscrew Evade on a near miss) ----------------
+const PED_HEIGHT = 1.32, PED_REAL_SPEED = 1.3;        // world units: a ~1.8 m man in a hat; walking pace that suits the stride
+let realPed = null, _gltfLoader = null;
+const pedPool = [];
+async function gltfLoader() {
+  if (_gltfLoader) return _gltfLoader;
+  const [{ GLTFLoader }, { MeshoptDecoder }] = await Promise.all([import('./vendor/GLTFLoader.js'), import('./vendor/meshopt_decoder.module.js')]);
+  _gltfLoader = new GLTFLoader(); _gltfLoader.setMeshoptDecoder(MeshoptDecoder);
+  return _gltfLoader;
+}
+async function loadRealPed() {
+  if (GFX.tier === 'low' || !renderer) return;
+  try {
+    const g = await (await gltfLoader()).loadAsync('models/ped.glb');
+    const box = new THREE.Box3().setFromObject(g.scene, true), k = PED_HEIGHT / Math.max(0.001, box.max.y - box.min.y);
+    const clips = {}; for (const c of g.animations) clips[c.name] = c;
+    const walkCm = 100.9;                              // the walk clip's stride speed, cm/s (1.38 m per 1.37 s)
+    realPed = { scene: g.scene, clips, k, offY: -box.min.y * k, walkSpeed: (walkCm / 100) * (PED_HEIGHT / 1.8) };   // walkSpeed: world units/s at timeScale 1
+  } catch (e) { console.warn('[slipstream] mocap pedestrian not loaded, keeping the low-poly crew', e); realPed = null; }
+}
+function acquirePed() {
+  const pooled = pedPool.pop();
+  if (pooled) { for (const a of Object.values(pooled.acts)) a.stop(); pooled.cur = null; pooled.root.position.set(0, 0, 0); return pooled; }
+  const inst = realPed.scene.clone(true);
+  // clone() leaves each skinned mesh pointing at the template's bones: rebind to this clone's bones by name
+  const bones = new Map(); inst.traverse(o => { if (o.isBone) bones.set(o.name, o); });
+  inst.traverse(o => {
+    if (o.isSkinnedMesh) o.bind(new THREE.Skeleton(o.skeleton.bones.map(b => bones.get(b.name)), o.skeleton.boneInverses), o.bindMatrix);
+    if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; }
+  });
+  inst.scale.setScalar(realPed.k); inst.position.y = realPed.offY;
+  const root = new THREE.Group(); root.add(inst);
+  const mixer = new THREE.AnimationMixer(inst), acts = {};
+  for (const [n, c] of Object.entries(realPed.clips)) acts[n] = mixer.clipAction(c);
+  for (const n of ['hit', 'evade']) if (acts[n]) { acts[n].setLoop(THREE.LoopOnce, 1); acts[n].clampWhenFinished = true; }
+  return { root, mixer, acts, cur: null };
+}
+function releasePed(r) { for (const a of Object.values(r.acts)) a.stop(); r.cur = null; if (pedPool.length < 12) pedPool.push(r); }
+function pedState(r, name, ts) {
+  if (r.cur === name) { if (name === 'walk' && ts) r.acts.walk.setEffectiveTimeScale(ts); return; }
+  const key = name === 'stand' ? 'hit' : name, next = r.acts[key], prev = r.cur && r.acts[r.cur === 'stand' ? 'hit' : r.cur];
+  if (!next) return;
+  if (prev === next) { next.paused = name === 'stand'; if (name !== 'stand') next.reset(); r.cur = name; return; }
+  next.reset(); next.setEffectiveWeight(1); next.setEffectiveTimeScale(ts || 1);
+  if (name === 'stand') { next.time = 0.04; next.paused = true; } else next.paused = false;   // standing = the first frame of the jump clip
+  next.play();
+  if (prev) next.crossFadeFrom(prev, name === 'hit' || name === 'evade' ? 0.12 : 0.3, false); else next.fadeIn(0.2);
+  r.cur = name;
+}
+function animRealPed(p, dt) {
+  const r = p.real;
+  if (!p.mesh.visible) return;                         // off-screen: don't pay for skinning maths
+  if (p.kt >= 0) pedState(r, p.kt > 0.85 ? 'stand' : 'hit');                // launched, then lands
+  else if (p.evT >= 0) pedState(r, 'evade');
+  else if (p.wait || phase === 'countdown' || phase === 'menu') pedState(r, 'stand');
+  else pedState(r, 'walk', clamp(p.speed / realPed.walkSpeed, 0.8, 2.2));
+  r.mixer.update(dt);
+}
 function updatePedAnimation(dt) {
   for (const p of peds) {
+    if (p.real) { animRealPed(p, dt); continue; }
     if (!p.mesh || !p.rig) continue;
     const R = p.rig, k = p.alive ? 1 : 2.2, s = Math.sin(p.t * 9 * k) * (p.alive ? 0.55 : 1.1);
     if (!p.alive) p.t += dt;
@@ -3612,7 +3688,7 @@ function boot() {
   buildParticles();
   buildStreaks();
   buildStarter();
-  setTimeout(loadRealStarter, 400);        // the mocap starter streams in after boot; the low-poly one covers until then
+  setTimeout(() => { loadRealStarter().then(loadRealPed); }, 400);   // mocap starter + pedestrian stream in after boot; low-poly ones cover until then
 
   // player car
   const pc = buildCar(0x9c0a10, { player: true, plate: 'DSDA 137' });
@@ -3713,6 +3789,7 @@ window.__tl = {
   start() { if (phase === 'menu') startGameFromMenu(); return 'ok'; },
   menu() { backToMenu(); return 'ok'; },
   boost(t) { boostTimer = t || BOOST_TIME; return 'ok'; },
+  peds() { return { real: !!realPed, list: peds.map(p => ({ p: +p.p.toFixed(1), x: +p.x.toFixed(2), wait: !!p.wait, alive: p.alive, real: !!p.real, evT: p.evT, kt: +p.kt.toFixed(2), state: p.real && p.real.cur })) }; },
   starter() { return { real: !!realStarter, useReal, introLen, clips: realStarter ? Object.keys(realStarter.acts) : [], flag: !!(realStarter && realStarter.hand) }; },
   getPhase() { return phase; },
   state() {
