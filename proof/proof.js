@@ -201,7 +201,8 @@ function initAnchorView() {
             sat + ' sats (' + bsv + ' BSV)';
         document.getElementById('payAddress').textContent = NOTARY_ADDRESS;
         // render the QR code (BIP21 URI)
-        const bip21 = 'bsv:' + NOTARY_ADDRESS + '?amount=' + (sat / 1e8) + '&label=DSDA%20Proof%20of%20Creation';
+        // toFixed(8): plain decimals; (sat / 1e8) alone gives "2.6e-7", which wallets can't parse
+        const bip21 = 'bsv:' + NOTARY_ADDRESS + '?amount=' + bsv + '&label=DSDA%20Proof%20of%20Creation';
         renderQR(bip21, document.getElementById('payQR'));
         document.getElementById('paymentCard').style.display = 'block';
         // Start the polling loop (auto-detect the payment + auto-anchor)
