@@ -76,7 +76,15 @@
   .avatar.edit .pen { display:flex; }
   #avOv { position:fixed; inset:0; z-index:3000; display:none; align-items:center; justify-content:center; padding:16px; background:rgba(4,8,14,0.78); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); }
   #avOv.on { display:flex; }
+  #nameOv { position:fixed; inset:0; z-index:3100; display:none; align-items:center; justify-content:center; padding:16px; background:rgba(4,8,14,0.78); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); }
+  #nameOv.on { display:flex; }
   #avOv .pp { width:min(420px,100%); max-height:90vh; overflow:auto; background:#0c1320; border:1px solid var(--line); border-radius:16px; padding:18px; box-shadow:0 24px 60px rgba(0,0,0,0.6); }
+  #nameOv .pp { width:min(420px,100%); max-height:90vh; overflow:auto; background:#0c1320; border:1px solid var(--line); border-radius:16px; padding:18px; box-shadow:0 24px 60px rgba(0,0,0,0.6); }
+  #nameOv input { width:100%; box-sizing:border-box; padding:11px 12px; border-radius:10px; border:1px solid var(--line); background:#0a0e14; color:var(--ink); font:500 15px Inter,sans-serif; letter-spacing:1px; margin-top:12px; }
+  #nameOv .name-actions { display:flex; gap:8px; margin-top:12px; }
+  #nameOv .name-msg { margin-top:10px; font:500 12px Inter,sans-serif; color:var(--muted); min-height:14px; }
+  #nameOv .name-msg.err { color:#e57373; }
+  #nameOv .name-skip { display:block; text-align:center; margin-top:10px; font:500 11px Inter,sans-serif; letter-spacing:1px; color:var(--muted); text-decoration:none; }
   #avOv h3 { font-family:"Playfair Display",serif; font-size:20px; margin:0 0 2px; color:var(--gold-bright); }
   #avOv .sub { font-size:11px; color:var(--muted); margin-bottom:14px; }
   #avOv .k { font-size:9px; letter-spacing:2px; color:var(--muted); margin:14px 0 8px; }
@@ -94,6 +102,8 @@
   .avatar .tier { position:absolute; bottom:-6px; right:-6px; background:var(--gold); color:#0a0e14; font-size:9px; font-weight:700; letter-spacing:1px; padding:3px 8px; border-radius:999px; }
   .handle { margin-top:14px; display:flex; align-items:center; gap:8px; }
   .handle .name { font-family:"Playfair Display",serif; font-weight:700; font-size:24px; letter-spacing:1px; }
+  .handle .rename-link { margin-left:auto; font:600 10px Inter,sans-serif; letter-spacing:1.5px; color:var(--gold); text-decoration:none; opacity:0.85; }
+  .handle .rename-link:hover { opacity:1; text-decoration:underline; }
   .handle .verified { width:16px; height:16px; border-radius:50%; background:var(--gold); display:flex; align-items:center; justify-content:center; font-size:10px; color:#0a0e14; }
   .addr { font-size:10px; color:var(--muted); letter-spacing:1px; margin-top:3px; font-family:monospace; }
   .addr.none { color:#5a6273; font-style:italic; }
@@ -209,7 +219,7 @@
         </div>
         <div class="id">
           <div class="avatar" id="c-avatar" role="img" aria-label="Player avatar"><span class="glyph" id="c-glyph">?</span><span class="pen" aria-hidden="true">✎</span><span class="tier" id="c-tier">ROOKIE</span></div>
-          <div class="handle"><span class="name" id="c-name">—</span><span class="verified" id="c-verified" style="display:none">✓</span></div>
+          <div class="handle"><span class="name" id="c-name">—</span><span class="verified" id="c-verified" style="display:none">✓</span><a class="rename-link" id="c-rename" href="#" style="display:none">✎ CHANGE NAME</a></div>
           <div class="addr" id="c-addr">—</div>
         </div>
         <div class="rank-row">
@@ -283,6 +293,18 @@
     <div id="avMsg"></div>
     <button class="av-close" id="avClose">DONE</button>
   </div></div>
+  <!-- Pick/Change name overlay (v11) — first Fundy login gets "Pick your arcade name" -->
+  <div id="nameOv" role="dialog" aria-modal="true" aria-label="Pick your arcade name"><div class="pp">
+    <h3>Pick your arcade name</h3>
+    <div class="sub" id="name-sub">This is what other players see on the boards, cards and challenges. You can change it later — once every 30 days after your first choice.</div>
+    <input id="name-input" type="text" placeholder="your name: a-z 0-9 _ - (2–16)" maxlength="16" autocomplete="nickname" autocapitalize="none" autocorrect="off" spellcheck="false">
+    <div class="name-msg" id="name-msg"></div>
+    <div class="name-actions">
+      <button class="btn ghost" id="name-keep">Keep</button>
+      <button class="btn" id="name-set">Set name</button>
+    </div>
+    <a class="name-skip" id="name-skip" href="#">change it later on your card</a>
+  </div></div>
   <div id="loading" class="loading" style="display:none">LOADING…</div>
   <div class="toast" id="toast"></div>
 
@@ -290,7 +312,7 @@
   // Local dev override (set before arcade-account.js). Prod uses https://api.ds-da.ca.
   if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') window.DSDA_API_BASE = 'http://127.0.0.1:8787';
 </script>
-<script src="/games/arcade-account.js?v=8"></script>
+<script src="/games/arcade-account.js?v=11"></script>
 <script>
 (function () {
   'use strict';
@@ -448,6 +470,10 @@
     box.title = isOwner ? 'Change your avatar' : '';
     $('c-name').textContent = handle;
     $('c-verified').style.display = account.address ? 'flex' : 'none';
+    // v11: "Change name" link — owner view only (a public card has no session).
+    var renameLink = $('c-rename');
+    if (isOwner) { renameLink.style.display = 'inline'; renameLink.onclick = function (e) { e.preventDefault(); showNameOverlay('change'); }; }
+    else { renameLink.style.display = 'none'; renameLink.onclick = null; }
     var tier = TIER_LABEL[profile.tier] || 'ROOKIE';
     $('c-tier').textContent = tier;
     // address
@@ -597,6 +623,8 @@
           if (!j || !j.profile) throw new Error('profile not found');
           renderCard(acc, j.profile, sync, true);
           show('card');
+          // v11: first Fundy login (auto player- name) → offer a real name.
+          if (window.DSDA.account.needsName(acc)) showNameOverlay('pick');
         });
     }).catch(function (e) { msg('Could not load your card: ' + e.message, 'err'); show('login'); });
   }
@@ -672,6 +700,68 @@
     if (c !== el.value) el.value = c;
   });
   $('handle').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('b-register').click(); });
+
+  // ---- v11: Pick/Change name overlay ----
+  // Mirrors the Worker's validateHandle client-side for instant feedback:
+  // 2–16 chars, a-z 0-9 _ -, no player- prefix, blocked words. The server
+  // re-checks everything (incl. the 30-day hold + cooldown) — this is UX only.
+  var BLOCKED_NAMES = ['admin', 'mod', 'support', 'system', 'api', 'dsda', 'null', 'none', 'guest', 'danny', 'fundy', 'arcade', 'official', 'root', 'owner'];
+  function nameError(raw) {
+    var h = cleanHandle(raw);
+    if (h.length < 2) return 'Name needs 2–16 characters: a-z, 0-9, _ or -';
+    if (/^player-/.test(h)) return 'Names starting with "player-" are reserved';
+    if (BLOCKED_NAMES.indexOf(h) >= 0) return 'That name is taken — pick another';
+    return '';
+  }
+  function cooldownMsg(acc) {
+    // Free from a player- name; otherwise once every 30 days.
+    if (!acc || !acc.last_handle_change) return '';
+    if (acc.handle && /^player-/.test(acc.handle)) return '';
+    var next = acc.last_handle_change + 30 * 86400 * 1000;
+    if (Date.now() < next) return 'You can change your name again in ' + Math.ceil((next - Date.now()) / 86400000) + ' days';
+    return '';
+  }
+  function nameMsg(text, isErr) { var m = $('name-msg'); m.textContent = text || ''; m.className = 'name-msg' + (isErr ? ' err' : ''); }
+  function showNameOverlay(mode) {
+    var acc = window.DSDA.account.getAccount();
+    if (!acc || !acc.handle) return;
+    $('name-sub').textContent = mode === 'pick'
+      ? 'This is what other players see on the boards, cards and challenges. You can change it later — once every 30 days after your first choice.'
+      : 'Your name is ' + acc.handle + '. Same rules as always: 2–16 chars, a-z 0-9 _ -, and once every 30 days.';
+    $('name-keep').textContent = 'Keep ' + acc.handle;
+    $('name-input').value = '';
+    var cd = cooldownMsg(acc);
+    $('name-set').disabled = !!cd;
+    nameMsg(cd);
+    $('nameOv').classList.add('on');
+    setTimeout(function () { $('name-input').focus(); }, 50);
+  }
+  function hideNameOverlay() { $('nameOv').classList.remove('on'); }
+  $('name-keep').onclick = function () { hideNameOverlay(); };
+  $('name-skip').onclick = function (e) { e.preventDefault(); hideNameOverlay(); };
+  $('name-input').addEventListener('input', function () {
+    var el = this, c = cleanHandle(el.value);
+    if (c !== el.value) el.value = c;
+    if (!cooldownMsg(window.DSDA.account.getAccount())) nameMsg('');
+  });
+  $('name-input').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('name-set').click(); });
+  $('name-set').onclick = function () {
+    var acc = window.DSDA.account.getAccount();
+    var err = nameError($('name-input').value);
+    if (err) { nameMsg(err, true); $('name-input').focus(); return; }
+    var cd = cooldownMsg(acc);
+    if (cd) { nameMsg(cd); return; }
+    var btn = $('name-set');
+    btn.disabled = true; btn.textContent = 'Setting…';
+    window.DSDA.account.setHandle(cleanHandle($('name-input').value)).then(function (r) {
+      btn.textContent = 'Set name';
+      if (r.ok) { btn.disabled = false; hideNameOverlay(); loadCard(); return; }
+      btn.disabled = !!cooldownMsg(window.DSDA.account.getAccount());
+      nameMsg(r.status === 429 ? (r.error || 'cooling down') : (r.error || 'rename failed'), true);
+      // 429: re-read the account so the cooldown text reflects the server.
+      if (r.status === 429) window.DSDA.account.refreshAccount().then(function (a2) { if (a2) { btn.disabled = !!cooldownMsg(a2); nameMsg(cooldownMsg(a2)); } });
+    });
+  };
   $('b-home').onclick = function () { window.location.href = '/games/'; };
   $('b-logout').onclick = function () { window.DSDA.account.logout(); show('login'); };
   $('b-link-wallet').onclick = function () {

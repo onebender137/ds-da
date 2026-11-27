@@ -462,7 +462,7 @@
     if (!document.getElementById('dsda-account-script')) {
       var s = document.createElement('script');
       s.id = 'dsda-account-script';
-      s.src = '/games/arcade-account.js?v=10';
+      s.src = '/games/arcade-account.js?v=11';
       s.async = true;
       (document.head || document.documentElement).appendChild(s);
     }

@@ -39,7 +39,7 @@
 // v20: chicken cabinet (arcade-social v14)
 // v23: Links realism pass (real ball physics, skinned golfer + golfer.glb).
 // v24: Hustlers cabinet (8-ball pool, arcade-social v15).
-const CACHE = 'dsda-arcade-v24';
+const CACHE = 'dsda-arcade-v25';
 const CORE = [
   './',
   './manifest.webmanifest',
