@@ -255,6 +255,15 @@
   #overlay .tops > li:nth-child(n+6) { display: none; }
 }
 .member-badge{color:var(--gold,#c9a227);font-size:0.7em;margin-left:3px;vertical-align:middle;}
+/* ---- game modes (2026-11-27) ---- */
+.mbtn small { display: block; font-size: 9.5px; letter-spacing: 1.2px; font-weight: 600; opacity: .72; margin-top: 3px; text-transform: uppercase; }
+.mbtn.mode { padding: 10px 13px; }
+.mode-tabs { display: flex; gap: 6px; }
+.mode-tabs button { flex: 1; padding: 8px 4px !important; font-size: 11px !important; letter-spacing: 1.5px !important; }
+.mode-tabs button.on { border-color: var(--accent); background: rgba(60,40,15,0.5); color: var(--accent); }
+#timeStat > span { white-space: nowrap; }
+#timeStat.low b { color: #ff4d5e; animation: pulse .5s ease-in-out infinite; }
+@media (max-width: 768px) { .menu-btns { gap: 7px; margin-top: 8px; } .mbtn { padding: 10px; font-size: 14px; } .mbtn small { font-size: 8.5px; } }
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -277,13 +286,13 @@
   <p>HIGHWAY DRAFT RACER · DSDA</p>
 </div>
 <div id="hud" class="panel">
-  <div class="stat" id="timeStat"><span>TIME <span id="draftTag">SLIPSTREAM</span></span><b id="time">0.00</b></div>
+  <div class="stat" id="timeStat"><span><span id="timeLbl">TIME</span> <span id="draftTag">SLIPSTREAM</span></span><b id="time">0.00</b></div>
   <div class="stat"><span>SPEED</span><b id="speed">0</b></div>
   <div class="stat" id="gearStat"><span>GEAR</span><b id="gear">N</b></div>
   <div id="revBar"><div id="revFill"></div></div>
-  <div class="stat"><span>BEST</span><b id="best">--</b></div>
+  <div class="stat"><span id="bestLbl">BEST</span><b id="best">--</b></div>
   <div id="distBar"><div id="distFill"></div></div>
-  <h3 class="sub">FASTEST 10</h3>
+  <h3 class="sub" id="hudTopTitle">FASTEST 10</h3>
   <ol id="hudTop" class="tops"></ol>
   <div class="keys" id="hudKeys">
     ← → &nbsp;steer<br>
@@ -298,7 +307,9 @@
   <h1 class="menu-title" id="menuTitle" aria-label="SLIPSTREAM"></h1>
   <p class="menu-tag"><b>SLIPSTREAM</b> — DRAFT YOUR WAY TO THE TOP OF THE LEADERBOARD</p>
   <div class="menu-btns">
-    <button id="menuStart" class="mbtn primary sel">START RACE</button>
+    <button id="menuStart" class="mbtn primary sel" data-mode="normal">NORMAL RUN<small>sunset sprint · fastest to the flag</small></button>
+    <button id="menuSunday" class="mbtn mode" data-mode="sunday">SUNDAY DRIVE<small>easy · light traffic · less construction</small></button>
+    <button id="menuEndless" class="mbtn mode" data-mode="endless">ENDLESS<small>beat the clock · checkpoints · day into night</small></button>
     <button id="menuScores" class="mbtn">HIGH SCORES</button>
     <button id="menuSite" class="mbtn">BACK TO DSDA ARCADE</button>
   </div>
@@ -307,7 +318,10 @@
 </div>
 <div id="scores" class="hidden">
   <div class="card">
-    <h2 style="color: var(--accent);">FASTEST TIMES</h2>
+    <h2 style="color: var(--accent);" id="scoresTitle">FASTEST TIMES</h2>
+    <div class="mode-tabs" id="scoreTabs">
+      <button data-mode="normal" class="on">NORMAL</button><button data-mode="sunday">SUNDAY</button><button data-mode="endless">ENDLESS</button>
+    </div>
     <h3 class="sub">GLOBAL — DS-DA.CA</h3>
     <ol id="globalTop" class="tops"></ol>
     <p id="globalNote" class="global-note"></p>
@@ -318,9 +332,9 @@
 </div>
 <div id="overlay" class="hidden">
   <div class="card">
-    <h2 style="color: var(--accent);">🏁 FINISH</h2>
+    <h2 style="color: var(--accent);" id="finishTitle">🏁 FINISH</h2>
     <div id="newHigh" class="hidden">★ NEW RECORD ★</div>
-    <p class="final">Your time <b id="finalTime">0.00s</b></p>
+    <p class="final"><span id="finalLbl">Your time</span> <b id="finalTime">0.00s</b></p>
     <p class="final" id="finalRank">—</p>
     <label for="initials">YOUR INITIALS</label>
     <input id="initials" maxlength="3" placeholder="ABC" autocomplete="off" spellcheck="false" />
@@ -328,7 +342,7 @@
     <div id="savedMsg"></div>
     <button id="shareBtn">Share Time</button>
     <div id="shareMsg"></div>
-    <h3 class="sub">FASTEST TIMES</h3>
+    <h3 class="sub" id="topListTitle">FASTEST TIMES</h3>
     <ol id="topList" class="tops"></ol>
     <button id="playAgain" class="primary">Race Again</button>
     <button id="toMenu">Main Menu</button>
@@ -395,14 +409,40 @@ const BOOST_N = 7, BOOST_SPEED = 56, BOOST_TIME = 2.5;   // speed pads: a few pe
 const WRAP_NEAR = 12, WRAP_FAR = 132;
 
 // ---------------- scoring / leaderboard (time trial: fastest wins) ----------------
-const SCORE_KEY = 'slipstream_scores.v3';   // v3 (2026-11-16): boards reset with the rules change (centre-line exploit closed)
-const GAME_ID = 'slipstream';
-// The global board sorts HIGHEST first, so we store "points" = POINTS_MAX - timeMs.
+const GAME_ID = 'slipstream';           // cabinet id (analytics / passport). Each mode posts to its own board (below).
+// The global board sorts HIGHEST first, so timed boards store "points" = POINTS_MAX - timeMs.
 // Faster finish -> higher points -> tops the board. Display converts back to time.
 const POINTS_MAX = 600000;              // 10 minutes in ms
 const toPoints = tMs => POINTS_MAX - tMs;
 const fmtTime = s => { const t = (POINTS_MAX - s) / 1000; return (isFinite(t) ? t.toFixed(2) : '999.99') + 's'; };
 const fmtClock = tMs => (tMs / 1000).toFixed(2);
+// ---------------- game modes (2026-11-27) ----------------
+// normal  : the original time trial, untouched rules, original board + local key.
+// sunday  : same trial, light traffic + little construction, its own board.
+// endless : checkpoint clock (OutRun style) — gates add time, each a bit less; density ramps every stage;
+//           crashes don't end the run, they bleed speed = bleed clock. Score = metres driven (higher wins).
+const M_PER_UNIT = 0.889;               // speed * 3.2 reads as km/h, so 1 unit ~ 0.889 m
+const MODES = {
+  normal:  { label: 'NORMAL', board: 'slipstream',         key: 'slipstream_scores.v3',          timed: true,
+             traffic: 7, tSpeed: [15, 21], dirt: 16, walls: 22, peds: 6, boosts: 7, mood: 'sunset' },
+  sunday:  { label: 'SUNDAY DRIVE', board: 'slipstream_sunday', key: 'slipstream_sunday_scores.v1', timed: true,
+             traffic: 4, tSpeed: [13, 18], dirt: 5, walls: 7, peds: 2, boosts: 9, mood: 'day' },
+  endless: { label: 'ENDLESS', board: 'slipstream_endless', key: 'slipstream_endless_scores.v1', timed: false,
+             traffic: 5, tSpeed: [15, 21], mood: 'cycle' },
+};
+let mode = 'normal';
+const MC = () => MODES[mode];
+const isEndless = () => mode === 'endless';
+// endless tuning
+const CP_LEN = 640;                     // units between checkpoint gates (~2 km per 3 gates)
+const CLOCK_START = 32;                 // seconds on the clock at the green light
+const cpBonus = stage => Math.max(10, 25 - 1.1 * (stage - 1));   // gate 1 = +25 s, then a little less each time
+const endlessDensity = stage => Math.min(1.7, 0.6 + 0.1 * stage); // x normal hazard density
+const endlessTraffic = stage => Math.min(9, 5 + Math.floor(stage / 2));
+const TRAFFIC_MAX = 9;
+const fmtDist = s => (s >= 1000 ? (s / 1000).toFixed(2) + ' km' : Math.round(s) + ' m');
+const fmtScore = (s, m) => MODES[m || mode].timed ? fmtTime(s) : fmtDist(s);
+const runMetres = () => Math.round(playerDist * M_PER_UNIT);
 
 // ---------------- GA4 analytics (optional; never breaks the game) ----------------
 function track(event, params) {
@@ -426,7 +466,7 @@ const SCORE_SECRET = '6216cf68f4e077d3cd991f2d6bd3e878';
 // ---------------- dom ----------------
 const $ = id => document.getElementById(id);
 const elTime = $('time'), elSpeed = $('speed'), elBest = $('best'), elDistFill = $('distFill'), elDraftTag = $('draftTag');
-const elFx = $('fx'), elHudTop = $('hudTop'), elOverlay = $('overlay');
+const elFx = $('fx'), elHudTop = $('hudTop'), elOverlay = $('overlay'), elTimeStat = $('timeStat');
 const elFinalTime = $('finalTime'), elFinalRank = $('finalRank');
 const elInitials = $('initials'), elSave = $('saveBtn'), elSavedMsg = $('savedMsg');
 const DSDA_INITS_KEY = 'dsda-initials';
@@ -792,7 +832,8 @@ let wallHit = {};        // wall index -> cooldown
 let pedCooldown = 0;
 let shake = 0;
 let finishTime = 0;      // ms
-let bestTime = null;     // player best ms
+const bests = { normal: null, sunday: null, endless: null };   // per-mode session best: ms (timed) / metres (endless)
+let clockLeft = 0, stage = 1, nextCp = CP_LEN, genUpTo = 0, finishDist = 0, lastTick = 0;
 let menuSel = 0;
 const menuButtons = [];
 let bannerTimer = 0, menuTime = 0;
@@ -1274,6 +1315,8 @@ const SKY_VERT = 'varying vec3 vDir; void main(){ vDir = position; vec4 p = mode
 const SKY_FRAG = `
 precision highp float;
 varying vec3 vDir; uniform vec3 sunDir; uniform float time; uniform float disc;
+uniform vec3 zenC, midC, horA, horS, glowC, haloC, sunC, cloudD, cloudL, cloudE, groundC;
+uniform float sunK, starK, starH, cover;
 float hash(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
 float vnoise(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
   return mix(mix(hash(i), hash(i + vec2(1,0)), f.x), mix(hash(i + vec2(0,1)), hash(i + vec2(1,1)), f.x), f.y); }
@@ -1283,32 +1326,38 @@ void main(){
   float h = max(d.y, 0.0);
   float sd = max(dot(d, sunDir), 0.0);
   float az = dot(normalize(d.xz + 1e-5), normalize(sunDir.xz)) * 0.5 + 0.5;      // 1 toward the sun, 0 opposite
-  vec3 zen = vec3(0.018, 0.04, 0.17), mid = vec3(0.15, 0.125, 0.33);
-  vec3 hor = mix(vec3(0.34, 0.22, 0.34), vec3(1.0, 0.44, 0.17), pow(az, 1.8));  // dusty mauve away from the sun, molten toward it
+  vec3 zen = zenC, mid = midC;
+  vec3 hor = mix(horA, horS, pow(az, 1.8));  // (sunset: dusty mauve away from the sun, molten toward it)
   vec3 c = mix(hor, mid, smoothstep(0.0, 0.24, pow(h, 0.85)));
   c = mix(c, zen, smoothstep(0.14, 0.55, h));
-  c += vec3(1.0, 0.46, 0.16) * pow(sd, 6.0) * 0.5 * (1.0 - smoothstep(0.0, 0.45, h) * 0.7);
-  c += vec3(1.0, 0.72, 0.42) * pow(sd, 48.0) * 1.4;
-  c += vec3(1.0, 0.86, 0.62) * smoothstep(0.99955, 0.9998, sd) * disc;           // the sun itself (HDR -> blooms)
+  c += glowC * pow(sd, 6.0) * 0.5 * (1.0 - smoothstep(0.0, 0.45, h) * 0.7);
+  c += haloC * pow(sd, 48.0) * 1.4;
+  c += sunC * smoothstep(0.99955, 0.9998, sd) * disc * sunK;           // the sun (or moon) itself (HDR -> blooms)
   // high cloud, lit from underneath on the sun side
   vec2 cuv = d.xz / (h + 0.16) * 0.55 + vec2(time * 0.004, time * 0.0015);
   float cl = fbm(cuv * 1.6) * 0.65 + fbm(cuv * 4.3 + 3.1) * 0.35;
-  float cov = smoothstep(0.44, 0.7, cl) * smoothstep(0.02, 0.13, d.y);
+  float cov = smoothstep(cover, cover + 0.26, cl) * smoothstep(0.02, 0.13, d.y);
   float lit = pow(sd, 2.2) * 0.9 + pow(az, 3.0) * 0.25;
-  vec3 ccol = mix(vec3(0.085, 0.07, 0.15), vec3(1.5, 0.55, 0.22), clamp(lit, 0.0, 1.0));
-  ccol += vec3(0.5, 0.22, 0.3) * (1.0 - smoothstep(0.44, 0.62, cl)) * 0.5;   // thin edges catch the pink
+  vec3 ccol = mix(cloudD, cloudL, clamp(lit, 0.0, 1.0));
+  ccol += cloudE * (1.0 - smoothstep(cover, cover + 0.18, cl)) * 0.5;   // thin edges catch the light
   c = mix(c, ccol, cov * 0.9);
   // first stars up top
-  vec2 sp = d.xz / (h + 0.4) * 90.0; float st = hash(floor(sp));
-  c += vec3(0.8, 0.85, 1.0) * step(0.9965, st) * smoothstep(0.35, 0.8, h) * (1.0 - cov) * 0.7;
+  vec2 sp = d.xz / (h + 0.4) * 90.0; vec2 cid = floor(sp); float st = hash(cid);
+  vec2 sj = vec2(hash(cid + 7.1), hash(cid + 3.7)) * 0.6 + 0.2;                   // where in its cell the star sits
+  float pt = 1.0 - smoothstep(0.0, 0.09, length(fract(sp) - sj));                  // a point, not the whole cell
+  c += vec3(0.8, 0.85, 1.0) * step(0.9935, st) * pt * smoothstep(starH, starH + 0.45, h) * (1.0 - cov) * starK * 2.2;
   // below the horizon: ground haze (only matters for reflections)
-  c = mix(c, vec3(0.10, 0.085, 0.09), 1.0 - smoothstep(-0.12, 0.0, d.y));   // (edges must ascend: reversed smoothstep is undefined and NaNs on real GPUs)
+  c = mix(c, groundC, 1.0 - smoothstep(-0.12, 0.0, d.y));   // (edges must ascend: reversed smoothstep is undefined and NaNs on real GPUs)
   gl_FragColor = vec4(clamp(c, 0.0, 40.0), 1.0);
 }`;
 let skyMat = null;
+// one shared uniform set: the dome and the env-map bake both read it, so a mood change moves both
+const V3 = () => ({ value: new THREE.Vector3() });
+const SKY_U = { sunDir: { value: SUN_DIR }, time: { value: 0 }, zenC: V3(), midC: V3(), horA: V3(), horS: V3(), glowC: V3(), haloC: V3(), sunC: V3(),
+  cloudD: V3(), cloudL: V3(), cloudE: V3(), groundC: V3(), sunK: { value: 1 }, starK: { value: 0.7 }, starH: { value: 0.35 }, cover: { value: 0.44 } };
 function makeSkyMat(disc) {
   return new THREE.ShaderMaterial({ vertexShader: SKY_VERT, fragmentShader: SKY_FRAG, side: THREE.BackSide, depthWrite: false, depthTest: true, fog: false,
-    uniforms: { sunDir: { value: SUN_DIR }, time: { value: 0 }, disc: { value: disc } } });
+    uniforms: Object.assign({}, SKY_U, { disc: { value: disc } }) });
 }
 function buildSky() {
   skyMat = makeSkyMat(26);
@@ -1317,11 +1366,10 @@ function buildSky() {
   // image-based lighting: bake the same sky (sun disc tamed) into a pre-filtered env map -> real reflections on paint, glass, wet-look road
   if (renderer) {
     try {
-      const es = new THREE.Scene(); es.add(new THREE.Mesh(new THREE.SphereGeometry(1, 32, 16), makeSkyMat(3)));
-      const pm = new THREE.PMREMGenerator(renderer);
-      scene.environment = pm.fromScene(es, 0.02).texture;
-      pm.dispose();
-    } catch (e) { /* no float targets: fall back to plain lights */ }
+      envScene = new THREE.Scene(); envScene.add(new THREE.Mesh(new THREE.SphereGeometry(1, 32, 16), makeSkyMat(3)));
+      pmrem = new THREE.PMREMGenerator(renderer);
+      bakeEnv();
+    } catch (e) { pmrem = null; /* no float targets: fall back to plain lights */ }
   }
   // distant ridgelines (static: the world never turns, it only slides sideways)
   const ridge = (R, base, hMin, hMax, col, seedK, freq) => {
@@ -1336,7 +1384,8 @@ function buildSky() {
     }
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(colr, 3)); g.setIndex(idx);
-    const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, fog: false, side: THREE.DoubleSide }));
+    const rm = new THREE.MeshBasicMaterial({ vertexColors: true, fog: false, side: THREE.DoubleSide }); ridgeMats.push(rm);
+    const m = new THREE.Mesh(g, rm);
     m.frustumCulled = false; m.renderOrder = -9; scene.add(m);
   };
   ridge(330, -6, 16, 44, new THREE.Color(0.30, 0.21, 0.30), 1.7, 0.21);
@@ -1348,7 +1397,7 @@ function buildSky() {
     for (let j = 2; j < h - 1; j += 4) for (let i = 2; i < w - 1; i += 4) if (Math.random() < 0.3) { x.fillStyle = Math.random() < 0.75 ? '#ffd9a0' : '#bfe6ff'; x.fillRect(i, j, 2, 2); }
   });
   winT.magFilter = THREE.NearestFilter;
-  const cityMat = new THREE.MeshBasicMaterial({ map: winT, fog: false, color: 0xb08a96 });
+  const cityMat = cityMatRef = new THREE.MeshBasicMaterial({ map: winT, fog: false, color: 0xb08a96 });
   for (let i = 0; i < 16; i++) {
     const w = 2.5 + srand() * 4, hh = 4 + srand() * srand() * 20;
     const m = new THREE.Mesh(new THREE.BoxGeometry(w, hh, 3), cityMat);
@@ -1359,7 +1408,7 @@ function buildSky() {
 // ---------------- track curvature: lateral bend relative to the player's tangent ----------------
 const _ss = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 function centerX(p) {
-  const env = _ss(60, 260, p) * (1 - _ss(TRACK_LEN - 260, TRACK_LEN - 40, p));
+  const env = _ss(60, 260, p) * (mode === 'endless' ? 1 : 1 - _ss(TRACK_LEN - 260, TRACK_LEN - 40, p));   // endless: the road never straightens out
   return env * (11 * Math.sin(p * 0.0224) + 4 * Math.sin(p * 0.0415 + 1.3));
 }
 let bendP = 0, bendX = 0, bendS = 0;
@@ -1421,10 +1470,10 @@ const lampHeadMat = new THREE.MeshStandardMaterial({ color: 0xfff0cc, emissive: 
 function buildLamps() {
   // tall highway masts both sides, arm reaching over the carriageway
   const poleMat = new THREE.MeshStandardMaterial({ color: 0x70757c, metalness: 0.75, roughness: 0.45 });
-  const glowMat = new THREE.SpriteMaterial({ map: radialGlow(0xffd9a0, 0.9), transparent: true, opacity: 0.5, depthWrite: false, blending: THREE.AdditiveBlending });
+  const glowMat = lampGlowMat = new THREE.SpriteMaterial({ map: radialGlow(0xffd9a0, 0.9), transparent: true, opacity: 0.5, depthWrite: false, blending: THREE.AdditiveBlending });
   const n = 12, span = n * 24, H = 7.2;
   const poolGeo = new THREE.PlaneGeometry(9, 13); poolGeo.rotateX(-Math.PI / 2);
-  const poolMat = new THREE.MeshBasicMaterial({ map: radialGlow(0xffc880, 0.5), transparent: true, opacity: 0.2, depthWrite: false, blending: THREE.AdditiveBlending,
+  const poolMat = lampPoolMat = new THREE.MeshBasicMaterial({ map: radialGlow(0xffc880, 0.5), transparent: true, opacity: 0.2, depthWrite: false, blending: THREE.AdditiveBlending,
     polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 });
   const poleGeo = new THREE.CylinderGeometry(0.06, 0.11, H, 8), armGeo = new THREE.CylinderGeometry(0.045, 0.055, 2.3, 6).rotateZ(Math.PI / 2), headGeo = new THREE.BoxGeometry(0.72, 0.09, 0.28);
   for (let i = 0; i < n; i++) {
@@ -1466,7 +1515,7 @@ function buildGuardrail() {
 function buildBillboards() {
   const n = 6, span = n * 150;
   const postMat = new THREE.MeshStandardMaterial({ color: 0x3a3d44, roughness: 0.6, metalness: 0.5 });
-  const boardMat = new THREE.MeshStandardMaterial({ map: billTex, emissive: 0xffffff, emissiveMap: billTex, emissiveIntensity: 0.9, roughness: 0.5 });
+  const boardMat = billMat = new THREE.MeshStandardMaterial({ map: billTex, emissive: 0xffffff, emissiveMap: billTex, emissiveIntensity: 0.9, roughness: 0.5 });
   for (let i = 0; i < n; i++) {
     const side = i % 2 ? 1 : -1;
     const g = new THREE.Group();
@@ -1542,9 +1591,9 @@ function buildOncoming() {
   }
 }
 let lampList = [], billList = [], signList = [];
-let sunLight = null, headLight = null, lampLights = [];
+let sunLight = null, headLight = null, lampLights = [], hemiLight = null;
 function buildLights() {
-  scene.add(new THREE.HemisphereLight(0x7f8fd0, 0x2a211c, 0.42));
+  hemiLight = new THREE.HemisphereLight(0x7f8fd0, 0x2a211c, 0.42); scene.add(hemiLight);
   sunLight = new THREE.DirectionalLight(0xffb070, 3.4);
   const L = new THREE.Vector3(0.365, 0.235, -0.9).normalize();           // a touch higher than the visible sun so shadows aren't endless
   sunLight.target.position.set(0, 0, -34); scene.add(sunLight.target);
@@ -1561,6 +1610,168 @@ function buildLights() {
   scene.add(headLight); scene.add(headLight.target);
   // two roaming point lights that sit on whichever street lamps are nearest: paint and road catch each lamp as it goes by
   for (let i = 0; i < 2; i++) { const p = new THREE.PointLight(0xffd0a0, 60, 26, 1.8); scene.add(p); lampLights.push(p); }
+}
+
+// ---------------- time of day (2026-11-27): one set of numbers drives sky, sun, fog, lamps and exposure ----------------
+// sunset = the original look (values copied from the old hard-wired scene). day = Sunday Drive. Endless rolls day -> dusk -> night -> dawn by distance.
+let ridgeMats = [], cityMatRef = null, lampGlowMat = null, lampPoolMat = null, billMat = null, envScene = null, pmrem = null;
+const C3 = hex => { const c = new THREE.Color(hex); return [c.r, c.g, c.b]; };
+const nrm = v => { const l = Math.hypot(v[0], v[1], v[2]); return [v[0] / l, v[1] / l, v[2] / l]; };
+const MOODS = {
+  sunset: {
+    sunDir: nrm([0.372, 0.105, -0.922]), lightDir: nrm([0.365, 0.235, -0.9]),
+    zenC: [0.018, 0.04, 0.17], midC: [0.15, 0.125, 0.33], horA: [0.34, 0.22, 0.34], horS: [1.0, 0.44, 0.17],
+    glowC: [1.0, 0.46, 0.16], haloC: [1.0, 0.72, 0.42], sunC: [1.0, 0.86, 0.62], sunK: 1,
+    cloudD: [0.085, 0.07, 0.15], cloudL: [1.5, 0.55, 0.22], cloudE: [0.5, 0.22, 0.3], groundC: [0.10, 0.085, 0.09],
+    starK: 0.7, starH: 0.35, cover: 0.44,
+    haze: [0.40, 0.25, 0.28], fogN: 48, fogF: 156,
+    sunCol: C3(0xffb070), sunI: 3.4, hemiS: C3(0x7f8fd0), hemiG: C3(0x2a211c), hemiI: 0.42,
+    lampE: 7, lampGlow: 0.5, lampPool: 0.2, lampPt: 60, headI: 120, billE: 0.9, exposure: 1.0,
+    ridge: [1, 1, 1], city: C3(0xb08a96), streak: [1.5, 1.0, 0.68], nightK: 0,
+  },
+  day: {
+    sunDir: nrm([0.30, 0.52, -0.80]), lightDir: nrm([0.34, 0.66, -0.67]),
+    zenC: [0.045, 0.15, 0.52], midC: [0.20, 0.38, 0.78], horA: [0.52, 0.64, 0.82], horS: [0.82, 0.80, 0.76],
+    glowC: [0.55, 0.45, 0.30], haloC: [0.9, 0.82, 0.66], sunC: [1.0, 0.96, 0.88], sunK: 1,
+    cloudD: [0.50, 0.56, 0.70], cloudL: [1.45, 1.40, 1.32], cloudE: [0.30, 0.34, 0.42], groundC: [0.22, 0.21, 0.19],
+    starK: 0, starH: 0.35, cover: 0.5,
+    haze: [0.54, 0.64, 0.80], fogN: 62, fogF: 210,
+    sunCol: C3(0xfff1de), sunI: 3.6, hemiS: C3(0xa9c6ff), hemiG: C3(0x4a4436), hemiI: 0.95,
+    lampE: 0.6, lampGlow: 0, lampPool: 0, lampPt: 0, headI: 18, billE: 0.4, exposure: 0.92,
+    ridge: [1.35, 1.85, 2.3], city: [0.62, 0.64, 0.72], streak: [1.0, 0.97, 0.9], nightK: 0,
+  },
+  night: {
+    sunDir: nrm([-0.42, 0.20, -0.88]), lightDir: nrm([-0.40, 0.42, -0.82]),
+    zenC: [0.002, 0.004, 0.014], midC: [0.008, 0.012, 0.035], horA: [0.03, 0.028, 0.05], horS: [0.06, 0.06, 0.09],
+    glowC: [0.06, 0.07, 0.11], haloC: [0.18, 0.2, 0.27], sunC: [0.9, 0.95, 1.0], sunK: 0.12,
+    cloudD: [0.012, 0.012, 0.02], cloudL: [0.12, 0.13, 0.18], cloudE: [0.02, 0.02, 0.035], groundC: [0.01, 0.01, 0.012],
+    starK: 1.2, starH: 0.1, cover: 0.5,
+    haze: [0.022, 0.024, 0.04], fogN: 30, fogF: 140,
+    sunCol: C3(0x8aa4ff), sunI: 0.38, hemiS: C3(0x2a3660), hemiG: C3(0x080706), hemiI: 0.24,
+    lampE: 9, lampGlow: 0.8, lampPool: 0.4, lampPt: 115, headI: 270, billE: 1.15, exposure: 1.25,
+    ridge: [0.16, 0.19, 0.32], city: [1.9, 1.6, 1.7], streak: [1.8, 1.75, 1.6], nightK: 1,
+  },
+};
+const cloneMood = m => { const o = {}; for (const k in m) o[k] = Array.isArray(m[k]) ? m[k].slice() : m[k]; return o; };
+function mixMood(out, a, b, t) {
+  for (const k in a) {
+    if (Array.isArray(a[k])) for (let i = 0; i < a[k].length; i++) out[k][i] = a[k][i] + (b[k][i] - a[k][i]) * t;
+    else out[k] = a[k] + (b[k] - a[k]) * t;
+  }
+  return out;
+}
+// endless: where in the day are we? one full cycle every CYCLE units (first dusk ~2.4 km in, night by ~3.2 km)
+const CYCLE = 6400;
+const CYCLE_KEYS = [[0, 'day'], [0.28, 'day'], [0.42, 'sunset'], [0.56, 'night'], [0.86, 'night'], [0.94, 'sunset'], [1, 'day']];
+const _moodTmp = cloneMood(MOODS.sunset);
+function cycleMood(dist) {
+  const t = ((dist % CYCLE) + CYCLE) % CYCLE / CYCLE;
+  for (let i = 0; i < CYCLE_KEYS.length - 1; i++) {
+    const [ta, a] = CYCLE_KEYS[i], [tb, b] = CYCLE_KEYS[i + 1];
+    if (t <= tb) { const u = (t - ta) / (tb - ta); return mixMood(_moodTmp, MOODS[a], MOODS[b], u * u * (3 - 2 * u)); }
+  }
+  return MOODS.day;
+}
+let moodNow = cloneMood(MOODS.sunset), moodBaked = cloneMood(MOODS.sunset), menuMood = 'sunset', moodSnap = true, _bakeT = 0;
+function moodTarget() {
+  if (phase === 'menu') return MOODS[menuMood];
+  const m = MC().mood;
+  return m === 'cycle' ? cycleMood(playerDist) : MOODS[m];
+}
+function bakeEnv() {
+  if (!pmrem || !envScene) return;
+  const old = scene.environment;
+  scene.environment = pmrem.fromScene(envScene, 0.02).texture;
+  if (old) old.dispose();
+  moodBaked = cloneMood(moodNow);
+}
+const _sv = new THREE.Vector3();
+function applyMood(M) {
+  SUN_DIR.set(M.sunDir[0], M.sunDir[1], M.sunDir[2]);
+  for (const k of ['zenC', 'midC', 'horA', 'horS', 'glowC', 'haloC', 'sunC', 'cloudD', 'cloudL', 'cloudE', 'groundC']) SKY_U[k].value.fromArray(M[k]);
+  SKY_U.sunK.value = M.sunK; SKY_U.starK.value = M.starK; SKY_U.starH.value = M.starH; SKY_U.cover.value = M.cover;
+  if (scene.fog) { scene.fog.color.fromArray(M.haze); scene.fog.near = M.fogN; scene.fog.far = M.fogF; }
+  if (scene.background && scene.background.isColor) scene.background.fromArray(M.haze);
+  if (sunLight) {
+    sunLight.color.fromArray(M.sunCol); sunLight.intensity = M.sunI;
+    _sv.fromArray(M.lightDir); sunLight.position.copy(sunLight.target.position).addScaledVector(_sv, 80);
+  }
+  if (hemiLight) { hemiLight.color.fromArray(M.hemiS); hemiLight.groundColor.fromArray(M.hemiG); hemiLight.intensity = M.hemiI; }
+  lampHeadMat.emissiveIntensity = M.lampE;
+  if (lampGlowMat) lampGlowMat.opacity = M.lampGlow;
+  if (lampPoolMat) lampPoolMat.opacity = M.lampPool;
+  for (const l of lampLights) { l.intensity = M.lampPt; l.visible = M.lampPt > 0.5; }
+  if (headLight) headLight.intensity = M.headI;
+  if (billMat) billMat.emissiveIntensity = M.billE;
+  for (const r of ridgeMats) r.color.fromArray(M.ridge);
+  if (cityMatRef) cityMatRef.color.fromArray(M.city);
+  if (Post.matFinal) Post.matFinal.uniforms.exposure.value = M.exposure;
+  if (renderer) renderer.toneMappingExposure = M.exposure;
+}
+function updateMood(dt) {
+  const T = moodTarget();
+  if (moodSnap) { moodNow = cloneMood(T); moodSnap = false; applyMood(moodNow); bakeEnv(); _bakeT = 0; return; }
+  mixMood(moodNow, moodNow, T, 1 - Math.exp(-dt * (phase === 'menu' ? 2.2 : 1.2)));
+  applyMood(moodNow);
+  // re-bake reflections only once the sky has actually moved (cheap, but not free every frame)
+  _bakeT += dt;
+  if (_bakeT > 1.2) {
+    let d = 0; for (const k of ['zenC', 'midC', 'horS', 'haze']) for (let i = 0; i < 3; i++) d += Math.abs(moodNow[k][i] - moodBaked[k][i]);
+    if (d > 0.05) { bakeEnv(); _bakeT = 0; }
+  }
+}
+
+// ---------------- speed streaks: road grit + bugs + air that stretch with speed (ride-particles technique) ----------------
+// A fixed pool seeded once. Each lives in track coordinates in a bounded box ahead of the car, wraps to a fresh
+// lane/height at the far (hidden) end, and fades at both ends of the box so nothing pops. Length follows speed and the tow.
+const STREAK_MAX = 240, STREAK_BY_TIER = { high: 240, med: 150, low: 90 };
+let streakSys = null;
+const streaks = [];
+function seedStreak(st, ahead) {
+  st.p = playerDist + (ahead ? rand(70, 100) : rand(8, 100));
+  st.x = rand(-8.5, 8.5);
+  st.y = Math.random() < 0.62 ? rand(0.04, 0.55) : rand(0.55, 3.3);   // mostly road grit, some airborne
+  st.w = rand(0.35, 1);
+}
+function buildStreaks() {
+  // thin ribbons (2 tris each), flat to the road: 1px lines get eaten by the radial blur pass, these survive it
+  const g = new THREE.BufferGeometry(), idx = [];
+  for (let i = 0; i < STREAK_MAX; i++) { const o = i * 4; idx.push(o, o + 1, o + 2, o + 2, o + 1, o + 3); }
+  g.setIndex(idx);
+  g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(STREAK_MAX * 12), 3).setUsage(THREE.DynamicDrawUsage));
+  g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(STREAK_MAX * 12), 3).setUsage(THREE.DynamicDrawUsage));
+  streakSys = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false, side: THREE.DoubleSide, toneMapped: false }));
+  streakSys.frustumCulled = false; streakSys.renderOrder = 4; scene.add(streakSys);
+  for (let i = 0; i < STREAK_MAX; i++) { const st = {}; seedStreak(st, false); streaks.push(st); }
+}
+function updateStreaks() {
+  if (!streakSys) return;
+  const n = STREAK_BY_TIER[GFX.tier] || 120;
+  streakSys.geometry.setDrawRange(0, n * 6);
+  const P = streakSys.geometry.attributes.position.array, K = streakSys.geometry.attributes.color.array;
+  const sk = _ss(15, 30, speed) * (phase === 'play' || phase === 'finish' ? 1 : 0);
+  streakSys.visible = sk > 0.001;
+  if (!streakSys.visible) return;
+  const len = sk * (0.5 + Math.max(0, speed - 18) * 0.075) + draftPull * 2.0 + (boostTimer > 0 ? 1.8 : 0);
+  const col = moodNow.streak, nk = moodNow.nightK;
+  for (let i = 0; i < n; i++) {
+    const st = streaks[i], o = i * 12;
+    let z = playerDist - st.p;
+    if (z > 5 || st.p > playerDist + 105) { seedStreak(st, true); z = playerDist - st.p; }
+    const depth = camD - z;                                       // distance in front of the camera
+    let b = sk * st.w * _ss(0.8, 3.0, depth) * (1 - _ss(50, 90, depth));
+    if (nk > 0) {                                                 // at night you only see what the headlights catch
+      const lit = 0.08 + 0.92 * (1 - _ss(8, 44, depth)) * (1 - _ss(1.3, 5.5, Math.abs(st.x - carX)));
+      b *= 1 + (lit - 1) * nk;
+    }
+    const x = st.x + bendOff(st.p), y = st.y, w = (st.y > 0.55 ? 0.03 : 0.022) * (1 + depth * 0.012), zt = z - len * (0.6 + st.w * 0.6);
+    P[o] = x - w; P[o + 1] = y; P[o + 2] = z;          P[o + 3] = x + w; P[o + 4] = y; P[o + 5] = z;
+    P[o + 6] = x - w * 0.2; P[o + 7] = y; P[o + 8] = zt; P[o + 9] = x + w * 0.2; P[o + 10] = y; P[o + 11] = zt;
+    const r = col[0] * b, gg = col[1] * b, bb = col[2] * b;
+    K[o] = K[o + 3] = r; K[o + 1] = K[o + 4] = gg; K[o + 2] = K[o + 5] = bb;
+    K[o + 6] = K[o + 9] = r * 0.05; K[o + 7] = K[o + 10] = gg * 0.05; K[o + 8] = K[o + 11] = bb * 0.05;
+  }
+  streakSys.geometry.attributes.position.needsUpdate = streakSys.geometry.attributes.color.needsUpdate = true;
 }
 
 // ---------------- post-processing: HDR target -> bloom -> radial motion blur + grade + grain ----------------
@@ -1716,10 +1927,12 @@ function blockedLanes(p, lane) {
 }
 function genTrack() {
   dirt = []; walls = []; peds = [];
+  if (isEndless()) { genUpTo = 150; streamHazards(0); return; }   // endless: hazards stream in chunks ahead of the car
+  const C = MC();
   const used = new Set(); // "lane:pBucket" to keep spacing
   const near = p => Math.floor(p / 40);
   // dirt patches (single lane)
-  for (let i = 0; i < 16; i++) {
+  for (let i = 0; i < C.dirt; i++) {
     let lane, p, tries = 0;
     do { lane = randi(0, 3); p = rand(160, TRACK_LEN - 80); tries++; }
     while (tries < 40 && (near(p) === 0 || used.has('d' + lane + ':' + near(p)) || dirt.filter(d => d.lane !== lane && p < d.pEnd + 20 && p + 46 > d.pStart - 20).length >= 2));
@@ -1729,7 +1942,7 @@ function genTrack() {
     used.add('w' + lane + ':' + near(p));
   }
   // walls (single lane, barrier)
-  for (let i = 0; i < 22; i++) {
+  for (let i = 0; i < C.walls; i++) {
     let lane, p, tries = 0;
     do { lane = randi(0, 3); p = rand(150, TRACK_LEN - 60); tries++; }
     while (tries < 60 && (near(p) === 0 || used.has('w' + lane + ':' + near(p)) || blockedLanes(p, lane) >= 2));
@@ -1738,51 +1951,121 @@ function genTrack() {
     used.add('d' + lane + ':' + near(p));
   }
   // pedestrians (seldom, crossing)
-  for (let i = 0; i < 6; i++) {
-    const p = 300 + i * ((TRACK_LEN - 500) / 6) + rand(0, 120);
+  for (let i = 0; i < C.peds; i++) {
+    const p = 300 + i * ((TRACK_LEN - 500) / C.peds) + rand(0, 120);
     const dir = Math.random() < 0.5 ? 1 : -1;
-    peds.push({ p, x: dir > 0 ? -(ROAD_HALF + 1) : (ROAD_HALF + 1), dir, speed: rand(1.4, 2.2), alive: true, mesh: null, t: 0, kt: -1, kx: 0 });
+    // (normal keeps its original behaviour: the crew set off at the green light. sunday/endless: they wait at the shoulder.)
+    peds.push({ p, x: dir > 0 ? -(ROAD_HALF + 1) : (ROAD_HALF + 1), dir, speed: rand(1.4, 2.2), alive: true, mesh: null, t: 0, kt: -1, kx: 0, wait: mode !== 'normal' });
   }
   // speed pads: spread along the track, kept clear of dirt and barriers
-  for (let i = 0; i < BOOST_N; i++) {
+  for (let i = 0; i < C.boosts; i++) {
     let lane, p, tries = 0, bad;
     do {
-      lane = randi(0, 3); p = 220 + i * ((TRACK_LEN - 420) / BOOST_N) + rand(0, 140); tries++;
+      lane = randi(0, 3); p = 220 + i * ((TRACK_LEN - 420) / C.boosts) + rand(0, 140); tries++;
       bad = dirt.some(d => d.lane === lane && p > d.pStart - 6 && p < d.pEnd + 6) || walls.some(w => w.lane === lane && Math.abs(w.p - p) < 10);
     } while (bad && tries < 30);
     const b = buildBoost(); scene.add(b.group);
     boosts.push({ lane, p, mesh: b.group, gem: b.gem, glow: b.glow, taken: false });
   }
-  // build meshes
-  for (const d of dirt) {
+  buildHazardMeshes();
+}
+// give every hazard that doesn't have one yet its mesh (fixed tracks: all at once; endless: each new chunk)
+const PED_COLS = [0x3a6ea5, 0xa5443a, 0x4a8a5a, 0x8a6aa0, 0xc0a040];
+let _pedN = 0;
+function buildHazardMeshes() {
+  for (const d of dirt) if (!d.mesh) {
     const n = Math.max(2, Math.ceil((d.pEnd - d.pStart) / 3) + 1), x = LANE_X[d.lane];
     d.rib = makeRibbon(n, [x - 0.95, 0.012], [x + 0.95, 0.012], dirtMat, 1, 0.3, (j) => d.pStart + (d.pEnd - d.pStart) * j / (n - 1), [0, 1, 0]);
     d.mesh = d.rib.mesh;
   }
-  for (const w of walls) {
+  for (const w of walls) if (!w.mesh) {
     const m = buildWall();
     m.position.set(LANE_X[w.lane], 0, 0);
     scene.add(m); w.mesh = m;
   }
-  const pedColors = [0x3a6ea5, 0xa5443a, 0x4a8a5a, 0x8a6aa0, 0xc0a040];
-  for (let i = 0; i < peds.length; i++) {
-    const b = buildPed(pedColors[i % pedColors.length]);
-    b.group.rotation.y = peds[i].dir > 0 ? Math.PI / 2 : -Math.PI / 2;   // facing the way they walk
-    scene.add(b.group); peds[i].mesh = b.group; peds[i].rig = b;
+  for (const pd of peds) if (!pd.mesh) {
+    const b = buildPed(PED_COLS[_pedN++ % PED_COLS.length]);
+    b.group.rotation.y = pd.dir > 0 ? Math.PI / 2 : -Math.PI / 2;   // facing the way they walk
+    scene.add(b.group); pd.mesh = b.group; pd.rig = b;
+  }
+}
+// ---- endless: generate hazards chunk by chunk ahead of the car, drop them once they're behind ----
+// Same placement rules as the fixed track (spacing buckets, never more than two lanes pinched), density scaled by stage.
+const CHUNK = 100, GEN_AHEAD = 280;
+function stochN(x) { const n = Math.floor(x); return n + (Math.random() < x - n ? 1 : 0); }
+function genChunk(p0, p1) {
+  const k = endlessDensity(stage), L = p1 - p0, near = p => Math.floor(p / 40);
+  const taken = (lane, p) => walls.some(w => w.lane === lane && near(w.p) === near(p)) || dirt.some(d => d.lane === lane && near(d.pStart) === near(p));
+  // normal-mode densities per unit: dirt 16 / 22 walls / 6 peds / 7 boosts over ~2240 units
+  for (let i = stochN(16 / 2240 * L * k); i > 0; i--) {
+    let lane, p, tries = 0;
+    do { lane = randi(0, 3); p = rand(p0, p1); tries++; }
+    while (tries < 40 && (taken(lane, p) || dirt.filter(d => d.lane !== lane && p < d.pEnd + 20 && p + 46 > d.pStart - 20).length >= 2));
+    if (tries >= 40) continue;
+    dirt.push({ lane, pStart: p, pEnd: p + rand(24, 46), mesh: null });
+  }
+  for (let i = stochN(22 / 2240 * L * k); i > 0; i--) {
+    let lane, p, tries = 0;
+    do { lane = randi(0, 3); p = rand(p0, p1); tries++; }
+    while (tries < 60 && (taken(lane, p) || blockedLanes(p, lane) >= 2));
+    if (tries >= 60) continue;
+    walls.push({ lane, p, mesh: null, cd: 0, kt: -1, kx: 0 });
+  }
+  for (let i = stochN(6 / 2240 * L * Math.min(1.3, k)); i > 0; i--) {
+    const dir = Math.random() < 0.5 ? 1 : -1;
+    peds.push({ p: rand(p0, p1), x: dir > 0 ? -(ROAD_HALF + 1) : (ROAD_HALF + 1), dir, speed: rand(1.4, 2.2), alive: true, mesh: null, t: 0, kt: -1, kx: 0, wait: true });
+  }
+  for (let i = stochN(8 / 2240 * L); i > 0; i--) {     // boost pads stay steady as it gets harder: they're your lifeline
+    let lane, p, tries = 0, bad;
+    do {
+      lane = randi(0, 3); p = rand(p0, p1); tries++;
+      bad = dirt.some(d => d.lane === lane && p > d.pStart - 6 && p < d.pEnd + 6) || walls.some(w => w.lane === lane && Math.abs(w.p - p) < 10);
+    } while (bad && tries < 30);
+    const b = buildBoost(); scene.add(b.group);
+    boosts.push({ lane, p, mesh: b.group, gem: b.gem, glow: b.glow, taken: false });
+  }
+}
+function streamHazards(dist) {
+  let made = false;
+  while (genUpTo < dist + GEN_AHEAD) { genChunk(genUpTo, genUpTo + CHUNK); genUpTo += CHUNK; made = true; }
+  if (made) buildHazardMeshes();
+  // cull what's well behind the car (knocked barricades / flying peds have had their moment by then)
+  const behind = dist - 40;
+  if (dirt.some(d => d.pEnd < behind) || walls.some(w => w.p < behind) || peds.some(p => p.p < behind) || boosts.some(b => b.p < behind)) {
+    dirt = dirt.filter(d => { if (d.pEnd >= behind) return true; if (d.mesh) { scene.remove(d.mesh); d.mesh.geometry.dispose(); } return false; });
+    walls = walls.filter(w => { if (w.p >= behind) return true; if (w.mesh) scene.remove(w.mesh); return false; });
+    peds = peds.filter(p => { if (p.p >= behind) return true; if (p.mesh) { scene.remove(p.mesh); p.mesh.traverse(o => { if (o.geometry) o.geometry.dispose(); }); } return false; });
+    boosts = boosts.filter(b => { if (b.p >= behind) return true; if (b.mesh) scene.remove(b.mesh); return false; });
   }
 }
 const trafficPool = [];      // cars are built once and re-dealt every race
+function poolCar(i) {
+  const car = trafficPool[i] || (trafficPool[i] = buildCar(pick(TRAFFIC_COLS), { type: TRAFFIC_TYPES[i % TRAFFIC_TYPES.length] }));
+  car.paint.color.setHex(pick(TRAFFIC_COLS));
+  car.group.rotation.set(0, 0, 0);
+  scene.add(car.group);
+  return car;
+}
 function buildTraffic() {
   traffic = [];
-  for (let i = 0; i < TRAFFIC_N; i++) {
+  const C = MC();
+  for (let i = 0; i < C.traffic; i++) {
     const lane = i % LANES;
     const p = 40 + i * rand(18, 34) + rand(0, 12);
-    const car = trafficPool[i] || (trafficPool[i] = buildCar(pick(TRAFFIC_COLS), { type: TRAFFIC_TYPES[i % TRAFFIC_TYPES.length] }));
-    car.paint.color.setHex(pick(TRAFFIC_COLS));
-    car.group.position.set(LANE_X[lane], 0, 0); car.group.rotation.set(0, 0, 0);
-    scene.add(car.group);
-    traffic.push({ lane, p, speed: rand(15, 21), mesh: car.group, car, wheels: car.wheels, cd: 0, brake: 0, wob: 0, prevGap: 1 });
+    const car = poolCar(i);
+    car.group.position.set(LANE_X[lane], 0, 0);
+    traffic.push({ lane, p, speed: rand(C.tSpeed[0], C.tSpeed[1]), mesh: car.group, car, wheels: car.wheels, cd: 0, brake: 0, wob: 0, prevGap: 1 });
   }
+}
+// endless: one more car joins, well up the road in the lane with the most room
+function addTrafficCar() {
+  if (traffic.length >= TRAFFIC_MAX) return;
+  const C = MC(), car = poolCar(traffic.length);
+  const p = playerDist + rand(110, 140);
+  let bestL = 0, bestS = -1;
+  for (let l = 0; l < LANES; l++) { let nr = 1e9; for (const o of traffic) if (o.lane === l) nr = Math.min(nr, Math.abs(o.p - p)); if (nr > bestS) { bestS = nr; bestL = l; } }
+  car.group.position.set(LANE_X[bestL], 0, 0);
+  traffic.push({ lane: bestL, p, speed: rand(C.tSpeed[0], C.tSpeed[1]), mesh: car.group, car, wheels: car.wheels, cd: 0.4, brake: 0, wob: 0, prevGap: 1 });
 }
 
 // ---------------- particles: soft smoke / dust puffs (one Points draw) + spark streaks (one LineSegments draw) ----------------
@@ -1919,10 +2202,28 @@ function hitPed(p) {
 }
 
 // ---------------- HUD / banner ----------------
+// per-mode HUD labels / titles (called on race start and mode change)
+function applyModeHud() {
+  const e = isEndless();
+  $('timeLbl').textContent = e ? 'CLOCK' : 'TIME';
+  $('bestLbl').textContent = e ? 'DIST' : 'BEST';
+  $('hudTopTitle').textContent = e ? 'LONGEST 10' : (mode === 'sunday' ? 'SUNDAY TOP 10' : 'FASTEST 10');
+  $('topListTitle').textContent = e ? 'LONGEST RUNS' : 'FASTEST TIMES';
+  $('finishTitle').textContent = e ? '⏱ TIME UP' : '🏁 FINISH';
+  $('finalLbl').textContent = e ? 'You drove' : 'Your time';
+  elSave.textContent = e ? 'Save Run' : 'Save Time';
+  elShare.textContent = e ? 'Share Run' : 'Share Time';
+  elPlayAgain.textContent = e ? 'Drive Again' : 'Race Again';
+  if (!e) elBest.textContent = bests[mode] !== null ? (bests[mode] / 1000).toFixed(2) : '--';
+  renderTopList(elHudTop, loadScores().slice(0, 10));
+}
 function updateHud() {
-  elTime.textContent = fmtClock(elapsed * 1000);
+  const e = isEndless();
+  elTime.textContent = e ? clockLeft.toFixed(1) : fmtClock(elapsed * 1000);
+  elTimeStat.classList.toggle('low', e && phase === 'play' && clockLeft < 6);
   elSpeed.textContent = Math.round(speed * 3.2);  // ~km/h feel
-  elDistFill.style.width = Math.min(100, (playerDist / TRACK_LEN) * 100) + '%';
+  elDistFill.style.width = (e ? clamp(1 - (nextCp - playerDist) / CP_LEN, 0, 1) * 100 : Math.min(100, (playerDist / TRACK_LEN) * 100)) + '%';
+  if (e) elBest.textContent = fmtDist(phase === 'finish' ? finishDist : runMetres());
   // the SLIPSTREAM tag and the screen glow both ride the tow strength, so you can see it swell
   const dp = (phase === 'play') ? draftPull : 0;
   elDraftTag.classList.toggle('on', dp > 0.12);
@@ -1930,7 +2231,7 @@ function updateHud() {
   elFx.classList.toggle('boost', boostTimer > 0);
   elFx.style.boxShadow = (boostTimer > 0 || dp <= 0.05) ? ''
     : 'inset 0 0 ' + Math.round(46 + 94 * dp) + 'px ' + Math.round(3 + 10 * dp) + 'px rgba(53,230,255,' + (0.06 + 0.3 * dp).toFixed(3) + ')';
-  if (bestTime !== null) elBest.textContent = (bestTime / 1000).toFixed(2);
+  if (!e && bests[mode] !== null) elBest.textContent = (bests[mode] / 1000).toFixed(2);
   elGear.textContent = phase === 'play' || phase === 'finish' ? drive.gear : 'N';
   elRevFill.style.width = Math.min(100, drive.rpm / 72) + '%';
 }
@@ -1952,6 +2253,10 @@ function onKey(e) {
   if (ae && ae.tagName === 'BUTTON') ae.blur();
   if (!elScores.classList.contains('hidden')) {
     if (e.code === 'Escape' || e.code === 'Enter' || e.code === 'Space') { e.preventDefault(); backToMenu(); }
+    else if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
+      const ks = Object.keys(MODES), i = ks.indexOf(scoresMode);
+      showScores(ks[(i + (e.code === 'ArrowRight' ? 1 : ks.length - 1)) % ks.length]);
+    }
     return;
   }
   if (phase === 'menu' && !elMenu.classList.contains('hidden')) {
@@ -2004,6 +2309,7 @@ function startRace() {
   playerDist = 0; speed = 0; carX = 0; prevCarX = 0; roll = 0; rollTarget = 0;
   elapsed = 0; drafting = false; draftPull = 0; onDirt = false; recoverTimer = 0; boostTimer = 0; collisionCooldown = 0; pedCooldown = 0; shake = 0;
   wallHit = {};
+  clockLeft = CLOCK_START; stage = 1; nextCp = CP_LEN; lastTick = 0; finishDist = 0; finishTime = 0;
   carVX = 0; prevVX = 0; latAcc = 0; steerTargetX = null; steerVis = 0; yawVis = 0; yawVel = 0; rollV = 0; pitch = 0; pitchV = 0; heave = 0; heaveV = 0;
   prevSpeed = 0; longAcc = 0; camX = 0; camKick = 0; lastTile = 0; flame = 0;
   drive.gear = 1; drive.rpm = 900; drive.load = 0; drive.spool = 0; drive.shiftT = 0; drive.cut = 0; drive.blip = 0; drive.prevWant = 0;
@@ -2016,6 +2322,8 @@ function startRace() {
   playerCar.group.position.set(0, 0, 0);
   playerCar.group.rotation.set(0, 0, 0);
   playerCar.chassis.rotation.set(0, 0, 0); playerCar.chassis.position.y = 0;
+  applyModeHud();
+  moodSnap = true;
   sfx.startEngine();
   // countdown
   phase = 'countdown';
@@ -2034,6 +2342,19 @@ function clearWorld() {
   clearParticles();
   dirt = []; walls = []; peds = []; traffic = []; boosts = [];
 }
+// what this run is worth on its board: timed modes store POINTS_MAX - ms, endless stores metres
+const runPoints = () => MC().timed ? toPoints(finishTime) : finishDist;
+function passCheckpoint() {
+  const bonus = cpBonus(stage);
+  clockLeft += bonus;
+  stage++;
+  nextCp += CP_LEN;
+  while (traffic.length < endlessTraffic(stage)) addTrafficCar();
+  showBanner('CHECKPOINT', '+' + bonus.toFixed(1) + 's · STAGE ' + stage);
+  sfx.go(); buzz(25);
+  lastTick = 0;
+  track('checkpoint', { mode, stage, dist_m: runMetres() });
+}
 function finish() {
   if (phase !== 'play') return;
   phase = 'finish';
@@ -2041,22 +2362,30 @@ function finish() {
   speed = Math.max(speed, 8);
   sfx.finish();
   sfx.stopEngine(2.2);       // lift off and coast through the gate
-  showBanner('FINISH!', fmtClock(finishTime));
-  track('race_finish', { time_ms: Math.round(finishTime) });
-  track('game_over', { time_ms: Math.round(finishTime), final_score: toPoints(finishTime), no_share: true }); // arcade passport + analytics; Slipstream has its own share
-  // best time
-  if (bestTime === null || finishTime < bestTime) bestTime = finishTime;
-  elBest.textContent = (bestTime / 1000).toFixed(2);
+  if (isEndless()) {
+    finishDist = runMetres();
+    showBanner('TIME UP!', fmtDist(finishDist) + ' · stage ' + stage);
+    if (bests.endless === null || finishDist > bests.endless) bests.endless = finishDist;
+  } else {
+    showBanner('FINISH!', fmtClock(finishTime));
+    if (bests[mode] === null || finishTime < bests[mode]) bests[mode] = finishTime;
+  }
+  track('race_finish', { mode, time_ms: Math.round(finishTime), dist_m: runMetres() });
+  track('game_over', { mode, time_ms: Math.round(finishTime), final_score: runPoints(), no_share: true }); // arcade passport + analytics; Slipstream has its own share
+  updateHud();
   // show finish screen after a short delay (let the car roll through)
   setTimeout(showFinish, 1200);
 }
 function showFinish() {
+  if (phase !== 'finish') return;     // a new run started before the timer fired
   hideBanner();
-  elFinalTime.textContent = fmtClock(finishTime);
-  const top = loadScores();
-  const isRecord = finishTime > 0 && finishTime <= (top.length ? (POINTS_MAX - top[0].s) : Infinity);
+  const top = loadScores(), timed = MC().timed;
+  elFinalTime.textContent = timed ? fmtClock(finishTime) + 's' : fmtDist(finishDist);
+  const isRecord = timed ? finishTime > 0 && finishTime <= (top.length ? (POINTS_MAX - top[0].s) : Infinity)
+                         : finishDist > 0 && finishDist >= (top.length ? top[0].s : 0);
   elNewHigh.classList.toggle('hidden', !isRecord);
-  elFinalRank.textContent = 'best on this device: ' + (bestTime / 1000).toFixed(2) + 's';
+  elFinalRank.textContent = timed ? 'best on this device: ' + (bests[mode] / 1000).toFixed(2) + 's'
+                                  : 'reached stage ' + stage + ' · best on this device: ' + fmtDist(bests.endless);
   elInitials.value = dsdaInits();
   setSaveEnabled();
   elSavedMsg.textContent = '';
@@ -2070,7 +2399,7 @@ function showFinish() {
   const lbl = document.querySelector('label[for="initials"]');
   elInitials.style.display = elSave.style.display = member ? 'none' : '';
   if (lbl) lbl.style.display = member ? 'none' : '';
-  if (member) { if (finishTime > 0) { elSave.disabled = false; saveScore(); } }
+  if (member) { if (runPoints() > 0) { elSave.disabled = false; saveScore(); } }
   else elInitials.focus();
 }
 function memberHandle() { try { return (window.DSDA && DSDA.member && DSDA.member()) || ''; } catch (e) { return ''; } }
@@ -2114,23 +2443,32 @@ function backToMenu() {
 function setMenuSel(i) {
   menuSel = (i + menuButtons.length) % menuButtons.length;
   menuButtons.forEach((b, k) => b.classList.toggle('sel', k === menuSel));
+  const m = menuButtons[menuSel] && menuButtons[menuSel].dataset.mode;
+  if (m) menuMood = MODES[m].mood === 'cycle' ? 'day' : MODES[m].mood;   // the sky behind the menu previews the mode
+}
+function setMode(m) {
+  if (!MODES[m] || m === mode) return;
+  mode = m;
+  applyModeHud();
 }
 function activateMenu() {
   if (!menuButtons.length) return;
   sfx.ensure(); sfx.draft();
   const id = menuButtons[menuSel].id;
-  if (id === 'menuStart') startGameFromMenu();
+  if (menuButtons[menuSel].dataset.mode) { setMode(menuButtons[menuSel].dataset.mode); startGameFromMenu(); }
   else if (id === 'menuScores') showScores();
   else if (id === 'menuSite') window.location.href = 'https://ds-da.ca/games/';
 }
-async function fetchGlobalBoard() {
+async function fetchGlobalBoard(m) {
+  m = m || mode;
   try {
-    const r = await fetchTimeout(BOARD_API + '/leaderboard?game=' + GAME_ID, { cache: 'no-store' });
+    const r = await fetchTimeout(BOARD_API + '/leaderboard?game=' + MODES[m].board, { cache: 'no-store' });
     if (r.ok) {
       const j = await r.json();
       if (j && Array.isArray(j.top)) return { top: j.top, updated: j.updated || null };
     }
   } catch (e) { /* fall through to static */ }
+  if (m !== 'normal') return null;   // the static snapshot only covers the original board
   try {
     const r = await fetch('leaderboard.json?nocache=' + Date.now(), { cache: 'no-store' });
     if (!r.ok) return null;
@@ -2142,45 +2480,53 @@ async function fetchGlobalBoard() {
 }
 setInterval(async () => {
   if (document.visibilityState === "hidden") return;
-  const g = await fetchGlobalBoard();
+  const m = elScores.classList.contains('hidden') ? mode : scoresMode;
+  const g = await fetchGlobalBoard(m);
   if (!g || !g.top.length) return;
   if (!elScores.classList.contains('hidden')) {
-    renderTopList(elGlobalTop, g.top.slice(0, 10));
+    renderTopList(elGlobalTop, g.top.slice(0, 10), m);
     elGlobalNote.textContent = 'Verified by the DSDA board · ' + new Date(g.updated || Date.now()).toLocaleDateString();
   } else if (elMenu.classList.contains('hidden')) {
     renderTopList(elHudTop, g.top.slice(0, 10));
   }
 }, 30000);
-async function showScores() {
+let scoresMode = 'normal', _scoresReq = 0;
+async function showScores(m) {
+  scoresMode = m = m || mode;
+  const req = ++_scoresReq;
   elScores.classList.remove('hidden');
-  renderTopList(elLocalTop, loadScores().slice(0, 10));
+  for (const b of document.querySelectorAll('#scoreTabs button')) b.classList.toggle('on', b.dataset.mode === m);
+  $('scoresTitle').textContent = MODES[m].timed ? (m === 'sunday' ? 'SUNDAY DRIVE' : 'FASTEST TIMES') : 'LONGEST RUNS';
+  renderTopList(elLocalTop, loadScores(m).slice(0, 10), m);
+  renderTopList(elGlobalTop, [], m);
   elGlobalNote.textContent = 'Loading global board…';
-  const g = await fetchGlobalBoard();
+  const g = await fetchGlobalBoard(m);
+  if (req !== _scoresReq) return;     // flipped tabs while it loaded
   if (g && g.top.length) {
-    renderTopList(elGlobalTop, g.top.slice(0, 10));
+    renderTopList(elGlobalTop, g.top.slice(0, 10), m);
     elGlobalNote.textContent = 'Verified by the DSDA board · ' + new Date(g.updated || Date.now()).toLocaleDateString();
   } else if (g) {
-    renderTopList(elGlobalTop, []);
-    elGlobalNote.textContent = 'No global times yet — be the first!';
+    renderTopList(elGlobalTop, [], m);
+    elGlobalNote.textContent = MODES[m].timed ? 'No global times yet — be the first!' : 'No global runs yet — be the first!';
   } else {
-    renderTopList(elGlobalTop, []);
+    renderTopList(elGlobalTop, [], m);
     elGlobalNote.textContent = 'Global board offline (local copy only)';
   }
 }
 
 // ---------------- scoring (localStorage) — stores points (faster = higher) ----------------
-function loadScores() {
+function loadScores(m) {
   try {
-    const a = JSON.parse(localStorage.getItem(SCORE_KEY));
+    const a = JSON.parse(localStorage.getItem(MODES[m || mode].key));
     return Array.isArray(a) ? a : [];
   } catch (e) { return []; }
 }
-function saveToStorage(name, tMs) {
+function saveToStorage(name, pts) {
   const arr = loadScores();
-  arr.push({ n: name, s: toPoints(tMs), d: Date.now(), h: memberHandle() || undefined });
-  arr.sort((a, b) => b.s - a.s);   // higher points = faster = top
+  arr.push({ n: name, s: pts, d: Date.now(), h: memberHandle() || undefined });
+  arr.sort((a, b) => b.s - a.s);   // higher points = faster (timed) / further (endless) = top
   const top = arr.slice(0, 10);
-  try { localStorage.setItem(SCORE_KEY, JSON.stringify(top)); } catch (e) {}
+  try { localStorage.setItem(MC().key, JSON.stringify(top)); } catch (e) {}
   return top;
 }
 
@@ -2188,8 +2534,11 @@ function saveToStorage(name, tMs) {
 // ---------------- share score (DSDA house card) ----------------
 const SHARE_CARD = { name: 'SLIPSTREAM', tag: 'Burnout-Style Highway Draft', id: 'slipstream', accent: 0xff8a3c };
 function shareText(tMs) {
-  return 'I ran ' + fmtClock(tMs) + ' in Slipstream — fastest to the flag. Think you can beat me? \ud83c\udfc1';
+  if (isEndless()) return 'I drove ' + fmtDist(finishDist) + ' in Slipstream Endless (stage ' + stage + ') before the clock ran out. Think you can go further? \ud83c\udfce\ufe0f';
+  return 'I ran ' + fmtClock(tMs) + ' in Slipstream' + (mode === 'sunday' ? ' Sunday Drive' : '') + ' — fastest to the flag. Think you can beat me? \ud83c\udfc1';
 }
+const shareLines = () => isEndless() ? [fmtDist(finishDist), 'Endless — beat the clock. Go further?']
+  : [fmtClock(finishTime), (mode === 'sunday' ? 'Sunday Drive — ' : '') + 'Fastest to the flag — think you can beat me?'];
 let __shot = null;
 (function(){ const im = new Image(); im.onload = () => { __shot = im; }; im.src = 'screenshot.png'; })();
 function _hexA(c, a){ return 'rgba(' + (c >> 16 & 255) + ',' + (c >> 8 & 255) + ',' + (c & 255) + ',' + a + ')'; }
@@ -2278,7 +2627,7 @@ async function shareScore() {
   if (navigator.share) {
     let files = null;
     try {
-      const cv = await makeScoreCard(fmtClock(finishTime), 'Fastest to the flag — think you can beat me?');
+      const cv = await makeScoreCard(...shareLines());
       const blob = await new Promise(res => cv.toBlob(res, 'image/png'));
       if (blob) {
         const f = [new File([blob], 'slipstream-time.png', { type: 'image/png' })];
@@ -2306,11 +2655,11 @@ async function shareScore() {
     window.prompt('Copy your time share:', text);
   }
 }
-function renderTopList(el, top) {
+function renderTopList(el, top, m) {
   el.innerHTML = '';
   if (!top.length) {
     const li = document.createElement('li');
-    li.innerHTML = '<span class="rank">—</span><span class="name">No times yet</span><span class="s">--</span>';
+    li.innerHTML = '<span class="rank">—</span><span class="name">' + (MODES[m || mode].timed ? 'No times yet' : 'No runs yet') + '</span><span class="s">--</span>';
     el.appendChild(li);
     return;
   }
@@ -2318,20 +2667,19 @@ function renderTopList(el, top) {
     const li = document.createElement('li');
     const r = document.createElement('span'); r.className = 'rank'; r.textContent = i + 1;
     const n = document.createElement('span'); n.className = 'name'; n.textContent = e.h || e.n; if (e.h) { const mb = document.createElement('span'); mb.className = 'member-badge'; mb.title = e.h; mb.textContent = '◆'; n.appendChild(mb); }
-    const s = document.createElement('span'); s.className = 's'; s.textContent = fmtTime(e.s);
+    const s = document.createElement('span'); s.className = 's'; s.textContent = fmtScore(e.s, m);
     li.append(r, n, s);
     el.appendChild(li);
   });
 }
-function submitGlobal(name, tMs) {
-  const points = toPoints(tMs);
+function submitGlobal(name, points) {
   // Worker only: arcade-account.js attaches the session token when logged in (and
   // retries once as casual on a 401). Honest result for the save line: 'ok',
   // 'http-<status>' (http-429 = rate limited), or 'board-offline'.
   return fetchTimeout(BOARD_API + '/score', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ initials: name, score: points, secret: SCORE_SECRET, game: GAME_ID })
+    body: JSON.stringify({ initials: name, score: points, secret: SCORE_SECRET, game: MC().board })
   }, 5000).then(function (r) {
     if (!r.ok) return 'http-' + r.status;
     // The shared arcade-account.js gate dedupes member sub-PB posts (fake 200,
@@ -2341,20 +2689,20 @@ function submitGlobal(name, tMs) {
 }
 function saveScore() {
   if (phase !== 'finish' || elSave.disabled) return;
-  track('score_submit', { time_ms: Math.round(finishTime) });
+  track('score_submit', { mode, time_ms: Math.round(finishTime), score: runPoints() });
   const member = memberHandle();
   let name = member ? DSDA.memberInits() : elInitials.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
   if (!name) name = dsdaInits();
   if (!name) { elSavedMsg.textContent = 'ENTER YOUR INITIALS'; elInitials.focus(); return; }
   name = name.slice(0, 3).padEnd(3, '?');
   if (!member) try { localStorage.setItem(DSDA_INITS_KEY, name); } catch (e) {}
-  const top = saveToStorage(name, finishTime);
+  const top = saveToStorage(name, runPoints());
   renderTopList(elTopList, top);
   renderTopList(elHudTop, top);
   elSave.disabled = true;
   elSavedMsg.textContent = 'Saved locally · submitting to global board…';
   sfx.draft();
-  submitGlobal(name, finishTime).then(res => {
+  submitGlobal(name, runPoints()).then(res => {
     if (res === 'ok') elSavedMsg.textContent = 'Saved! On the global board' + (member ? ' as ' + member + ' \u25c6' : '') + ' ✓';
     else if (res === 'deduped') elSavedMsg.textContent = 'Personal best stands — not reposted';
     else elSavedMsg.textContent = 'Saved locally · global board: ' + res;
@@ -2363,6 +2711,8 @@ function saveScore() {
 
 // ---------------- finish gate ----------------
 let _gateProto = null;
+const _gateSigns = {};
+const gateP = () => isEndless() ? nextCp : TRACK_LEN;
 function buildFinishGate() {
   if (finishGate) { scene.remove(finishGate); finishGate = null; }
   if (!_gateProto) {
@@ -2375,8 +2725,9 @@ function buildFinishGate() {
     const bar = new THREE.Mesh(new THREE.BoxGeometry(RW * 2 + 1.4, 1.3, 0.3),
       new THREE.MeshStandardMaterial({ map: checkTex, emissive: 0xffffff, emissiveMap: checkTex, emissiveIntensity: 0.35, roughness: 0.6 }));
     bar.position.set(0, 6.7, 0); bar.castShadow = true; g.add(bar);
-    const st = canvasTex(256, 64, (x, w, h) => { x.fillStyle = '#0a0710'; x.fillRect(0, 0, w, h); x.fillStyle = '#ffb347'; x.font = '800 44px "Segoe UI", sans-serif'; x.textAlign = 'center'; x.fillText('FINISH', w / 2, 46); });
-    const sign = new THREE.Mesh(new THREE.PlaneGeometry(6, 1.4), new THREE.MeshBasicMaterial({ map: st, side: THREE.DoubleSide }));
+    const mkSign = (txt, col) => new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, map: canvasTex(256, 64, (x, w, h) => { x.fillStyle = '#0a0710'; x.fillRect(0, 0, w, h); x.fillStyle = col; x.font = '800 ' + (txt.length > 7 ? 34 : 44) + 'px "Segoe UI", sans-serif'; x.textAlign = 'center'; x.fillText(txt, w / 2, txt.length > 7 ? 43 : 46); }) });
+    _gateSigns.finish = mkSign('FINISH', '#ffb347'); _gateSigns.cp = mkSign('CHECKPOINT', '#39ff9e');
+    const sign = _gateSigns.mesh = new THREE.Mesh(new THREE.PlaneGeometry(6, 1.4), _gateSigns.finish);
     sign.position.set(0, 5.2, 0.02); g.add(sign);
     // painted line across the carriageway
     const line = new THREE.Mesh(new THREE.PlaneGeometry(ROAD_HALF * 2, 1.1).rotateX(-Math.PI / 2),
@@ -2384,6 +2735,7 @@ function buildFinishGate() {
     line.position.y = 0.012; line.receiveShadow = true; g.add(line);
     _gateProto = g;
   }
+  _gateSigns.mesh.material = isEndless() ? _gateSigns.cp : _gateSigns.finish;
   scene.add(_gateProto);
   finishGate = _gateProto;
 }
@@ -2417,7 +2769,7 @@ function scrollFeatures(offset) {
   for (const s of signList) {
     s.mesh.position.z = wrapP(s, offset, window.__signSpan);
     s.mesh.position.x = bendOff(s.p); s.mesh.rotation.y = bendYaw(s.p);
-    s.mesh.visible = s.p > 60 && s.p < TRACK_LEN - 60;
+    s.mesh.visible = s.p > 60 && (isEndless() || s.p < TRACK_LEN - 60);
   }
   if (treeSys) {
     const T = treeSys;
@@ -2480,7 +2832,7 @@ function updateHazardPositions(offset) {
     p.mesh.visible = (p.alive || flying) && z < WRAP_NEAR && z > -WRAP_FAR;
     if (flying) { const t = p.kt; p.mesh.position.y = Math.max(0, 3.4 * t - 5.5 * t * t); p.mesh.rotation.z = -p.kx * Math.min(1.5, t * 4); }
   }
-  if (finishGate) { finishGate.position.z = offset - TRACK_LEN; finishGate.position.x = bendOff(TRACK_LEN); finishGate.rotation.y = bendYaw(TRACK_LEN); }
+  if (finishGate) { const gp = gateP(); finishGate.position.z = offset - gp; finishGate.position.x = bendOff(gp); finishGate.rotation.y = bendYaw(gp); }
 }
 
 // ---------------- slipstream wake field ----------------
@@ -2569,6 +2921,7 @@ function updateBody(dt, rolling) {
 // ---------------- main loop ----------------
 function update(dt) {
   menuTime += dt;
+  updateMood(dt);
   if (bannerTimer > 0) { bannerTimer -= dt; if (bannerTimer <= 0 && phase !== 'countdown') hideBanner(); }
   updateParticles(dt);
   if (shake > 0) shake = Math.max(0, shake - dt * 2.2);
@@ -2655,6 +3008,7 @@ function update(dt) {
     for (const p of peds) {
       if (p.kt >= 0) { p.kt += dt; p.x += p.kx * 5 * dt; p.p += Math.max(0, 9 - p.kt * 8) * dt; }
       if (!p.alive) continue;
+      if (p.wait) { if (p.p - playerDist < Math.max(45, speed * 3.1)) p.wait = false; else continue; }   // step out so they're mid-road as you arrive
       p.x += p.dir * p.speed * dt;
       p.t += dt;
       if (p.x < -(ROAD_HALF + 1.2) || p.x > ROAD_HALF + 1.2) { p.alive = false; continue; }
@@ -2694,7 +3048,7 @@ function update(dt) {
         c.lane = bestL;
         let crowd = 0; for (const o of traffic) if (o !== c && Math.abs(o.p - c.p) < 14) crowd++;
         if (crowd >= 2) c.p += 22;        // at most two abreast: there's always a gap to thread
-        c.speed = rand(15, 21);
+        c.speed = rand(MC().tSpeed[0], MC().tSpeed[1]);
         c.cd = 0.4; c.prevGap = 1; c.wob = 0;
         c.car.paint.color.setHex(pick(TRAFFIC_COLS));
       }
@@ -2703,8 +3057,15 @@ function update(dt) {
     if (boostTimer > 0) boostTimer -= dt;
     if (collisionCooldown > 0) collisionCooldown -= dt;
 
-    // finish
-    if (playerDist >= TRACK_LEN) finish();
+    // finish (timed modes) / clock, checkpoints and streaming (endless)
+    if (isEndless()) {
+      streamHazards(playerDist);
+      clockLeft -= dt;
+      if (playerDist >= nextCp) passCheckpoint();
+      const sec = Math.ceil(clockLeft);
+      if (clockLeft > 0 && clockLeft < 5.5 && sec !== lastTick) { lastTick = sec; sfx.count(); }
+      if (clockLeft <= 0) { clockLeft = 0; finish(); }
+    } else if (playerDist >= TRACK_LEN) finish();
 
     scrollFeatures(playerDist);
     updateHazardPositions(playerDist);
@@ -2794,6 +3155,7 @@ function fitCamera() {
 }
 function renderFrame() {
   if (!renderer) return;
+  updateStreaks();
   if (puffMat) puffMat.uniforms.scale.value = (Post.ok ? Post.h : renderer.domElement.height) * 1.1;
   if (Post.ok) Post.render(menuTime); else renderer.render(scene, camera);
 }
@@ -2884,6 +3246,7 @@ function boot() {
   buildTrees();
   buildOncoming();
   buildParticles();
+  buildStreaks();
 
   // player car
   const pc = buildCar(0x9c0a10, { player: true, plate: 'DSDA 137' });
@@ -2938,7 +3301,8 @@ function boot() {
   elScoresBack.addEventListener('click', e => { backToMenu(); e.currentTarget.blur(); });
   elToMenu.addEventListener('click', e => { backToMenu(); e.currentTarget.blur(); });
 
-  menuButtons.push($('menuStart'), $('menuScores'), $('menuSite'));
+  menuButtons.push($('menuStart'), $('menuSunday'), $('menuEndless'), $('menuScores'), $('menuSite'));
+  for (const b of document.querySelectorAll('#scoreTabs button')) b.addEventListener('click', e => { showScores(b.dataset.mode); e.currentTarget.blur(); });
   menuButtons.forEach((b, k) => {
     b.addEventListener('mouseenter', () => setMenuSel(k));
     b.addEventListener('click', e => { setMenuSel(k); activateMenu(); e.currentTarget.blur(); });
@@ -2962,7 +3326,7 @@ function boot() {
 
   buildTitle();
   playTitleIntro();
-  renderTopList(elHudTop, loadScores().slice(0, 10));
+  applyModeHud();
   updateHud();
   setMenuSel(0);
   phase = 'menu';
@@ -2981,13 +3345,15 @@ window.__tl = {
   step(dt) { update(Math.min(dt, 0.05)); return 'ok'; },       // update only (no render) — fast simulation
   stepMany(n, dt) { dt = dt || 1 / 60; for (let i = 0; i < n; i++) { update(Math.min(dt, 0.05)); if (phase === 'finish') break; } return this.state(); },
   start() { if (phase === 'menu') startGameFromMenu(); return 'ok'; },
+  menu() { backToMenu(); return 'ok'; },
+  boost(t) { boostTimer = t || BOOST_TIME; return 'ok'; },
   getPhase() { return phase; },
   state() {
     return {
       phase, dist: +playerDist.toFixed(2), speed: +speed.toFixed(2), carX: +carX.toFixed(2),
       time: +elapsed.toFixed(3), drafting, draftPull: +draftPull.toFixed(3), onDirt, recover: +recoverTimer.toFixed(2),
       traffic: traffic.length, boosts: boosts.length, boost: +boostTimer.toFixed(2), dirt: dirt.length, walls: walls.length, peds: peds.length,
-      best: bestTime, finishTime: finishTime,
+      best: bests[mode], finishTime: finishTime, mode, clock: +clockLeft.toFixed(2), stage, nextCp, finishDist, metres: runMetres(),
     };
   },
   setX(x) { carX = clamp(x, CAR_MIN_X, CAR_MAX_X); carVX = 0; steerTargetX = null; return 'ok'; },
@@ -2998,13 +3364,17 @@ window.__tl = {
   audio() { return { ctx: sfx.ctx ? sfx.ctx.state : null, engine: !!sfx.eng, on: sfx.on }; },
   hooks: { get traffic() { return traffic; }, get walls() { return walls; }, get peds() { return peds; }, get boosts() { return boosts; }, get dirt() { return dirt; }, sfx },
   steer(d) { keys.left = d < 0; keys.right = d > 0; return 'ok'; },
-  getBest() { return bestTime; },
+  getBest() { return bests[mode]; },
+  mode(m) { if (m) setMode(m); return mode; },
+  setClock(t) { clockLeft = t; return 'ok'; },
+  setDist(d) { playerDist = d; if (isEndless()) { while (nextCp < d) nextCp += CP_LEN; streamHazards(d); } return 'ok'; },
+  mood() { return { ...moodNow, sky: undefined }; },
   setTime(t) { elapsed = t; return 'ok'; },
   finish() { finish(); return 'ok'; },
   reset: startRace,
   async shareCard(tMs){
     const t = (tMs === undefined) ? finishTime : tMs;
-    try { return (await makeScoreCard(fmtClock(t), 'Fastest to the flag — think you can beat me?')).toDataURL('image/png'); }
+    try { return (await makeScoreCard(...(tMs === undefined ? shareLines() : [fmtClock(t), 'Fastest to the flag — think you can beat me?']))).toDataURL('image/png'); }
     catch(e){ return 'err:' + e; }
   },
   shareText: () => shareText(finishTime),
