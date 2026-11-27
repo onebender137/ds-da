@@ -263,6 +263,92 @@
 .mode-tabs button.on { border-color: var(--accent); background: rgba(60,40,15,0.5); color: var(--accent); }
 #timeStat > span { white-space: nowrap; }
 #timeStat.low b { color: #ff4d5e; animation: pulse .5s ease-in-out infinite; }
+/* ---- DSDA Radio skinned as an '80s high-end in-dash stereo (Slipstream only, 2026-11-27) ----
+   The stock widget (#radioBox) stays mounted as the audio engine but hidden; #stereo drives it. */
+#radioBox { display: none !important; }
+#stereo { position: fixed; left: 16px; bottom: 16px; z-index: 50; width: 318px; user-select: none; -webkit-user-select: none;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif; color: #c9cbd1; touch-action: manipulation;
+  padding: 7px 9px 7px; border-radius: 5px;
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.025) 0 1px, rgba(0,0,0,0) 1px 3px),
+    linear-gradient(180deg, #2b2d33 0%, #17181c 46%, #0d0e11 100%);
+  border: 1px solid #050506;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), inset 0 -1px 0 rgba(0,0,0,0.8), inset 0 0 0 2px #1d1e23,
+              0 0 0 2px #5a5d66, 0 0 0 3px #101114, 0 10px 26px rgba(0,0,0,0.6); }
+#stereo button { font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.st-top { display: flex; align-items: baseline; justify-content: space-between; margin: 0 2px 5px; }
+.st-brand { font-size: 11px; font-weight: 900; font-style: italic; letter-spacing: 1px; color: #e9ebf0;
+  text-shadow: 0 1px 0 #000; }
+.st-brand span { font-weight: 600; font-style: normal; font-size: 8px; letter-spacing: 2.5px; color: #ff9a3c; margin-left: 4px; }
+.st-model { font-size: 7.5px; letter-spacing: 1.6px; color: #80838c; font-weight: 700; }
+.st-main { display: flex; align-items: center; gap: 8px; }
+/* volume knob: knurled chrome with an indicator line */
+.st-knob { flex: 0 0 auto; width: 40px; height: 40px; border-radius: 50%; border: none; padding: 0; position: relative;
+  background: repeating-conic-gradient(from 0deg, #8f949d 0 4deg, #5d626b 4deg 8deg);
+  box-shadow: 0 0 0 2px #0a0b0d, 0 2px 4px rgba(0,0,0,0.7), inset 0 1px 1px rgba(255,255,255,0.4); touch-action: none; }
+.st-knob::before { content: ''; position: absolute; inset: 6px; border-radius: 50%;
+  background: radial-gradient(circle at 38% 32%, #f4f5f7 0%, #b4b8c0 32%, #6d727b 70%, #3d4047 100%);
+  box-shadow: inset 0 -1px 2px rgba(0,0,0,0.5); }
+.st-knob i { position: absolute; left: 50%; top: 7px; width: 2px; height: 9px; margin-left: -1px; border-radius: 1px;
+  background: #ff8a2c; box-shadow: 0 0 4px #ff8a2c; transform-origin: 50% 13px; }
+.st-knob b { position: absolute; left: 0; right: 0; bottom: -11px; font-size: 6.5px; letter-spacing: 1.5px; color: #8b8e96; text-align: center; font-weight: 800; }
+/* vacuum-fluorescent display */
+.st-vfd { flex: 1 1 auto; min-width: 0; height: 52px; border-radius: 3px; padding: 4px 7px 3px; position: relative; overflow: hidden;
+  background: radial-gradient(ellipse at 50% 0%, #0b2420 0%, #04100e 70%), #04100e;
+  box-shadow: inset 0 0 0 1px #000, inset 0 2px 6px rgba(0,0,0,0.9), 0 1px 0 rgba(255,255,255,0.08);
+  --vfd: #7dffe0; --vfd-dim: rgba(125,255,224,0.07); }
+.st-vfd::after { content: ''; position: absolute; inset: 0; pointer-events: none;   /* the glass: faint grid + glare */
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.22) 0 1px, rgba(0,0,0,0) 1px 2px),
+              linear-gradient(160deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 38%); }
+.st-r1 { display: flex; align-items: flex-end; gap: 5px; height: 24px; }
+.st-band { font-size: 8px; font-weight: 800; letter-spacing: 1px; color: var(--vfd); text-shadow: 0 0 5px var(--vfd); margin-bottom: 3px; }
+.st-freq { position: relative; font-family: "Consolas", "Courier New", ui-monospace, monospace; font-weight: 700; font-size: 22px; line-height: 22px;
+  letter-spacing: 1px; font-style: italic; transform: skewX(-4deg); }
+.st-freq .ghost { color: var(--vfd-dim); }
+.st-freq .lit { position: absolute; right: 0; top: 0; color: var(--vfd); text-shadow: 0 0 6px var(--vfd), 0 0 14px rgba(125,255,224,0.45); }
+.st-ind { display: flex; flex-direction: column; gap: 1px; margin-bottom: 1px; }
+.st-ind em { font-style: normal; font-size: 6.5px; font-weight: 800; letter-spacing: 1px; color: var(--vfd-dim); }
+.st-ind em.on { color: var(--vfd); text-shadow: 0 0 4px var(--vfd); }
+.st-ind em#stLive.on { color: #ff6a4d; text-shadow: 0 0 5px #ff4d2d; }
+.st-meter { margin-left: auto; display: flex; align-items: flex-end; gap: 2px; height: 18px; margin-bottom: 2px; }
+.st-meter s { display: block; width: 3px; height: 100%; text-decoration: none;
+  background: linear-gradient(0deg, var(--vfd) 0 60%, #ffd36a 60% 82%, #ff5a3c 82%); opacity: 0.9;
+  clip-path: inset(calc(100% - var(--h, 10%)) 0 0 0); transition: clip-path .09s linear;
+  -webkit-mask: repeating-linear-gradient(0deg, #000 0 2px, transparent 2px 3px); mask: repeating-linear-gradient(0deg, #000 0 2px, transparent 2px 3px); }
+.st-r2 { height: 14px; line-height: 14px; margin-top: 4px; overflow: hidden; white-space: nowrap; position: relative; }
+.st-scroll { display: inline-block; font-family: "Consolas", "Courier New", ui-monospace, monospace; font-size: 10px; font-weight: 700; letter-spacing: 1.4px;
+  text-transform: uppercase; color: var(--vfd); text-shadow: 0 0 5px var(--vfd); padding-left: 100%; }
+.st-scroll.still { padding-left: 0; animation: none !important; }
+@keyframes stMarquee { from { transform: translateX(0); } to { transform: translateX(-100%); } }
+/* right-hand cluster */
+.st-btns { flex: 0 0 auto; display: flex; flex-direction: column; gap: 4px; }
+.st-btn { border: none; padding: 0; height: 19px; border-radius: 3px; font-size: 7.5px !important; font-weight: 800; letter-spacing: 1px;
+  color: #ffb066 !important; text-shadow: 0 0 4px rgba(255,140,40,0.6);
+  background: linear-gradient(180deg, #3b3d44, #1c1d21 60%, #141518);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 1px 0 #000, 0 0 0 1px #08090a; }
+.st-btn:active, .st-btn.down { transform: translateY(1px); background: linear-gradient(180deg, #24252a, #141518); box-shadow: inset 0 1px 2px #000, 0 0 0 1px #08090a; }
+.st-pwr { width: 58px; }
+.st-pwr.on { color: #7dffb0 !important; text-shadow: 0 0 5px rgba(80,255,150,0.8); }
+.st-seek { display: flex; gap: 3px; }
+.st-seek .st-btn { width: 27.5px; font-size: 8px !important; }
+.st-presets { display: flex; gap: 3px; margin-top: 6px; }
+.st-presets .st-btn { flex: 1; height: 15px; font-size: 8px !important; color: #9fa3ab !important; text-shadow: none; position: relative; }
+.st-presets .st-btn.on { color: #ffb066 !important; text-shadow: 0 0 4px rgba(255,140,40,0.7); }
+.st-presets .st-btn.on::after { content: ''; position: absolute; top: 2px; right: 3px; width: 3px; height: 3px; border-radius: 50%;
+  background: var(--acc, #ff8a2c); box-shadow: 0 0 4px var(--acc, #ff8a2c); }
+#stereo.off .st-vfd { --vfd: #5fd8bd; }
+/* the sound / gfx toggles move up to sit on top of the stereo */
+#soundBtn, #gfxBtn { bottom: 140px; }
+@media (max-width: 768px) {
+  #stereo { left: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); width: 236px; padding: 5px 6px; }
+  .st-top { margin-bottom: 3px; } .st-model { display: none; }
+  .st-knob { width: 32px; height: 32px; } .st-knob::before { inset: 5px; } .st-knob i { top: 5px; height: 7px; transform-origin: 50% 11px; }
+  .st-vfd { height: 45px; padding: 3px 5px 2px; } .st-r1 { height: 20px; } .st-r2 { margin-top: 3px; } .st-freq { font-size: 18px; line-height: 19px; }
+  .st-meter { display: none; }
+  .st-pwr { width: 46px; } .st-seek .st-btn { width: 21.5px; }
+  .st-presets { margin-top: 4px; } .st-presets .st-btn { height: 17px; }
+  #soundBtn, #gfxBtn { bottom: calc(118px + env(safe-area-inset-bottom)) !important; }
+}
 @media (max-width: 768px) { .menu-btns { gap: 7px; margin-top: 8px; } .mbtn { padding: 10px; font-size: 14px; } .mbtn small { font-size: 8.5px; } }
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2325,6 +2411,7 @@ function startRace() {
   applyModeHud();
   moodSnap = true;
   sfx.startEngine();
+  if (sfx.on) { try { window.ssRadioAuto && window.ssRadioAuto(); } catch (e) {} }   // car stereo comes on with a random DSDA Radio station
   // countdown
   phase = 'countdown';
   countdown = 3.0;
@@ -3397,6 +3484,132 @@ try {
     // DSDA Radio — shared cross-game dial (6 stations). The radio is the music source;
     // the game's own procedural music is disabled.
     DSDARadio.init({ mount: 'radioBox', manifest: '../../radio/stations.json' });
+  </script>
+  <!-- '80s in-dash stereo faceplate: Slipstream's skin for DSDA Radio (drives the shared player above) -->
+  <div id="stereo" class="off" aria-label="DSDA Radio car stereo">
+    <div class="st-top"><div class="st-brand">DSDA<span>AUDIO</span></div><div class="st-model">ESR-137 · DIGITAL SYNTH TUNER</div></div>
+    <div class="st-main">
+      <button class="st-knob" id="stVol" title="Volume — drag or scroll" aria-label="Volume"><i></i><b>VOL</b></button>
+      <div class="st-vfd" id="stVfd">
+        <div class="st-r1"><span class="st-band">FM</span><span class="st-freq"><span class="ghost">888.8</span><span class="lit" id="stFreq"></span></span>
+          <span class="st-ind"><em id="stSt">STEREO</em><em id="stLive">LIVE</em></span>
+          <span class="st-meter" id="stMeter"><s></s><s></s><s></s><s></s><s></s><s></s><s></s></span></div>
+        <div class="st-r2"><span class="st-scroll" id="stText">DSDA RADIO</span></div>
+      </div>
+      <div class="st-btns">
+        <button class="st-btn st-pwr" id="stPwr" title="Power" aria-label="Radio power">PWR</button>
+        <div class="st-seek"><button class="st-btn" id="stPrev" title="Seek down" aria-label="Previous station">◀◀</button><button class="st-btn" id="stNext" title="Seek up" aria-label="Next station">▶▶</button></div>
+      </div>
+    </div>
+    <div class="st-presets" id="stPresets"></div>
+  </div>
+  <script>
+  // Slipstream car stereo — a skin over the shared DSDARadio engine (public API only:
+  // setStation / nextStation / prevStation / play / pause / setVolume / cur / playing / manifest).
+  (function () {
+    // radio.js declares `const DSDARadio` (a global binding, not a window property) — reach it by name
+    var R = (typeof DSDARadio !== 'undefined') ? DSDARadio : null, $ = function (id) { return document.getElementById(id); };
+    if (!R) return;
+    var el = $('stereo'), freqEl = $('stFreq'), textEl = $('stText'), stEl = $('stSt'), liveEl = $('stLive'), pwr = $('stPwr');
+    var bars = el.querySelectorAll('#stMeter s'), presetsEl = $('stPresets'), knobI = el.querySelector('#stVol i');
+    var OFF_KEY = 'ss_radio_off', volShowUntil = 0, lastText = '', built = false, everOn = false;
+    var userOff = function () { try { return sessionStorage.getItem(OFF_KEY) === '1'; } catch (e) { return false; } };
+    var setUserOff = function (v) { try { v ? sessionStorage.setItem(OFF_KEY, '1') : sessionStorage.removeItem(OFF_KEY); } catch (e) {} };
+    var stations = function () { return (R.manifest && R.manifest.stations) || []; };
+    function randomStation() {
+      var st = stations(), b = st.filter(function (s) { return s.type === 'broadcast'; }), pool = b.length ? b : st;
+      if (!pool.length) return;
+      var pick = pool[Math.floor(Math.random() * pool.length)];
+      R.setStation(st.indexOf(pick), pick.tracks && pick.tracks.length ? Math.floor(Math.random() * pick.tracks.length) : undefined);
+    }
+    // game hook: a race starting is a user gesture, so autoplay is allowed. Same rule as the other cabinets —
+    // never override a station the player picked; and in here, PWR off means off until they turn it back on.
+    var pendingAuto = false;
+    window.ssRadioAuto = function () {
+      if (userOff() || R.playing) return;
+      if (!R.manifest) { pendingAuto = true; return; }
+      randomStation();
+    };
+    function setText(t) {
+      if (t === lastText) return;
+      lastText = t; textEl.textContent = t;
+      var box = textEl.parentNode.clientWidth, w = textEl.scrollWidth;
+      var still = w <= box * 2 - 4;   // (padding-left:100% doubles the width) — fits? then don't scroll
+      textEl.classList.toggle('still', still);
+      textEl.style.animation = still ? 'none' : 'stMarquee ' + Math.max(6, (w / 34)).toFixed(1) + 's linear infinite';
+    }
+    function clockText() { var d = new Date(), h = d.getHours() % 12 || 12, m = ('0' + d.getMinutes()).slice(-2); return (h < 10 ? ' ' : '') + h + ':' + m; }
+    function paint() {
+      var c = R.cur, on = !!R.playing;
+      if (on) everOn = true;
+      el.classList.toggle('off', !on);
+      pwr.classList.toggle('on', on);
+      var vol = Math.round((R.volume || 0) * 100);
+      knobI.style.transform = 'rotate(' + (-135 + 270 * (R.volume || 0)) + 'deg)';
+      if (Date.now() < volShowUntil) {
+        var n = Math.round(vol / 10), seg = ''; for (var i = 0; i < 10; i++) seg += i < n ? '█' : '·';
+        setText('VOL ' + seg + ' ' + vol);
+      } else if (!on || !c) {
+        setText(c ? c.station.name + ' · PWR TO PLAY' : 'DSDA RADIO · PWR TO PLAY');
+      } else {
+        var t = c.station.name + (c.track && c.track.title ? '  ·  ' + c.track.title : '') + (c.track && c.track.credit ? '  ·  ' + c.track.credit : '');
+        setText(t);
+      }
+      // the big digits: frequency when tuned & on, the clock when it's off (like a real head unit)
+      freqEl.textContent = on && c && c.station.frequency ? String(c.station.frequency) : clockText();
+      el.querySelector('.st-band').textContent = on && c ? 'FM' : 'CLK';
+      stEl.classList.toggle('on', on);
+      liveEl.classList.toggle('on', on && c && c.station.type === 'broadcast');
+      var idx = R.station, btns = presetsEl.children;
+      for (var k = 0; k < btns.length; k++) { btns[k].classList.toggle('on', on && k === idx); }
+      if (c && c.station.accent) el.style.setProperty('--acc', c.station.accent);
+    }
+    function build() {
+      if (built || !R.manifest) return;
+      built = true;
+      stations().forEach(function (s, i) {
+        var b = document.createElement('button');
+        b.className = 'st-btn'; b.textContent = String(i + 1);
+        b.title = s.name; b.setAttribute('aria-label', 'Preset ' + (i + 1) + ': ' + s.name);
+        b.addEventListener('click', function (e) { setUserOff(false); R.setStation(i); e.currentTarget.blur(); });
+        presetsEl.appendChild(b);
+      });
+      if (pendingAuto) { pendingAuto = false; window.ssRadioAuto(); }
+      paint();
+    }
+    // repaint whenever the engine re-renders, plus a slow tick for the clock / broadcast track changes
+    var origRender = R.render.bind(R);
+    R.render = function () { origRender(); try { paint(); } catch (e) {} };
+    var waited = 0, wait = setInterval(function () { waited++; if (R.manifest || waited > 100) { clearInterval(wait); build(); } }, 150);
+    setInterval(function () { if (built) paint(); }, 1000);
+    // fake-but-honest-looking level meter: only moves while the radio is actually playing
+    var ph = 0;
+    (function meter() {
+      ph += 1;
+      var on = !!R.playing;
+      for (var i = 0; i < bars.length; i++) {
+        var h = on ? 18 + 70 * Math.abs(Math.sin(ph * (0.11 + i * 0.023) + i * 1.7)) * (0.55 + 0.45 * Math.random()) : 4;
+        bars[i].style.setProperty('--h', h.toFixed(0) + '%');
+      }
+      setTimeout(meter, 95);
+    })();
+    pwr.addEventListener('click', function (e) {
+      e.currentTarget.blur();
+      if (R.playing) { R.pause(); setUserOff(true); }
+      else { setUserOff(false); if (everOn) R.play(); else randomStation(); }   // back on to the station you had, or a random one first time
+    });
+    $('stPrev').addEventListener('click', function (e) { setUserOff(false); R.prevStation(); e.currentTarget.blur(); });
+    $('stNext').addEventListener('click', function (e) { setUserOff(false); R.nextStation(); e.currentTarget.blur(); });
+    // volume knob: drag (up/right = louder) or mouse wheel
+    var knob = $('stVol'), drag = null;
+    function vol(v) { R.setVolume(Math.max(0, Math.min(1, v))); volShowUntil = Date.now() + 1300; paint(); }
+    knob.addEventListener('pointerdown', function (e) { drag = { x: e.clientX, y: e.clientY, v: R.volume || 0 }; knob.setPointerCapture(e.pointerId); e.preventDefault(); });
+    knob.addEventListener('pointermove', function (e) { if (!drag) return; vol(drag.v + ((e.clientX - drag.x) - (e.clientY - drag.y)) * 0.006); });
+    knob.addEventListener('pointerup', function (e) { if (drag && Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y) < 4) vol((R.volume || 0) + 0.1 > 1.001 ? 0 : (R.volume || 0) + 0.1); drag = null; knob.blur(); });
+    knob.addEventListener('pointercancel', function () { drag = null; });
+    knob.addEventListener('wheel', function (e) { e.preventDefault(); vol((R.volume || 0) - e.deltaY * 0.0009); }, { passive: false });
+    paint();
+  })();
   </script>
 </body>
 </html>
