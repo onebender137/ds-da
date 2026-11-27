@@ -624,7 +624,10 @@
           renderCard(acc, j.profile, sync, true);
           show('card');
           // v11: first Fundy login (auto player- name) → offer a real name.
-          if (window.DSDA.account.needsName(acc)) showNameOverlay('pick');
+          // v11.1: …unless the user already hit "Keep" for this account.
+          var keptAuto = false;
+          try { keptAuto = localStorage.getItem('dsda-keep-auto-name') === acc.id; } catch (e) {}
+          if (window.DSDA.account.needsName(acc) && !keptAuto) showNameOverlay('pick');
         });
     }).catch(function (e) { msg('Could not load your card: ' + e.message, 'err'); show('login'); });
   }
@@ -737,7 +740,15 @@
     setTimeout(function () { $('name-input').focus(); }, 50);
   }
   function hideNameOverlay() { $('nameOv').classList.remove('on'); }
-  $('name-keep').onclick = function () { hideNameOverlay(); };
+  $('name-keep').onclick = function () {
+    // v11.1: "Keep" must stick — once the user keeps the auto name, the pick
+    // overlay must not reopen on every page load. Flag is per account id.
+    var acc = window.DSDA.account.getAccount();
+    if (acc && /^player-/.test(acc.handle || '')) {
+      try { localStorage.setItem('dsda-keep-auto-name', acc.id); } catch (e) {}
+    }
+    hideNameOverlay();
+  };
   $('name-skip').onclick = function (e) { e.preventDefault(); hideNameOverlay(); };
   $('name-input').addEventListener('input', function () {
     var el = this, c = cleanHandle(el.value);
