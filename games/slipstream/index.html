@@ -2415,11 +2415,14 @@ function startRace() {
   if (sfx.on) { try { window.ssRadioAuto && window.ssRadioAuto(); } catch (e) {} }   // car stereo comes on with a random DSDA Radio station
   // countdown
   phase = 'countdown';
-  countdown = 3.0 + INTRO;                // a beat of chat with the starter before the "3"
+  useReal = !!realStarter;                // the mocap starter if she's loaded, the low-poly one otherwise
+  introLen = useReal ? INTRO_REAL : INTRO;
+  countdown = 3.0 + introLen;             // a beat of chat with the starter before the "3"
   lastCount = 4;
   hideBanner();
   goT = -1;
   if (starter) { starter.kissed = false; starter.heartT = -1; starter.heart.visible = false; starter.yaw = Math.PI / 2; }
+  if (realStarter) { realStarter.cur = null; for (const a of Object.values(realStarter.acts)) a.stop(); realStarter.yaw = Math.PI / 2; }
   updateHud();
 }
 function clearWorld() {
@@ -3198,7 +3201,102 @@ function placeTraffic(dt) {
 // ---------------- the starter (2026-11-27): chats at your window, blows a kiss, walks out and flags you off ----------------
 // Original low-poly character built from primitives, jointed so the gestures read. Built at human scale (1.7 m)
 // and shrunk to the game's world scale. Lives in track coordinates once the race is on, so you leave her behind.
-const INTRO = 1.0;                                    // seconds of chat before the "3" (Enter / Space skips it)
+// ---------------- the mocap starter (Mixamo character + clips, converted to models/starter.glb) ----------------
+// Same story as the low-poly one, retimed to the real clips: chat -> kiss (before the "3") -> walk out -> flag wave -> GO.
+const INTRO = 1.0;                                    // low-poly starter: seconds of chat before the "3" (Enter / Space skips it)
+const INTRO_REAL = 2.2;                               // mocap starter: chat + the full blow-a-kiss clip before the "3"
+let introLen = INTRO, useReal = false, realStarter = null;
+const RS_WIN = { x: -1.02, p: -0.35 }, RS_SPOT = { x: -1.7, p: 1.5 };
+const SEQ_LOW = { kiss: 1.0, walk: 1.75, flag: 3.1, end: 4.0 }, SEQ_REAL = { kiss: 0.45, walk: 2.2, flag: 4.0, end: 5.2 };
+const RS_HEIGHT = 1.17;                               // world units: matches the car (a ~1.7 m person at the game's scale)
+async function loadRealStarter() {
+  if (GFX.tier === 'low' || !renderer) return;        // old phones keep the low-poly starter
+  try {
+    const [{ GLTFLoader }, { MeshoptDecoder }] = await Promise.all([import('./vendor/GLTFLoader.js'), import('./vendor/meshopt_decoder.module.js')]);
+    const L = new GLTFLoader(); L.setMeshoptDecoder(MeshoptDecoder);
+    const g = await L.loadAsync('models/starter.glb');
+    const model = g.scene;
+    model.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; o.frustumCulled = false; if (o.material) o.material.envMapIntensity = 0.7; } });
+    const box = new THREE.Box3().setFromObject(model, true), k = RS_HEIGHT / Math.max(0.001, box.max.y - box.min.y);
+    model.scale.multiplyScalar(k); model.position.y = -box.min.y * k;
+    const root = new THREE.Group(); root.add(model); root.visible = false; scene.add(root);
+    const mixer = new THREE.AnimationMixer(model), acts = {};
+    for (const c of g.animations) acts[c.name] = mixer.clipAction(c);
+    if (acts.kiss) { acts.kiss.setLoop(THREE.LoopOnce, 1); acts.kiss.clampWhenFinished = true; }
+    let hand = null, lHand = null, rHand = null, head = null;
+    model.traverse(o => { if (!o.isBone) return; if (/RightHand$/.test(o.name)) rHand = o; else if (/LeftHand$/.test(o.name)) lHand = o; else if (/Head$/.test(o.name)) head = o; });
+    hand = rHand;
+    // checkered flag in her right hand (built at the low-poly starter's scale, then undone from the bone's scale)
+    const flag = new THREE.Group();
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.6, 6), new THREE.MeshStandardMaterial({ color: 0x2b2c30, metalness: 0.6, roughness: 0.4 }));
+    pole.position.y = 0.22; pole.castShadow = true; flag.add(pole);
+    const clothGeo = new THREE.PlaneGeometry(0.44, 0.3, 10, 2); clothGeo.translate(0.22, 0, 0);
+    const cloth = new THREE.Mesh(clothGeo, new THREE.MeshStandardMaterial({ map: checkTex, side: THREE.DoubleSide, roughness: 0.8 }));
+    cloth.position.set(0, 0.36, 0); cloth.castShadow = true; flag.add(cloth);
+    if (hand) {
+      hand.add(flag);
+      model.updateMatrixWorld(true);
+      const ws = new THREE.Vector3(); hand.getWorldScale(ws);
+      flag.scale.setScalar(STARTER_S / ws.x);           // flag ends up the same world size as the low-poly one's
+      flag.position.set(0, 0.05 / ws.x, 0.015 / ws.x);   // in her palm (world-sized offset, whatever units the bones use)
+    }
+    realStarter = { root, model, mixer, acts, hand, lHand, rHand, head, flag, cloth, base: clothGeo.attributes.position.array.slice(), cur: null, hx: RS_WIN.x, hp: RS_WIN.p, yaw: Math.PI / 2 };
+  } catch (e) { console.warn('[slipstream] mocap starter not loaded, using the low-poly one', e); realStarter = null; }
+}
+function rsPlay(name, fade, ts) {
+  const R = realStarter, next = R.acts[name];
+  if (!next || R.cur === name) return;
+  const prev = R.cur && R.acts[R.cur];
+  next.reset(); next.setEffectiveTimeScale(ts || 1); next.setEffectiveWeight(1); next.play();
+  if (prev) next.crossFadeFrom(prev, fade, false); else next.fadeIn(fade);
+  R.cur = name;
+}
+const _rh = new THREE.Vector3(), _rl = new THREE.Vector3(), _rhd = new THREE.Vector3();
+function updateRealStarter(dt) {
+  const R = realStarter, S = starter, Q = SEQ_REAL, t = menuTime;
+  let wave = 0.4;
+  if (phase === 'countdown') {
+    const u = (3 + introLen) - countdown;
+    if (u < Q.kiss) {                                  // chatting with you at the window
+      R.hx = RS_WIN.x; R.hp = RS_WIN.p; R.yaw = Math.PI / 2;
+      rsPlay('talk', 0.2);
+    } else if (u < Q.walk) {                           // blows you a kiss
+      rsPlay('kiss', 0.3);
+      if (u >= Q.kiss + 1.0 && !S.kissed) {            // the hand leaves her lips: send the heart from whichever hand did it
+        S.kissed = true; S.heartT = 0;
+        R.lHand.getWorldPosition(_rl); R.rHand.getWorldPosition(_rh); R.head.getWorldPosition(_rhd);
+        S.heart.position.copy(_rl.distanceTo(_rhd) < _rh.distanceTo(_rhd) ? _rl : _rh); S.heart.position.y += 0.03;
+        S.heartV.set(0.85, 0.3, 0.3);
+      }
+    } else if (u < Q.flag) {                           // walks out to the line
+      rsPlay('walk', 0.25, 1.45);
+      const w = clamp((u - Q.walk - 0.12) / (Q.flag - Q.walk - 0.22), 0, 1);   // linear: matches the stride, no foot slide
+      R.hx = lerp(RS_WIN.x, RS_SPOT.x, w); R.hp = lerp(RS_WIN.p, RS_SPOT.p, w);
+      const walkYaw = Math.atan2(RS_SPOT.x - RS_WIN.x, -(RS_SPOT.p - RS_WIN.p));
+      R.yaw = Math.PI / 2 + _wrapA(walkYaw - Math.PI / 2) * _span(u, Q.walk, Q.walk + 0.35);
+      wave = 0.6;
+    } else {                                           // flag up, waving you off
+      R.hx = RS_SPOT.x; R.hp = RS_SPOT.p;
+      R.yaw = lerp(R.yaw, Math.atan2(0 - RS_SPOT.x, RS_SPOT.p + 1.5), 1 - Math.exp(-dt * 10));
+      rsPlay('wave', 0.25);
+      wave = 1.5;
+    }
+  } else {                                             // GO: the arm drops (flag down) as you launch past her
+    goT += dt;
+    rsPlay('talk', 0.16);
+    wave = Math.max(0.2, 2.2 - goT);
+    if (goT > 6) goT = -1;
+  }
+  R.mixer.update(dt);
+  // flag cloth ripple (same as the low-poly one)
+  const A = R.cloth.geometry.attributes.position, B = R.base;
+  for (let i = 0; i < A.count; i++) { const x = B[i * 3]; A.array[i * 3 + 2] = Math.sin(x * 15 - t * 13) * 0.045 * wave * (x / 0.44); }
+  A.needsUpdate = true;
+  const z = playerDist - R.hp;
+  R.root.position.set(R.hx + bendOff(R.hp), 0, z);
+  R.root.rotation.y = R.yaw;
+  R.root.visible = z < 14;
+}
 const STARTER_S = 0.69;
 const ST_WIN = { x: -0.97, p: -0.35 };                // at the driver's window (p = -z at the start line)
 const ST_SPOT = { x: -2.9, p: 2.6 };                  // on the lane line ahead-left of your nose
@@ -3300,10 +3398,12 @@ function updateStarter(dt) {
     S.heart.visible = k < 1 && show;
     if (k >= 1) S.heartT = -1;
   }
-  if (!show) { S.root.visible = false; return; }
+  if (!show) { S.root.visible = false; if (realStarter) realStarter.root.visible = false; return; }
+  if (useReal && realStarter) { S.root.visible = false; updateRealStarter(dt); return; }
+  if (realStarter) realStarter.root.visible = false;
   let P = {}, u;
   if (phase === 'countdown') {
-    u = (3 + INTRO) - countdown;                       // 0 .. 4
+    u = (3 + introLen) - countdown;                    // 0 .. 4
     if (u < 1.0) {                                     // leaning in at the window, chatting
       S.hx = ST_WIN.x; S.hp = ST_WIN.p; S.yaw = Math.PI / 2;
       P = { spX: 0.34 + 0.03 * Math.sin(t * 2.1), hdX: -0.32 + 0.07 * Math.sin(t * 5.3), hdZ: 0.13 * Math.sin(t * 1.4),
@@ -3356,12 +3456,12 @@ const _cA = new THREE.Vector3(), _cL = new THREE.Vector3(), _cP = new THREE.Vect
 function updateCameraIntro(dt) {
   updateCameraPlay(dt);                                // the chase pose (also keeps headlights / post in step)
   if (!starter) return;
-  const u = (3 + INTRO) - countdown;
+  const u = (3 + introLen) - countdown, Q = useReal ? SEQ_REAL : SEQ_LOW, SP = useReal ? RS_SPOT : ST_SPOT;
   const chasePos = _cP.copy(camera.position), chaseLook = _cT.set(camX * 0.35 + carX * 0.3 + bendOff(playerDist + 16) * 0.9, 1.0, -13);
   const A = [0.3, 1.02, -2.35], AL = [-0.45, 0.86, 0.25];                       // off your front fender, looking back at her face
-  const B = [-0.9, 2.35, 5.3], BL = [-2.5, 0.65, -2.4];                         // wide and high: her on the line, your car
+  const B = [-0.9, 2.35, 5.3], BL = [SP.x + 0.4, 0.65, -SP.p + 0.2];           // wide and high: her on the line, your car
   const drift = u * 0.12;
-  const ab = _span(u, 1.55, 2.6), bc = _span(u, 3.15, 4.0);
+  const ab = _span(u, Q.walk - 0.2, Q.walk + 0.85), bc = _span(u, Q.flag + 0.05, Q.end);
   _cA.set(lerp(A[0] - drift, B[0], ab), lerp(A[1], B[1], ab), lerp(A[2] - drift * 0.5, B[2], ab));
   _cL.set(lerp(AL[0], BL[0], ab), lerp(AL[1], BL[1], ab), lerp(AL[2], BL[2], ab));
   _cA.lerp(chasePos, bc); _cL.lerp(chaseLook, bc);
@@ -3512,6 +3612,7 @@ function boot() {
   buildParticles();
   buildStreaks();
   buildStarter();
+  setTimeout(loadRealStarter, 400);        // the mocap starter streams in after boot; the low-poly one covers until then
 
   // player car
   const pc = buildCar(0x9c0a10, { player: true, plate: 'DSDA 137' });
@@ -3612,6 +3713,7 @@ window.__tl = {
   start() { if (phase === 'menu') startGameFromMenu(); return 'ok'; },
   menu() { backToMenu(); return 'ok'; },
   boost(t) { boostTimer = t || BOOST_TIME; return 'ok'; },
+  starter() { return { real: !!realStarter, useReal, introLen, clips: realStarter ? Object.keys(realStarter.acts) : [], flag: !!(realStarter && realStarter.hand) }; },
   getPhase() { return phase; },
   state() {
     return {
