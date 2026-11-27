@@ -44,6 +44,15 @@ Purely additive; no ALTER/DROP on `players` columns that existing code reads, no
 beyond the backfill. Applied to prod with `wrangler d1 execute <uuid> --remote --file=…` AFTER
 a verified `d1 export`.
 
+**Pre-migration read-only check** (run 2026-11-27: **result = 0, clean**):
+```sql
+SELECT COUNT(*) FROM score_handles sh LEFT JOIN players p ON p.handle = sh.handle WHERE p.id IS NULL;
+```
+Must be 0 — any unmatched row would drop off the member's personal-best sync after the backfill.
+If non-zero, paste the offenders: `SELECT sh.handle, COUNT(*) AS n FROM score_handles sh
+LEFT JOIN players p ON p.handle = sh.handle WHERE p.id IS NULL GROUP BY sh.handle`
+(email-prefix handles from before Nov 20 were the suspected ones — there are none).
+
 ```sql
 -- 1. account key on the bridge table
 ALTER TABLE score_handles ADD COLUMN account_id TEXT;
@@ -75,41 +84,53 @@ Rollback = none needed (additive). Old Worker code keeps working on the new sche
 
 ## 3. Worker changes (`~/dsda-board/src/index.js` — additive)
 
-### 3.1 Shared validation (register + set-handle, one function)
+### 3.1 Shared validation (EVERY place that sets a handle — one function)
 
 `cleanHandle` stays: `toLowerCase().replace(/[^a-z0-9_-]/g,'').slice(0,16)`.
-New `validateHandle(raw)` used by BOTH `handleRegister` and the new endpoint:
+New `validateHandle(raw, { holderId = null })` used by **all three** handle-setting paths —
+`handleRegister`, `POST /api/account/handle`, AND `handleLoginBrc100` (the client-supplied
+`body.handle` there must pass the full validation; if it doesn't, the login falls back to the
+auto name `player-<addr6>` — a Fundy login must not skip the blocked words, the `player-` ban
+or the hold just by sending its own handle):
 
 - length 2–16 (HANDLE_MIN/HANDLE_MAX)
 - must NOT start with `player-` (reserved for the auto-name namespace)
-- NOT in `BLOCKED_HANDLES` — a small reserved set applied to register too (register has none today;
+- NOT in `BLOCKED_HANDLES` — reserved set applied to register too (register has none today;
   adding it is part of "same validation as register" going forward):
-  `admin, mod, support, system, api, dsda, null, none, guest, danny`
+  `admin, mod, support, system, api, dsda, null, none, guest, danny, fundy, arcade, official, root, owner`
+- **hold check lives INSIDE `validateHandle`** (not only in the rename endpoint):
+  `SELECT * FROM released_handles WHERE handle = ? AND available_at > now` → 409
+  `that name is on hold — available in N days`. Exception: the account that released the name
+  can take it back (`holderId === row.account_id` → allowed).
 - uniqueness: case-insensitive by construction (lowercased before insert + existing partial
-  unique index `idx_players_handle_unique`). The endpoint also does an explicit
+  unique index `idx_players_handle_unique`). The rename endpoint also does an explicit
   `SELECT id FROM players WHERE handle = ? AND id != me` → 409 `handle already taken`
   (matches register's 409 semantics).
+
+**Race rule:** a unique-index violation thrown INSIDE the write batch (two requests racing for
+the same name) must be caught and returned as **409 `handle already taken`**, never a 500.
 
 ### 3.2 `POST /api/account/handle` (Bearer, new route under existing `/api/account/*` prefixes —
 both `api.ds-da.ca` and `ds-da.ca` same-origin twins, no new route entries needed)
 
 Body: `{ handle }`. Flow:
 1. `requireAccount` → row (401 if none).
-2. `validateHandle` → 400 on failure.
-3. No-op guard: `new === row.handle` → 200 `{ ok:true, unchanged:true }`.
+2. No-op guard: `cleanHandle(body.handle) === row.handle` → 200 `{ ok:true, unchanged:true }`.
+3. `validateHandle(body.handle, { holderId: row.id })` → 400 on validation failure, 409 on hold
+   (the holder exception lets an account take back a name it just released).
 4. **Cooldown rule:** if `row.handle` starts with `player-` → free rename, no check.
    Else if `row.last_handle_change` and `now - last_handle_change < 30d` →
    **429** + `Retry-After` in **seconds** (RFC 9110, house rule) + `seconds_left` in body.
-5. **Hold check:** `SELECT * FROM released_handles WHERE handle = ? AND available_at > now`
-   → 409 `that name is on hold — available in N days`.
-6. Burst bucket: `rateAllow(db, 'handle', 'acct:<id>', 5)` → 429 (backstop for fat-finger loops;
+5. Burst bucket: `rateAllow(db, 'handle', 'acct:<id>', 5)` → 429 (backstop for fat-finger loops;
    independent of the 30-day rule).
-7. `db.batch` (single atomic write):
-   - upsert old handle into `released_handles` (only when `row.handle` non-null;
-     `ON CONFLICT(handle) DO UPDATE` — re-releasing a name extends the hold),
+6. `db.batch` (single atomic write), wrapped in try/catch — a unique-index violation
+   (two requests racing for the same name) → **409 `handle already taken`**, never 500:
+   - upsert old handle into `released_handles` — **EXCEPT `player-` names** (the prefix is
+     reserved anyway; holding them just fills the table) — `ON CONFLICT(handle) DO UPDATE`
+     (re-releasing a name extends the hold),
    - `UPDATE players SET handle=?, last_handle_change=now, updated=now WHERE id=me`.
-8. Prune: `DELETE FROM released_handles WHERE available_at < now` (same pattern as nonces).
-9. Return `{ ok:true, account: publicAccount(updated) }`.
+7. Prune: `DELETE FROM released_handles WHERE available_at < now` (same pattern as nonces).
+8. Return `{ ok:true, account: publicAccount(updated) }`.
 
 `publicAccount` gains `last_handle_change` (public info; the card UI shows "next change in Nd").
 
@@ -129,9 +150,9 @@ Body: `{ handle }`. Flow:
   (covers rows whose account no longer exists, and pre-migration rows if backfill missed any).
   Response shape unchanged (`{n,s,d,h}`) → cabinets, `◆ MEMBER` badge, and the champ alert
   (`x.t.h || x.t.n` in arcade-social.js) all follow the rename with zero client changes.
-- sync per-board bests (~line 672): `WHERE sh.account_id = ?1` (backfill makes this complete;
-  a rename naturally drops the member's old-handle bests → PB gate re-seeds, which is the
-  correct behavior — their board identity moved).
+- sync per-board bests (~line 672): `WHERE sh.account_id = ?1` (backfill makes this complete).
+  Bests follow the **account id**, so a rename does NOT re-seed them — the member's board rows
+  keep their `account_id`, the PB gate keeps working: no lockout, no drop.
 - `readLeaderboard` (season rank) and `profile/:id`: already id-keyed — untouched.
 - Challenges: untouched (id-keyed). `?vs=<handle>-<score>` invite links resolve handle→id at
   accept time; a link minted before a rename 404s at accept — acceptable (links are transient;
@@ -152,7 +173,13 @@ Body: `{ handle }`. Flow:
 
 ### 4.1 `games/arcade-account.js` (v10 → v11)
 
-- `setHandle(handle)` → POST `/api/account/handle` (Bearer), returns account.
+- `setHandle(handle)` → POST `/api/account/handle` (Bearer). On success, **write the updated
+  account to `localStorage['dsda-account']`** — `member()` and `isMe()` read the handle from
+  that cache; a stale cache means self-champ alerts and wrong initials after a rename.
+- **Refresh the cached account from the server once per page load** — the existing
+  `/api/account/sync` GET already returns the current account object, so the refresh is
+  overwriting `dsda-account` from that response (add it if the module doesn't already do it).
+  This is what makes other devices the player is logged in on pick up the new name.
 - `needsName(account)` → `!!(account && account.handle && account.handle.startsWith('player-'))`.
 - Login/register flows already return `account`; no flow change.
 
@@ -169,13 +196,14 @@ Body: `{ handle }`. Flow:
   shows "next change available in N days" and disables Set.
 - Public view (`?player=<id>`) shows the current handle as before (profile API is id-keyed).
 
-### 4.3 Version bumps (house rule)
+### 4.3 Version bumps (house rule — verified against the tree 2026-11-27)
 
-- `arcade-account.js` → `?v=11` in BOTH `arcade-social.js` (injector, currently v10)
-  AND `account/index.html` (currently v8 — fix the drift).
-- `games/sw.js` `CACHE` v24 → v25.
-- `arcade-social.js` itself is UNCHANGED (champ poll reads `/api/board/all` → follows the
-  rename server-side) → no arcade-wide 14-cabinet bump needed.
+- `arcade-account.js` → `?v=11` in ALL THREE load sites: the `arcade-social.js` injector
+  (currently v10), `account/index.html` (currently v8 — fix the drift), and
+  `games/challenge-login.html` (currently v10).
+- Changing the injector line inside `arcade-social.js` changes `arcade-social.js` itself →
+  `arcade-social.js?v=` **v17 → v18 in all 19 files that load it** (18 cabinets + hall index)
+  AND `games/sw.js` `CACHE` v24 → v25.
 
 ## 5. Testing — staging D1 only (guard stays in place)
 
@@ -198,8 +226,15 @@ Test matrix (real signup path for accounts, rows wiped between runs):
    arithmetic in the row.)
 7. Sync: member's per-board bests come from `sh.account_id` after rename.
 8. Challenge: create/accept with the NEW handle; old-handle `?vs=` link → graceful 404/unknown.
-9. Casual board post (no account) → `score_handles` row untouched (no account_id) — parity.
-10. `EXPLAIN QUERY PLAN` on both read queries → `USING INDEX` on both join sides (no SCAN).
+10. Casual board post (no account) → `score_handles` row untouched (no account_id) — parity.
+11. `EXPLAIN QUERY PLAN` on both read queries → `USING INDEX` on both join sides (no SCAN).
+12. BRC-100 login with `body.handle` set to `admin` / `player-x` / a name on hold → each falls
+    back to the auto name `player-<addr6>` (blocked words, prefix ban, and hold all enforced
+    at login, not just at register/rename).
+13. Register trying to take a name on hold → 409 on-hold.
+14. Two renames racing for one name (parallel requests) → one 200, one 409 (the unique-index
+    violation inside the batch surfaces as 409, never 500).
+15. Live checks through Fundy use **wallet B only** (never the primary wallet).
 
 ## 6. Prod rollout (same sequence as the challenges rollout)
 
@@ -222,10 +257,10 @@ Test matrix (real signup path for accounts, rows wiped between runs):
 - **`player-` prefix on register:** register currently accepts `player-anything`; §3.1 closes
   that. Existing 2 `player-` accounts are unaffected (they can rename away; they can't
   re-grab the prefix).
-- **PB gate drop on rename:** a member's per-board bests re-seed to 0 after a rename (old
-  handle's board rows no longer match their id… they DO match — `score_handles.account_id`
-  is unchanged, so the gate keeps their bests. The bests query switches to
-  `sh.account_id = ?`, which is strictly MORE stable than the handle query). Net: no lockout.
+- **PB gate on rename:** no drop. The per-board bests query switches to `sh.account_id = ?`,
+  and a rename does not touch `score_handles.account_id` — the member's board rows and gate
+  bests follow the account id, unchanged. (An earlier draft said bests re-seed on rename —
+  that was wrong; the id-keyed query is strictly MORE stable than the old handle query.)
 - **Schema cache:** if the Worker can't see `account_id` after deploy, fallback = the new
   `released_handles` table proves new-table visibility; the ALTER column would need the
   drop-and-recreate treatment (unlikely; avatar precedent).
