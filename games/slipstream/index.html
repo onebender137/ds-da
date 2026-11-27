@@ -517,6 +517,8 @@ const MODES = {
              traffic: 5, tSpeed: [15, 21], mood: 'cycle' },
 };
 let mode = 'normal';
+let normalPedsWait = true;              // 2026-11-27: Normal's crew now waits at the shoulder like the other modes (they used to set off at the
+                                        // green light and were gone before you arrived). ~+1 s on a good run; the Normal board was kept as is.
 const MC = () => MODES[mode];
 const isEndless = () => mode === 'endless';
 // endless tuning
@@ -2040,8 +2042,8 @@ function genTrack() {
   for (let i = 0; i < C.peds; i++) {
     const p = 300 + i * ((TRACK_LEN - 500) / C.peds) + rand(0, 120);
     const dir = Math.random() < 0.5 ? 1 : -1;
-    // (normal keeps its original behaviour: the crew set off at the green light. sunday/endless: they wait at the shoulder.)
-    peds.push({ p, x: dir > 0 ? -(ROAD_HALF + 1) : (ROAD_HALF + 1), dir, speed: rand(1.4, 2.2), alive: true, mesh: null, t: 0, kt: -1, kx: 0, wait: mode !== 'normal' });
+    // every mode: the crew waits at the shoulder and steps out as you approach (normalPedsWait = false restores the old Normal behaviour)
+    peds.push({ p, x: dir > 0 ? -(ROAD_HALF + 1) : (ROAD_HALF + 1), dir, speed: rand(1.4, 2.2), alive: true, mesh: null, t: 0, kt: -1, kx: 0, wait: mode !== 'normal' || normalPedsWait });
   }
   // speed pads: spread along the track, kept clear of dirt and barriers
   for (let i = 0; i < C.boosts; i++) {
@@ -3789,6 +3791,7 @@ window.__tl = {
   start() { if (phase === 'menu') startGameFromMenu(); return 'ok'; },
   menu() { backToMenu(); return 'ok'; },
   boost(t) { boostTimer = t || BOOST_TIME; return 'ok'; },
+  pedsWait(v) { normalPedsWait = !!v; return normalPedsWait; },
   peds() { return { real: !!realPed, list: peds.map(p => ({ p: +p.p.toFixed(1), x: +p.x.toFixed(2), wait: !!p.wait, alive: p.alive, real: !!p.real, evT: p.evT, kt: +p.kt.toFixed(2), state: p.real && p.real.cur })) }; },
   starter() { return { real: !!realStarter, useReal, introLen, clips: realStarter ? Object.keys(realStarter.acts) : [], flag: !!(realStarter && realStarter.hand) }; },
   getPhase() { return phase; },
