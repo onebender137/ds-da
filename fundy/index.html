@@ -16,6 +16,8 @@
     <meta property="og:url" content="https://ds-da.ca/fundy/">
     <meta property="og:title" content="Fundy Wallet | DSDA">
     <meta property="og:description" content="A BSV wallet for Android. Your keys stay on your phone.">
+    <meta property="og:image" content="https://ds-da.ca/fundy/releases/fundy-1.8.7-banner-1600.webp">
+    <meta name="twitter:card" content="summary_large_image">
     <link rel="canonical" href="https://ds-da.ca/fundy/">
     <link rel="icon" type="image/x-icon" href="../favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
@@ -104,6 +106,16 @@
         html.dark .pk-strip a { color: #f3d97a; }
         .pk-credit { text-align: center; color: var(--text-dim); font-size: .8rem; padding: 0 40px 40px; }
 
+        /* what's new (one poster + notes per release) */
+        .whatsnew { display: grid; grid-template-columns: 300px 1fr; gap: 44px; align-items: center; }
+        .whatsnew figure { margin: 0; }
+        .whatsnew img { width: 100%; height: auto; display: block; border-radius: 18px; box-shadow: 0 18px 50px rgba(0,0,0,.35); }
+        .whatsnew figcaption { margin-top: 10px; text-align: center; font-size: .78rem; color: var(--text-dim); }
+        .whatsnew ul { margin: 0; padding-left: 20px; line-height: 1.7; }
+        .whatsnew li { margin-bottom: 8px; }
+        .whatsnew li strong { color: var(--text); }
+        @media (max-width: 760px) { .whatsnew { grid-template-columns: 1fr; gap: 28px; } .whatsnew figure { max-width: 300px; margin: 0 auto; } }
+
         @media (max-width: 900px) { .services-grid.three { grid-template-columns: 1fr; } }
         @media (max-width: 700px) {
             .pk-section { padding: 70px 20px; }
@@ -154,10 +166,10 @@
             <h1 class="hero-title">Fundy<br><span class="gold">Wallet</span></h1>
             <p class="hero-sub">A BSV wallet built in New Brunswick, named for the Bay of Fundy. Send and receive, sign into the DSDA Arcade and Proof of Creation with a tap, and keep your keys on your own phone.</p>
             <div class="hero-cta">
-                <a href="https://github.com/onebender137/fundy-releases/releases/download/v1.8.6/fundy.apk" class="btn btn-primary">Download for Android</a>
+                <a href="https://github.com/onebender137/fundy-releases/releases/download/v1.8.7/fundy.apk" class="btn btn-primary">Download for Android</a>
                 <a href="#verify" class="btn btn-ghost">Verify the download</a>
             </div>
-            <div class="fundy-meta">Version 1.8.6 &middot; 99.6 MB &middot; Android 7.0 or newer</div>
+            <div class="fundy-meta">Version 1.8.7 &middot; 97.3 MB &middot; Android 7.0 or newer</div>
             <div class="hero-chips">
                 <span>&#9724; your keys, your phone</span>
                 <span>&#9724; no accounts</span>
@@ -165,6 +177,26 @@
             </div>
         </div>
         <div class="scroll-cue" aria-hidden="true"></div>
+    </section>
+
+    <!-- WHAT'S NEW (swap the poster + list each release) -->
+    <section class="pk-section" id="whats-new">
+        <h2 class="section-title reveal">What&rsquo;s new in 1.8.7</h2>
+        <div class="whatsnew reveal">
+            <figure>
+                <img src="releases/fundy-1.8.7-poster-540.webp" srcset="releases/fundy-1.8.7-poster-540.webp 540w, releases/fundy-1.8.7-poster-1080.webp 1080w" sizes="300px" width="540" height="967" loading="lazy" alt="Fundy 1.8.7 release poster: the Fundy logo above phones showing the wallet">
+                <figcaption>Release artwork</figcaption>
+            </figure>
+            <ul>
+                <li><strong>Two new looks.</strong> Soft (the default) and Arcade, each in light, dark or system.</li>
+                <li><strong>NFTs.</strong> Send 1Sat NFTs, browse them in a grid or list, open any one full screen. New arrivals show &ldquo;Arriving&rdquo; until they confirm.</li>
+                <li><strong>Safer logout.</strong> Fundy now waits for your last payment and your backup to finish, and warns you if either isn&rsquo;t done yet.</li>
+                <li><strong>Scan BSV QR codes.</strong> Payment codes that start with <span class="mono">bsv:</span> now fill in the address.</li>
+                <li><strong>Clearer hints.</strong> Sending to your own address, payments still sending, sends made while offline.</li>
+                <li><strong>Sounds.</strong> A cha-ching when you get paid, a typewriter when you send.</li>
+                <li><strong>Fixes.</strong> Payments made just before logging out no longer go missing, logout can&rsquo;t leave a half-loaded wallet, text fits at larger font sizes, plus currency and max-send fixes. New icon and splash screen too.</li>
+            </ul>
+        </div>
     </section>
 
     <!-- WHAT IT DOES -->
@@ -199,8 +231,8 @@
                 </div>
                 <div class="service-card reveal" style="--d:0.30s">
                     <div class="service-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg></div>
-                    <h3>See your NFTs</h3>
-                    <p>NFTs your wallet holds show up in their own tab. Fundy can&rsquo;t send NFTs yet, so keep valuable ones where they are for now.</p>
+                    <h3>See and send your NFTs</h3>
+                    <p>Your 1Sat NFTs show up in a gallery with a full-screen view, and you can send them to any BSV address. New arrivals are marked until they confirm.</p>
                 </div>
             </div>
             <p class="pk-strip reveal">Works with any BRC-100 app &middot; 12 languages &middot; No accounts &middot; <a href="privacy/">Privacy policy</a></p>
@@ -215,22 +247,22 @@
         <div class="verify-card reveal">
             <div class="vrow">
                 <div class="vlabel">Version</div>
-                <div class="vvalue">1.8.6 <small>Released November 25, 2026</small></div>
+                <div class="vvalue">1.8.7 <small>Released November 27, 2026</small></div>
                 <div></div>
             </div>
             <div class="vrow">
                 <div class="vlabel">File</div>
-                <div class="vvalue"><span class="mono">fundy.apk</span><small>99.6 MB (99,563,322 bytes)</small></div>
+                <div class="vvalue"><span class="mono">fundy.apk</span><small>97.3 MB (97,314,443 bytes)</small></div>
                 <div></div>
             </div>
             <div class="vrow">
                 <div class="vlabel">SHA-256</div>
                 <div class="vvalue">
                     <!-- Paste the hash in BOTH places: data-copy below, and split into 8-character chunks here. -->
-                    <div class="hash-chunks mono" id="sha"><span>6b131209</span> <span>211e4cd0</span> <span>f9cf9b04</span> <span>6a170790</span> <span>31e6dc69</span> <span>fe3f50ce</span> <span>ccb8c494</span> <span>10243856</span></div>
+                    <div class="hash-chunks mono" id="sha"><span>571a62e0</span> <span>2925c09e</span> <span>a123159e</span> <span>b83eaca3</span> <span>6d5c16de</span> <span>650e1711</span> <span>fa9bc510</span> <span>cda495c4</span></div>
                     <small>Changes with every release.</small>
                 </div>
-                <button class="copy-btn" type="button" data-copy="6b131209211e4cd0f9cf9b046a17079031e6dc69fe3f50ceccb8c49410243856">Copy</button>
+                <button class="copy-btn" type="button" data-copy="571a62e02925c09ea123159eb83eaca36d5c16de650e1711fa9bc510cda495c4">Copy</button>
             </div>
             <div class="vrow">
                 <div class="vlabel">Package</div>
@@ -250,7 +282,7 @@
             <div class="vrow">
                 <div class="vlabel">On-chain proof</div>
                 <div class="vvalue">
-                    <a href="../proof/?txid=b1098ec85c7b5a9c78b364021231fab1664fb367241524d6409a1a0a58226a60" class="footer-link mono">b1098ec8&hellip;58226a60</a>
+                    <a href="../proof/?txid=f71c1e0094da899dcc43c6fd158c6191b4ae58f9b7f68e2d1b4475d166200243" class="footer-link mono">f71c1e00&hellip;66200243</a>
                     <small>This release&rsquo;s SHA-256, timestamped on the BSV blockchain with our own <a href="../proof/" class="footer-link">Proof of Creation</a>. Open the certificate and paste the SHA-256 above into its verify box: it should match. Even if this website were ever tampered with, the on-chain record can&rsquo;t be.</small>
                 </div>
                 <div></div>
@@ -280,7 +312,7 @@ Windows:  certutil -hashfile fundy.apk SHA256</pre>
         <h2 class="section-title reveal">Install in a minute</h2>
         <p class="pk-lead reveal">Fundy isn&rsquo;t on the Play Store yet, so Android installs it straight from the file.</p>
         <ol class="pk-steps reveal">
-            <li>Tap <a href="https://github.com/onebender137/fundy-releases/releases/download/v1.8.6/fundy.apk">Download for Android</a> on your phone.<span>The file comes from our public releases page on GitHub.</span></li>
+            <li>Tap <a href="https://github.com/onebender137/fundy-releases/releases/download/v1.8.7/fundy.apk">Download for Android</a> on your phone.<span>The file comes from our public releases page on GitHub.</span></li>
             <li>Open the downloaded file.<span>Android will ask to allow your browser to install apps. Allow it for this install. You can switch it back off afterwards.</span></li>
             <li>Tap <strong>Install</strong>.<span>Android may warn that the app isn&rsquo;t from the Play Store. That&rsquo;s expected for direct downloads, and it&rsquo;s exactly why the checks above exist.</span></li>
             <li>Open Fundy and create your wallet.<span>Write your recovery phrase on paper and keep it somewhere safe. It&rsquo;s the only way back into your wallet if you lose your phone.</span></li>
