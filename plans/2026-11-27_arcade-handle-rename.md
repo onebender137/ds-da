@@ -243,13 +243,21 @@ Test matrix (real signup path for accounts, rows wiped between runs):
 2. **Migrate:** `--remote --file=migration-handle-rename.sql` (the §2 block) → verify with a
    follow-up `--remote` SELECT (backfill count = expected; `PRAGMA`-style table_info check).
 3. **Read-cost gate (read-only, STOP on regression):** run the OLD `/all` window SELECT
-   (no players join) and the NEW one (with `LEFT JOIN players p ON p.id = sh.account_id`)
-   against prod with `--remote`, and report both `meta.rows_read` values. Staging
-   `EXPLAIN QUERY PLAN` shows both plans index-driven (players join = PK lookup per bridge
-   row), but the number is the gate: **if the new number is more than ~2× the old, stop and
-   report before deploying.**
+   (no players join) and the NEW one against prod with `--remote`, and report both
+   `meta.rows_read` values. **If the new number is more than ~2× the old, stop and
+   report before deploying.** Final implementation (2026-11-27): the players join was
+   measured 1781 → 4221 (2.37×, stable 3/3) INSIDE the window scan — it grows with every
+   score row. Fix: window query back to the old shape (+`s.id`), current handles for the
+   DISPLAYED rows only via a second PK-driven query
+   (`score_handles JOIN players WHERE score_id IN (<top sids>)`). Re-measured:
+   1781 + 144 = 1925 = **1.08×** → gate passed. `readBoard` stays joined: its join is
+   bounded by LIMIT 10, not table size (1 → 6 rows; 6× is a small-base artifact).
 4. **Deploy Worker** (`deploy` script re-asserts `SESSION_SECRET` + `BOARD_SECRET`) → confirm
-   NEW Version ID.
+   NEW Version ID. **Right after the new Worker is live, re-run the backfill UPDATE**
+   (`UPDATE score_handles SET account_id = (SELECT id FROM players WHERE handle =
+   score_handles.handle) WHERE account_id IS NULL`) — it's safe to repeat; any member
+   score posted between the migration and the deploy went in without `account_id`.
+   Report how many rows it fills.
 5. **Smoke test:** curl `/api/board/all` + `/api/board/leaderboard?game=dropblock` (shape
    byte-identical, `h` fields intact); one REAL member score post from a live cabinet (not curl)
    → confirm it lands with `account_id` populated (data-layer read-back); `/api/account/nonce`
