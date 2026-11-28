@@ -33,12 +33,12 @@
 <button id="go">RUN PROOF</button>
 
 <div class="card">
-  <div class="k">1 · NONCE</div><div class="v" id="nonce">—</div>
+  <div class="k">1 · NONCE</div><div class="v" id="out-nonce">—</div>
   <div class="k">2 · PUBLIC KEY (getPublicKey, forSelf:true, counterparty:'anyone')</div><div class="v" id="pub">—</div>
-  <div class="k">3 · ADDRESS DERIVED IN-PAGE (P2PKH of the pubkey, via vendor bsv.min.js)</div><div class="v" id="addr">—</div>
+  <div class="k">3 · ADDRESS DERIVED IN-PAGE (P2PKH of the pubkey, via vendor bsv.min.js)</div><div class="v" id="out-addr">—</div>
   <div class="k">4 · ACCOUNT LOGIN ADDRESS (from ds-da session, localStorage)</div><div class="v" id="accaddr">—</div>
   <div class="k">5 · SIGNATURE (createSignature over the accept message, DER hex)</div><div class="v" id="sig">—</div>
-  <div class="k">6 · SIGNED MESSAGE</div><div class="v" id="msg">—</div>
+  <div class="k">6 · SIGNED MESSAGE</div><div class="v" id="out-message">—</div>
 </div>
 
 <div class="card">
@@ -96,6 +96,14 @@
     $('verdict').textContent = 'running…';
     var chid = $('chid').value.trim();
     var a = acc();
+    // SHARED VALUES — declared here (the onclick scope) so EVERY .then
+    // callback sees the real variables. A `var` declared inside one .then
+    // callback and referenced in a sibling callback is NOT lexically in
+    // scope there: in the WebView's eval it resolves to the window's NAMED
+    // ELEMENT (id="nonce", id="addr"…) → [object HTMLDivElement] was signed
+    // and posted. Element ids that collide with JS variable names are
+    // renamed out-* for this reason.
+    var nonce = null, pk = null, addr = null, acceptMsg = null;
     $('accaddr').textContent = (a && a.address) ? a.address : '— (no ds-da session: log in at ds-da.ca/account first)';
     $('accaddr').className = 'v ' + (a && a.address ? '' : 'pend');
     // 1) nonce — real challenge accept nonce if we have a session + id, else a plain login nonce
@@ -104,24 +112,25 @@
       : fetch(API + '/account/nonce').then(function (r) { return r.json(); });
     nonceReq.then(function (j) {
       if (!j.nonce) throw new Error('no nonce: ' + JSON.stringify(j));
-      var nonce = j.nonce;
-      $('nonce').textContent = nonce + (chid && tok() ? '  (challenge accept nonce)' : '  (plain login nonce — no session/challenge id)');
+      nonce = j.nonce;
+      $('out-nonce').textContent = nonce + (chid && tok() ? '  (challenge accept nonce)' : '  (plain login nonce — no session/challenge id)');
       // 2) pubkey
       return window.CWI.getPublicKey({ protocolID: PROTO.protocolID, keyID: PROTO.keyID, counterparty: PROTO.counterparty, forSelf: true });
-    }).then(function (pk) {
+    }).then(function (k) {
+      pk = k;
       $('pub').textContent = pk.publicKey;
       // 3) in-page address
-      var addr = p2pkh(pk.publicKey);
-      $('addr').textContent = addr;
-      // 4) sign
-      var msg = chid ? 'dsda-accept|' + chid + '|' + nonce : nonce;
-      $('msg').textContent = msg;
-      return window.CWI.createSignature({ data: Array.from(new TextEncoder().encode(msg)), protocolID: PROTO.protocolID, keyID: PROTO.keyID, counterparty: PROTO.counterparty, forSelf: true }).then(function (sg) {
+      addr = p2pkh(pk.publicKey);
+      $('out-addr').textContent = addr;
+      // 4) sign — the EXACT string, used for both createSignature and the POST
+      acceptMsg = chid ? 'dsda-accept|' + chid + '|' + nonce : nonce;
+      $('out-message').textContent = acceptMsg;
+      return window.CWI.createSignature({ data: Array.from(new TextEncoder().encode(acceptMsg)), protocolID: PROTO.protocolID, keyID: PROTO.keyID, counterparty: PROTO.counterparty, forSelf: true }).then(function (sg) {
         var s = hex(sg.signature);
         $('sig').textContent = s;
         // 5) server verify — Worker brc100Verify over HTTPS (primary),
         //    sideline spike server (fallback if the Worker call fails).
-        var payload = { message: msg, publicKey: pk.publicKey, signature: s, pageAddress: addr, account: a || null };
+        var payload = { message: acceptMsg, publicKey: pk.publicKey, signature: s, pageAddress: addr, account: a || null };
         return verifyWorker(payload).then(function (v) {
           v.via = 'worker brc100Verify (https)';
           return v;
@@ -134,14 +143,15 @@
       });
     }).then(function (v) {
       $('verify').textContent = JSON.stringify(v, null, 2);
-      var a = acc();
-      var checks = {
-        'server verified the signature with the pubkey': v.ok === true,
-        'server address == in-page address (same pubkey → same address)': !!(v.address && v.address === addr),
-        'in-page address == account LOGIN address (login key == signing key)': !!(a && a.address && v.address === a.address)
-      };
-      var all = Object.values(checks).every(Boolean);
-      $('verdict').textContent = (all ? '✅ PROOF HOLDS' : '❌ PROOF FAILED') + '\n' + Object.entries(checks).map(function (c) { return (c[1] ? '✅' : '❌') + ' ' + c[0]; }).join('\n');
+      // Each verdict line is computed INDEPENDENTLY from its own operands —
+      // a failed server call fails only the server-dependent lines.
+      var checks = [
+        { label: 'server verified the signature with the pubkey', ok: !!(v && v.ok === true) },
+        { label: 'server address == in-page address (same pubkey → same address)', ok: !!(v && v.address && addr && v.address === addr) },
+        { label: 'in-page address == account LOGIN address (login key == signing key)', ok: !!(a && a.address && addr && addr === a.address) }
+      ];
+      var all = checks.every(function (c) { return c.ok; });
+      $('verdict').textContent = (all ? '✅ PROOF HOLDS' : '❌ PROOF FAILED') + '\n' + checks.map(function (c) { return (c.ok ? '✅' : '❌') + ' ' + c.label; }).join('\n');
       $('verdict').style.color = all ? '#6cffb2' : '#ff6b6b';
     }).catch(function (e) {
       $('verdict').textContent = '❌ ' + (e && e.message ? e.message : e);
