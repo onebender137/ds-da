@@ -54,16 +54,18 @@
 
   function ready() {
     var t = tok();
-    if (!window.CWI || typeof window.CWI.getPublicKey !== 'function') {
-      statusEl.innerHTML = '<span class="err">No wallet — open this page in Fundy Wallet.</span>';
-      return;
-    }
+    // Gate on the SESSION, not the CWI. Fundy injects the CWI a moment after
+    // load, so a page-load CWI check says "no wallet" and players (who won't
+    // know to refresh) are stuck. The CWI is detected at click time (waitForCwi
+    // in doLink), so the buttons are always live once logged in.
     if (!t) {
       statusEl.innerHTML = '<span class="err">Not logged in — log in on <b>ds-da.ca/account</b> first, then reload.</span>';
       return;
     }
-    statusEl.innerHTML = '<span class="ok">Ready — wallet + session present.</span>';
+    statusEl.innerHTML = '<span class="ok">Ready — tap a button. (The wallet is detected when you tap; no need to refresh.)</span>';
     goBtn.disabled = false;
+    var mb = document.getElementById('mismatch');
+    if (mb) mb.disabled = false;
   }
 
   goBtn.addEventListener('click', function () {
