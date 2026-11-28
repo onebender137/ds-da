@@ -30,7 +30,8 @@
  *
  * Exposes window.DSDA.account:
  *   loginBrc100(), loginEmail(email, pw), register(email, handle, pw),
- *   logout(), pull(), push(), getToken(), getAccount()
+ *   logout(), pull(), push(), getToken(), getAccount(),
+ *   setHandle(handle), needsName(account), refreshAccount()  // v11
  */
 (function () {
   'use strict';
@@ -112,6 +113,28 @@
   // includes resetUrl so the flow is testable; in prod it's a generic message.
   function forgotPassword(email) {
     return api('/forgot-password', 'POST', { email: email });
+  }
+  // v11: pick/change the public handle (POST /api/account/handle). The server
+  // enforces the same rules as register (cleaning, 2–16, blocked words,
+  // player- ban, 30-day released-name hold) plus the rename cooldown (free
+  // from a player- name, else once every 30 days). On success the fresh
+  // account is written to localStorage so member()/isMe() see the new
+  // handle immediately (no stale champ alerts / initials).
+  function setHandle(handle) {
+    if (!tok()) return Promise.resolve({ ok: false, error: 'not logged in' });
+    return api('/handle', 'POST', { handle: handle }).then(function (r) {
+      if (r.ok) {
+        setAcc(r.j.account);
+        window.dispatchEvent(new CustomEvent('DSDA:account-updated', { detail: r.j.account }));
+        return { ok: true, account: r.j.account };
+      }
+      return { ok: false, status: r.status, error: r.j.error || 'rename failed' };
+    });
+  }
+  // v11: true when the account still carries an auto-assigned player- name.
+  function needsName(account) {
+    account = account || getAcc();
+    return !!(account && account.handle && /^player-/.test(account.handle));
   }
   function resetPassword(token, password) {
     return api('/reset-password', 'POST', { token: token, password: password });
@@ -216,6 +239,18 @@
 
   // Pull on load if there's a token.
   if (tok()) pull();
+
+  // v11: refresh the cached account once per page load — the server is the
+  // source of truth for the handle (it may have been renamed on another
+  // device), so a stale localStorage copy never outlives a page load.
+  function refreshAccount() {
+    if (!tok()) return Promise.resolve(null);
+    return api('/me').then(function (r) {
+      if (r.ok && r.j.account) { setAcc(r.j.account); return r.j.account; }
+      return getAcc();
+    });
+  }
+  if (tok()) refreshAccount();
 
   // Submit a score to the account. Wallet-signed (CWI) when the account has a
   // linked wallet, else session (token). The server keeps the max; every score
@@ -384,6 +419,7 @@
     forgotPassword: forgotPassword, resetPassword: resetPassword,
     logout: logout, pull: pull, push: push, submitScore: submitScore, linkWallet: linkWallet,
     getToken: tok, getAccount: getAcc,
+    setHandle: setHandle, needsName: needsName, refreshAccount: refreshAccount, // v11: handle rename
     boardBest: boardBest, pending: loadPend // v9: board gate reads passport.boards (live-board bests), not passport.scores (test hooks)
   };
 })();
