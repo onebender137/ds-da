@@ -42,7 +42,7 @@
 </div>
 
 <div class="card">
-  <div class="k">7 · SERVER VERIFY (spike server, bsv lib, independent)</div>
+  <div class="k">7 · SERVER VERIFY (Worker brc100Verify over HTTPS — same path as login/accept; sideline server is the fallback)</div>
   <pre id="verify">—</pre>
 </div>
 
@@ -58,16 +58,30 @@
   if (typeof bsv !== 'undefined' && typeof BSV === 'undefined') window.BSV = bsv;
   var API = location.origin + '/api';
   var PROTO = { protocolID: [0, 'dsda ca login'], keyID: 'login', counterparty: 'anyone' };
-  var VERIFY_URL = 'http://100.108.37.25:8793/verify'; // bigboy tailnet
 
   function $(id) { return document.getElementById(id); }
   function tok() { try { return localStorage.getItem('dsda-token') || ''; } catch (e) { return ''; } }
   function acc() { try { return JSON.parse(localStorage.getItem('dsda-account') || 'null'); } catch (e) { return null; } }
   function hex(bytes) { return Array.from(bytes).map(function (b) { return b.toString(16).padStart(2, '0'); }).join(''); }
   function p2pkh(pubHex) {
-    var buf = BSV.deps.Buffer.from(pubHex, 'hex');
-    var h160 = BSV.crypto.Hash.ripemd160(BSV.crypto.Hash.sha256(buf));
-    return new BSV.Address(h160, BSV.constants.networks.bitcoin).toString();
+    // The vendored bsv build exposes the global as lowercase `bsv`;
+    // PublicKey(...).toAddress() is the lib's own P2PKH path.
+    return new BSV.PublicKey(pubHex).toAddress().toString();
+  }
+  // Step 7: primary verify = the Worker's brc100Verify over HTTPS (the same
+  // code path as login/accept). Fallback = the sideline spike server on the
+  // tailnet (only reachable from a plain-http context).
+  function verifyWorker(payload) {
+    return fetch(API + '/account/verify-brc100', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(function (r) { return r.json(); });
+  }
+  function verifySpike(payload) {
+    return fetch('http://100.108.37.25:8793/verify', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(function (r) { return r.json(); });
   }
 
   if (window.CWI && typeof window.CWI.getVersion === 'function') {
@@ -105,18 +119,25 @@
       return window.CWI.createSignature({ data: Array.from(new TextEncoder().encode(msg)), protocolID: PROTO.protocolID, keyID: PROTO.keyID, counterparty: PROTO.counterparty, forSelf: true }).then(function (sg) {
         var s = hex(sg.signature);
         $('sig').textContent = s;
-        // 5) server verify
-        return fetch(VERIFY_URL, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ nonce: nonce, challenge_id: chid || null, message: msg, publicKey: pk.publicKey, signature: s, pageAddress: addr, account: a || null })
-        }).then(function (r) { return r.json(); });
+        // 5) server verify — Worker brc100Verify over HTTPS (primary),
+        //    sideline spike server (fallback if the Worker call fails).
+        var payload = { message: msg, publicKey: pk.publicKey, signature: s, pageAddress: addr, account: a || null };
+        return verifyWorker(payload).then(function (v) {
+          v.via = 'worker brc100Verify (https)';
+          return v;
+        }).catch(function (e) {
+          return verifySpike(payload).then(function (v) {
+            v.via = 'spike server (tailnet http) — worker verify failed: ' + e.message;
+            return v;
+          });
+        });
       });
     }).then(function (v) {
       $('verify').textContent = JSON.stringify(v, null, 2);
       var a = acc();
       var checks = {
-        'server verified signature with the pubkey': v.ok === true,
-        'server address == in-page address (same pubkey → same address)': v.address && v.address === v.page_address,
+        'server verified the signature with the pubkey': v.ok === true,
+        'server address == in-page address (same pubkey → same address)': !!(v.address && v.address === addr),
         'in-page address == account LOGIN address (login key == signing key)': !!(a && a.address && v.address === a.address)
       };
       var all = Object.values(checks).every(Boolean);
