@@ -1,7 +1,7 @@
-/* DSDA Arcade — AUTHORITATIVE challenges (Phase 1, no stakes).
+/* DSDA Arcade — AUTHORITATIVE challenges (Phase 2, shadow verification).
  *
  * Drop-in for eligible cabinets (TappyCat, DropBlock):
- *   <script src="../arcade-challenge.js?v=3"></script>
+ *   <script src="../arcade-challenge.js?v=4"></script>
  *
  * A no-op unless the URL has ?c=<challengeId>. When it does:
  *   - Loads the challenge (GET /api/challenge/<id>, session-authed) and shows a
@@ -11,10 +11,20 @@
  *     window.__dsdaGetChallengeSeed(gameKey), which burns an attempt
  *     (POST .../run/start) and returns the per-attempt seed. Normal play (no
  *     ?c=) is untouched — the seed provider is never registered.
- *   - On game_over, posts the score + [tick,bits] input log to
- *     POST .../run/<run_id>/finish. Challenge runs do NOT post to the public
- *     board or the account score history (window.__dsdaChallengeActive gates
- *     both — see arcade-social.js + each cabinet's submitGlobal).
+ *   - The input log comes from the CABINET'S OWN Phase-0 recorder
+ *     (window.__dsdaStartRunLog / window.__dsdaGetRunLog): the [tick, bits]
+ *     change-events are exactly what sim.step() consumed — the same
+ *     mechanism that passed the 50/50 determinism gate. No DOM
+ *     keydown/touch approximation (the event stream is lossy: event tick ≠
+ *     consumed tick, touches collapsed, no release info).
+ *   - On game_over, posts score + envelope log {v:2, sim_sha, seed, ticks,
+ *     events} to POST .../run/<run_id>/finish. The worker checks sim_sha +
+ *     seed against the challenge, gzips → R2. replayd replays it against the
+ *     pinned sim build and posts a verdict (shadow until the per-cabinet
+ *     replay gate flips the challenge to verify_mode='replay').
+ *   - Challenge runs do NOT post to the public board or the account score
+ *     history (window.__dsdaChallengeActive gates both — see
+ *     arcade-social.js + each cabinet's submitGlobal).
  *
  * Identity comes from the session token (localStorage `dsda-token`), never the
  * request body. The seed only reaches the page in this player's own run/start
@@ -75,34 +85,26 @@
   var state = {
     id: CH_ID, active: false, data: null,
     games: [], gameKeys: [],
-    current: null,       // { run_id, seed, attempt_no, game_key }
-    log: [],             // [tick, bits]
-    logStart: 0,
+    current: null,       // { run_id, seed, attempt_no, game_key, sim_sha }
     finishing: false
   };
   var bootPromise = null; // set by boot() — provider awaits it to avoid a race
   window.__dsdaChallengeActive = true;   // gates public board + account posts
 
-  /* ---------------- input log ----------------
-     Record (simTick, inputBits) for each input during the live run. The cabinet
-     exposes window.__dsdaTick() (current sim tick); if absent we fall back to a
-     wall-clock ms tick. Phase 1 stores the log (Phase 2 replays it) — it is not
-     validated server-side, so a best-effort bit map is fine. */
-  function tickNow() {
-    try { if (typeof window.__dsdaTick === 'function') { var t = window.__dsdaTick(); if (t != null) return t; } } catch (e) {}
-    return state.logStart ? Date.now() - state.logStart : 0;
+  /* ---------------- run log (from the cabinet's Phase-0 recorder) --------
+     The cabinet exposes window.__dsdaStartRunLog() / window.__dsdaGetRunLog()
+     — the Phase-0 gate recorder that wraps Sim.step and captures the exact
+     [tick, bits] change-events step() consumed. recordStop() also returns
+     the seed + final tick count the cabinet actually used, which the worker
+     cross-checks against the run row. */
+  function startRec() {
+    try { if (typeof window.__dsdaStartRunLog === 'function') return window.__dsdaStartRunLog(); } catch (e) {}
+    return null;
   }
-  var KEY_BITS = { ArrowLeft: 1, a: 1, ArrowRight: 2, d: 2, ArrowUp: 4, w: 4, ' ': 4, ArrowDown: 8, s: 8, z: 16, Z: 16, x: 32, X: 32, Shift: 64 };
-  function recordBit(bits) {
-    if (!state.current || state.finishing) return;
-    var t = tickNow();
-    var last = state.log[state.log.length - 1];
-    if (last && last[0] === t) last[1] |= bits;       // merge same-tick presses
-    else state.log.push([t, bits]);
-    if (state.log.length > 20000) state.log.shift();   // hard cap (well under 256KB gz)
+  function stopRec() {
+    try { if (typeof window.__dsdaGetRunLog === 'function') return window.__dsdaGetRunLog(); } catch (e) {}
+    return null;
   }
-  function onKey(e) { if (e && e.type === 'keydown' && !e.repeat) recordBit(KEY_BITS[e.key] || 0); }
-  function onPointer(e) { if (e && (e.type === 'touchstart' || e.type === 'pointerdown')) recordBit(128); }
 
   /* ---------------- seed provider (called by the cabinet's start fn) ---------------- */
   window.__dsdaGetChallengeSeed = function (gameKey) {
@@ -117,12 +119,10 @@
           showRunStartError((r.j && r.j.error) || ('HTTP ' + r.status));
           return { blocked: true };
         }
-        state.current = { run_id: r.j.run_id, seed: r.j.seed, attempt_no: r.j.attempt_no, game_key: gameKey };
-        state.log = []; state.logStart = Date.now(); state.finishing = false;
+        state.current = { run_id: r.j.run_id, seed: r.j.seed, attempt_no: r.j.attempt_no, game_key: gameKey, sim_sha: r.j.sim_sha || null };
+        state.finishing = false;
+        startRec(); // start the cabinet's step() recorder for this run
         setCollapsed(true); // slim pill while running
-        document.addEventListener('keydown', onKey, { passive: true });
-        document.addEventListener('touchstart', onPointer, { passive: true });
-        document.addEventListener('pointerdown', onPointer, { passive: true });
         refreshStandings();
         return r.j.seed;
       });
@@ -156,10 +156,18 @@
     if (!state.current || state.finishing) return;
     state.finishing = true;
     var run = state.current;
-    var log = state.log.slice();
-    document.removeEventListener('keydown', onKey);
-    document.removeEventListener('touchstart', onPointer);
-    document.removeEventListener('pointerdown', onPointer);
+    // The exact step() input log, from the cabinet's recorder.
+    var rec = stopRec();
+    var log = null;
+    if (rec) {
+      log = {
+        v: 2,
+        sim_sha: run.sim_sha || null,
+        seed: rec.seed != null ? rec.seed : null,
+        ticks: rec.ticks != null ? rec.ticks : null,
+        events: Array.isArray(rec.events) ? rec.events : null
+      };
+    }
     setCollapsed(false); // expand HUD on game over
     var s = Math.round(+score || 0);
     api('/' + state.id + '/run/' + run.run_id + '/finish', 'POST', { score: s, log: log })

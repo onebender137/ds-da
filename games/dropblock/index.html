@@ -2686,6 +2686,13 @@ window.__tl = {
   reset: resetGame,
 };
 
+// DSDA challenges (Phase 2): expose the Phase-0 recorder to
+// arcade-challenge.js. The [tick, bits] change-events are EXACTLY what
+// DropBlockSim.step() consumed (8-bit mask, bit7 = touch source) — replay is
+// exact by construction (same gate mechanism that passed 50/50).
+window.__dsdaStartRunLog = () => (window.__tl && window.__tl.recordStart) ? window.__tl.recordStart() : null;
+window.__dsdaGetRunLog = () => (window.__tl && window.__tl.recordStop) ? window.__tl.recordStop() : null;
+
 try {
   boot();
 } catch (err) {
@@ -2695,7 +2702,7 @@ try {
 }
 </script>
 <script src="../arcade-social.js?v=18"></script>
-<script src="../arcade-challenge.js?v=3"></script>
+<script src="../arcade-challenge.js?v=4"></script>
 <script src="../../radio/radio.js?v=11"></script>
 <script>
   // DSDA Radio — the shared cross-game dial (6 stations: Most Pit, Easy Mellow,
