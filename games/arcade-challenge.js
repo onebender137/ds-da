@@ -177,7 +177,13 @@
           // (PLAY AGAIN) burns a NEW run and restarts the recorder.
           state.current = null;
           state.finishing = false;
-          toast(EM[run.game_key] || '🎯', 'CHALLENGE RUN IN', 'Attempt ' + run.attempt_no + ' · ' + s + (r.j && r.j.log_hash ? ' · log saved' : ''));
+          // Replay mode: the score is untrusted until the verdict lands, so show
+          // "verifying…" (the standings flip to the score once it's verified).
+          var isReplay = state.data && state.data.verify_mode === 'replay';
+          var sub = isReplay
+            ? 'Attempt ' + run.attempt_no + ' · RUN IN · verifying…'
+            : 'Attempt ' + run.attempt_no + ' · ' + s + (r.j && r.j.log_hash ? ' · log saved' : '');
+          toast(EM[run.game_key] || '🎯', 'CHALLENGE RUN IN', sub);
         } else {
           // Run still open server-side — keep state.current so PLAY AGAIN
           // replays the same seed and this finish can be retried.
@@ -228,7 +234,7 @@
       '.dsda-ch .st.open{color:#0d2b3d;background:#6cffb2}.dsda-ch .st.live{color:#1d1200;background:#ffd54a}.dsda-ch .st.settled{color:#eaf6ff;background:#22384a}' +
       '.dsda-ch .pl{color:#9fb3ad;font-size:10px}.dsda-ch .sb{color:#eaf6ff;font-size:10px}.dsda-ch .sb b{color:#6cffb2}' +
       '.dsda-ch .me{color:#ffd54a}' +
-      '.dsda-ch .nrun{color:#5a6b6e;font-style:italic}';
+      '.dsda-ch .nrun{color:#5a6b6e;font-style:italic}.dsda-ch .vfy{color:#6cffb2;font-style:italic;animation:dsdachpulse 1.2s ease-in-out infinite}@keyframes dsdachpulse{0%,100%{opacity:1}50%{opacity:.35}}';
     var st = document.createElement('style'); st.id = 'dsda-ch-css'; st.textContent = css;
     (document.head || document.documentElement).appendChild(st);
   }
@@ -258,6 +264,8 @@
     var d = state.data;
     if (!d) { hud.innerHTML = '<div class="row"><span class="t">🎯 CHALLENGE</span><span class="st open">LOADING</span></div>'; return; }
     var st = statusLabel(d);
+    var stDisp = st.toUpperCase();
+    if (d.pending_runs > 0) { st = 'settling'; stDisp = 'SETTLING · VERIFYING RUNS'; }
     var players = (d.players || []).map(function (p) {
       var me = p.handle === member();
       return '<span class="' + (me ? 'me' : '') + '">' + (me ? '★ ' : '') + esc(p.handle) + (p.status === 'accepted' ? '' : '·' + esc(p.status)) + '</span>';
@@ -265,26 +273,28 @@
     var stand = (d.standings || []).map(function (s) {
       var me = s.handle === member();
       var bestStr = '';
+      var hasScore = false;
       if (s.best && typeof s.best === 'object') {
         var parts = [];
         (state.gameKeys || []).forEach(function (g) {
-          if (s.best[g] != null) parts.push((EM[g] || g) + ' ' + s.best[g]);
+          if (s.best[g] != null) { parts.push((EM[g] || g) + ' ' + s.best[g]); hasScore = true; }
         });
-        bestStr = parts.length ? ' (' + parts.join(' ') + ')' : ' <span class="nrun">no runs yet</span>';
+        bestStr = parts.length ? ' (' + parts.join(' ') + ')' : '';
       } else if (s.best != null) {
-        bestStr = ' (best ' + s.best + ')';
-      } else {
-        bestStr = ' <span class="nrun">no runs yet</span>';
+        bestStr = ' (best ' + s.best + ')'; hasScore = true;
       }
+      // verifying…: a finished run awaiting a verdict (pending 0 / review 3)
+      if (s.verifying > 0) bestStr += ' <span class="vfy">verifying…</span>';
+      if (!hasScore && !(s.verifying > 0)) bestStr = ' <span class="nrun">no runs yet</span>';
       return '<span class="' + (me ? 'me' : '') + '">' + (me ? '★ ' : '') + esc(s.handle) + ' ' + (s.points != null ? s.points + 'pt' : '') + bestStr + '</span>';
     }).join('  ');
     // Collapsed: slim pill with title + status only
     if (hudCollapsed) {
-      hud.innerHTML = '<div class="row"><span class="t">🎯 CHALLENGE</span><span class="st ' + st + '">' + st.toUpperCase() + '</span></div>';
+      hud.innerHTML = '<div class="row"><span class="t">🎯 CHALLENGE</span><span class="st ' + st + '">' + stDisp + '</span></div>';
     } else {
       hud.innerHTML =
         '<div class="row"><span class="t">🎯 ' + esc((d.title || 'CHALLENGE').slice(0, 40)) + '</span>' +
-        '<span class="st ' + st + '">' + st.toUpperCase() + '</span></div>' +
+        '<span class="st ' + st + '">' + stDisp + '</span></div>' +
         (players ? '<div class="pl">' + players + '</div>' : '') +
         (stand ? '<div class="sb">▸ ' + stand + '</div>' : '');
     }
