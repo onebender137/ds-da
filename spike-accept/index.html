@@ -130,7 +130,9 @@
         $('sig').textContent = s;
         // 5) server verify — Worker brc100Verify over HTTPS (primary),
         //    sideline spike server (fallback if the Worker call fails).
-        var payload = { message: acceptMsg, publicKey: pk.publicKey, signature: s, pageAddress: addr, account: a || null };
+        // Field names: the Worker reads `pubkey`, the sideline server reads
+        // `publicKey` — send both; extras are harmless to each.
+        var payload = { message: acceptMsg, pubkey: pk.publicKey, publicKey: pk.publicKey, signature: s, pageAddress: addr, account: a || null };
         return verifyWorker(payload).then(function (v) {
           v.via = 'worker brc100Verify (https)';
           return v;
