@@ -60,10 +60,36 @@
     return false;
   }
 
+  // Gate 0 accept proof: sign `dsda-accept|<id>|<nonce>` with the LOGIN key
+  // (the same BRC-42 derivation as the account's address — see
+  // ~/dsda-wallet-spike/spike/accept-proof/PROOF.md) and POST it with the
+  // accept. Without a wallet (CWI) the accept is session-only.
+  var PROTO = { protocolID: [0, 'dsda ca login'], keyID: 'login', counterparty: 'anyone' };
+  function b64toHex(bytes) {
+    return Array.from(bytes).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+  }
+  function acceptSigned(id) {
+    return api('/' + id + '/accept-nonce', 'GET').then(function (nr) {
+      var nonce = nr.ok && nr.j ? nr.j.nonce : '';
+      var proof = Promise.resolve({});
+      if (nonce && window.CWI && typeof window.CWI.getPublicKey === 'function' && typeof window.CWI.createSignature === 'function') {
+        proof = window.CWI.getPublicKey({ protocolID: PROTO.protocolID, keyID: PROTO.keyID, counterparty: PROTO.counterparty, forSelf: true })
+          .then(function (pk) {
+            var msg = 'dsda-accept|' + id + '|' + nonce;
+            return window.CWI.createSignature({ data: Array.from(new TextEncoder().encode(msg)), protocolID: PROTO.protocolID, keyID: PROTO.keyID, counterparty: PROTO.counterparty, forSelf: true })
+              .then(function (sg) { return { nonce: nonce, pubkey: pk.publicKey, accept_sig: b64toHex(sg.signature) }; });
+          })
+          .catch(function () { return {}; }); // wallet declined → session-only accept
+      }
+      return proof.then(function (p) { return api('/' + id + '/accept', 'POST', p); });
+    });
+  }
+
   window.DSDA = window.DSDA || {};
   window.DSDA.challenge = {
     api: api, esc: esc, status: status, gameLabel: gameLabel, gamesLabel: gamesLabel,
     playUrl: playUrl, timeLeft: timeLeft, challengeUrl: challengeUrl, requireLogin: requireLogin,
+    acceptSigned: acceptSigned,
     token: tok, account: acc, BASE: BASE
   };
 })();

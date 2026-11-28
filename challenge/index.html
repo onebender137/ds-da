@@ -75,7 +75,7 @@
     // Local dev override (prod uses same-origin /api/challenge on ds-da.ca).
     if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') window.DSDA_API_BASE = 'http://127.0.0.1:8787';
   </script>
-  <script src="/challenge/challenge.js?v=2"></script>
+  <script src="/challenge/challenge.js?v=3"></script>
   <script>
   (function () {
     'use strict';
@@ -203,7 +203,7 @@
       var join = document.getElementById('b-join');
       if (join) join.onclick = function () {
         join.disabled = true; join.textContent = 'JOINING…';
-        CH.api('/' + d.id + '/accept', 'POST', {}).then(function (r) {
+        CH.acceptSigned(d.id).then(function (r) {
           if (r.ok) { document.getElementById('actions').innerHTML = '<div style="width:100%;text-align:center;color:var(--green);font-size:13px;">✓ You\'re in — hit PLAY above.</div>'; load(); }
           else { join.disabled = false; join.textContent = 'JOIN CHALLENGE'; flash('join', (r.j && r.j.error) || 'Could not join.'); }
         });
@@ -211,7 +211,7 @@
       var accept = document.getElementById('b-accept');
       if (accept) accept.onclick = function () {
         accept.disabled = true; accept.textContent = 'ACCEPTING…';
-        CH.api('/' + d.id + '/accept', 'POST', {}).then(function (r) {
+        CH.acceptSigned(d.id).then(function (r) {
           if (r.ok) { load(); }
           else { accept.disabled = false; accept.textContent = '✓ ACCEPT CHALLENGE'; flash('accept', (r.j && r.j.error) || 'Could not accept.'); }
         });
