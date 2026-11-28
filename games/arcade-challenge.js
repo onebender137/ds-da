@@ -1,7 +1,7 @@
 /* DSDA Arcade — AUTHORITATIVE challenges (Phase 2, shadow verification).
  *
  * Drop-in for eligible cabinets (TappyCat, DropBlock):
- *   <script src="../arcade-challenge.js?v=4"></script>
+ *   <script src="../arcade-challenge.js?v=5"></script>
  *
  * A no-op unless the URL has ?c=<challengeId>. When it does:
  *   - Loads the challenge (GET /api/challenge/<id>, session-authed) and shows a
@@ -173,13 +173,20 @@
     api('/' + state.id + '/run/' + run.run_id + '/finish', 'POST', { score: s, log: log })
       .then(function (r) {
         if (r.ok) {
+          // Attempt consumed server-side — clear run state so the next start
+          // (PLAY AGAIN) burns a NEW run and restarts the recorder.
+          state.current = null;
+          state.finishing = false;
           toast(EM[run.game_key] || '🎯', 'CHALLENGE RUN IN', 'Attempt ' + run.attempt_no + ' · ' + s + (r.j && r.j.log_hash ? ' · log saved' : ''));
         } else {
+          // Run still open server-side — keep state.current so PLAY AGAIN
+          // replays the same seed and this finish can be retried.
+          state.finishing = false;
           toast('⚠️', 'CHALLENGE RUN', (r.j && r.j.error) || ('HTTP ' + r.status), 5200);
         }
         refreshStandings();
       })
-      .catch(function () { toast('⚠️', 'CHALLENGE RUN', 'Could not save — check your connection', 5200); });
+      .catch(function () { state.finishing = false; toast('⚠️', 'CHALLENGE RUN', 'Could not save — check your connection', 5200); });
   }
   // Hook game_over via gtag (chain with arcade-social's wrapper).
   (function hookGtag() {
