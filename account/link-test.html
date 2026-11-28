@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DSDA — Link wallet (E2E)</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background: #0a1628; color: #fafaf8; padding: 24px; }
+  h1 { font-size: 1.2rem; margin: 0 0 4px; }
+  p.sub { color: #8a97ab; font-size: 0.85rem; margin: 0 0 20px; }
+  .card { background: #12203a; border: 1px solid #1e3252; border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+  button { width: 100%; padding: 14px; font-size: 1rem; font-weight: 600; border: 0; border-radius: 10px; background: #c9a227; color: #0a1628; cursor: pointer; }
+  button:disabled { opacity: 0.5; }
+  pre { white-space: pre-wrap; word-break: break-all; font-size: 0.75rem; background: #0a1220; border-radius: 8px; padding: 12px; color: #9fb3cc; }
+  .ok { color: #4ade80; } .err { color: #f87171; }
+  .lbl { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: #8a97ab; margin-bottom: 6px; }
+</style>
+</head>
+<body>
+  <h1>Link wallet (E2E)</h1>
+  <p class="sub">Binds your Fundy wallet's BRC-42 identity to this account. Open this page <b>in Fundy</b> while logged in.</p>
+
+  <div class="card">
+    <div class="lbl">Status</div>
+    <div id="status">Loading…</div>
+  </div>
+
+  <div class="card">
+    <button id="go" disabled>Link wallet</button>
+  </div>
+
+  <div class="card">
+    <div class="lbl">Result</div>
+    <pre id="out">—</pre>
+  </div>
+
+<script>
+(function () {
+  'use strict';
+  var API = (window.DSDA_API_BASE || 'https://api.ds-da.ca') + '/api/account';
+  var PROTO = { protocolID: [0, 'dsda ca login'], keyID: 'login', counterparty: 'anyone' };
+  var statusEl = document.getElementById('status');
+  var outEl = document.getElementById('out');
+  var goBtn = document.getElementById('go');
+  function tok() { try { return localStorage.getItem('dsda-token') || ''; } catch (e) { return ''; } }
+  function log(s) { outEl.textContent = s; }
+
+  function ready() {
+    var t = tok();
+    if (!window.CWI || typeof window.CWI.getPublicKey !== 'function') {
+      statusEl.innerHTML = '<span class="err">No wallet — open this page in Fundy Wallet.</span>';
+      return;
+    }
+    if (!t) {
+      statusEl.innerHTML = '<span class="err">Not logged in — log in on <b>ds-da.ca/account</b> first, then reload.</span>';
+      return;
+    }
+    statusEl.innerHTML = '<span class="ok">Ready — wallet + session present.</span>';
+    goBtn.disabled = false;
+  }
+
+  goBtn.addEventListener('click', function () {
+    goBtn.disabled = true;
+    log('Working…');
+    (async function () {
+      try {
+        var idr = await window.CWI.getPublicKey({ identityKey: true });
+        var identityPub = idr.publicKey;
+        var pkr = await window.CWI.getPublicKey({
+          protocolID: PROTO.protocolID, keyID: PROTO.keyID,
+          counterparty: PROTO.counterparty, forSelf: true
+        });
+        var publicKey = pkr.publicKey;
+        var nr = await fetch(API + '/nonce?purpose=link').then(function (r) { return r.json(); });
+        var nonce = nr.nonce;
+        var data = Array.from(new TextEncoder().encode(nonce));
+        var sgr = await window.CWI.createSignature({
+          data: data, protocolID: PROTO.protocolID, keyID: PROTO.keyID,
+          counterparty: PROTO.counterparty, forSelf: true
+        });
+        var sigHex = Array.from(sgr.signature).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+        var res = await fetch(API + '/link-wallet', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': '***' + tok() },
+          body: JSON.stringify({ identityPub: identityPub, publicKey: publicKey, signature: sigHex, nonce: nonce })
+        });
+        var j = await res.json();
+        log('HTTP ' + res.status + '\n' + JSON.stringify(j, null, 2) +
+            '\n\nidentityPub: ' + identityPub + '\npublicKey:   ' + publicKey);
+        statusEl.innerHTML = (res.status >= 200 && res.status < 300)
+          ? '<span class="ok">Linked ✅ — ' + (j.account && j.account.handle || '') + '</span>'
+          : '<span class="err">Rejected: ' + (j.error || res.status) + '</span>';
+      } catch (e) {
+        log('Error: ' + String(e));
+        statusEl.innerHTML = '<span class="err">Error: ' + String(e) + '</span>';
+      } finally {
+        goBtn.disabled = false;
+      }
+    })();
+  });
+
+  ready();
+})();
+</script>
+</body>
+</html>
