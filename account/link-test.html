@@ -31,6 +31,12 @@
   </div>
 
   <div class="card">
+    <div class="lbl">Mismatch case (must be REJECTED)</div>
+    <p class="sub" style="margin-bottom:10px">Valid login-key signature, but the identity is the secp256k1 base point — it can't derive to your login key.</p>
+    <button id="mismatch" disabled>Mismatch test</button>
+  </div>
+
+  <div class="card">
     <div class="lbl">Result</div>
     <pre id="out">—</pre>
   </div>
@@ -61,12 +67,59 @@
   }
 
   goBtn.addEventListener('click', function () {
+    doLink({ identityKey: true }).then(function (res) {
+      statusEl.innerHTML = (res.status >= 200 && res.status < 300)
+        ? '<span class="ok">Linked ✅ — ' + (res.j.account && res.j.account.handle || '') + '</span>'
+        : '<span class="err">Rejected: ' + (res.j.error || res.status) + '</span>';
+    });
+  });
+
+  // Mismatch case: a VALID login-key signature, but identityPub = the secp256k1
+  // base point (a real key that is NOT this wallet's identity). The invariant
+  // publicDeriveAny(basePoint, invoice) != loginKey must reject it.
+  var BASE_POINT = '0279be667ef9dcbbac55a06295ce870b07029bfcdb2c2ca99819a312b3c0d0a';
+  var mismatchBtn = document.getElementById('mismatch');
+  mismatchBtn.addEventListener('click', function () {
+    mismatchBtn.disabled = true;
+    log('Mismatch test — working…');
+    doLink({ identityPub: BASE_POINT }).then(function (res) {
+      var expectedReject = res.status === 400 && /identity_pubkey/i.test(res.j.error || '');
+      statusEl.innerHTML = expectedReject
+        ? '<span class="ok">Rejected as expected ✅ — ' + res.j.error + '</span>'
+        : '<span class="err">UNEXPECTED: ' + res.status + ' ' + JSON.stringify(res.j) + '</span>';
+    }).finally(function () { mismatchBtn.disabled = false; });
+  });
+
+  // CWI is injected by Fundy a moment after page load — never trust a single
+  // page-load check. Poll at click time with a short retry (players won't know
+  // to refresh).
+  function waitForCwi() {
+    return new Promise(function (resolve, reject) {
+      var tries = 0;
+      (function poll() {
+        if (window.CWI && typeof window.CWI.getPublicKey === 'function') return resolve();
+        if (++tries > 20) return reject(new Error('no wallet (open in Fundy)'));
+        setTimeout(poll, 250);
+      })();
+    });
+  }
+
+  // Shared: gather CWI keys + a link nonce + signature, POST /link-wallet.
+  // opts.identityKey=true -> use the wallet's real identity; opts.identityPub
+  // -> override the identity (mismatch case).
+  function doLink(opts) {
     goBtn.disabled = true;
     log('Working…');
-    (async function () {
+    return (async function () {
       try {
-        var idr = await window.CWI.getPublicKey({ identityKey: true });
-        var identityPub = idr.publicKey;
+        await waitForCwi();
+        var identityPub;
+        if (opts.identityPub) {
+          identityPub = opts.identityPub;
+        } else {
+          var idr = await window.CWI.getPublicKey({ identityKey: true });
+          identityPub = idr.publicKey;
+        }
         var pkr = await window.CWI.getPublicKey({
           protocolID: PROTO.protocolID, keyID: PROTO.keyID,
           counterparty: PROTO.counterparty, forSelf: true
@@ -88,17 +141,15 @@
         var j = await res.json();
         log('HTTP ' + res.status + '\n' + JSON.stringify(j, null, 2) +
             '\n\nidentityPub: ' + identityPub + '\npublicKey:   ' + publicKey);
-        statusEl.innerHTML = (res.status >= 200 && res.status < 300)
-          ? '<span class="ok">Linked ✅ — ' + (j.account && j.account.handle || '') + '</span>'
-          : '<span class="err">Rejected: ' + (j.error || res.status) + '</span>';
+        return { status: res.status, j: j };
       } catch (e) {
         log('Error: ' + String(e));
-        statusEl.innerHTML = '<span class="err">Error: ' + String(e) + '</span>';
+        return { status: 0, j: { error: String(e) } };
       } finally {
         goBtn.disabled = false;
       }
     })();
-  });
+  }
 
   ready();
 })();
