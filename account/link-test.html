@@ -79,7 +79,7 @@
   // Mismatch case: a VALID login-key signature, but identityPub = the secp256k1
   // base point (a real key that is NOT this wallet's identity). The invariant
   // publicDeriveAny(basePoint, invoice) != loginKey must reject it.
-  var BASE_POINT = '0279be667ef9dcbbac55a06295ce870b07029bfcdb2c2ca99819a312b3c0d0a';
+  var BASE_POINT = '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798';
   var mismatchBtn = document.getElementById('mismatch');
   mismatchBtn.addEventListener('click', function () {
     mismatchBtn.disabled = true;
